@@ -1,0 +1,51 @@
+
+#ignore thumbnails created by windows
+Thumbs.db
+#Ignore files build by Visual Studio
+*.obj
+*.exe
+*.pdb
+*.user
+*.aps
+*.pch
+*.vspscc
+*_i.c
+*_p.c
+*.ncb
+*.suo
+*.tlb
+*.tlh
+*.bak
+*.cache
+*.ilk
+*.log
+*.orig
+[Bb]in
+[Dd]ebug*/
+*.lib
+*.sbr
+*.nogit
+*.nupkg
+*.zip
+*.sdf
+*.opensdf
+*.suo
+*.dotCover
+sdk-include/
+vc-include/
+obj/
+ipch*/
+Demo/
+AppPackages/
+[Rr]elease*/
+_ReSharper*/
+[Tt]est[Rr]esult*
+Generated*/
+packages/
+Temp*/
+.vs/
+#ignore build log file
+BuildErrors.log
+#ignore certification test results
+Source/CertificationTests/Results/*
+*.tlog
