@@ -225,11 +225,6 @@
     <Content Include="SharpGen.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Service References\Bing\Reference.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </Compile>
     <Compile Include="Service References\MTPS\Reference.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -241,13 +236,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="Service References\Bing\search.wsdl" />
-    <None Include="Service References\Bing\SharpGen.Bing.SearchResponse.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Service References\Bing\SharpGen.Bing.SearchResponse1.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
     <None Include="Service References\MTPS\atoms.xsd">
       <SubType>Designer</SubType>
     </None>
@@ -305,20 +293,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <WCFMetadataStorage Include="Service References\Bing\" />
     <WCFMetadataStorage Include="Service References\MTPS\" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Service References\Bing\configuration91.svcinfo" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Service References\Bing\configuration.svcinfo" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Service References\Bing\Reference.svcmap">
-      <Generator>WCF Proxy Generator</Generator>
-      <LastGenOutput>Reference.cs</LastGenOutput>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="Service References\MTPS\configuration91.svcinfo" />
