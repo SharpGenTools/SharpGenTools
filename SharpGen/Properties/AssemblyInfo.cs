@@ -19,7 +19,9 @@
 // THE SOFTWARE.
 
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 [assembly: AssemblyProduct("SharpGen")]
 [assembly: AssemblyTitle("SharpGen")]
 [assembly: AssemblyDescription("Assembly providing C# code generation from C++ includes")]
+[assembly: ComVisible(false)]

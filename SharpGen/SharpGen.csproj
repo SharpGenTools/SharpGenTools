@@ -78,9 +78,6 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\SharedAssemblyInfo.cs">
-      <Link>Properties\SharedAssemblyInfo.cs</Link>
-    </Compile>
     <Compile Include="Config\BindRule.cs" />
     <Compile Include="Config\ContextSetRule.cs" />
     <Compile Include="Config\ContextRule.cs" />

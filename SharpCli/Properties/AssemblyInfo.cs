@@ -19,7 +19,9 @@
 // THE SOFTWARE.
 
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 [assembly: AssemblyProduct("SharpCli")]
 [assembly: AssemblyTitle("SharpCli")]
 [assembly: AssemblyDescription("Assembly providing core tools for SharpDX Tools")]
+[assembly: ComVisible(false)]
