@@ -179,7 +179,6 @@
     <Compile Include="TextTemplating\Tokenizer.cs" />
     <Compile Include="TextTemplating\TemplateEngine.cs" />
     <Compile Include="Utilities.cs" />
-    <Compile Include="Utility.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="ProgressForm.resx">

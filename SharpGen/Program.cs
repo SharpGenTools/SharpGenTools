@@ -68,7 +68,7 @@ namespace SharpGen
             try
             {
                 // Optimize XmlSerialization by generating XmlSerializers assembly
-                Utilities.SGenThisAssembly();
+                Utilities.GenerateAndLoadXmlSerializerAssembly();
 
                 _codeGenApp = new CodeGenApp();
                 _codeGenApp.ParseArguments(args);

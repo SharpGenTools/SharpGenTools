@@ -98,7 +98,7 @@ namespace SharpGen
         /// <summary>
         /// Generates XmlSerializers assembly for this assembly, allowing faster startup with xml serialization.
         /// </summary>
-        public static void SGenThisAssembly()
+        public static void GenerateAndLoadXmlSerializerAssembly()
         {
             var xmlRootTypes = new List<Type>();
             var assembly = typeof(Utilities).Assembly;
