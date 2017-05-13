@@ -516,9 +516,8 @@ namespace SharpGen.Doc
                 var response = proxy.GetContent(new appId() { value = "Sandcastle" }, request);
                 if (response.primaryDocuments[0].Any != null)
                     return response.primaryDocuments[0].Any.OuterXml;
-            } catch (Exception ex)
+            } catch (Exception)
             {
-                //Logger.Warning("MTPS error for id {0} : {1}", shortId, ex.Message);
             }
             return string.Empty;
         }
@@ -551,9 +550,8 @@ namespace SharpGen.Doc
                         return match.Groups[1].Value;
                 }
             } 
-            catch (Exception ex)
+            catch (Exception)
             {
-                //Logger.Warning("Unable to get id for [{0}] (Reason: {1})", name, ex.Message);
             }
 
             return string.Empty;

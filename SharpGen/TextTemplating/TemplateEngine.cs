@@ -73,7 +73,6 @@ using System.Text.RegularExpressions;
         public TemplateEngine()
         {
             _parameters = new Dictionary<string, ParameterValueType>();
-            // templateCodePath = Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location), "..\\..\\");
         }
 
 
@@ -205,7 +204,7 @@ using System.Text.RegularExpressions;
             // Parameter {3} = Body of template class level code
             string templateSourceCode = string.Format(GenericTemplateCodeText, importNamespaceCode, parametersCode, _doTemplateCode, _doTemplateClassCode);
 
-            // Creates the C# compiler, compiling for 3.5
+            // Creates the C# compiler, compiling for 4.0
             var codeProvider = new Microsoft.CSharp.CSharpCodeProvider(new Dictionary<string, string>() { { "CompilerVersion", "v4.0" } });
             var compilerParameters = new CompilerParameters { GenerateInMemory = true, GenerateExecutable = false };
 

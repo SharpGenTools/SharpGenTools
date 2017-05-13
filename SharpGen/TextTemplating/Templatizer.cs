@@ -100,7 +100,7 @@ namespace SharpGen.TextTemplating
         /// <returns>this instance</returns>
         public Templatizer Write(object value, params object[] args)
         {
-            Write(value==null?null:value.ToString(), args);
+            Write(value?.ToString(), args);
             return this;
         }
 
@@ -111,7 +111,7 @@ namespace SharpGen.TextTemplating
         /// <returns>this instance</returns>
         public Templatizer Write(object value)
         {
-            Write(value == null ? null : value.ToString());
+            Write(value?.ToString());
             return this;
         }
 
@@ -190,7 +190,7 @@ namespace SharpGen.TextTemplating
         /// Returns the text processed by this templatizer.
         /// </summary>
         /// <returns>
-        /// A <see cref="System.String"/> that represents this instance.
+        /// A <see cref="string"/> that represents this instance.
         /// </returns>
         public override string ToString()
         {

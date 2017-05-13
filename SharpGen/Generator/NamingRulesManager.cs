@@ -281,9 +281,8 @@ namespace SharpGen.Generator
                 // Else, perform a standard conversion
                 if (subPart.Length > 0)
                 {
-                    int numberOfCharLowercase;
                     // If string is not Pascal Case, then Pascal Case it
-                    if (IsPascalCase(subPart, out numberOfCharLowercase))
+                    if (IsPascalCase(subPart, out int numberOfCharLowercase))
                     {
                         sb.Append(subPart);
                     }

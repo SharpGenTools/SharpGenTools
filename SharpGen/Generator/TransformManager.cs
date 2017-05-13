@@ -574,7 +574,7 @@ namespace SharpGen.Generator
 
                                     File.Delete(oldGeneratedFile);
                                 }
-                                catch (Exception ex)
+                                catch (Exception)
                                 {
                                 }
                             }

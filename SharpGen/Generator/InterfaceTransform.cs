@@ -154,16 +154,13 @@ namespace SharpGen.Generator
 
                 // Add specialized method for ComArray
                 DuplicateMethodSpecial(interfaceType, cSharpMethod, intPtrType);
-
-                //MapMethod(cSharpMethod);
-                //RegisterNativeInterop(cSharpMethod);
-
-				// Allow overloads by changing the name to <name>#
-				string origCppName = cppInterface.Name + "::" + cppMethod.Name;
-				string chosenCppName = origCppName;
-				for (int i = 0; Manager.FindBindType(chosenCppName) != null; i++)
-					chosenCppName = origCppName + i.ToString();
-					
+                
+                // Allow overloads by changing the name to <name>#
+                string origCppName = cppInterface.Name + "::" + cppMethod.Name;
+                string chosenCppName = origCppName;
+                for (int i = 0; Manager.FindBindType(chosenCppName) != null; i++)
+                    chosenCppName = origCppName + i.ToString();
+                    
                 Manager.BindType(chosenCppName, cSharpMethod);
             }
 
@@ -182,7 +179,6 @@ namespace SharpGen.Generator
                         string innerInterfaceName = keyValuePair.Value.InnerInterface;
                         string parentInterfaceName = keyValuePair.Value.InheritedInterfaceName;
 
-                        CsInterface innerCsInterface;
                         CsInterface parentCsInterface = null;
 
                         if (parentInterfaceName != null)
@@ -194,11 +190,15 @@ namespace SharpGen.Generator
                             }
                         }
 
-                        if (!mapInnerInterface.TryGetValue(innerInterfaceName, out innerCsInterface))
+                        if (!mapInnerInterface.TryGetValue(innerInterfaceName, out CsInterface innerCsInterface))
                         {
                             // TODO custom cppInterface?
                             innerCsInterface = new CsInterface(cppInterface)
-                                { Name = innerInterfaceName, PropertyAccesName = keyValuePair.Value.PropertyAccessName, Base = parentCsInterface ?? DefaultInterfaceCppObject };
+                            {
+                                Name = innerInterfaceName,
+                                PropertyAccesName = keyValuePair.Value.PropertyAccessName,
+                                Base = parentCsInterface ?? DefaultInterfaceCppObject
+                            };
 
                             // Add inner interface to root interface
                             interfaceType.Add(innerCsInterface);
@@ -215,14 +215,7 @@ namespace SharpGen.Generator
                 }
             }
 
-            // Remove dispatched methods from outer interface
-            //foreach (var innerInterface in mapInnerInterface)
-            //{
-            //    foreach (var method in innerInterface.Value.Methods)
-            //        cppInterface.Remove(method.CppElement);
-            //}
-
-            // If interfaceType is DualCallback, then need to generate a default implem
+            // If interfaceType is DualCallback, then need to generate a default implentation
             if (interfaceType.IsDualCallback)
             {
                 var tagForInterface = cppInterface.GetTagOrDefault<MappingRule>();
@@ -261,9 +254,8 @@ namespace SharpGen.Generator
 
                 foreach (var innerElement in interfaceType.Items)
                 {
-                    if (innerElement is CsMethod)
+                    if (innerElement is CsMethod method)
                     {
-                        var method = (CsMethod)innerElement;
                         var newCsMethod = (CsMethod)method.Clone();
                         var tagForMethod = method.CppElement.GetTagOrDefault<MappingRule>();
                         bool keepMethodPublic = tagForMethod.IsKeepImplementPublic.HasValue && tagForMethod.IsKeepImplementPublic.Value;
@@ -286,8 +278,7 @@ namespace SharpGen.Generator
             else
             {
                 // If interface is a callback and parent is ComObject, then remove it
-                var parentInterface = interfaceType.Base as CsInterface;
-                if (parentInterface != null && parentInterface.IsDualCallback)
+                if (interfaceType.Base is CsInterface parentInterface && parentInterface.IsDualCallback)
                 {
                     interfaceType.Base = parentInterface.NativeImplem;
                 }
@@ -299,7 +290,7 @@ namespace SharpGen.Generator
             }
 
             // If interface is a callback and parent is ComObject, then remove it
-            if (interfaceType.IsCallback )
+            if (interfaceType.IsCallback)
             {
                 if (interfaceType.IsBaseComObject)
                     interfaceType.Base = null;
@@ -375,10 +366,9 @@ namespace SharpGen.Generator
                 int parameterCount = cSharpMethod.ParameterCount;
                 var parameterList = cSharpMethod.Parameters;
 
-                CsProperty csProperty;
                 bool isPropertyToAdd = false;
 
-                if (!cSharpProperties.TryGetValue(propertyName, out csProperty))
+                if (!cSharpProperties.TryGetValue(propertyName, out CsProperty csProperty))
                 {
                     csProperty = new CsProperty(propertyName);
                     isPropertyToAdd = true;

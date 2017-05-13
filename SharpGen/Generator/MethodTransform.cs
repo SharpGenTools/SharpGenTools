@@ -338,17 +338,13 @@ namespace SharpGen.Generator
                         }
                     }
                 }
-                if (publicType == null)
-                {
-                    throw new ArgumentException("Public type cannot be null");
-                }
 
                 paramMethod.HasPointer = hasPointer;
                 paramMethod.Attribute = parameterAttribute;
                 paramMethod.IsArray = hasArray;
                 paramMethod.HasParams = hasParams;
                 paramMethod.HasPointer = hasPointer;
-                paramMethod.PublicType = publicType;
+                paramMethod.PublicType = publicType ?? throw new ArgumentException("Public type cannot be null");
                 paramMethod.MarshalType = marshalType;
                 paramMethod.IsOptionnal = isOptional;
 

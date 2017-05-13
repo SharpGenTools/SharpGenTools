@@ -210,7 +210,7 @@ namespace SharpGen.Model
         {
             get
             {
-                string path = Parent != null ? Parent.QualifiedName : null;
+                string path = Parent?.QualifiedName;
                 string name = Name ?? "";
                 return string.IsNullOrEmpty(path) ? name : path + "." + name;
             }

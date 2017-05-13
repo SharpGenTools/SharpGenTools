@@ -115,7 +115,7 @@ namespace SharpGen.Model
                     {
                         _codeComments.Load(codeCommentsFullPath);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         Logger.Warning("Cannot load code comments from [{0}] for assembly [{1}]", codeCommentsFullPath, Name);
                     }

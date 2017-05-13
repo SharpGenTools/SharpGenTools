@@ -53,8 +53,8 @@ namespace SharpGen.Model
         protected override void UpdateFromTag(MappingRule tag)
         {
             base.UpdateFromTag(tag);
-            IsCallback = tag.IsCallbackInterface.HasValue?tag.IsCallbackInterface.Value:false;
-            IsDualCallback = tag.IsDualCallbackInterface.HasValue ? tag.IsDualCallbackInterface.Value : false;
+            IsCallback = tag.IsCallbackInterface ?? false;
+            IsDualCallback = tag.IsDualCallbackInterface ?? false;
         }
 
         /// <summary>
@@ -102,7 +102,7 @@ namespace SharpGen.Model
         /// </value>
         public bool IsBaseComObject
         {
-            get { return Base != null && (Base as CsInterface).QualifiedName == Global.Name + ".ComObject"; }
+            get { return (Base as CsInterface)?.QualifiedName == Global.Name + ".ComObject"; }
         }
 
         public override string ToString()

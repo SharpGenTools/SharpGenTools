@@ -89,8 +89,8 @@ namespace SharpGen.Model
             foreach (var param in PublicParameters)
                 docItems.Add("<param name=\"" + param.Name + "\">" + param.SingleDoc + "</param>");
 
-		    if (HasReturnType)
-		        docItems.Add("<returns>" + ReturnTypeDoc + "</returns>");
+            if (HasReturnType)
+                docItems.Add("<returns>" + ReturnTypeDoc + "</returns>");
         }
 
         public bool IsHResult
@@ -102,8 +102,7 @@ namespace SharpGen.Model
         {
             get
             {
-                var csStruct = ReturnType.PublicType as CsStruct ;
-                if (csStruct != null)
+                if (ReturnType.PublicType is CsStruct csStruct)
                 {
                     if (ReturnType.MarshalType.Type == typeof(IntPtr))
                         return false;

@@ -133,7 +133,7 @@ namespace SharpGen.Generator
                     Manager.BindType(cppEnumItem.Name, csharpEnumItem);
             }
 
-            bool tryToAddNone = tag.EnumHasNone.HasValue ? tag.EnumHasNone.Value : false;
+            bool tryToAddNone = tag.EnumHasNone ?? false;
 
             // If C++ enum name is ending with FLAG OR FLAGS
             // Then tag this enum as flags and add None if necessary
@@ -148,8 +148,10 @@ namespace SharpGen.Generator
             // Add None value
             if (tryToAddNone)
             {
-                var csharpEnumItem = new CsEnumItem("None", "0");
-                csharpEnumItem.CppElement = new CppElement { Description = "None." };
+                var csharpEnumItem = new CsEnumItem("None", "0")
+                {
+                    CppElement = new CppElement { Description = "None." }
+                };
                 newEnum.Add(csharpEnumItem);
             }
         }

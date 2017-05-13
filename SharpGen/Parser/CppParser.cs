@@ -41,11 +41,7 @@ namespace SharpGen.Parser
         /// <param name="xElement">The <see cref="XElement"/> object to get the attribute from.</param>
         /// <param name="name">The name of the attribute.</param>
         /// <returns></returns>
-        public static string AttributeValue(this XElement xElement, string name)
-        {
-            var attr = xElement.Attribute(name);
-            return (attr != null) ? attr.Value : null;
-        }
+        public static string AttributeValue(this XElement xElement, string name) => xElement.Attribute(name)?.Value;
     }
 
     /// <summary>
@@ -112,10 +108,8 @@ namespace SharpGen.Parser
         /// <param name="configRoot">The root config file</param>
         public void Init(ConfigFile configRoot)
         {
-            if (configRoot == null) throw new ArgumentNullException("configRoot");
-            _configRoot = configRoot;
+            _configRoot = configRoot ?? throw new ArgumentNullException("configRoot");
 
-            // var configRoot = ConfigFile.Load(@"E:\code\sharpdx-v2\Source\Mapping.xml");
             _configRootHeader = _configRoot.Id + ".h";
             _gccxml = new CastXml {ExecutablePath = CastXmlExecutablePath};
 
@@ -233,8 +227,7 @@ namespace SharpGen.Parser
                         // Attach types if any
                         if (includeRule.AttachTypes.Count > 0)
                         {
-                            List<string> typesToAttach;
-                            if (!_includeAttachedTypes.TryGetValue(includeRule.Id, out typesToAttach))
+                            if (!_includeAttachedTypes.TryGetValue(includeRule.Id, out List<string> typesToAttach))
                             {
                                 typesToAttach = new List<string>();
                                 _includeAttachedTypes.Add(includeRule.Id, typesToAttach);
@@ -438,8 +431,7 @@ namespace SharpGen.Parser
             // Load all defines and store them in the config file to allow dynamic variable substitution
             foreach (var cppInclude in _group.Includes)
             {
-                int count = 0;
-                IncludeMacroCounts.TryGetValue(cppInclude.Name, out count);
+                IncludeMacroCounts.TryGetValue(cppInclude.Name, out int count);
 
                 foreach (var cppDefine in cppInclude.Macros)
                 {
@@ -595,8 +587,7 @@ namespace SharpGen.Parser
                 string file = xElement.AttributeValue("file");
                 if (file != null)
                 {
-                    List<XElement> elementsInFile;
-                    if (!_mapFileToXElement.TryGetValue(file, out elementsInFile))
+                    if (!_mapFileToXElement.TryGetValue(file, out List<XElement> elementsInFile))
                     {
                         elementsInFile = new List<XElement>();
                         _mapFileToXElement.Add(file, elementsInFile);
@@ -898,8 +889,7 @@ namespace SharpGen.Parser
                     cppInterface.ParentName = cppInterfaceBase.Name;
 
                 // If interface is binded, then check that the bind is a valid interface and not a SharpDX.ComObject/System.IntPtr
-                string bindedValueTo;
-                if (_bindings.TryGetValue(baseTypeName, out bindedValueTo))
+                if (_bindings.TryGetValue(baseTypeName, out string bindedValueTo))
                 {
                     if (baseTypeName != "IUnknown" && baseTypeName != "IDispatch" && (
                             bindedValueTo == "SharpDX.ComObject"
@@ -1116,8 +1106,7 @@ namespace SharpGen.Parser
             {
                 var includeFrom = GetIncludeIdFromFileId(xElement.AttributeValue("file"));
 
-                int enumOffset;
-                if (!_mapIncludeToAnonymousEnumCount.TryGetValue(includeFrom, out enumOffset))
+                if (!_mapIncludeToAnonymousEnumCount.TryGetValue(includeFrom, out int enumOffset))
                     _mapIncludeToAnonymousEnumCount.Add(includeFrom, enumOffset);
 
                 cppEnum.Name = includeFrom.ToUpper() + "_ENUM_" + enumOffset;
@@ -1202,8 +1191,7 @@ namespace SharpGen.Parser
             for (int i = 0; i < guidElements.Length; i++)
             {
                 var guidElement = guidElements[i];
-                long value;
-                if (!long.TryParse(guidElement, out value))
+                if (!long.TryParse(guidElement, out long value))
                     return null;
 
                 values[i] = unchecked((int)value);
@@ -1227,8 +1215,7 @@ namespace SharpGen.Parser
                     continue;
 
                 // Process only files attached (fully or partially) to an assembly/namespace
-                bool isIncludeFullyAttached;
-                if (!_includeIsAttached.TryGetValue(includeId, out isIncludeFullyAttached))
+                if (!_includeIsAttached.TryGetValue(includeId, out bool isIncludeFullyAttached))
                     continue;
 
                 // Log current include being processed
@@ -1517,7 +1504,7 @@ namespace SharpGen.Parser
                         }
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     Logger.Warning("Warning, Unable to locate/load DocProvider Assembly.");
                     Logger.Warning("Warning, DocProvider was not found from assembly [{0}]", DocProviderAssembly);

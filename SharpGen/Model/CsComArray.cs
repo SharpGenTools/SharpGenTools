@@ -35,7 +35,7 @@ namespace SharpGen.Model
         {
             get
             {
-                return "SharpDX.ComArray<" + baseElement.QualifiedName + ">";
+                return $"SharpDX.ComArray<{baseElement.QualifiedName}>";
             }
         }
     }

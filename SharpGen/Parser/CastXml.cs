@@ -244,7 +244,7 @@ namespace SharpGen.Parser
 
                         }
                         path = Path.Combine(subKey.GetValue(subKeyStr).ToString(), subPath);
-                    } catch (Exception ex)
+                    } catch (Exception)
                     {
                         Logger.Error("Unable to locate key [{0}] in registry", registryPath);
                         continue;

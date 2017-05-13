@@ -73,77 +73,76 @@ namespace SharpGen.Model
         /// <returns></returns>
         private static CppElement.ProcessModifier ProcessTag(MappingRule fromTag)
         {
-            return (pathREgex, element) =>
-                       {
-                           var tag = element.Tag as MappingRule;
-                           if (tag == null)
-                           {
-                               tag = new MappingRule();
-                               element.Tag = tag;
-                           }
-                           if (fromTag.Assembly != null) tag.Assembly = fromTag.Assembly;
-                           if (fromTag.Namespace != null) tag.Namespace = fromTag.Namespace;
-                           if (fromTag.DefaultValue != null) tag.DefaultValue = fromTag.DefaultValue;
-                           if (fromTag.MethodCheckReturnType.HasValue) tag.MethodCheckReturnType = fromTag.MethodCheckReturnType;
-                           if (fromTag.AlwaysReturnHResult.HasValue) tag.AlwaysReturnHResult = fromTag.AlwaysReturnHResult;
-                           if (fromTag.RawPtr.HasValue) tag.RawPtr = fromTag.RawPtr;
-                           if (fromTag.Visibility.HasValue) tag.Visibility = fromTag.Visibility;
-                           if (fromTag.NativeCallbackVisibility.HasValue) tag.NativeCallbackVisibility = fromTag.NativeCallbackVisibility;
-                           if (fromTag.NativeCallbackName != null) tag.NativeCallbackName = fromTag.NativeCallbackName;
-                           if (fromTag.Property.HasValue) tag.Property = fromTag.Property;
-                           if (fromTag.CustomVtbl.HasValue) tag.CustomVtbl = fromTag.CustomVtbl;
-                           if (fromTag.Persist.HasValue) tag.Persist = fromTag.Persist;
-                           if (fromTag.Replace != null) tag.Replace = fromTag.Replace;
-                           if (fromTag.MappingName != null) 
-                               tag.MappingName = RegexRename(pathREgex, element.FullName, fromTag.MappingName);
-                           if (fromTag.NamingFlags.HasValue) tag.NamingFlags = fromTag.NamingFlags.Value;
-                           if (fromTag.IsFinalMappingName != null) tag.IsFinalMappingName = fromTag.IsFinalMappingName;
-                           if (fromTag.StructPack != null) tag.StructPack = fromTag.StructPack;
-                           if (fromTag.StructHasNativeValueType != null) tag.StructHasNativeValueType = fromTag.StructHasNativeValueType;
-                           if (fromTag.StructToClass != null) tag.StructToClass = fromTag.StructToClass;
-                           if (fromTag.StructCustomMarshal != null) tag.StructCustomMarshal = fromTag.StructCustomMarshal;
-                           if (fromTag.StructCustomNew != null) tag.StructCustomNew = fromTag.StructCustomNew;
-                           if (fromTag.StructForceMarshalToToBeGenerated != null)
-                               tag.StructForceMarshalToToBeGenerated = fromTag.StructForceMarshalToToBeGenerated;
-                           if (fromTag.MappingType != null) tag.MappingType = RegexRename(pathREgex, element.FullName, fromTag.MappingType);
+            return (patchRegex, element) =>
+                {
+                    var tag = element.Tag as MappingRule;
+                    if (tag == null)
+                    {
+                        tag = new MappingRule();
+                        element.Tag = tag;
+                    }
+                    if (fromTag.Assembly != null) tag.Assembly = fromTag.Assembly;
+                    if (fromTag.Namespace != null) tag.Namespace = fromTag.Namespace;
+                    if (fromTag.DefaultValue != null) tag.DefaultValue = fromTag.DefaultValue;
+                    if (fromTag.MethodCheckReturnType.HasValue) tag.MethodCheckReturnType = fromTag.MethodCheckReturnType;
+                    if (fromTag.AlwaysReturnHResult.HasValue) tag.AlwaysReturnHResult = fromTag.AlwaysReturnHResult;
+                    if (fromTag.RawPtr.HasValue) tag.RawPtr = fromTag.RawPtr;
+                    if (fromTag.Visibility.HasValue) tag.Visibility = fromTag.Visibility;
+                    if (fromTag.NativeCallbackVisibility.HasValue) tag.NativeCallbackVisibility = fromTag.NativeCallbackVisibility;
+                    if (fromTag.NativeCallbackName != null) tag.NativeCallbackName = fromTag.NativeCallbackName;
+                    if (fromTag.Property.HasValue) tag.Property = fromTag.Property;
+                    if (fromTag.CustomVtbl.HasValue) tag.CustomVtbl = fromTag.CustomVtbl;
+                    if (fromTag.Persist.HasValue) tag.Persist = fromTag.Persist;
+                    if (fromTag.Replace != null) tag.Replace = fromTag.Replace;
+                    if (fromTag.MappingName != null) 
+                        tag.MappingName = RegexRename(patchRegex, element.FullName, fromTag.MappingName);
+                    if (fromTag.NamingFlags.HasValue) tag.NamingFlags = fromTag.NamingFlags.Value;
+                    if (fromTag.IsFinalMappingName != null) tag.IsFinalMappingName = fromTag.IsFinalMappingName;
+                    if (fromTag.StructPack != null) tag.StructPack = fromTag.StructPack;
+                    if (fromTag.StructHasNativeValueType != null) tag.StructHasNativeValueType = fromTag.StructHasNativeValueType;
+                    if (fromTag.StructToClass != null) tag.StructToClass = fromTag.StructToClass;
+                    if (fromTag.StructCustomMarshal != null) tag.StructCustomMarshal = fromTag.StructCustomMarshal;
+                    if (fromTag.StructCustomNew != null) tag.StructCustomNew = fromTag.StructCustomNew;
+                    if (fromTag.StructForceMarshalToToBeGenerated != null)
+                        tag.StructForceMarshalToToBeGenerated = fromTag.StructForceMarshalToToBeGenerated;
+                    if (fromTag.MappingType != null) tag.MappingType = RegexRename(patchRegex, element.FullName, fromTag.MappingType);
 
-                           var cppType = element as CppType;
-                           if (cppType != null)
-                           {
-                               if (tag.MappingType != null)
-                                   cppType.TypeName = tag.MappingType;
+                    if (element is CppType cppType)
+                    {
+                        if (tag.MappingType != null)
+                            cppType.TypeName = tag.MappingType;
 
-                               if (fromTag.Pointer != null)
-                               {
-                                   cppType.Pointer = fromTag.Pointer;
-                                   tag.Pointer = fromTag.Pointer;
-                               }
-                               if (fromTag.TypeArrayDimension != null)
-                               {
-                                   cppType.ArrayDimension = fromTag.TypeArrayDimension;
-                                   if (fromTag.TypeArrayDimension == null)
-                                       cppType.IsArray = false;
-                                   tag.TypeArrayDimension = fromTag.TypeArrayDimension;
-                               }
-                           }
-                           if (fromTag.EnumHasFlags != null) tag.EnumHasFlags = fromTag.EnumHasFlags;
-                           if (fromTag.EnumHasNone != null) tag.EnumHasNone = fromTag.EnumHasNone;
-                           if (fromTag.IsCallbackInterface != null) tag.IsCallbackInterface = fromTag.IsCallbackInterface;
-                           if (fromTag.IsDualCallbackInterface != null) tag.IsDualCallbackInterface = fromTag.IsDualCallbackInterface;
-                           if (fromTag.IsKeepImplementPublic != null) tag.IsKeepImplementPublic = fromTag.IsKeepImplementPublic;
-                           if (fromTag.FunctionDllName != null) tag.FunctionDllName = RegexRename(pathREgex, element.FullName, fromTag.FunctionDllName);
-                           if (fromTag.UseDllImport != null) tag.UseDllImport = fromTag.UseDllImport;
-                           if (fromTag.FunctionDllNameFromMacro != null)
-                               tag.FunctionDllName = element.ParentRoot.FindFirst<CppDefine>(fromTag.FunctionDllNameFromMacro).StripStringValue;
-                           if (fromTag.CsClass != null) tag.CsClass = fromTag.CsClass;
-                           if (fromTag.ParameterAttribute != null && element is CppParameter)
-                           {
-                               (element as CppParameter).Attribute = fromTag.ParameterAttribute.Value;
-                               tag.ParameterAttribute = fromTag.ParameterAttribute.Value;
-                           }
-                           if (fromTag.ParameterUsedAsReturnType != null ) tag.ParameterUsedAsReturnType = fromTag.ParameterUsedAsReturnType;
-                           return false;
-                       };
+                        if (fromTag.Pointer != null)
+                        {
+                            cppType.Pointer = fromTag.Pointer;
+                            tag.Pointer = fromTag.Pointer;
+                        }
+                        if (fromTag.TypeArrayDimension != null)
+                        {
+                            cppType.ArrayDimension = fromTag.TypeArrayDimension;
+                            if (fromTag.TypeArrayDimension == null)
+                                cppType.IsArray = false;
+                            tag.TypeArrayDimension = fromTag.TypeArrayDimension;
+                        }
+                    }
+                    if (fromTag.EnumHasFlags != null) tag.EnumHasFlags = fromTag.EnumHasFlags;
+                    if (fromTag.EnumHasNone != null) tag.EnumHasNone = fromTag.EnumHasNone;
+                    if (fromTag.IsCallbackInterface != null) tag.IsCallbackInterface = fromTag.IsCallbackInterface;
+                    if (fromTag.IsDualCallbackInterface != null) tag.IsDualCallbackInterface = fromTag.IsDualCallbackInterface;
+                    if (fromTag.IsKeepImplementPublic != null) tag.IsKeepImplementPublic = fromTag.IsKeepImplementPublic;
+                    if (fromTag.FunctionDllName != null) tag.FunctionDllName = RegexRename(patchRegex, element.FullName, fromTag.FunctionDllName);
+                    if (fromTag.UseDllImport != null) tag.UseDllImport = fromTag.UseDllImport;
+                    if (fromTag.FunctionDllNameFromMacro != null)
+                        tag.FunctionDllName = element.ParentRoot.FindFirst<CppDefine>(fromTag.FunctionDllNameFromMacro).StripStringValue;
+                    if (fromTag.CsClass != null) tag.CsClass = fromTag.CsClass;
+                    if (fromTag.ParameterAttribute != null && element is CppParameter)
+                    {
+                        (element as CppParameter).Attribute = fromTag.ParameterAttribute.Value;
+                        tag.ParameterAttribute = fromTag.ParameterAttribute.Value;
+                    }
+                    if (fromTag.ParameterUsedAsReturnType != null ) tag.ParameterUsedAsReturnType = fromTag.ParameterUsedAsReturnType;
+                    return false;
+                };
         }
     }
 }
