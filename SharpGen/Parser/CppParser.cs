@@ -1475,8 +1475,15 @@ namespace SharpGen.Parser
         private string GetIncludeIdFromFileId(string fileId)
         {
             string filePath = _mapIdToXElement[fileId].AttributeValue("name");
-            if (!File.Exists(filePath))
+            try
+            {
+                if (!File.Exists(filePath))
+                    return "";
+            }
+            catch (ArgumentException)
+            {
                 return "";
+            }
             return Path.GetFileNameWithoutExtension(filePath).ToLower();            
         }
 
