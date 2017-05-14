@@ -1,19 +1,16 @@
 ﻿using System;
-using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
 using HtmlAgilityPack;
 using ICSharpCode.SharpZipLib.Zip;
-using Microsoft.JScript;
-using SharpGen;
 using SharpGen.Logging;
 
 using SharpGen.MTPS;
+using Newtonsoft.Json.Linq;
 
 namespace SharpGen.Doc
 {
@@ -164,9 +161,9 @@ namespace SharpGen.Doc
             //Logger.Progress(20 + (counter/50) % 10, "Applying C++ documentation ([{0}])", name);
 
             string doc = GetDocumentationFromCacheOrMsdn(name);
-            if(doc == null)
+            if (doc == null)
             {
-                return new DocItem() {Description = "No documentation for Direct3D12"};
+                return new DocItem() { Description = "No documentation for Direct3D12" };
             }
             return ParseDocumentation(doc);
         }
@@ -179,8 +176,8 @@ namespace SharpGen.Doc
             private Stream stream;
             public ZipEntryStreamSource(string doc)
             {
-                byte[] byteArray = Encoding.ASCII.GetBytes( doc );
-                stream = new MemoryStream( byteArray ); 
+                byte[] byteArray = Encoding.ASCII.GetBytes(doc);
+                stream = new MemoryStream(byteArray);
             }
 
             public Stream GetSource()
@@ -219,10 +216,10 @@ namespace SharpGen.Doc
                         isZipUpdated = true;
                     }
 
-                    Logger.Progress(20 + (counter/50) % 10, "Fetching C++ documentation ([{0}]) from MSDN", name);
+                    Logger.Progress(20 + (counter / 50) % 10, "Fetching C++ documentation ([{0}]) from MSDN", name);
 
                     doc = GetDocumentationFromMsdn(name);
-                    
+
                     _zipFile.Add(new ZipEntryStreamSource(doc), fileName);
 
                     // Commit update every 20 files
@@ -233,7 +230,8 @@ namespace SharpGen.Doc
                         CloseArchive(true);
                     }
                 }
-            } else
+            }
+            else
             {
                 fileName = OutputPath + Path.DirectorySeparatorChar + fileName;
 
@@ -280,7 +278,7 @@ namespace SharpGen.Doc
                 if (!string.IsNullOrEmpty(insideStr) && insideStr != "Copy")
                 {
                     documentation.Append("{{");
-                    insideStr = insideStr.Trim().Split(' ','\t')[0];
+                    insideStr = insideStr.Trim().Split(' ', '\t')[0];
                     documentation.Append(insideStr);
                     documentation.Append("}}");
                 }
@@ -331,11 +329,11 @@ namespace SharpGen.Doc
             //if (htmlNode.Name == "p")
             //    documentation.Append("\r\n");
 
-            return documentation.ToString();            
+            return documentation.ToString();
         }
 
         private static Regex regexCapitals = new Regex(@"([^0-9A-Za-z_:\{])([A-Z][A-Z0-9_][0-9A-Za-z_:]*)");
-        private static readonly Regex RegexReplacePointer = new Regex(@"pointer");     
+        private static readonly Regex RegexReplacePointer = new Regex(@"pointer");
 
 
         /// <summary>
@@ -353,7 +351,7 @@ namespace SharpGen.Doc
             return result;
         }
 
-        private static string GetTextUntilNextHeader(HtmlNode htmlNode, bool skipFirstNode = true, params string[] untilNodes )
+        private static string GetTextUntilNextHeader(HtmlNode htmlNode, bool skipFirstNode = true, params string[] untilNodes)
         {
             if (skipFirstNode)
                 htmlNode = htmlNode.NextSibling;
@@ -431,7 +429,7 @@ namespace SharpGen.Doc
                         {
                             item.Items.Add(new DocSubItem
                             {
-                                Term = termName, 
+                                Term = termName,
                                 Description = currentDoc[currentDoc.Count - 1]
                             });
                             currentDoc.Clear();
@@ -472,7 +470,7 @@ namespace SharpGen.Doc
                 if (remarksCollection != null)
                 {
                     item.Remarks = ParseNextDiv(remarksCollection[0].NextSibling);
-                } 
+                }
             }
             return item;
         }
@@ -494,7 +492,7 @@ namespace SharpGen.Doc
             var result = GetDocFromMTPS(shortId);
             if (string.IsNullOrEmpty(result))
                 return string.Empty;
-            return "<id>"+shortId+"</id>\r\n" + result;
+            return "<id>" + shortId + "</id>\r\n" + result;
         }
 
         private static ContentServicePortTypeClient proxy;
@@ -503,20 +501,21 @@ namespace SharpGen.Doc
         {
             try
             {
-                if (proxy == null) 
+                if (proxy == null)
                     proxy = new ContentServicePortTypeClient();
 
                 var request = new getContentRequest
-                    {
-                        contentIdentifier = shortId,
-                        locale = "en-us",
-                        version = "VS.85",
-                        requestedDocuments = new[] { new requestedDocument() { type = documentTypes.primary, selector = "Mtps.Xhtml" } }
-                    };
+                {
+                    contentIdentifier = shortId,
+                    locale = "en-us",
+                    version = "VS.85",
+                    requestedDocuments = new[] { new requestedDocument() { type = documentTypes.primary, selector = "Mtps.Xhtml" } }
+                };
                 var response = proxy.GetContent(new appId() { value = "Sandcastle" }, request);
                 if (response.primaryDocuments[0].Any != null)
                     return response.primaryDocuments[0].Any.OuterXml;
-            } catch (Exception)
+            }
+            catch (Exception)
             {
             }
             return string.Empty;
@@ -525,8 +524,6 @@ namespace SharpGen.Doc
 
 
         private static Regex matchId = new Regex(@"/([a-zA-Z0-9\._\-]+)(\(.+\).*|\.[a-zA-Z]+)?$");
-
-        private static JScriptEval jScriptEval = new JScriptEval();
 
         public static string GetShortId(string name)
         {
@@ -539,17 +536,21 @@ namespace SharpGen.Doc
                 if (string.IsNullOrEmpty(result))
                     return string.Empty;
 
-                var indexOfResults = result.IndexOf("var results", System.StringComparison.Ordinal);
+                var resultsStart = "var results = ";
+                var indexOfResults = result.IndexOf(resultsStart, StringComparison.Ordinal) + resultsStart.Length;
                 if (indexOfResults > 0)
                 {
-                    var endOfLine = result.IndexOf('\n', indexOfResults);
-                    var urlResult = (JSObject)jScriptEval.Eval(result.Substring(indexOfResults, endOfLine - indexOfResults));
-                    var contentUrl = ((JSObject)((ArrayObject)((JSObject)urlResult["data"])["results"])[0])["url"].ToString();
+                    var endOfLine = result.IndexOf('\n', indexOfResults) - 1;
+                    var resultsText = result.Substring(indexOfResults, endOfLine - indexOfResults);
+                    var endJsonSemicolon = resultsText.LastIndexOf(';');
+                    var resultsJson = resultsText.Substring(0, endJsonSemicolon);
+                    var urlResult = JObject.Parse(resultsJson);
+                    var contentUrl = ((JArray)(urlResult["data"])["results"])[0]["url"].ToString();
                     var match = matchId.Match(contentUrl);
                     if (match.Success)
                         return match.Groups[1].Value;
                 }
-            } 
+            }
             catch (Exception)
             {
             }
@@ -616,52 +617,5 @@ namespace SharpGen.Doc
             }
             return string.Empty;
         }
-
-
-        /// <summary>
-        /// Exposes the JScrip eval function as a .net method.
-        /// This uses the "safe" JScript.Eval so no disk, or network access is allowed.
-        /// </summary>
-        private class JScriptEval
-        {
-            private readonly object evaluator;
-            private readonly Type evaluatorType;
-
-            public JScriptEval()
-            {
-                var compiler = new JScriptCodeProvider();
-                var parameters = new CompilerParameters { GenerateInMemory = true };
-                string jscriptSource =
-                    @"package Evaluator
-{
-    class Evaluator
-    {
-        public function Eval(expr : String) 
-        { 
-            return eval(expr); 
-        }
-    }
-}";
-                var results = compiler.CompileAssemblyFromSource(parameters, jscriptSource);
-
-                var assembly = results.CompiledAssembly;
-                evaluatorType = assembly.GetType("Evaluator.Evaluator");
-                evaluator = Activator.CreateInstance(evaluatorType);
-            }
-
-            public object Eval(String ecmaScript)
-            {
-                //ecmaScript = WrapInBrackets(ecmaScript);
-
-                return evaluatorType.InvokeMember(
-                    "Eval",
-                    BindingFlags.InvokeMethod,
-                    null,
-                    evaluator,
-                    new object[] { ecmaScript }
-                    );
-            }
-        }
-
     }
 }
