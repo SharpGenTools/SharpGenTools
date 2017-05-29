@@ -148,6 +148,8 @@ namespace SharpGen
 
             if (_configRootPath == null)
                 UsageError("Missing config.xml. A config.xml must be specified");
+            if (AppType == null)
+                UsageError("Missing apptype argument. an App type must be specified (for example: -apptype=DESKTOP_APP");
         }
 
         /// <summary>
