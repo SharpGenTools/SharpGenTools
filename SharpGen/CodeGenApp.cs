@@ -76,6 +76,12 @@ namespace SharpGen
         public string AppType { get; set; }
 
         /// <summary>
+        /// Gets or sets output directory.
+        /// </summary>
+        /// <remarks>Null is allowed, in which case sharpgen will use default</remarks>
+        public string OutputDirectory { get; set; }
+
+        /// <summary>
         /// Gets or sets the macros.
         /// </summary>
         /// <value>
@@ -125,6 +131,7 @@ namespace SharpGen
                                   {"d|doc", "Specify to generate the documentation [default: false]", opt => IsGeneratingDoc = true},
                                   {"p|docpath=", "Specify the path to the assembly doc provider [default: null]", opt => DocProviderAssemblyPath = opt},
                                   {"v|vctools=", "Specify the path to the Visual C++ Toolset", opt => VcToolsPath = opt },
+                                  {"od|outputdir=", "Specify the base output directory for the generated code", opt => OutputDirectory = opt },
                                   {"a|apptype=", "Specify what app type to generate code for (i.e. DESKTOP_APP or STORE_APP)", opt => AppType = opt },
                                   "",
                                   {"h|help", "Show this message and exit", opt => showHelp = opt != null},
@@ -162,7 +169,7 @@ namespace SharpGen
             _assemblyCheckFile = Path.ChangeExtension(_thisAssemblyPath, ".check-" + AppType);
             _assemblyDatetime = File.GetLastWriteTime(_thisAssemblyPath);
             _isAssemblyNew = (File.GetLastWriteTime(_thisAssemblyPath) != File.GetLastWriteTime(_assemblyCheckFile));
-            _generatedPath = Path.GetDirectoryName(_configRootPath);
+            _generatedPath = OutputDirectory != null ? Path.GetDirectoryName(OutputDirectory) : Path.GetDirectoryName(_configRootPath);
 
             Logger.Message("Loading config files...");
 
@@ -184,6 +191,7 @@ namespace SharpGen
             {
                 Logger.Message("Config files [{0}] changed", string.Join(",", Config.ConfigFilesLoaded.Select(file => Path.GetFileName(file.AbsoluteFilePath))));
             }
+
 
             // Return true if a config file changed or the assembly changed
             return isConfigFileChanged || _isAssemblyNew;
