@@ -39,6 +39,7 @@ namespace SharpGen.Config
         public ConfigFile()
         {
             Depends = new List<string>();
+            Bindings = new List<BindRule>();
             Files = new List<string>();
             References = new List<ConfigFile>();
             IncludeProlog = new List<string>();
