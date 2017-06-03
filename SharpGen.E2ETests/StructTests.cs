@@ -34,7 +34,7 @@ namespace SharpGen.E2ETests
                 }
             };
             var result = RunWithConfig(testDirectory, config);
-            Assert.Equal(0, result.exitCode);
+            AssertRanSuccessfully(result.exitCode, result.output);
 
             var compilation = GetCompilationForGeneratedCode(testDirectory);
             var structType = compilation.GetTypeByMetadataName($"{nameof(SimpleCppStructGeneratesCorrectCSharpStruct)}.Test");

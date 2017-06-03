@@ -44,6 +44,14 @@ namespace SharpGen.E2ETests
             return (sharpGenProcess.ExitCode, output);
         }
 
+        public static void AssertRanSuccessfully(int exitCode, string output)
+        {
+            if(exitCode != 0)
+            {
+                throw new Xunit.Sdk.AssertActualExpectedException(0, exitCode, output);
+            }
+        }
+
         private static void SaveConfigFile(DirectoryInfo testDirectory, Config.ConfigFile config, string configName)
         {
             config.Id = configName;
