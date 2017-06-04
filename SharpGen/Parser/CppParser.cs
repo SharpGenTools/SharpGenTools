@@ -729,9 +729,6 @@ namespace SharpGen.Parser
 
             // Parse attributes
             const string gccXmlAttribute = "annotate(";
-            // none == 0
-            // pre == 1
-            // post == 2
             bool isPre = false;
             bool isPost = false;
             bool hasWritable = false;
@@ -746,13 +743,11 @@ namespace SharpGen.Parser
 
                 if (newItem.StartsWith("SAL_pre"))
                 {
-                    // paramAttribute |= ParamAttribute.In;
                     isPre = true;
                     isPost = false;
                 } 
                 else if (newItem.StartsWith("SAL_post"))
                 {
-                    // paramAttribute |= ParamAttribute.Out;
                     isPre = false;
                     isPost = true;
                 }

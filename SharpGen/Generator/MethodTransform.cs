@@ -94,6 +94,7 @@ namespace SharpGen.Generator
                 }
                 else
                 {
+                    // TODO: Is this "temporary" change still needed?
                     // Patch for Mono bug with structs marshalling and calli. TEMPORARY
                     var returnQualifiedName = csMethod.ReturnType.PublicType.QualifiedName;
                     if (returnQualifiedName == "SharpDX.Result")
@@ -107,8 +108,6 @@ namespace SharpGen.Generator
             else if (csMethod.ReturnType.MarshalType.Type != null)
             {
                 Type type = csMethod.ReturnType.MarshalType.Type;
-                //if (type == typeof(IntPtr))
-                //    type = typeof(void*);
                 cSharpInteropCalliSignature.ReturnType = type;
             }
             else
@@ -121,6 +120,7 @@ namespace SharpGen.Generator
             {
                 InteropType interopType;
                 string publicName = param.PublicType.QualifiedName;
+                // TODO: Is this "temporary" change still needed?
                 // Patch for Mono bug with structs marshalling and calli. TEMPORARY
                 if (publicName == "SharpDX.PointerSize" || param.PublicType.QualifiedName == "SharpDX.Direct3D9.EffectHandle")
                 {
@@ -142,6 +142,7 @@ namespace SharpGen.Generator
                 else
                 {
                     Type type = param.MarshalType.Type;
+                    // TODO: Is this "temporary" change still needed?
                     // Patch for Mono bug with structs marshalling and calli. TEMPORARY
                     if (type == typeof(IntPtr))
                         type = typeof(void*);
@@ -321,7 +322,6 @@ namespace SharpGen.Generator
                         if (cppParameter.TypeName == "void" && (cppAttribute & ParamAttribute.Buffer) != 0)
                         {
                             hasArray = false;
-                            // arrayDimension = 0;
                             parameterAttribute = CsParameterAttribute.In;
                         }
                         else if (publicType.Type == typeof(string) && (cppAttribute & ParamAttribute.Out) != 0)
