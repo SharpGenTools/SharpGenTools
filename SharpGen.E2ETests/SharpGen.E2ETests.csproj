@@ -128,6 +128,7 @@
   <ItemGroup>
     <Compile Include="EmptyConfigTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RenameTests.cs" />
     <Compile Include="StructTests.cs" />
     <Compile Include="TestBase.cs" />
   </ItemGroup>
