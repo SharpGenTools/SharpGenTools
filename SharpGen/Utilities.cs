@@ -94,55 +94,7 @@ namespace SharpGen
                 importedTypes.Add(type);
             }
         }
-
-        /// <summary>
-        /// Generates XmlSerializers assembly for this assembly, allowing faster startup with xml serialization.
-        /// </summary>
-        public static void GenerateAndLoadXmlSerializerAssembly()
-        {
-            var xmlRootTypes = new List<Type>();
-            var assembly = typeof(Utilities).Assembly;
-            var mappings = new List<XmlMapping>();
-            var allXmlTypeToSerialize = new List<Type>();
-            var importer = new XmlReflectionImporter();
-
-            foreach (var type in assembly.GetTypes())
-            {
-                if (type.GetCustomAttributes(typeof(XmlRootAttribute), true).Length > 0)
-                {
-                    xmlRootTypes.Add(type);
-                    ImportXmlTypes(type, mappings, allXmlTypeToSerialize, importer);
-                }
-            }
-
-            if (allXmlTypeToSerialize.Count == 0)
-                return;
-
-            string assemblySerializer = XmlSerializer.GetXmlSerializerAssemblyName(allXmlTypeToSerialize[0], null) + ".dll";
-            var assemblySerializerTime = File.GetLastWriteTime(assemblySerializer);
-
-            if (!File.Exists(assemblySerializer) || File.GetLastWriteTime(typeof(Utilities).Assembly.Location) > assemblySerializerTime)
-            {
-                // Delete previous assembly
-                File.Delete(assemblySerializer);
-
-                // Regenerate assembly
-                var parameters = new CompilerParameters();
-                string codePath = Path.GetDirectoryName(assembly.Location);
-                var files = new TempFileCollection(codePath, false);
-                parameters.TempFiles = files;
-                parameters.GenerateInMemory = false;
-                parameters.IncludeDebugInformation = true;
-                parameters.GenerateInMemory = false;
-                XmlSerializer.GenerateSerializer(allXmlTypeToSerialize.ToArray(), mappings.ToArray(), parameters);
-                files.Delete();
-            }
-            else
-            {
-                Assembly.LoadFrom(assemblySerializer);
-            }
-        }
-
+        
 		/// <summary>
 		/// Determines whether a string contains a given C++ identifier.
 		/// </summary>

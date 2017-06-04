@@ -67,9 +67,6 @@ namespace SharpGen
             _progressForm = null;
             try
             {
-                // Optimize XmlSerialization by generating XmlSerializers assembly
-                Utilities.GenerateAndLoadXmlSerializerAssembly();
-
                 _codeGenApp = new CodeGenApp();
                 _codeGenApp.ParseArguments(args);
 
