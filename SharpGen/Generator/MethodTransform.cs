@@ -94,12 +94,11 @@ namespace SharpGen.Generator
                 }
                 else
                 {
-                    // TODO: Is this "temporary" change still needed?
-                    // Patch for Mono bug with structs marshalling and calli. TEMPORARY
+                    // Patch for Mono bug with structs marshalling and calli.
                     var returnQualifiedName = csMethod.ReturnType.PublicType.QualifiedName;
                     if (returnQualifiedName == "SharpDX.Result")
                         cSharpInteropCalliSignature.ReturnType = typeof (int);
-                    else if (returnQualifiedName == "SharpDX.PointerSize" || returnQualifiedName == "SharpDX.Direct3D9.EffectHandle")
+                    else if (returnQualifiedName == "SharpDX.PointerSize")
                         cSharpInteropCalliSignature.ReturnType = typeof(void*);
                     else
                         cSharpInteropCalliSignature.ReturnType = csMethod.ReturnType.PublicType.QualifiedName;
@@ -120,9 +119,8 @@ namespace SharpGen.Generator
             {
                 InteropType interopType;
                 string publicName = param.PublicType.QualifiedName;
-                // TODO: Is this "temporary" change still needed?
-                // Patch for Mono bug with structs marshalling and calli. TEMPORARY
-                if (publicName == "SharpDX.PointerSize" || param.PublicType.QualifiedName == "SharpDX.Direct3D9.EffectHandle")
+                // Patch for Mono bug with structs marshalling and calli.
+                if (publicName == "SharpDX.PointerSize")
                 {
                     interopType = typeof(void*);
                 }
@@ -142,8 +140,7 @@ namespace SharpGen.Generator
                 else
                 {
                     Type type = param.MarshalType.Type;
-                    // TODO: Is this "temporary" change still needed?
-                    // Patch for Mono bug with structs marshalling and calli. TEMPORARY
+                    // Patch for Mono bug with structs marshalling and calli.
                     if (type == typeof(IntPtr))
                         type = typeof(void*);
                     interopType = type;
