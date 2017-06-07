@@ -17,7 +17,7 @@ namespace SharpGen.E2ETests
 {
     public class TestBase
     {
-        private const string DefaultSharpGenArguments = @"--castxml castxml/bin/castxml.exe --vctools ""C:\Program Files(x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.10.25017\";
+        private const string DefaultSharpGenArguments = @"--castxml castxml/bin/castxml.exe --vctools ""C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.10.25017\";
 
         public static (int exitCode, string output) RunWithConfig(DirectoryInfo testDirectory, Config.ConfigFile config, string appType = "true", [CallerMemberName] string configName = "")
         {
