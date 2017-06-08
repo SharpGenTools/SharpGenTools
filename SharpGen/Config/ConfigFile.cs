@@ -96,55 +96,6 @@ namespace SharpGen.Config
             }
         }
 
-
-        /*
-        private static void AddDependency(MappingFile configFile, List<MappingFile> dependencyList)
-        {
-            // Dependency is already done for this file
-            foreach (var mappingFile in dependencyList)
-                if (mappingFile.Id == configFile.Id)
-                    return;
-
-            foreach (var configId in configFile.Depends)
-                AddDependency(configFile.MapIdToFile[configId], dependencyList);
-
-            dependencyList.Add(configFile);
-        }
-
-        public List<MappingFile> ComputeDependencyList()
-        {
-            var dependency = new List<string>();
-            dependency.Add(GetRoot().Id);
-
-            var configToProcess = new List<MappingFile>();
-            configToProcess.AddRange(ConfigFiles);
-
-
-            do
-            {
-                for (int i = configToProcess.Count - 1; i >= 0; i--)
-                {
-                    var config = configToProcess[i];
-
-                    bool dependencyAllResolved = true;
-                    foreach (var configId in config.Depends)
-                    {
-                        if (!dependency.Contains(configId))
-                        {
-                            dependencyAllResolved = false;
-                            break;
-                        }
-                    }
-                    if (dependencyAllResolved)
-                    {
-                        dependency.Add(config.Id);
-                        configToProcess.RemoveAt(i);
-                    }
-                }
-            } while (configToProcess.Count > 0);
-        }
-        */
-
         [XmlAttribute("id")]
         public string Id { get; set; }
 

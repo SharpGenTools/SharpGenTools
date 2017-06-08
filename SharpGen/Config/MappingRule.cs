@@ -293,7 +293,6 @@ namespace SharpGen.Config
         /// <summary>
         /// ClassType attached to a function
         /// </summary>
-        //[XmlAttribute("class")]
         [XmlAttribute("group")]
         public string CsClass { get; set; }
 
@@ -302,10 +301,5 @@ namespace SharpGen.Config
 		/// </summary>
 		[XmlAttribute("offset-translate")]
 		public int LayoutOffsetTranslate { get; set; }
-
-        //public override string ToString()
-        //{
-        //    return Utilities.PropertiesToString(this);
-        //}
     }
 }

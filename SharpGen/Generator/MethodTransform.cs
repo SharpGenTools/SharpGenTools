@@ -94,11 +94,11 @@ namespace SharpGen.Generator
                 }
                 else
                 {
-                    // Patch for Mono bug with structs marshalling and calli. TEMPORARY
+                    // Patch for Mono bug with structs marshalling and calli.
                     var returnQualifiedName = csMethod.ReturnType.PublicType.QualifiedName;
                     if (returnQualifiedName == "SharpDX.Result")
                         cSharpInteropCalliSignature.ReturnType = typeof (int);
-                    else if (returnQualifiedName == "SharpDX.PointerSize" || returnQualifiedName == "SharpDX.Direct3D9.EffectHandle")
+                    else if (returnQualifiedName == "SharpDX.PointerSize")
                         cSharpInteropCalliSignature.ReturnType = typeof(void*);
                     else
                         cSharpInteropCalliSignature.ReturnType = csMethod.ReturnType.PublicType.QualifiedName;
@@ -107,8 +107,6 @@ namespace SharpGen.Generator
             else if (csMethod.ReturnType.MarshalType.Type != null)
             {
                 Type type = csMethod.ReturnType.MarshalType.Type;
-                //if (type == typeof(IntPtr))
-                //    type = typeof(void*);
                 cSharpInteropCalliSignature.ReturnType = type;
             }
             else
@@ -121,8 +119,8 @@ namespace SharpGen.Generator
             {
                 InteropType interopType;
                 string publicName = param.PublicType.QualifiedName;
-                // Patch for Mono bug with structs marshalling and calli. TEMPORARY
-                if (publicName == "SharpDX.PointerSize" || param.PublicType.QualifiedName == "SharpDX.Direct3D9.EffectHandle")
+                // Patch for Mono bug with structs marshalling and calli.
+                if (publicName == "SharpDX.PointerSize")
                 {
                     interopType = typeof(void*);
                 }
@@ -142,7 +140,7 @@ namespace SharpGen.Generator
                 else
                 {
                     Type type = param.MarshalType.Type;
-                    // Patch for Mono bug with structs marshalling and calli. TEMPORARY
+                    // Patch for Mono bug with structs marshalling and calli.
                     if (type == typeof(IntPtr))
                         type = typeof(void*);
                     interopType = type;
@@ -321,7 +319,6 @@ namespace SharpGen.Generator
                         if (cppParameter.TypeName == "void" && (cppAttribute & ParamAttribute.Buffer) != 0)
                         {
                             hasArray = false;
-                            // arrayDimension = 0;
                             parameterAttribute = CsParameterAttribute.In;
                         }
                         else if (publicType.Type == typeof(string) && (cppAttribute & ParamAttribute.Out) != 0)

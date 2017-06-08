@@ -211,7 +211,6 @@ namespace SharpGen
                                  {
                                      IsGeneratingDoc = IsGeneratingDoc,
                                      DocProviderAssembly = DocProviderAssemblyPath,
-                                     // @"..\..\..\DocProviderFromMsdn\bin\debug\DocProviderFromMsdn.exe",
                                      ForceParsing = _isAssemblyNew,
                                      CastXmlExecutablePath = CastXmlExecutablePath
                                  };
