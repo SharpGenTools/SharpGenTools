@@ -880,7 +880,7 @@ namespace SharpGen.Generator
                 if (isTypeUsedInStruct)
                 {
                     // Special case for Size type, as it is default marshal to IntPtr for method parameter
-                    if (publicType.QualifiedName == "SharpDX.PointerSize")
+                    if (publicType.QualifiedName == Global.GetGlobalName("PointerSize"))
                         marshalType = null;
                 }
             }

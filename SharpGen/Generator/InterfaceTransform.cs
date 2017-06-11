@@ -35,9 +35,9 @@ namespace SharpGen.Generator
     public class InterfaceTransform : TransformBase
     {
         private readonly Dictionary<Regex, InnerInterfaceMethod> _mapMoveMethodToInnerInterface = new Dictionary<Regex, InnerInterfaceMethod>();
-        private readonly CsTypeBase DefaultInterfaceCppObject = new CsInterface { Name = Global.Name + ".CppObject" };
-        private readonly CsTypeBase DefaultCallbackable = new CsInterface { Name = Global.Name + ".ICallbackable" };
-        private readonly CsTypeBase DefaultComObjectCallback = new CsInterface { Name = Global.Name + ".ComObjectCallback" };
+        private readonly CsTypeBase DefaultInterfaceCppObject = new CsInterface { Name = Global.GetGlobalName("CppObject") };
+        private readonly CsTypeBase DefaultCallbackable = new CsInterface { Name = Global.GetGlobalName("ICallbackable") };
+        private readonly CsTypeBase DefaultComObjectCallback = new CsInterface { Name = Global.GetGlobalName("ComObjectCallback") };
 
         /// <summary>
         /// Moves the methods to an inner C# interface.
@@ -134,7 +134,7 @@ namespace SharpGen.Generator
                 {
                     // If Guid == null && BaseRoot != null && BaseRoot is a ComObject
                     // then we probably missed a guid
-                    if (rootBase != null && rootBase.QualifiedName == Global.Name + ".ComObject")
+                    if (rootBase != null && rootBase.QualifiedName == Global.GetGlobalName("ComObject"))
                         Logger.Warning("cannot find GUID");
                 } 
                 else

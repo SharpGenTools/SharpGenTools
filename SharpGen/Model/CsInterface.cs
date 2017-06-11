@@ -102,7 +102,7 @@ namespace SharpGen.Model
         /// </value>
         public bool IsBaseComObject
         {
-            get { return (Base as CsInterface)?.QualifiedName == Global.Name + ".ComObject"; }
+            get { return (Base as CsInterface)?.QualifiedName == Global.GetGlobalName("ComObject"); }
         }
 
         public override string ToString()

@@ -40,7 +40,7 @@ namespace SharpGen.Model
 
         public bool HasParams { get; set; }
 
-        public bool IsOptionnal { get; set; }
+        public bool IsOptional { get; set; }
 
         public bool IsUsedAsReturnType { get; set; }
 
@@ -165,7 +165,7 @@ namespace SharpGen.Model
 
         public bool IsRefInValueTypeOptional
         {
-            get { return IsRefIn && IsValueType && !IsArray && IsOptionnal; }
+            get { return IsRefIn && IsValueType && !IsArray && IsOptional; }
         }
 
         public bool IsRefInValueTypeByValue
@@ -194,7 +194,7 @@ namespace SharpGen.Model
                     builder.Append("params ");
                 }
 
-                if (IsRefIn && IsValueType && !IsArray && IsOptionnal && !IsStructClass)
+                if (IsRefIn && IsValueType && !IsArray && IsOptional && !IsStructClass)
                     builder.Append(PublicType.QualifiedName + "?");
                 else
                     builder.Append(PublicType.QualifiedName);
@@ -228,20 +228,12 @@ namespace SharpGen.Model
                     {
                         if (IsArray)
                         {
-                            return IsOptionnal ? Name + "==null?(void*)0:" + TempName : TempName;
+                            return IsOptional ? Name + "==null?(void*)0:" + TempName : TempName;
                         }
                         return "&" + TempName;
                     }
                     if (IsArray)
                     {
-                        //if (IsValueType && IsOptionnal)
-                        //{
-                        //    //return Name + "==null?(void*)IntPtr.Zero:" + TempName;
-                        //}
-                        //else
-                        //{
-                        //    return TempName;
-                        //}
                         return IsComArray ? Name : TempName;
                     }
                     if (IsFixed && !HasNativeValueType)
@@ -267,7 +259,7 @@ namespace SharpGen.Model
                 {
                     return HasNativeValueType ? "&" + TempName : "&" + Name;
                 }
-                if (PublicType.QualifiedName == Global.Name + ".Color4" && MarshalType.Type == typeof(int))
+                if (PublicType.QualifiedName == Global.GetGlobalName("Color4") && MarshalType.Type == typeof(int))
                 {
                     return Name + ".ToArgb()";
                 }
@@ -275,21 +267,16 @@ namespace SharpGen.Model
                     return "unchecked((int)" + Name + ")";
                 if (PublicType.Type == typeof (string))
                     return "(void*)" + TempName;
-                //if (PublicType.Type == typeof (byte))
-                //    return "(int)" + Name;
                 if (PublicType is CsInterface && Attribute == CsParameterAttribute.In && !IsArray)
                     return "(void*)((" + Name + " == null)?IntPtr.Zero:" + Name + ".NativePointer)";
                 if (IsArray)
                 {
                     if (HasNativeValueType || IsBoolToInt)
                     {
-                        //if (IsOptionnal)
-                        //    return Name + "==null?(void*)IntPtr.Zero:" + TempName;
                         return TempName;
                     }
-                    if (IsValueType && IsOptionnal)
+                    if (IsValueType && IsOptional)
                     {
-                        //return Name + "==null?(void*)IntPtr.Zero:" + TempName;
                         return TempName;
                     }
                 }
@@ -303,7 +290,7 @@ namespace SharpGen.Model
                 {
                     return IsIn ? TempName : "&" + TempName;
                 }
-                if (PublicType.Name == "SharpDX.PointerSize")
+                if (PublicType.Name == Global.GetGlobalName("PointerSize"))
                     return "(void*)" + Name;
                 return Name;
             }

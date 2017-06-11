@@ -96,9 +96,9 @@ namespace SharpGen.Generator
                 {
                     // Patch for Mono bug with structs marshalling and calli.
                     var returnQualifiedName = csMethod.ReturnType.PublicType.QualifiedName;
-                    if (returnQualifiedName == "SharpDX.Result")
+                    if (returnQualifiedName == Global.GetGlobalName("Result"))
                         cSharpInteropCalliSignature.ReturnType = typeof (int);
-                    else if (returnQualifiedName == "SharpDX.PointerSize")
+                    else if (returnQualifiedName == Global.GetGlobalName("PointerSize"))
                         cSharpInteropCalliSignature.ReturnType = typeof(void*);
                     else
                         cSharpInteropCalliSignature.ReturnType = csMethod.ReturnType.PublicType.QualifiedName;
@@ -120,7 +120,7 @@ namespace SharpGen.Generator
                 InteropType interopType;
                 string publicName = param.PublicType.QualifiedName;
                 // Patch for Mono bug with structs marshalling and calli.
-                if (publicName == "SharpDX.PointerSize")
+                if (publicName == Global.GetGlobalName("PointerSize"))
                 {
                     interopType = typeof(void*);
                 }
@@ -203,7 +203,7 @@ namespace SharpGen.Generator
             method.ReturnType = Manager.GetCsType<CsMarshalBase>(cppMethod.ReturnType);
 
             // Hide return type only if it is a HRESULT and AlwaysReturnHResult is false
-            if (method.CheckReturnType && method.ReturnType.PublicType != null && method.ReturnType.PublicType.QualifiedName == "SharpDX.Result")
+            if (method.CheckReturnType && method.ReturnType.PublicType != null && method.ReturnType.PublicType.QualifiedName == Global.GetGlobalName("Result"))
             {
                 method.HideReturnType = !method.AlwaysReturnHResult;
             }
@@ -294,7 +294,7 @@ namespace SharpGen.Generator
 
                         if ((cppAttribute & ParamAttribute.In) != 0)
                         {
-                            parameterAttribute = publicType.Type == typeof(IntPtr) || publicType.Name == Global.Name + ".FunctionCallback" ||
+                            parameterAttribute = publicType.Type == typeof(IntPtr) || publicType.Name == Global.GetGlobalName("FunctionCallback") ||
                                                  publicType.Type == typeof(string)
                                                      ? CsParameterAttribute.In
                                                      : CsParameterAttribute.RefIn;
@@ -343,7 +343,7 @@ namespace SharpGen.Generator
                 paramMethod.HasPointer = hasPointer;
                 paramMethod.PublicType = publicType ?? throw new ArgumentException("Public type cannot be null");
                 paramMethod.MarshalType = marshalType;
-                paramMethod.IsOptionnal = isOptional;
+                paramMethod.IsOptional = isOptional;
 
                 // Force IsString to be only string (due to Buffer attribute)
                 if (paramMethod.IsString)
