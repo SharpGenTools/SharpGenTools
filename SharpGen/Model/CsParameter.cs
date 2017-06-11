@@ -40,7 +40,7 @@ namespace SharpGen.Model
 
         public bool HasParams { get; set; }
 
-        public bool IsOptionnal { get; set; }
+        public bool IsOptional { get; set; }
 
         public bool IsUsedAsReturnType { get; set; }
 
@@ -165,7 +165,7 @@ namespace SharpGen.Model
 
         public bool IsRefInValueTypeOptional
         {
-            get { return IsRefIn && IsValueType && !IsArray && IsOptionnal; }
+            get { return IsRefIn && IsValueType && !IsArray && IsOptional; }
         }
 
         public bool IsRefInValueTypeByValue
@@ -194,7 +194,7 @@ namespace SharpGen.Model
                     builder.Append("params ");
                 }
 
-                if (IsRefIn && IsValueType && !IsArray && IsOptionnal && !IsStructClass)
+                if (IsRefIn && IsValueType && !IsArray && IsOptional && !IsStructClass)
                     builder.Append(PublicType.QualifiedName + "?");
                 else
                     builder.Append(PublicType.QualifiedName);
@@ -207,6 +207,8 @@ namespace SharpGen.Model
             }
         }
 
+        // Example Code-gen:
+        //
         //IntPtr pDevice_;
         //SharpDX.Interop.CalliVoid(_nativePointer, 3 * 4, &pDevice_);
         //pDevice = new SharpDX.Direct3D11.Device(pDevice_);
@@ -220,7 +222,7 @@ namespace SharpGen.Model
             {
                 // All ComArray are handle the same way
                 if (IsComArray)
-                    return "(void*)((" + Name + " == null)?IntPtr.Zero:" + Name + ".NativePointer)";
+                    return $"(void*)({Name}?.NativePointer ?? IntPtr.Zero)";
 
                 if (IsOut)
                 {
@@ -228,20 +230,12 @@ namespace SharpGen.Model
                     {
                         if (IsArray)
                         {
-                            return IsOptionnal ? Name + "==null?(void*)0:" + TempName : TempName;
+                            return IsOptional ? Name + "==null?(void*)0:" + TempName : TempName;
                         }
                         return "&" + TempName;
                     }
                     if (IsArray)
                     {
-                        //if (IsValueType && IsOptionnal)
-                        //{
-                        //    //return Name + "==null?(void*)IntPtr.Zero:" + TempName;
-                        //}
-                        //else
-                        //{
-                        //    return TempName;
-                        //}
                         return IsComArray ? Name : TempName;
                     }
                     if (IsFixed && !HasNativeValueType)
@@ -275,21 +269,16 @@ namespace SharpGen.Model
                     return "unchecked((int)" + Name + ")";
                 if (PublicType.Type == typeof (string))
                     return "(void*)" + TempName;
-                //if (PublicType.Type == typeof (byte))
-                //    return "(int)" + Name;
                 if (PublicType is CsInterface && Attribute == CsParameterAttribute.In && !IsArray)
-                    return "(void*)((" + Name + " == null)?IntPtr.Zero:" + Name + ".NativePointer)";
+                    return $"(void*)({Name}?.NativePointer ?? IntPtr.Zero)";
                 if (IsArray)
                 {
                     if (HasNativeValueType || IsBoolToInt)
                     {
-                        //if (IsOptionnal)
-                        //    return Name + "==null?(void*)IntPtr.Zero:" + TempName;
                         return TempName;
                     }
-                    if (IsValueType && IsOptionnal)
+                    if (IsValueType && IsOptional)
                     {
-                        //return Name + "==null?(void*)IntPtr.Zero:" + TempName;
                         return TempName;
                     }
                 }

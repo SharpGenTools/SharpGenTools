@@ -49,40 +49,12 @@
 		} else {
             if (method.CustomVtbl)
 			{
-			#>,((void**)(*(void**)_nativePointer))[<#= method.Name #>__vtbl_index]<#+
+			#>,(*(void***)_nativePointer)[<#= method.Name #>__vtbl_index]<#+
 			}
 			else
 			{
-			#>,((void**)(*(void**)_nativePointer))[<#= method.Offset #>]<#+
+			#>,(*(void***)_nativePointer)[<#= method.Offset #>]<#+
 			}
-		}
-		#>)<#= method.CastEnd #>;		
-<#+
-	}
-
-	private void ProcessMethodCalliX86Jit(CsMethod method) {
-		// Number of parameters
-		var maxParam = method.ParameterCount;		
-		// IF Function, else method
-		if (method is CsFunction) {
-#><#= method.CastStart #><#= method.Assembly.QualifiedName #>.LocalInterop.<#= method.Interop.Name #>((void*)<#= method.CppElementName #>_, 0<#+
-		} else {
-#><#= method.CastStart #><#= method.Assembly.QualifiedName #>.LocalInterop.<#= method.Interop.Name #>(&__ptr__, ((void**)(*(void**)_nativePointer))[<#= method.Offset #>], &__ptr__ <#+
-		}
-		if (maxParam > 0) {#>, <#+}
-
-		// For ClrCall to StdCall, reverse order of pushed parameters in order to have right to left parameters		
-		for(int i  = maxParam-1; i >=0; i--) {
-			var param = method.Parameters[i];
-			if (i < (maxParam-1)) {#>,<#+}
-			#><#= param.CallName #><#+				
-		}
-		if (method is CsFunction) {
-			if (maxParam > 0 && method.IsReturnStructLarge) {#>, <#+}
-			if (method.IsReturnStructLarge) {#>(void*)&__result__<#+}				
-		} else {
-			if (method.IsReturnStructLarge) {#>,(void*)&__result__<#+}				
-			#>,_nativePointer<#+
 		}
 		#>)<#= method.CastEnd #>;		
 <#+
@@ -234,17 +206,7 @@
 <#+						
 					}
 
-				} 
-				// End Of initializing parameter out
-				// ---------------------------------------------------------------------------------------------------
-
-				/*
-				if (!(method is CsFunction)) {			
-#if JIT_x86
-				void* __ptr__;
-#endif				
 				}
-				*/
 				
 				// ---------------------------------------------------------------------------------------------------
 				// Pre-Declare Return Type
@@ -285,11 +247,8 @@
 				} else {
 #>                <#+
 				}
-//#if JIT_x86
-//				ProcessMethodCalliX86Jit(method);
-//#else
 				ProcessMethodCalli(method);
-//#endif
+
 				// ---------------------------------------------------------------------------------------------------
 				// Unindent fixed parameters
 				// ---------------------------------------------------------------------------------------------------

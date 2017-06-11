@@ -343,7 +343,7 @@ namespace SharpGen.Generator
                 paramMethod.HasPointer = hasPointer;
                 paramMethod.PublicType = publicType ?? throw new ArgumentException("Public type cannot be null");
                 paramMethod.MarshalType = marshalType;
-                paramMethod.IsOptionnal = isOptional;
+                paramMethod.IsOptional = isOptional;
 
                 // Force IsString to be only string (due to Buffer attribute)
                 if (paramMethod.IsString)
