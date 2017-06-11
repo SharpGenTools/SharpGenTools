@@ -83,6 +83,7 @@
     <Compile Include="Config\BindRule.cs" />
     <Compile Include="Config\ContextSetRule.cs" />
     <Compile Include="Config\ContextRule.cs" />
+    <Compile Include="Config\CreateCppExtensionRule.cs" />
     <Compile Include="Config\NamingFlags.cs" />
     <Compile Include="Config\IncludeDirRule.cs" />
     <Compile Include="Config\MoveRule.cs" />
