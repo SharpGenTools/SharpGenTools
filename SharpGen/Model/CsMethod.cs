@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SharpGen.Config;
 using SharpGen.CppModel;
+using SharpGen.Generator;
 
 namespace SharpGen.Model
 {
@@ -84,13 +85,13 @@ namespace SharpGen.Model
             }
         }
 
-        protected override void FillDocItems(List<string> docItems)
+        public override void FillDocItems(List<string> docItems, TransformManager manager)
         {
             foreach (var param in PublicParameters)
-                docItems.Add("<param name=\"" + param.Name + "\">" + param.SingleDoc + "</param>");
+                docItems.Add("<param name=\"" + param.Name + "\">" + manager.GetSingleDoc(param) + "</param>");
 
             if (HasReturnType)
-                docItems.Add("<returns>" + ReturnTypeDoc + "</returns>");
+                docItems.Add("<returns>" + GetReturnTypeDoc(manager) + "</returns>");
         }
 
         public bool IsHResult
@@ -295,19 +296,16 @@ namespace SharpGen.Model
         /// <summary>
         /// Returns the documentation for the return type
         /// </summary>
-        public string ReturnTypeDoc
+        public string GetReturnTypeDoc(TransformManager manager)
         {
-            get
+            foreach (var param in Parameters)
             {
-                foreach (var param in Parameters)
+                if (param.IsUsedAsReturnType)
                 {
-                    if (param.IsUsedAsReturnType)
-                    {
-                        return param.SingleDoc;
-                    }
+                    return manager.GetSingleDoc(param);
                 }
-                return ReturnType.SingleDoc;
             }
+            return manager.GetSingleDoc(ReturnType);
         }
 
         /// <summary>

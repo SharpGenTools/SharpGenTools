@@ -22,7 +22,7 @@ foreach (var sharpStruct in Namespace.Structs)
 #>
     
 <#+	
-	foreach (var docItem in sharpStruct.DocItems) {
+	foreach (var docItem in Generator.GetDocItems(sharpStruct)) {
 #>
     /// <#= docItem #>	
 <#+			
@@ -68,7 +68,7 @@ foreach (var sharpStruct in Namespace.Structs)
 #>
         
 <#+	
-		foreach (var docItem in sharpStructItem.DocItems) {
+		foreach (var docItem in Generator.GetDocItems(sharpStructItem)) {
 #>
         /// <#= docItem #>	
 <#+			

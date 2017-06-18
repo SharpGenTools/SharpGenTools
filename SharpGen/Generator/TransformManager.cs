@@ -23,7 +23,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Text.RegularExpressions;
 using SharpGen.Logging;
@@ -56,7 +55,6 @@ namespace SharpGen.Generator
         {
             NamingRules = new NamingRulesManager();
             Assemblies = new List<CsAssembly>();
-            CallContext.SetData("Generator", this);
 
             EnumTransform = new EnumTransform();
             EnumTransform.Init(this);
@@ -1131,6 +1129,112 @@ namespace SharpGen.Generator
                 return cSharpType.QualifiedName;
 
             return null;
+        }
+        
+        private static readonly Regex RegexLinkStart = new Regex(@"^\s*\{\{.*?}}\s*(.*)", RegexOptions.Compiled);
+        private static readonly Regex RegexLink = new Regex(@"\{\{(.*?)}}", RegexOptions.Compiled);
+        private static readonly Regex RegexSpaceBegin = new Regex(@"^\s*(.*)", RegexOptions.Compiled);
+
+        public List<string> GetDocItems(CsBase element)
+        {
+            var docItems = new List<string>();
+
+            // If doc comments are already stored in an external file, than don't emit them
+            if (!element.IsCodeCommentsExternal)
+            {
+                string description = element.Description;
+                string remarks = element.Remarks;
+
+                description = RegexSpaceBegin.Replace(description, "$1");
+
+                description = RegexLink.Replace(description, RegexReplaceCReference);
+                // evaluator => "<see cref=\"$1\"/>");
+
+                string line = null;
+
+                StringReader stringReader = new StringReader(description);
+                docItems.Add("<summary>");
+                while ((line = stringReader.ReadLine()) != null)
+                    docItems.Add(line);
+                docItems.Add("</summary>");
+
+                element.FillDocItems(docItems, this);
+
+                if (!string.IsNullOrEmpty(remarks))
+                {
+                    remarks = RegexSpaceBegin.Replace(remarks, "$1");
+                    remarks = RegexLink.Replace(remarks, RegexReplaceCReference);
+
+                    stringReader = new StringReader(remarks);
+                    docItems.Add("<remarks>");
+                    while ((line = stringReader.ReadLine()) != null)
+                        docItems.Add(line);
+                    docItems.Add("</remarks>");
+                }
+            }
+
+            docItems.Add(element.DocIncludeDirective);
+            if (element.CppElement != null)
+            {
+                if (element.DocId != null)
+                {
+                    docItems.Add("<msdn-id>" + Utilities.EscapeXml(element.DocId) + "</msdn-id>");
+                }
+                docItems.Add("<unmanaged>" + Utilities.EscapeXml(element.DocUnmanagedName) + "</unmanaged>");
+                docItems.Add("<unmanaged-short>" + Utilities.EscapeXml(element.DocUnmanagedShortName) + "</unmanaged-short>");
+            }
+
+            return docItems;
+        }
+
+        /// <summary>
+        /// Gets the description as a single line of documentation.
+        /// </summary>
+        /// <value>The single doc.</value>
+        public string GetSingleDoc(CsBase element)
+        {
+            string description = element.Description;
+
+            if (RegexLinkStart.Match(description).Success)
+                description = RegexLinkStart.Replace(description, "$1");
+
+            description = RegexSpaceBegin.Replace(description, "$1");
+
+            description = RegexLink.Replace(description, RegexReplaceCReference);
+
+            StringBuilder docItems = new StringBuilder();
+            string line = null;
+
+            StringReader stringReader = new StringReader(description);
+            while ((line = stringReader.ReadLine()) != null)
+                docItems.Append(line);
+
+            return docItems.ToString();
+        }
+
+
+        private static Regex regextWithMethodW = new Regex("([^W])::");
+        private static Regex regexWithTypeW = new Regex("([^W])$");
+
+        private string RegexReplaceCReference(Match match)
+        {
+            string matchName = match.Groups[1].Value;
+            var csName = FindDocName(matchName);
+
+            // Tries to match with W::
+            if (csName == null && regextWithMethodW.Match(matchName).Success)
+                csName = FindDocName(regextWithMethodW.Replace(matchName, "$1W::"));
+
+            // Or with W
+            if (csName == null && regexWithTypeW.Match(matchName).Success)
+                csName = FindDocName(regexWithTypeW.Replace(matchName, "$1W"));
+
+            if (csName == null)
+                return matchName;
+
+            if (csName.StartsWith("<"))
+                return csName;
+            return string.Format(CultureInfo.InvariantCulture, "<see cref=\"{0}\"/>", csName);
         }
 
         /// <summary>

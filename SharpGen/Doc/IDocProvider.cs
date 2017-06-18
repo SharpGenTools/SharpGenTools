@@ -17,7 +17,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-namespace SharpGen
+namespace SharpGen.Doc
 {
     /// <summary>
     /// A DocProvider is responsible to provide documentation to the Parser
@@ -26,7 +26,7 @@ namespace SharpGen
     /// A client of Parser API could provide a documentation provider
     /// in an external assembly.
     /// </summary>
-    public interface DocProvider
+    public interface IDocProvider
     {
         /// <summary>
         /// Begins the process of the documentation provider

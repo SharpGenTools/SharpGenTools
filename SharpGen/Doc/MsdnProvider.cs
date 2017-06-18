@@ -14,7 +14,7 @@ using Newtonsoft.Json.Linq;
 
 namespace SharpGen.Doc
 {
-    internal class DocProviderMsdn : DocProvider
+    internal class MsdnProvider : IDocProvider
     {
         private static Regex stripSpace = new Regex(@"[\r\n]+\s+", RegexOptions.Multiline);
         private static Regex beginWithSpace = new Regex(@"^\s+");
@@ -25,7 +25,7 @@ namespace SharpGen.Doc
 
         private int filesAddedToArchive = 0;
 
-        public DocProviderMsdn()
+        public MsdnProvider()
         {
             ArchiveName = "MSDNDoc.zip";
             UseArchive = true;

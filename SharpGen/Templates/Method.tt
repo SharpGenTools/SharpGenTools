@@ -102,7 +102,7 @@
 #>        private int <#= method.Name #>__vtbl_index = <#= method.Offset #>;
 <#+		
 		}
-		foreach (var docItem in method.DocItems) {
+		foreach (var docItem in Generator.GetDocItems(method)) {
 #>
         /// <#= docItem #>	
 <#+			

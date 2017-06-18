@@ -120,8 +120,8 @@
     <Compile Include="CppModel\CppStruct.cs" />
     <Compile Include="CppModel\CppType.cs" />
     <Compile Include="DocItem.cs" />
-    <Compile Include="DocProvider.cs" />
-    <Compile Include="Doc\DocProviderMsdn.cs" />
+    <Compile Include="Doc\IDocProvider.cs" />
+    <Compile Include="Doc\MsdnProvider.cs" />
     <Compile Include="Logging\ConsoleLogger.cs" />
     <Compile Include="Logging\ILogger.cs" />
     <Compile Include="Logging\IProgressReport.cs" />

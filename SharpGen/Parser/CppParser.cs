@@ -1509,7 +1509,7 @@ namespace SharpGen.Parser
         private void ApplyDocumentation()
         {
             // Use default MSDN doc provider
-            DocProvider docProvider = new DocProviderMsdn();
+            IDocProvider docProvider = new MsdnProvider();
 
             // Try to load doc provider from an external assembly
             if (DocProviderAssembly != null)
@@ -1520,9 +1520,9 @@ namespace SharpGen.Parser
 
                     foreach (var type in assembly.GetTypes())
                     {
-                        if (typeof(DocProvider).IsAssignableFrom(type))
+                        if (typeof(IDocProvider).IsAssignableFrom(type))
                         {
-                            docProvider = (DocProvider)Activator.CreateInstance(type);
+                            docProvider = (IDocProvider)Activator.CreateInstance(type);
                             break;
                         }
                     }
