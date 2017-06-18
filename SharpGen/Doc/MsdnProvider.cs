@@ -30,10 +30,6 @@ namespace SharpGen.Doc
             ArchiveName = "MSDNDoc.zip";
             UseArchive = true;
             mapReplaceName = new Dictionary<Regex, string>();
-            ReplaceName("IDirectSound(?<name>[3A-Za-z]*)::(?<method>.*)$", @"IDirectSound${name}8::${method}");
-            ReplaceName("IDirectSound(?<name>[3A-Za-z]*)$", @"IDirectSound${name}8");
-            ReplaceName("IDirectInput(?<name>[A-Za-z]*)([0-9]?|[0-9]A)::(?<method>.*)$", @"IDirectInput${name}8::${method}");
-            ReplaceName("IDirectInput(?<name>[A-Za-z]*)([0-9]?|[0-9]A)$", @"IDirectInput${name}8");
             ReplaceName("W::", @"::");
             ReplaceName("([a-z0-9])A::", @"$1::");
             ReplaceName("W$", @"");
