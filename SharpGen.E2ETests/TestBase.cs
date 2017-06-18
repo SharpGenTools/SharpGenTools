@@ -28,7 +28,7 @@ namespace SharpGen.E2ETests
             var sharpGenProcessInfo = new ProcessStartInfo
             {
                 WorkingDirectory = testDirectory.FullName,
-                FileName = "SharpGen.exe",
+                FileName = "SharpGen.Interactive.exe",
                 Arguments = $"{configName}-Mapping.xml --apptype {appType} " + DefaultSharpGenArguments,
                 EnvironmentVariables =
                 {

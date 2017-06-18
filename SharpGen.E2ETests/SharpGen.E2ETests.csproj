@@ -142,6 +142,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\SharpGen.Interactive\SharpGen.Interactive.csproj">
+      <Project>{cc2b8922-b2e1-40bd-935a-71e4728c5604}</Project>
+      <Name>SharpGen.Interactive</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SharpGen\SharpGen.csproj">
       <Project>{31f85a16-cb01-4456-be3c-76e9ff3a1343}</Project>
       <Name>SharpGen</Name>
