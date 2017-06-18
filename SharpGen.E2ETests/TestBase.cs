@@ -80,7 +80,7 @@ namespace SharpGen.E2ETests
         {
             return new Config.IncludeDirRule
             {
-                Path = "includes"
+                Path = "$(THIS_CONFIG_PATH)\\includes"
             };
         }
 
