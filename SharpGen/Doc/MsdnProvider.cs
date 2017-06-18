@@ -6,9 +6,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
 using HtmlAgilityPack;
-using ICSharpCode.SharpZipLib.Zip;
 using SharpGen.Logging;
-
+using System.IO.Compression;
 using SharpGen.MTPS;
 using Newtonsoft.Json.Linq;
 
@@ -19,7 +18,7 @@ namespace SharpGen.Doc
         private static Regex stripSpace = new Regex(@"[\r\n]+\s+", RegexOptions.Multiline);
         private static Regex beginWithSpace = new Regex(@"^\s+");
         private Dictionary<Regex, string> mapReplaceName;
-        private ZipFile _zipFile;
+        private ZipArchive _zipFile;
         private bool isZipUpdated;
         private string archiveFullPath;
 
@@ -95,12 +94,12 @@ namespace SharpGen.Doc
                 var fileInfo = new FileInfo(archiveFullPath);
                 if (fileInfo.Exists && fileInfo.Length > 0)
                 {
-                    _zipFile = new ZipFile(archiveFullPath);
+                    _zipFile = ZipFile.Open(archiveFullPath, ZipArchiveMode.Update);
                 }
                 else
                 {
                     File.Delete(archiveFullPath);
-                    _zipFile = ZipFile.Create(archiveFullPath);
+                    _zipFile = ZipFile.Open(archiveFullPath, ZipArchiveMode.Create);
                 }
             }
         }
@@ -109,9 +108,7 @@ namespace SharpGen.Doc
         {
             if (_zipFile != null)
             {
-                if (isZipUpdated)
-                    _zipFile.CommitUpdate();
-                _zipFile.Close();
+                _zipFile.Dispose();
                 if (isZipUpdated && clone)
                     File.Copy(archiveFullPath, archiveFullPath + ".backup", true);
                 _zipFile = null;
@@ -149,12 +146,6 @@ namespace SharpGen.Doc
                     name = name.Substring(0, name.Length - 1);
                 }
             }
-            if (oldName != name)
-            {
-                //Console.WriteLine("Documentation: Use name [{0}] instead of [{1}]", name, oldName);
-            }
-
-            //Logger.Progress(20 + (counter/50) % 10, "Applying C++ documentation ([{0}])", name);
 
             string doc = GetDocumentationFromCacheOrMsdn(name);
             if (doc == null)
@@ -162,24 +153,6 @@ namespace SharpGen.Doc
                 return new DocItem() { Description = "No documentation for Direct3D12" };
             }
             return ParseDocumentation(doc);
-        }
-
-        /// <summary>
-        /// Internal ZipEntryStreamSource in order to add a string to a zip
-        /// </summary>
-        internal class ZipEntryStreamSource : IStaticDataSource
-        {
-            private Stream stream;
-            public ZipEntryStreamSource(string doc)
-            {
-                byte[] byteArray = Encoding.ASCII.GetBytes(doc);
-                stream = new MemoryStream(byteArray);
-            }
-
-            public Stream GetSource()
-            {
-                return stream;
-            }
         }
 
         /// <summary>
@@ -199,16 +172,17 @@ namespace SharpGen.Doc
                 var zipEntry = _zipFile.GetEntry(fileName);
                 if (zipEntry != null)
                 {
-                    var streamInput = new StreamReader(_zipFile.GetInputStream(zipEntry));
-                    doc = streamInput.ReadToEnd();
-                    streamInput.Close();
+                    using (var streamInput = zipEntry.Open())
+                    using (var reader = new StreamReader(streamInput))
+                    {
+                        doc = reader.ReadToEnd();
+                    }
                 }
                 else
                 {
                     // Begin update if zip is not updated
                     if (!isZipUpdated)
                     {
-                        _zipFile.BeginUpdate();
                         isZipUpdated = true;
                     }
 
@@ -216,7 +190,12 @@ namespace SharpGen.Doc
 
                     doc = GetDocumentationFromMsdn(name);
 
-                    _zipFile.Add(new ZipEntryStreamSource(doc), fileName);
+                    var newEntry = _zipFile.CreateEntry(fileName);
+                    using (var stream = newEntry.Open())
+                    using (var writer = new StreamWriter(stream))
+                    {
+                        writer.Write(doc);
+                    }
 
                     // Commit update every 20 files
                     filesAddedToArchive++;
@@ -255,15 +234,10 @@ namespace SharpGen.Doc
 
             bool isDocClear = false;
 
-            string htmlNodeName = null;
-
-            //if (!isRoot)
-            {
-                htmlNodeName = htmlNode.Name.ToLower();
-                if (HtmlPreserveTags.Contains(htmlNodeName))
-                    documentation.Append("<").Append(htmlNodeName).Append(">");
-            }
-
+            string htmlNodeName = htmlNode.Name.ToLower();
+            if (HtmlPreserveTags.Contains(htmlNodeName))
+                documentation.Append("<").Append(htmlNodeName).Append(">");
+            
             if (htmlNode.Name == "a")
             {
                 StringBuilder inside = new StringBuilder();
@@ -280,10 +254,6 @@ namespace SharpGen.Doc
                 }
                 return documentation.ToString();
             }
-            //else if (htmlNode.Name == "pre")
-            //{
-            //    return "\r\n<code>\r\n" + ParseSubNodes(htmlNode.FirstChild, false) + "\r\n</code>\r\n";
-            //}
             else if (htmlNode.NodeType == HtmlNodeType.Text)
             {
                 string text = htmlNode.InnerText;
@@ -297,10 +267,6 @@ namespace SharpGen.Doc
             foreach (var node in htmlNode.ChildNodes)
             {
                 string text = ParseSubNodes(node, false);
-                //if (documentation.Length > 0 && documentation[documentation.Length - 1] == '.' && !string.IsNullOrEmpty(text))
-                //{
-                //    documentation.Append(" ");
-                //}
 
                 if (text.StartsWith("Type:"))
                 {
@@ -311,8 +277,7 @@ namespace SharpGen.Doc
                     documentation.Append(text);
                 }
             }
-
-            //if (!isRoot && !isDocClear)
+            
             if (!isDocClear)
             {
                 if (HtmlPreserveTags.Contains(htmlNodeName))
@@ -321,9 +286,6 @@ namespace SharpGen.Doc
 
             if (isDocClear)
                 documentation.Clear();
-
-            //if (htmlNode.Name == "p")
-            //    documentation.Append("\r\n");
 
             return documentation.ToString();
         }
