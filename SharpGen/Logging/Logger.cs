@@ -90,6 +90,11 @@ namespace SharpGen.Logging
             get { return _errorCount > 0; }
         }
 
+        public static void ResetErrors()
+        {
+            _errorCount = 0;
+        }
+
         /// <summary>
         ///   Gets or sets the progress report.
         /// </summary>

@@ -166,13 +166,7 @@ using System.Text.RegularExpressions;
         {
             AddCode(location, "Write(" + content + ");\n");
         }
-
-        /// <summary>
-        /// Gets or sets the name of the template file being processed (for debug purpose).
-        /// </summary>
-        /// <value>The name of the template file.</value>
-        public string TemplateFileName { get; set; }
-
+        
         /// <summary>
         /// Process a template and returns the processed file.
         /// </summary>
@@ -180,6 +174,32 @@ using System.Text.RegularExpressions;
         /// <returns></returns>
         public string ProcessTemplate(string templateText, string templateName)
         {
+            Assembly templateAssembly = GenerateTemplateAssembly(templateText, templateName);
+            // Get a new templatizer instance
+            var templatizer = (Templatizer)Activator.CreateInstance(templateAssembly.GetType("TemplateImpl"));
+
+            // Set all parameters for the template
+            foreach (var parameterValueType in _parameters.Values)
+            {
+                var propertyInfo = templatizer.GetType().GetRuntimeProperty(parameterValueType.Name);
+                propertyInfo.SetValue(templatizer, parameterValueType.Value, null);
+            }
+
+            // Run the templatizer
+            templatizer.Process();
+
+            // Returns the text
+            return templatizer.ToString();
+        }
+
+        private static Dictionary<string, Assembly> templateAssemblyCache = new Dictionary<string, Assembly>();
+
+        private Assembly GenerateTemplateAssembly(string templateText, string templateName)
+        {
+            if (templateAssemblyCache.ContainsKey(templateName))
+            {
+                return templateAssemblyCache[templateName];
+            }
             // Initialize TemplateEngine state
             _doTemplateCode = new StringBuilder();
             _doTemplateClassCode = new StringBuilder();
@@ -188,7 +208,7 @@ using System.Text.RegularExpressions;
             _directives = new List<Directive>();
 
             // Parse the T4 template text
-            Parse(templateText);
+            Parse(templateText, templateName);
 
             // Build parameters for template
             var parametersCode = new StringBuilder();
@@ -211,10 +231,25 @@ using System.Text.RegularExpressions;
             string templateSourceCode = string.Format(GenericTemplateCodeText, importNamespaceCode, parametersCode, _doTemplateCode, _doTemplateClassCode);
 
             // Creates the C# compiler
+            //The location of the .NET assemblies
+            var assemblyPath = Path.GetDirectoryName(typeof(object).GetTypeInfo().Assembly.Location);
+
+            /* 
+                * Adding some necessary .NET assemblies
+                * These assemblies couldn't be loaded correctly via the same construction as above,
+                * in specific the System.Runtime.
+                */
+            var returnList = new List<MetadataReference>
+            {
+                MetadataReference.CreateFromFile(GetType().GetTypeInfo().Assembly.Location),
+                MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "mscorlib.dll")),
+                MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Private.CoreLib.dll")),
+                MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Collections.dll")),
+                MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Runtime.dll")),
+                MetadataReference.CreateFromFile(typeof(System.Text.RegularExpressions.Regex).GetTypeInfo().Assembly.Location)
+            };
             var compilation = CSharpCompilation.Create($"SharpGen.{templateName}", options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
-            compilation = compilation.AddReferences(MetadataReference.CreateFromFile(GetType().GetTypeInfo().Assembly.Location),
-                 MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location),
-                 MetadataReference.CreateFromFile(typeof(System.Text.RegularExpressions.Regex).GetTypeInfo().Assembly.Location));
+            compilation = compilation.AddReferences(returnList.ToArray());
 
             compilation = compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText(templateSourceCode));
 
@@ -231,6 +266,7 @@ using System.Text.RegularExpressions;
             if (!compilationErrors.Any())
             {
 #if NETSTANDARD1_5
+                memoryStream.Seek(0, SeekOrigin.Begin);
                 templateAssembly = AssemblyLoadContext.Default.LoadFromStream(memoryStream);
 #else
                 templateAssembly = Assembly.Load(memoryStream.ToArray());
@@ -238,23 +274,10 @@ using System.Text.RegularExpressions;
             }
             else
             {
-                Logger.Fatal("Template [{0}] contains error", TemplateFileName);
+                Logger.Fatal("Template [{0}] contains error", templateName);
             }
-            // Get a new templatizer instance
-            var templatizer = (Templatizer)Activator.CreateInstance(templateAssembly.GetType("TemplateImpl"));
-
-            // Set all parameters for the template
-            foreach (var parameterValueType in _parameters.Values)
-            {
-                var propertyInfo = templatizer.GetType().GetRuntimeProperty(parameterValueType.Name);
-                propertyInfo.SetValue(templatizer, parameterValueType.Value, null);
-            }
-
-            // Run the templatizer
-            templatizer.Process();
-
-            // Returns the text
-            return templatizer.ToString();
+            templateAssemblyCache[templateName] = templateAssembly;
+            return templateAssembly;
         }
 
         /// <summary>
@@ -301,10 +324,9 @@ using System.Text.RegularExpressions;
         /// Parses the specified template text.
         /// </summary>
         /// <param name="templateText">The template text.</param>
-        private void Parse(string templateText)
+        private void Parse(string templateText, string templateName)
         {
-            //var filePath = Path.GetFullPath(Path.Combine(templateCodePath, TemplateFileName));
-            var tokeniser = new Tokeniser(TemplateFileName, templateText);
+            var tokeniser = new Tokeniser(templateName, templateText);
 
             AddCode(tokeniser.Location, "");
 
@@ -367,7 +389,7 @@ using System.Text.RegularExpressions;
                                     throw new InvalidOperationException("Include file found. OnInclude event must be implemented");
                                 var includeArgs = new TemplateIncludeArgs() {IncludeName = includeFile};
                                 OnInclude(this, includeArgs);
-                                Parse(includeArgs.Text ?? "");
+                                Parse(includeArgs.Text ?? "", includeArgs.IncludeName);
                             }
                             _directives.Add(directive);
                         }

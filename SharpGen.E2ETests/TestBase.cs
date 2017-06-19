@@ -36,17 +36,17 @@ namespace SharpGen.E2ETests
             SaveConfigFile(config, configName);
             var codeGenApp = new CodeGenApp
             {
-                CastXmlExecutablePath = "../../../CastXML/bin/castxml.exe",
+                CastXmlExecutablePath = "../../../../CastXML/bin/castxml.exe",
                 VcToolsPath = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.10.25017\",
                 AppType = appType,
                 ConfigRootPath = Path.Combine(testDirectory.FullName, configName + "-Mapping.xml"),
                 EnableCheckFiles = false,
             };
+            Logger.ResetErrors();
             var logger = new XUnitLogger(outputHelper);
             Logger.LoggerOutput = logger;
             codeGenApp.Init();
             codeGenApp.Run();
-
             return (logger.Success, logger.ExitReason);
         }
 
@@ -90,7 +90,7 @@ namespace SharpGen.E2ETests
         public Compilation GetCompilationForGeneratedCode([CallerMemberName] string assemblyName = "")
         {
             return CSharpCompilation.Create(assemblyName)
-                .AddReferences(MetadataReference.CreateFromFile(typeof(object).Assembly.Location))
+                .AddReferences(MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location))
                 .AddSyntaxTrees(GetSyntaxTrees(assemblyName));
         }
 

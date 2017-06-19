@@ -555,10 +555,6 @@ namespace SharpGen.Generator
 
                 string input = Utilities.GetResourceAsString("Templates." + templateFileName);
 
-                // Sets the template file name
-                engine.TemplateFileName =
-                    Path.GetFullPath(Path.Combine("..\\..\\Templates\\", templateFileName));
-
                 // Iterates on assemblies
                 foreach (var csAssembly in Assemblies)
                 {
