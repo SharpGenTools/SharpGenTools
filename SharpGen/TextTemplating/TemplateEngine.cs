@@ -27,7 +27,9 @@ using SharpGen.Logging;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis;
 using System.Linq;
+#if NETSTANDARD1_5
 using System.Runtime.Loader;
+#endif
 
 namespace SharpGen.TextTemplating
 {

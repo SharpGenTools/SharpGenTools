@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>netstandard1.5;net462</TargetFrameworks>
+    <TargetFrameworks>netstandard1.5;net46</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="**/*.tt" />
@@ -13,7 +13,7 @@
     <PackageReference Include="System.IO.Compression" Version="4.3.0" />
     <PackageReference Include="System.Net.Requests" Version="4.3.0" />
     <PackageReference Include="System.Runtime.Extensions" Version="4.3.0" />
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" Condition="'$(TargetFramework)' == 'netstandard1.5'" />
     <PackageReference Include="System.ServiceModel.Duplex" Version="4.3.0" />
     <PackageReference Include="System.ServiceModel.Http" Version="4.3.0" />
     <PackageReference Include="System.ServiceModel.NetTcp" Version="4.3.0" />

@@ -30,7 +30,9 @@ using SharpGen.Logging;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Doc;
+#if NETSTANDARD1_5
 using System.Runtime.Loader;
+#endif
 
 namespace SharpGen.Parser
 {
@@ -1520,7 +1522,11 @@ namespace SharpGen.Parser
             {
                 try
                 {
+#if NETSTANDARD1_5
                     var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(DocProviderAssembly);
+#else
+                    var assembly = Assembly.LoadFrom(DocProviderAssembly);
+#endif
 
                     foreach (var type in assembly.GetTypes())
                     {
