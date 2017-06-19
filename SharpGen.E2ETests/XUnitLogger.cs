@@ -17,7 +17,7 @@ namespace SharpGen.E2ETests
             this.output = output;
         }
 
-        public bool Success { get; private set; }
+        public bool Success { get; private set; } = true;
         public string ExitReason { get; private set; }
 
         public override void Exit(string reason, int exitCode)

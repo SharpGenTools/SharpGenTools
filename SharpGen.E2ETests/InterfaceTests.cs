@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace SharpGen.E2ETests
 {
@@ -24,7 +25,11 @@ namespace SharpGen.E2ETests
     
     // Wrap all declspec for code-gen
     #define __declspec(x) __attribute__((annotate(#x)))";
-        
+
+        public InterfaceTests(ITestOutputHelper outputHelper) : base(outputHelper)
+        {
+        }
+
         private static void AssertMethodCalliIndex(Microsoft.CodeAnalysis.ISymbol interfaceMethod, int correctIndex)
         {
             var methodSyntax = interfaceMethod.DeclaringSyntaxReferences[0].GetSyntax();
@@ -53,7 +58,7 @@ namespace SharpGen.E2ETests
                     new Config.IncludeDirRule(@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\shared"),
                     new Config.IncludeDirRule(@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\um"),
                     new Config.IncludeDirRule(@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\ucrt"),
-                    new Config.IncludeDirRule(@"$(VC_TOOLS_PATH)\include")
+                    new Config.IncludeDirRule(@"$(VC_TOOLS_PATH)include")
                 },
                 Includes =
                 {
@@ -78,9 +83,9 @@ namespace SharpGen.E2ETests
                 },
             };
 
-            (int exitCode, string output) = RunWithConfig(testDirectory, config);
-            AssertRanSuccessfully(exitCode, output);
-            var compilation = GetCompilationForGeneratedCode(testDirectory);
+            (bool success, string output) = RunWithConfig(config);
+            AssertRanSuccessfully(success, output);
+            var compilation = GetCompilationForGeneratedCode();
             var iUnsecuredApartment = compilation.GetTypeByMetadataName($"{nameof(BasicComInterfaceGeneratesCorrectClass)}.IUnsecuredApartment");
             var interfaceMethod = iUnsecuredApartment.GetMembers("CreateObjectStub").Single();
             AssertMethodCalliIndex(interfaceMethod, 3);
@@ -130,9 +135,9 @@ namespace SharpGen.E2ETests
                 }
             };
 
-            (int exitCode, string output) = RunWithConfig(testDirectory, config);
-            AssertRanSuccessfully(exitCode, output);
-            var compilation = GetCompilationForGeneratedCode(testDirectory);
+            (bool success, string output) = RunWithConfig(config);
+            AssertRanSuccessfully(success, output);
+            var compilation = GetCompilationForGeneratedCode();
             var iUnknown = compilation.GetTypeByMetadataName($"{nameof(IUnknownMappingGeneratesCorrectClass)}.IUnknown");
             AssertMethodCalliIndex(iUnknown.GetMembers("QueryInterface").Single(), 0);
             AssertMethodCalliIndex(iUnknown.GetMembers("AddRef").Single(), 1);

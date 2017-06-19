@@ -20,9 +20,8 @@ using Xunit.Abstractions;
 
 namespace SharpGen.E2ETests
 {
-    public class TestBase
+    public abstract class TestBase : IDisposable
     {
-        private const string DefaultSharpGenArguments = @"--castxml castxml/bin/castxml.exe --vctools ""C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.10.25017\";
         private ITestOutputHelper outputHelper;
         private DirectoryInfo testDirectory;
 
@@ -35,15 +34,13 @@ namespace SharpGen.E2ETests
         public (bool success, string output) RunWithConfig(Config.ConfigFile config, string appType = "true", [CallerMemberName] string configName = "")
         {
             SaveConfigFile(config, configName);
-
             var codeGenApp = new CodeGenApp
             {
                 CastXmlExecutablePath = "../../../CastXML/bin/castxml.exe",
-                VcToolsPath = @"C:\Program Files(x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.10.25017\",
+                VcToolsPath = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.10.25017\",
                 AppType = appType,
                 ConfigRootPath = Path.Combine(testDirectory.FullName, configName + "-Mapping.xml"),
                 EnableCheckFiles = false,
-                OutputDirectory = testDirectory.FullName
             };
             var logger = new XUnitLogger(outputHelper);
             Logger.LoggerOutput = logger;
@@ -53,12 +50,9 @@ namespace SharpGen.E2ETests
             return (logger.Success, logger.ExitReason);
         }
 
-        public static void AssertRanSuccessfully(int exitCode, string output)
+        public static void AssertRanSuccessfully(bool success, string output)
         {
-            if(exitCode != 0)
-            {
-                throw new Xunit.Sdk.AssertActualExpectedException(0, exitCode, output);
-            }
+            Assert.True(success, output);
         }
 
         private void SaveConfigFile(Config.ConfigFile config, string configName)
@@ -89,7 +83,7 @@ namespace SharpGen.E2ETests
         {
             return new Config.IncludeDirRule
             {
-                Path = "includes"
+                Path = "$(THIS_CONFIG_PATH)\\includes"
             };
         }
 
@@ -117,6 +111,11 @@ namespace SharpGen.E2ETests
             var testFolderName = Path.GetRandomFileName();
             var testDirectoryInfo = Directory.CreateDirectory(Path.Combine(tempFolder, testFolderName));
             return testDirectoryInfo;
+        }
+
+        public void Dispose()
+        {
+            testDirectory.Delete(true);
         }
     }
 }

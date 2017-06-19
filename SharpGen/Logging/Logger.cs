@@ -39,7 +39,7 @@ namespace SharpGen.Logging
 
         #endregion
 
-        private static readonly string DefaultFilePathError = Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location);
+        private static readonly string DefaultFilePathError = Path.GetFileNameWithoutExtension(typeof(Logger).GetTypeInfo().Assembly.Location);
 
         private static int _errorCount;
         private static readonly List<string> ContextStack = new List<string>();

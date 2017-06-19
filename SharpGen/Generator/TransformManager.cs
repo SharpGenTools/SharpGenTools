@@ -244,6 +244,8 @@ namespace SharpGen.Generator
             if (!enableCheckFiles)
             {
                 assembly.IsToUpdate = true;
+                foreach (var linkedConfigFile in assembly.ConfigFilesLinked)
+                    linkedConfigFile.IsMappingToProcess = true;
                 return;
             }
 

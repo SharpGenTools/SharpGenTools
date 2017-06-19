@@ -6,11 +6,16 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace SharpGen.E2ETests
 {
     public class StructTests : TestBase
     {
+        public StructTests(ITestOutputHelper outputHelper) : base(outputHelper)
+        {
+        }
+
         [Fact]
         public void SimpleCppStructGeneratesCorrectCSharpStruct()
         {
@@ -22,7 +27,7 @@ namespace SharpGen.E2ETests
                 IncludeDirs = { GetTestFileIncludeRule() },
                 Includes =
                 {
-                    CreateCppFile(testDirectory, "simpleStruct", @"
+                    CreateCppFile("simpleStruct", @"
                         struct Test {
                             int field;
                         };
@@ -33,10 +38,10 @@ namespace SharpGen.E2ETests
                     new Config.BindRule("int", "System.Int32")
                 }
             };
-            var result = RunWithConfig(testDirectory, config);
-            AssertRanSuccessfully(result.exitCode, result.output);
+            var result = RunWithConfig(config);
+            AssertRanSuccessfully(result.success, result.output);
 
-            var compilation = GetCompilationForGeneratedCode(testDirectory);
+            var compilation = GetCompilationForGeneratedCode();
             var structType = compilation.GetTypeByMetadataName($"{nameof(SimpleCppStructGeneratesCorrectCSharpStruct)}.Test");
             var attributes = structType.GetAttributes();
             var structLayoutAttribute = attributes.FirstOrDefault(attr => attr.AttributeClass.Name == nameof(StructLayoutAttribute));
@@ -59,7 +64,7 @@ namespace SharpGen.E2ETests
                 IncludeDirs = { GetTestFileIncludeRule() },
                 Includes =
                 {
-                    CreateCppFile(testDirectory, "structWithMultipleMembers", @"
+                    CreateCppFile("structWithMultipleMembers", @"
                         struct Test {
                             int field1;
                             int field2;
@@ -72,10 +77,10 @@ namespace SharpGen.E2ETests
                 }
             };
 
-            var result = RunWithConfig(testDirectory, config);
-            AssertRanSuccessfully(result.exitCode, result.output);
+            var result = RunWithConfig(config);
+            AssertRanSuccessfully(result.success, result.output);
 
-            var compilation = GetCompilationForGeneratedCode(testDirectory);
+            var compilation = GetCompilationForGeneratedCode();
             var structType = compilation.GetTypeByMetadataName($"{nameof(StructWithMultipleMembersGeneratesStructWithMembersInCorrectOrder)}.Test");
             var attributes = structType.GetAttributes();
             var structLayoutAttribute = attributes.FirstOrDefault(attr => attr.AttributeClass.Name == nameof(StructLayoutAttribute));
@@ -97,7 +102,7 @@ namespace SharpGen.E2ETests
                 IncludeDirs = { GetTestFileIncludeRule() },
                 Includes =
                 {
-                    CreateCppFile(testDirectory, "inheritingStructs", @"
+                    CreateCppFile("inheritingStructs", @"
                         struct Base {
                             int field1;
                             int field2;
@@ -113,10 +118,10 @@ namespace SharpGen.E2ETests
                 }
             };
 
-            var result = RunWithConfig(testDirectory, config);
-            AssertRanSuccessfully(result.exitCode, result.output);
+            var result = RunWithConfig(config);
+            AssertRanSuccessfully(result.success, result.output);
 
-            var compilation = GetCompilationForGeneratedCode(testDirectory);
+            var compilation = GetCompilationForGeneratedCode();
             var structType = compilation.GetTypeByMetadataName($"{nameof(InheritingStructPutsItsMembersAfterBaseMembers)}.Inherited");
             var attributes = structType.GetAttributes();
             var structLayoutAttribute = attributes.FirstOrDefault(attr => attr.AttributeClass.Name == nameof(StructLayoutAttribute));

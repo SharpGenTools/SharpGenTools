@@ -4,11 +4,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace SharpGen.E2ETests
 {
     public class RenameTests : TestBase
     {
+        public RenameTests(ITestOutputHelper outputHelper) : base(outputHelper)
+        {
+        }
+
         [Fact]
         public void MappingNameRuleRenamesStruct()
         {
@@ -20,7 +25,7 @@ namespace SharpGen.E2ETests
                 IncludeDirs = { GetTestFileIncludeRule() },
                 Includes =
                 {
-                    CreateCppFile(testDirectory, "simpleStruct", @"
+                    CreateCppFile("simpleStruct", @"
                         struct Test {
                             int field;
                         };
@@ -39,10 +44,10 @@ namespace SharpGen.E2ETests
                     }
                 }
             };
-            var result = RunWithConfig(testDirectory, config);
-            AssertRanSuccessfully(result.exitCode, result.output);
+            var result = RunWithConfig(config);
+            AssertRanSuccessfully(result.success, result.output);
 
-            var compilation = GetCompilationForGeneratedCode(testDirectory);
+            var compilation = GetCompilationForGeneratedCode();
             var structType = compilation.GetTypeByMetadataName($"{nameof(MappingNameRuleRenamesStruct)}.MyStruct");
             Assert.NotNull(structType);
         }
@@ -58,7 +63,7 @@ namespace SharpGen.E2ETests
                 IncludeDirs = { GetTestFileIncludeRule() },
                 Includes =
                 {
-                    CreateCppFile(testDirectory, "simpleStruct", @"
+                    CreateCppFile("simpleStruct", @"
                         struct Test {
                             int field;
                         };
@@ -77,10 +82,10 @@ namespace SharpGen.E2ETests
                     }
                 }
             };
-            var result = RunWithConfig(testDirectory, config);
-            AssertRanSuccessfully(result.exitCode, result.output);
+            var result = RunWithConfig(config);
+            AssertRanSuccessfully(result.success, result.output);
 
-            var compilation = GetCompilationForGeneratedCode(testDirectory);
+            var compilation = GetCompilationForGeneratedCode();
             var structType = compilation.GetTypeByMetadataName($"{nameof(MappingNameRuleRenamesStructMember)}.Test");
             Assert.Equal(1, structType.GetMembers("MyField").Length);
         }
