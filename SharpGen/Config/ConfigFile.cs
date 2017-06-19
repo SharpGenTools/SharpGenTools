@@ -25,6 +25,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Serialization;
 using SharpGen.Logging;
+using System.Reflection;
 
 namespace SharpGen.Config
 {
@@ -285,7 +286,7 @@ namespace SharpGen.Config
                 return null;
             if (objectToExpand is string)
                 return ExpandString((string)objectToExpand, expandDynamicVariable);
-            if (objectToExpand.GetType().IsPrimitive)
+            if (objectToExpand.GetType().GetTypeInfo().IsPrimitive)
                 return objectToExpand;
             if (objectToExpand is IList)
             {
@@ -294,12 +295,12 @@ namespace SharpGen.Config
                     list[i] = ExpandVariables(list[i], expandDynamicVariable);
                 return list;
             }
-            foreach (var propertyInfo in objectToExpand.GetType().GetProperties())
+            foreach (var propertyInfo in objectToExpand.GetType().GetRuntimeProperties())
             {
-                if (propertyInfo.GetCustomAttributes(typeof(XmlIgnoreAttribute), false).Length == 0)
+                if (!propertyInfo.GetCustomAttributes<XmlIgnoreAttribute>(false).Any())
                 {
                     // Check that this field is "ShouldSerializable"
-                    var method = objectToExpand.GetType().GetMethod("ShouldSerialize" + propertyInfo.Name);
+                    var method = objectToExpand.GetType().GetRuntimeMethod("ShouldSerialize" + propertyInfo.Name, Type.EmptyTypes);
                     if (method != null && !((bool)method.Invoke(objectToExpand, null)))
                         continue;
 
@@ -512,9 +513,10 @@ namespace SharpGen.Config
 
         public void Write(string file)
         {
-            var output = new FileStream(file, FileMode.Create);
-            Write(output);
-            output.Close();
+            using (var output = new FileStream(file, FileMode.Create))
+            {
+                Write(output); 
+            }
         }
 
         /// <summary>

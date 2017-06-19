@@ -113,7 +113,10 @@ namespace SharpGen.Model
 
                     try
                     {
-                        _codeComments.Load(codeCommentsFullPath);
+                        using (var commentsFile = File.OpenRead(codeCommentsFullPath))
+                        {
+                            _codeComments.Load(commentsFile); 
+                        }
                     }
                     catch (Exception)
                     {

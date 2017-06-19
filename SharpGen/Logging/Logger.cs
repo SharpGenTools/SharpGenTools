@@ -51,7 +51,6 @@ namespace SharpGen.Logging
         static Logger()
         {
             PushLocation(DefaultFilePathError);
-            LoggerOutput = new ConsoleLogger();
         }
 
         /// <summary>

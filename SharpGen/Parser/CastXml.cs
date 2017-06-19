@@ -161,34 +161,35 @@ namespace SharpGen.Parser
 
                         if (!File.Exists(headerFile))
                             Logger.Fatal("C++ Header file [{0}] not found", headerFile);
-
-                        var currentProcess = new Process();
-                        var startInfo = new ProcessStartInfo(ExecutablePath)
+                        
+                        using (var currentProcess = new Process())
+                        {
+                            var startInfo = new ProcessStartInfo(ExecutablePath)
                             {
                                 RedirectStandardOutput = true,
                                 RedirectStandardError = true,
                                 UseShellExecute = false,
                                 CreateNoWindow = true,
-                                WorkingDirectory = Environment.CurrentDirectory
+                                WorkingDirectory = Directory.GetCurrentDirectory()
                             };
 
-                        var arguments = GetCastXmlArgs();
-                        arguments += " -E -dD";
+                            var arguments = GetCastXmlArgs();
+                            arguments += " -E -dD";
 
-                        foreach (var directory in GetIncludePaths())
-                            arguments += " " + directory;
+                            foreach (var directory in GetIncludePaths())
+                                arguments += " " + directory;
 
-                        startInfo.Arguments = arguments + " " + headerFile;
-                        Console.WriteLine(startInfo.Arguments);
-                        currentProcess.StartInfo = startInfo;
-                        currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
-                        currentProcess.OutputDataReceived += handler;
-                        currentProcess.Start();
-                        currentProcess.BeginOutputReadLine();
-                        currentProcess.BeginErrorReadLine();
+                            startInfo.Arguments = arguments + " " + headerFile;
+                            Console.WriteLine(startInfo.Arguments);
+                            currentProcess.StartInfo = startInfo;
+                            currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
+                            currentProcess.OutputDataReceived += handler;
+                            currentProcess.Start();
+                            currentProcess.BeginOutputReadLine();
+                            currentProcess.BeginErrorReadLine();
 
-                        currentProcess.WaitForExit();
-                        currentProcess.Close();
+                            currentProcess.WaitForExit(); 
+                        }
 
                     });
         }
@@ -280,53 +281,55 @@ namespace SharpGen.Parser
 
             Logger.RunInContext("castxml", () =>
             {
-                ExecutablePath = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, ExecutablePath));
+                ExecutablePath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), ExecutablePath));
 
                 if (!File.Exists(ExecutablePath)) Logger.Fatal("castxml.exe not found from path: [{0}]", ExecutablePath);
 
                 if (!File.Exists(headerFile)) Logger.Fatal("C++ Header file [{0}] not found", headerFile);
 
-                var currentProcess = new Process();
-                var startInfo = new ProcessStartInfo(ExecutablePath)
-                {
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    WorkingDirectory = Environment.CurrentDirectory
-                };
                 var xmlFile = Path.ChangeExtension(headerFile, "xml");
 
-                // Delete any previously generated xml file
-                File.Delete(xmlFile);
+                using (var currentProcess = new Process())
+                {
+                    var startInfo = new ProcessStartInfo(ExecutablePath)
+                    {
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        WorkingDirectory = Directory.GetCurrentDirectory()
+                    };
 
-                string arguments = GetCastXmlArgs();
-                arguments += " -o " + xmlFile;
+                    // Delete any previously generated xml file
+                    File.Delete(xmlFile);
 
-                foreach (var directory in GetIncludePaths())
-                    arguments += " " + directory;
+                    string arguments = GetCastXmlArgs();
+                    arguments += " -o " + xmlFile;
 
-                startInfo.Arguments = arguments + " " + headerFile;
+                    foreach (var directory in GetIncludePaths())
+                        arguments += " " + directory;
 
-                Console.WriteLine(startInfo.Arguments);
-                currentProcess.StartInfo = startInfo;
-                currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
-                currentProcess.OutputDataReceived += ProcessOutputFromHeaderFile;
-                currentProcess.Start();
-                currentProcess.BeginOutputReadLine();
-                currentProcess.BeginErrorReadLine();
+                    startInfo.Arguments = arguments + " " + headerFile;
 
-                currentProcess.WaitForExit();
+                    Console.WriteLine(startInfo.Arguments);
+                    currentProcess.StartInfo = startInfo;
+                    currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
+                    currentProcess.OutputDataReceived += ProcessOutputFromHeaderFile;
+                    currentProcess.Start();
+                    currentProcess.BeginOutputReadLine();
+                    currentProcess.BeginErrorReadLine();
 
-                currentProcess.Close();
-
+                    currentProcess.WaitForExit(); 
+                }
+                
                 if (!File.Exists(xmlFile) || Logger.HasErrors)
                 {
                     Logger.Error("Unable to generate XML file with castxml [{0}]. Check previous errors.", xmlFile);
                 }
                 else
                 {
-                    result = new StreamReader(xmlFile);
+                    result = File.OpenText(xmlFile);
+
                 }
             });
 

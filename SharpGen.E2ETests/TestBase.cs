@@ -35,12 +35,14 @@ namespace SharpGen.E2ETests
                     { "SharpDXBuildNoWindow", "" },
                 },
                 UseShellExecute = false,
-                RedirectStandardOutput = true
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
             };
 
             var sharpGenProcess = Process.Start(sharpGenProcessInfo);
             sharpGenProcess.WaitForExit(30000);
             var output = sharpGenProcess.StandardOutput.ReadToEnd();
+            var error = sharpGenProcess.StandardError.ReadToEnd();
             return (sharpGenProcess.ExitCode, output);
         }
 

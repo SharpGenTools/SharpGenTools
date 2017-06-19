@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 using System.Xml.Serialization;
@@ -200,9 +201,9 @@ namespace SharpGen.CppModel
         {
             var type = typeof (T);
             string tagname = type.Name;
-            var attributes = type.GetCustomAttributes(typeof (DataContractAttribute), false);
-            if (attributes.Length == 1)
-                tagname = (attributes[0] as DataContractAttribute).Name;
+            var attribute = type.GetTypeInfo().GetCustomAttributes<DataContractAttribute>(false).FirstOrDefault();
+            if (attribute != null)
+                tagname = attribute.Name;
             return tagname;
         }
 

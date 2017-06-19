@@ -26,7 +26,7 @@ using SharpGen.Generator;
 
 namespace SharpGen.Model
 {
-    public class CsMethod : CsTypeBase, ICloneable
+    public class CsMethod : CsTypeBase
     {
         protected virtual int MaxSizeReturnParameter
         {

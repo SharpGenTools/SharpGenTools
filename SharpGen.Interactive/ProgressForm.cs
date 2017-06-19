@@ -22,7 +22,7 @@ using System;
 using System.Windows.Forms;
 using SharpGen.Logging;
 
-namespace SharpGen
+namespace SharpGen.Interactive
 {
     /// <summary>
     /// Progress form used to show the progress of the code generation.

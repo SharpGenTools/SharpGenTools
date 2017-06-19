@@ -21,8 +21,9 @@ using System;
 using System.Threading;
 using System.Windows.Forms;
 using SharpGen.Logging;
+using Mono.Options;
 
-namespace SharpGen
+namespace SharpGen.Interactive
 {
     /// <summary>
     /// Main program for CodeGen
@@ -58,17 +59,77 @@ namespace SharpGen
         }
 
         /// <summary>
+        /// Parses the command line arguments.
+        /// </summary>
+        /// <param name="args">The args.</param>
+        public static void ParseArguments(string[] args, CodeGenApp app)
+        {
+            var showHelp = false;
+
+            var options = new OptionSet()
+                              {
+                                  "Copyright (c) 2010-2014 SharpDX - Alexandre Mutel",
+                                  "Usage: SharpGen [options] config_file.xml",
+                                  "Code generator from C++ to C# for .Net languages",
+                                  "",
+                                  {"c|castxml=", "Specify the path to castxml.exe", opt => app.CastXmlExecutablePath = opt},
+                                  {"d|doc", "Specify to generate the documentation [default: false]", opt => app.IsGeneratingDoc = true},
+                                  {"p|docpath=", "Specify the path to the assembly doc provider [default: null]", opt => app.DocProviderAssemblyPath = opt},
+                                  {"v|vctools=", "Specify the path to the Visual C++ Toolset", opt => app.VcToolsPath = opt },
+                                  {"od|outputdir=", "Specify the base output directory for the generated code", opt => app.OutputDirectory = opt },
+                                  {"a|apptype=", "Specify what app type to generate code for (i.e. DESKTOP_APP or STORE_APP)", opt => app.AppType = opt },
+                                  "",
+                                  {"h|help", "Show this message and exit", opt => showHelp = opt != null},
+                                  // default
+                                  {"<>", opt => app.ConfigRootPath = opt },
+                              };
+            try
+            {
+                options.Parse(args);
+            }
+            catch (OptionException e)
+            {
+                UsageError(e.Message);
+            }
+
+            if (showHelp)
+            {
+                options.WriteOptionDescriptions(Console.Out);
+                Environment.Exit(0);
+            }
+
+            if (app.ConfigRootPath == null)
+                UsageError("Missing config.xml. A config.xml must be specified");
+            if (app.AppType == null)
+                UsageError("Missing apptype argument. an App type must be specified (for example: -apptype=DESKTOP_APP");
+        }
+
+        /// <summary>
+        /// Print usages the error.
+        /// </summary>
+        /// <param name="error">The error.</param>
+        /// <param name="parameters">The parameters.</param>
+        private static void UsageError(string error, params object[] parameters)
+        {
+            Console.Write("SharpGen: ");
+            Console.WriteLine(error, parameters);
+            Console.WriteLine("Use SharpGen --help' for more information.");
+            Environment.Exit(1);
+        }
+
+        /// <summary>
         /// Main SharpGen
         /// </summary>
         /// <param name="args">Command line args.</param>
         [STAThread]
         public static void Main(string[] args)
         {
+            Logger.LoggerOutput = new ConsoleLogger();
             _progressForm = null;
             try
             {
                 _codeGenApp = new CodeGenApp();
-                _codeGenApp.ParseArguments(args);
+                ParseArguments(args, _codeGenApp);
 
                 if(_codeGenApp.Init())
                 {

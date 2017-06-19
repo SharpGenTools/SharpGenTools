@@ -24,6 +24,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Generator;
@@ -33,7 +34,7 @@ namespace SharpGen.Model
     /// <summary>
     /// Root class for all model elements.
     /// </summary>
-    public class CsBase : ICloneable
+    public class CsBase
     {
         private List<CsBase> _items;
         private CppElement _cppElement;

@@ -1,4 +1,4 @@
-﻿namespace SharpGen
+﻿namespace SharpGen.Interactive
 {
     partial class ProgressForm
     {

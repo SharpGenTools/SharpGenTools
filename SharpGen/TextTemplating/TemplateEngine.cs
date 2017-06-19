@@ -24,6 +24,10 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using SharpGen.Logging;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis;
+using System.Linq;
+using System.Runtime.Loader;
 
 namespace SharpGen.TextTemplating
 {
@@ -172,7 +176,7 @@ using System.Text.RegularExpressions;
         /// </summary>
         /// <param name="templateText">The template text.</param>
         /// <returns></returns>
-        public string ProcessTemplate(string templateText)
+        public string ProcessTemplate(string templateText, string templateName)
         {
             // Initialize TemplateEngine state
             _doTemplateCode = new StringBuilder();
@@ -204,50 +208,43 @@ using System.Text.RegularExpressions;
             // Parameter {3} = Body of template class level code
             string templateSourceCode = string.Format(GenericTemplateCodeText, importNamespaceCode, parametersCode, _doTemplateCode, _doTemplateClassCode);
 
-            // Creates the C# compiler, compiling for 4.0
-            var codeProvider = new Microsoft.CSharp.CSharpCodeProvider(new Dictionary<string, string>() { { "CompilerVersion", "v4.0" } });
-            var compilerParameters = new CompilerParameters { GenerateInMemory = true, GenerateExecutable = false };
+            // Creates the C# compiler
+            var compilation = CSharpCompilation.Create($"SharpGen.{templateName}", options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+            compilation = compilation.AddReferences(MetadataReference.CreateFromFile(GetType().GetTypeInfo().Assembly.Location),
+                 MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location),
+                 MetadataReference.CreateFromFile(typeof(System.Text.RegularExpressions.Regex).GetTypeInfo().Assembly.Location));
 
-            // Adds assembly from CurrentDomain
-            // TODO, implement T4 directive "assembly"?
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                try
-                {
-                    string location = assembly.Location;
-                    if (!String.IsNullOrEmpty(location))
-                        compilerParameters.ReferencedAssemblies.Add(location);
-                }
-                catch (NotSupportedException)
-                {
-                    // avoid problem with previous dynamic assemblies
-                }
-            }
+            compilation = compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText(templateSourceCode));
 
+            var memoryStream = new MemoryStream();
             // Compiles the code
-            var compilerResults = codeProvider.CompileAssemblyFromSource(compilerParameters, templateSourceCode);
+            var compilerResults = compilation.Emit(memoryStream);
 
+            var compilationErrors = compilerResults.Diagnostics.Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
             // Output any errors
-            foreach (var compilerError in compilerResults.Errors)
+            foreach (var compilerError in compilationErrors)
                 Logger.Error(compilerError.ToString());
 
             // If successful, gets the compiled assembly
-            if (compilerResults.Errors.Count == 0 && compilerResults.CompiledAssembly != null)
+            if (!compilationErrors.Any())
             {
-                templateAssembly = compilerResults.CompiledAssembly;
+#if NETSTANDARD1_5
+                templateAssembly = AssemblyLoadContext.Default.LoadFromStream(memoryStream);
+#else
+                templateAssembly = Assembly.Load(memoryStream.ToArray());
+#endif
             }
             else
             {
                 Logger.Fatal("Template [{0}] contains error", TemplateFileName);
             }
-
             // Get a new templatizer instance
             var templatizer = (Templatizer)Activator.CreateInstance(templateAssembly.GetType("TemplateImpl"));
 
             // Set all parameters for the template
             foreach (var parameterValueType in _parameters.Values)
             {
-                var propertyInfo = templatizer.GetType().GetProperty(parameterValueType.Name);
+                var propertyInfo = templatizer.GetType().GetRuntimeProperty(parameterValueType.Name);
                 propertyInfo.SetValue(templatizer, parameterValueType.Value, null);
             }
 

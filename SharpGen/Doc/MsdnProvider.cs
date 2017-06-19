@@ -4,12 +4,11 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Web;
 using HtmlAgilityPack;
 using SharpGen.Logging;
 using System.IO.Compression;
-using SharpGen.MTPS;
 using Newtonsoft.Json.Linq;
+using MTPS;
 
 namespace SharpGen.Doc
 {
@@ -226,7 +225,7 @@ namespace SharpGen.Doc
         }
 
 
-        private static HashSet<string> HtmlPreserveTags = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) { "dl", "dt", "dd", "p", "strong", "pre", "em", "code", "ul", "ol", "li", "table", "tr", "th", "td" };
+        private static HashSet<string> HtmlPreserveTags = new HashSet<string>(StringComparer.CurrentCultureIgnoreCase) { "dl", "dt", "dd", "p", "strong", "pre", "em", "code", "ul", "ol", "li", "table", "tr", "th", "td" };
 
         private static string ParseSubNodes(HtmlNode htmlNode, bool isRoot)
         {
@@ -322,7 +321,7 @@ namespace SharpGen.Doc
                 return string.Empty;
 
             var builder = new StringBuilder();
-            var nodes = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) { "h3", "h2", "mtps:collapsiblearea" };
+            var nodes = new HashSet<string>(StringComparer.CurrentCultureIgnoreCase) { "h3", "h2", "mtps:collapsiblearea" };
             foreach (var untilNode in untilNodes)
             {
                 nodes.Add(untilNode);
@@ -487,7 +486,7 @@ namespace SharpGen.Doc
         {
             try
             {
-                var url = "http://social.msdn.microsoft.com/Search/en-US?query=" + HttpUtility.UrlEncode(name) + "&addenglish=1";
+                var url = "http://social.msdn.microsoft.com/Search/en-US?query=" + WebUtility.UrlEncode(name) + "&addenglish=1";
 
                 var result = GetFromUrl(url);
 
@@ -550,19 +549,13 @@ namespace SharpGen.Doc
                 // Set value for request headers
 
                 request.Method = "GET";
-                request.ProtocolVersion = HttpVersion.Version11;
-                request.AllowAutoRedirect = true;
                 request.Accept = "*/*";
-                request.UserAgent = "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 2.0.50727)";
-                request.Headers.Add("Accept-Language", "en-us");
-                request.KeepAlive = true;
 
                 StreamReader responseStream = null;
                 HttpWebResponse webResponse = null;
                 string webResponseStream = string.Empty;
-
                 // Get response for http web request
-                webResponse = (HttpWebResponse)request.GetResponse();
+                webResponse = (HttpWebResponse)request.GetResponseAsync().Result;
                 responseStream = new StreamReader(webResponse.GetResponseStream());
                 webResponseStream = responseStream.ReadToEnd();
                 /*This content has moved to <a href=\"http://msdn.microsoft.com/en-us/library/microsoft.directx_sdk.reference.dideviceobjectinstance(v=VS.85).aspx?appId=Dev10IDEF1&amp;l=ENUS&amp;k=kDIDEVICEOBJECTINSTANCE);k(DevLang-&quot;C++&quot;);k(TargetOS-WINDOWS)&amp;rd=true\"

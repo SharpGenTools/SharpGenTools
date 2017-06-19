@@ -22,6 +22,7 @@ using System;
 using System.Text;
 using SharpGen.Config;
 using SharpGen.CppModel;
+using System.Reflection;
 
 namespace SharpGen.Model
 {
@@ -135,7 +136,7 @@ namespace SharpGen.Model
 
         public bool IsPrimitive
         {
-            get { return PublicType.Type != null && PublicType.Type.IsPrimitive; }
+            get { return PublicType.Type != null && PublicType.Type.GetTypeInfo().IsPrimitive; }
         }
 
         public bool IsString
@@ -145,7 +146,8 @@ namespace SharpGen.Model
 
         public bool IsValueType
         {
-            get { return PublicType is CsStruct || PublicType is CsEnum || (PublicType.Type != null && (PublicType.Type.IsValueType || PublicType.Type.IsPrimitive)); }
+            get { return PublicType is CsStruct || PublicType is CsEnum ||
+                    (PublicType.Type != null && (PublicType.Type.GetTypeInfo().IsValueType || PublicType.Type.GetTypeInfo().IsPrimitive)); }
         }
 
         public bool IsStructClass

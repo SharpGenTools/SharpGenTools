@@ -30,6 +30,7 @@ using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
 using SharpGen.TextTemplating;
+using System.Reflection;
 
 namespace SharpGen.Generator
 {
@@ -494,24 +495,25 @@ namespace SharpGen.Generator
         /// <param name="fileName">Name of the output file.</param>
         public void Dump(string fileName)
         {
-            StreamWriter log = new StreamWriter(fileName, false, Encoding.ASCII);
-
-            string csv = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
-            string format = "{1}{0}{2}{0}{3}{0}{4}";
-
-            foreach (var assembly in Assemblies)
+            using (var logFile = File.OpenWrite(fileName))
+            using (var log = new StreamWriter(logFile, Encoding.ASCII))
             {
-                foreach (var ns in assembly.Namespaces)
+                string csv = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
+                string format = "{1}{0}{2}{0}{3}{0}{4}";
+
+                foreach (var assembly in Assemblies)
                 {
-                    foreach (var element in ns.Enums)
-                        log.WriteLine(format, csv, "enum", ns.Name, element.Name, element.CppElementName);
-                    foreach (var element in ns.Structs)
-                        log.WriteLine(format, csv, "struct", ns.Name, element.Name, element.CppElementName);
-                    foreach (var element in ns.Interfaces)
-                        log.WriteLine(format, csv, "interface", ns.Name, element.Name, element.CppElementName);
+                    foreach (var ns in assembly.Namespaces)
+                    {
+                        foreach (var element in ns.Enums)
+                            log.WriteLine(format, csv, "enum", ns.Name, element.Name, element.CppElementName);
+                        foreach (var element in ns.Structs)
+                            log.WriteLine(format, csv, "struct", ns.Name, element.Name, element.CppElementName);
+                        foreach (var element in ns.Interfaces)
+                            log.WriteLine(format, csv, "interface", ns.Name, element.Name, element.CppElementName);
+                    }
                 }
             }
-            log.Close();
         }
 
         /// <summary>
@@ -532,7 +534,7 @@ namespace SharpGen.Generator
             int indexToGenerate = 0;
             var templateNames = new[] { "Enumerations", "Structures", "Interfaces", "Functions", "LocalInterop" };
 
-            var directoryToCreate = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+            var directoryToCreate = new HashSet<string>(StringComparer.CurrentCulture);
 
             // Iterates on templates
             foreach (string templateName in templateNames)
@@ -547,7 +549,7 @@ namespace SharpGen.Generator
 
                 // Sets the template file name
                 engine.TemplateFileName =
-                    Path.GetFullPath(Path.Combine(Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location), "..\\..\\Templates\\"), templateFileName));
+                    Path.GetFullPath(Path.Combine("..\\..\\Templates\\", templateFileName));
 
                 // Iterates on assemblies
                 foreach (var csAssembly in Assemblies)
@@ -590,7 +592,7 @@ namespace SharpGen.Generator
                         Logger.Message("\tProcess Interop {0} => {1}", csAssembly.Name, generatedDirectoryForAssembly);
 
                         //Transform the text template.
-                        string output = engine.ProcessTemplate(input);
+                        string output = engine.ProcessTemplate(input, templateName);
                         string outputFileName = Path.GetFileNameWithoutExtension(templateFileName);
 
                         outputFileName = Path.Combine(generatedDirectoryForAssembly, outputFileName);
@@ -616,7 +618,7 @@ namespace SharpGen.Generator
                             //host.Session = host.CreateSession();
 
                             //Transform the text template.
-                            string output = engine.ProcessTemplate(input);
+                            string output = engine.ProcessTemplate(input, templateName);
                             string outputFileName = Path.GetFileNameWithoutExtension(templateFileName);
 
                             outputFileName = Path.Combine(nameSpaceDirectory, outputFileName);
