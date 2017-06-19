@@ -184,11 +184,9 @@
     <Compile Include="RenameTests.cs" />
     <Compile Include="StructTests.cs" />
     <Compile Include="TestBase.cs" />
+    <Compile Include="XUnitLogger.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="..\CastXML.zip">
-      <Link>CastXML.zip</Link>
-    </EmbeddedResource>
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>

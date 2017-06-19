@@ -90,6 +90,8 @@ namespace SharpGen
 
         public string ConfigRootPath { get; set; }
 
+        public bool EnableCheckFiles { get; set; } = true;
+
         private ConfigFile Config { get; set; }
 
         private string _thisAssemblyPath;
@@ -119,23 +121,27 @@ namespace SharpGen
 
             Config = ConfigFile.Load(ConfigRootPath, Macros.ToArray(), new KeyValue("VC_TOOLS_PATH", VcToolsPath));
             var latestConfigTime = ConfigFile.GetLatestTimestamp(Config.ConfigFilesLoaded);
-
+            
             _allConfigCheck = Config.Id + "-" + AppType + "-CodeGen.check";
 
-            var isConfigFileChanged = !File.Exists(_allConfigCheck) || latestConfigTime > File.GetLastWriteTime(_allConfigCheck);
-
-            if(_isAssemblyNew)
+            if (EnableCheckFiles)
             {
-                Logger.Message("Assembly [{0}] changed. All files will be generated", _thisAssemblyPath);
-            }
-            else if(isConfigFileChanged)
-            {
-                Logger.Message("Config files [{0}] changed", string.Join(",", Config.ConfigFilesLoaded.Select(file => Path.GetFileName(file.AbsoluteFilePath))));
-            }
+                var isConfigFileChanged = !File.Exists(_allConfigCheck) || latestConfigTime > File.GetLastWriteTime(_allConfigCheck);
+
+                if (_isAssemblyNew)
+                {
+                    Logger.Message("Assembly [{0}] changed. All files will be generated", _thisAssemblyPath);
+                }
+                else if (isConfigFileChanged)
+                {
+                    Logger.Message("Config files [{0}] changed", string.Join(",", Config.ConfigFilesLoaded.Select(file => Path.GetFileName(file.AbsoluteFilePath))));
+                }
 
 
-            // Return true if a config file changed or the assembly changed
-            return isConfigFileChanged || _isAssemblyNew;
+                // Return true if a config file changed or the assembly changed
+                return isConfigFileChanged || _isAssemblyNew;
+            }
+            return true;
         }
 
         /// <summary>
@@ -176,12 +182,12 @@ namespace SharpGen
                     AppType = AppType
                 };
 
-                transformer.Init(group, Config);
+                transformer.Init(group, Config, EnableCheckFiles);
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Mapping rules initialization failed");
 
-                transformer.Generate();
+                transformer.Generate(EnableCheckFiles);
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Code generation failed");
@@ -198,13 +204,16 @@ namespace SharpGen
                     transformer.NamingRules.DumpRenames(fileWriter);
                 }
 
-                // Update Checkfile for assembly
-                File.WriteAllText(_assemblyCheckFile, "");
-                File.SetLastWriteTime(_assemblyCheckFile, _assemblyDatetime);
+                if (EnableCheckFiles)
+                {
+                    // Update Checkfile for assembly
+                    File.WriteAllText(_assemblyCheckFile, "");
+                    File.SetLastWriteTime(_assemblyCheckFile, _assemblyDatetime);
 
-                // Update Checkfile for all config files
-                File.WriteAllText(_allConfigCheck, "");
-                File.SetLastWriteTime(_allConfigCheck, DateTime.Now);
+                    // Update Checkfile for all config files
+                    File.WriteAllText(_allConfigCheck, "");
+                    File.SetLastWriteTime(_allConfigCheck, DateTime.Now);
+                }
             }
             finally
             {

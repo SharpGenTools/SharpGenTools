@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
+using SharpGen.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,38 +13,44 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+using Xunit;
+using Xunit.Abstractions;
+
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace SharpGen.E2ETests
 {
     public class TestBase
     {
         private const string DefaultSharpGenArguments = @"--castxml castxml/bin/castxml.exe --vctools ""C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.10.25017\";
+        private ITestOutputHelper outputHelper;
+        private DirectoryInfo testDirectory;
 
-        public static (int exitCode, string output) RunWithConfig(DirectoryInfo testDirectory, Config.ConfigFile config, string appType = "true", [CallerMemberName] string configName = "")
+        public TestBase(ITestOutputHelper outputHelper)
         {
-            SaveConfigFile(testDirectory, config, configName);
+            this.outputHelper = outputHelper;
+            testDirectory = GenerateTestDirectory();
+        }
 
-            ExtractCastXmlToTestDirectory(testDirectory);
+        public (bool success, string output) RunWithConfig(Config.ConfigFile config, string appType = "true", [CallerMemberName] string configName = "")
+        {
+            SaveConfigFile(config, configName);
 
-            var sharpGenProcessInfo = new ProcessStartInfo
+            var codeGenApp = new CodeGenApp
             {
-                WorkingDirectory = testDirectory.FullName,
-                FileName = "SharpGen.Interactive.exe",
-                Arguments = $"{configName}-Mapping.xml --apptype {appType} " + DefaultSharpGenArguments,
-                EnvironmentVariables =
-                {
-                    { "SharpDXBuildNoWindow", "" },
-                },
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
+                CastXmlExecutablePath = "../../../CastXML/bin/castxml.exe",
+                VcToolsPath = @"C:\Program Files(x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.10.25017\",
+                AppType = appType,
+                ConfigRootPath = Path.Combine(testDirectory.FullName, configName + "-Mapping.xml"),
+                EnableCheckFiles = false,
+                OutputDirectory = testDirectory.FullName
             };
+            var logger = new XUnitLogger(outputHelper);
+            Logger.LoggerOutput = logger;
+            codeGenApp.Init();
+            codeGenApp.Run();
 
-            var sharpGenProcess = Process.Start(sharpGenProcessInfo);
-            sharpGenProcess.WaitForExit(30000);
-            var output = sharpGenProcess.StandardOutput.ReadToEnd();
-            var error = sharpGenProcess.StandardError.ReadToEnd();
-            return (sharpGenProcess.ExitCode, output);
+            return (logger.Success, logger.ExitReason);
         }
 
         public static void AssertRanSuccessfully(int exitCode, string output)
@@ -54,7 +61,7 @@ namespace SharpGen.E2ETests
             }
         }
 
-        private static void SaveConfigFile(DirectoryInfo testDirectory, Config.ConfigFile config, string configName)
+        private void SaveConfigFile(Config.ConfigFile config, string configName)
         {
             config.Id = configName;
 
@@ -66,7 +73,7 @@ namespace SharpGen.E2ETests
             }
         }
 
-        public static Config.IncludeRule CreateCppFile(DirectoryInfo testDirectory, string cppFileName, string cppFile, [CallerMemberName] string testName = "")
+        public Config.IncludeRule CreateCppFile(string cppFileName, string cppFile, [CallerMemberName] string testName = "")
         {
             var includesDir = testDirectory.CreateSubdirectory("includes");
             File.WriteAllText(Path.Combine(includesDir.FullName, cppFileName + ".h"), cppFile);
@@ -86,14 +93,14 @@ namespace SharpGen.E2ETests
             };
         }
 
-        public static Compilation GetCompilationForGeneratedCode(DirectoryInfo testDirectory, [CallerMemberName] string assemblyName = "")
+        public Compilation GetCompilationForGeneratedCode([CallerMemberName] string assemblyName = "")
         {
             return CSharpCompilation.Create(assemblyName)
                 .AddReferences(MetadataReference.CreateFromFile(typeof(object).Assembly.Location))
-                .AddSyntaxTrees(GetSyntaxTrees(testDirectory, assemblyName));
+                .AddSyntaxTrees(GetSyntaxTrees(assemblyName));
         }
 
-        private static IEnumerable<SyntaxTree> GetSyntaxTrees(DirectoryInfo testDirectory, string assemblyName)
+        private IEnumerable<SyntaxTree> GetSyntaxTrees(string assemblyName)
         {
             foreach (var child in testDirectory.CreateSubdirectory(assemblyName).EnumerateFiles("*.cs", SearchOption.AllDirectories))
             {
@@ -110,15 +117,6 @@ namespace SharpGen.E2ETests
             var testFolderName = Path.GetRandomFileName();
             var testDirectoryInfo = Directory.CreateDirectory(Path.Combine(tempFolder, testFolderName));
             return testDirectoryInfo;
-        }
-
-        private static void ExtractCastXmlToTestDirectory(DirectoryInfo testDirectory)
-        {
-            using (var castXml = typeof(TestBase).Assembly.GetManifestResourceStream("SharpGen.E2ETests.CastXML.zip"))
-            using (var archive = new ZipArchive(castXml))
-            {
-                archive.ExtractToDirectory(testDirectory.FullName);
-            }
         }
     }
 }

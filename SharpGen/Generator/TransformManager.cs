@@ -155,7 +155,7 @@ namespace SharpGen.Generator
         /// </summary>
         /// <param name="cppModule">The C++ module.</param>
         /// <param name="config">The root config file.</param>
-        public void Init(CppModule cppModule, ConfigFile config)
+        public void Init(CppModule cppModule, ConfigFile config, bool enableCheckFiles)
         {
             CppModule = cppModule;
             var configFiles = config.ConfigFilesLoaded;
@@ -167,7 +167,7 @@ namespace SharpGen.Generator
 
             // Check which assembly to update
             foreach (var assembly in Assemblies)
-                CheckAssemblyUpdate(assembly);
+                CheckAssemblyUpdate(assembly, enableCheckFiles);
 
 
             int numberOfConfigFilesToParse = 0;
@@ -239,8 +239,14 @@ namespace SharpGen.Generator
         /// Checks the assembly is up to date relative to its config dependencies.
         /// </summary>
         /// <param name="assembly">The assembly.</param>
-        private void CheckAssemblyUpdate(CsAssembly assembly)
+        private void CheckAssemblyUpdate(CsAssembly assembly, bool enableCheckFiles)
         {
+            if (!enableCheckFiles)
+            {
+                assembly.IsToUpdate = true;
+                return;
+            }
+
             var maxUpdateTime = ConfigFile.GetLatestTimestamp(assembly.ConfigFilesLinked);
 
             if (File.Exists(assembly.CheckFileName))
@@ -519,7 +525,7 @@ namespace SharpGen.Generator
         /// <summary>
         /// Generates the C# code.
         /// </summary>
-        public void Generate()
+        public void Generate(bool enableCheckFiles)
         {
             Transform();
 
@@ -628,13 +634,15 @@ namespace SharpGen.Generator
                     }
                 }
             }
-
-            // Update check files for all assemblies
-            var processTime = DateTime.Now;
-            foreach (CsAssembly assembly in Assemblies)
+            if (enableCheckFiles)
             {
-                File.WriteAllText(assembly.CheckFileName, "");
-                File.SetLastWriteTime(assembly.CheckFileName, processTime);
+                // Update check files for all assemblies
+                var processTime = DateTime.Now;
+                foreach (CsAssembly assembly in Assemblies)
+                {
+                    File.WriteAllText(assembly.CheckFileName, "");
+                    File.SetLastWriteTime(assembly.CheckFileName, processTime);
+                } 
             }
         }
 
