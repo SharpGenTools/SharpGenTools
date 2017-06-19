@@ -78,6 +78,7 @@ namespace SharpGen.Interactive
                                   {"v|vctools=", "Specify the path to the Visual C++ Toolset", opt => app.VcToolsPath = opt },
                                   {"od|outputdir=", "Specify the base output directory for the generated code", opt => app.OutputDirectory = opt },
                                   {"a|apptype=", "Specify what app type to generate code for (i.e. DESKTOP_APP or STORE_APP)", opt => app.AppType = opt },
+                                  {"D:", "Define a macro that is used in the config files", m => app.Macros.Add(m) },
                                   "",
                                   {"h|help", "Show this message and exit", opt => showHelp = opt != null},
                                   // default

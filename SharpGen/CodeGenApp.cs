@@ -114,8 +114,7 @@ namespace SharpGen
             _generatedPath = OutputDirectory != null ? Path.GetDirectoryName(OutputDirectory) : Path.GetDirectoryName(ConfigRootPath);
 
             Logger.Message("Loading config files...");
-
-            Macros.Add("DIRECTX11_1");
+            
             Macros.Add(AppType);
 
             Config = ConfigFile.Load(ConfigRootPath, Macros.ToArray(), new KeyValue("VC_TOOLS_PATH", VcToolsPath));
