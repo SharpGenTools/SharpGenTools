@@ -30,8 +30,10 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Pdb;
 using CallSite = Mono.Cecil.CallSite;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
+using System.Text;
+using Microsoft.Extensions.DependencyModel;
 
-namespace SharpCli
+namespace SharpPatch
 {
     /// <summary>
     /// InteropBuilder is responsible to patch SharpDX assemblies and inject unmanaged interop call.
@@ -148,7 +150,7 @@ namespace SharpCli
             var paramT = ((GenericInstanceMethod)fixedtoPatch.Operand).GenericArguments[0];
             // Preparing locals
             // local(0) T*
-            method.Body.Variables.Add(new VariableDefinition("pin", new PinnedType(new ByReferenceType(paramT))));
+            method.Body.Variables.Add(new VariableDefinition(new PinnedType(new ByReferenceType(paramT))));
 
             int index = method.Body.Variables.Count - 1;
 
@@ -247,7 +249,7 @@ namespace SharpCli
             var paramT = ((GenericInstanceMethod)fixedtoPatch.Operand).GenericArguments[0];
             // Preparing locals
             // local(0) T*
-            method.Body.Variables.Add(new VariableDefinition("pin", new PinnedType(new ByReferenceType(paramT))));
+            method.Body.Variables.Add(new VariableDefinition(new PinnedType(new ByReferenceType(paramT))));
 
             int index = method.Body.Variables.Count - 1;
 
@@ -664,8 +666,7 @@ namespace SharpCli
             // Patch methods
             foreach (var method in type.Methods)
                 PatchMethod(method);
-
-            // LocalInterop will be removed after the patch only for non SharpJit code
+            
             if (type.Name == "LocalInterop")
                 classToRemoveList.Add(type);
 
@@ -688,28 +689,12 @@ namespace SharpCli
         }
 
         /// <summary>
-        /// Get Program Files x86
-        /// </summary>
-        /// <returns></returns>
-        static string ProgramFilesx86()
-        {
-            if (8 == IntPtr.Size
-                || (!String.IsNullOrEmpty(Environment.GetEnvironmentVariable("PROCESSOR_ARCHITEW6432")))
-                || Environment.GetEnvironmentVariable("ProgramFiles(x86)") != null)
-            {
-                return Environment.GetEnvironmentVariable("ProgramFiles(x86)");
-            }
-
-            return Environment.GetEnvironmentVariable("ProgramFiles");
-        }
-
-        /// <summary>
         /// Patches the file.
         /// </summary>
         /// <param name="file">The file.</param>
         public bool PatchFile(string file)
         {
-            file = Path.Combine(Environment.CurrentDirectory, file);
+            file = Path.Combine(Directory.GetCurrentDirectory(), file);
 
             var fileTime = new FileTime(file);
             string checkFile = Path.GetFullPath(file) + ".check";
@@ -722,45 +707,40 @@ namespace SharpCli
             }
 
             // Copy PDB from input assembly to output assembly if any
-            var readerParameters = new ReaderParameters();
-            var resolver = new DefaultAssemblyResolver();
-            readerParameters.AssemblyResolver = resolver;
+            var readerParameters = new ReaderParameters
+            {
+                InMemory = true
+            };
+
+            var depsFilePath = Path.Combine(Path.GetDirectoryName(file), $"{Path.GetFileNameWithoutExtension(file)}.deps.json");
+            if(!File.Exists(depsFilePath))
+            {
+                LogError($"Could not find deps file: {depsFilePath}. Set PreserveCompilationContext to true while building to generate the deps file.");
+                return false;
+            }
+            using (var depsFile = File.OpenRead(depsFilePath))
+            {
+                var reader = new DependencyContextJsonReader();
+                var resolver = new AssemblyResolver(reader.Read(depsFile)); 
+                readerParameters.AssemblyResolver = resolver;
+            }
+
             var writerParameters = new WriterParameters();
             var pdbName = Path.ChangeExtension(file, "pdb");
             if (File.Exists(pdbName))
             {
-                var symbolReaderProvider = new PdbReaderProvider();
-                readerParameters.SymbolReaderProvider = symbolReaderProvider;
+                readerParameters.SymbolReaderProvider = GetSymbolReaderProvider(pdbName);
                 readerParameters.ReadSymbols = true;
                 writerParameters.WriteSymbols = true;
             }
 
             // Read Assembly
             assembly = AssemblyDefinition.ReadAssembly(file, readerParameters);
-            resolver.AddSearchDirectory(Path.GetDirectoryName(file));
-
-            // Query the target framework in order to resolve correct assemblies and type forwarding
-            var targetFrameworkAttr = assembly.CustomAttributes.FirstOrDefault(
-                attribute => attribute.Constructor.FullName.Contains("System.Runtime.Versioning.TargetFrameworkAttribute"));
-            if(targetFrameworkAttr != null && targetFrameworkAttr.ConstructorArguments.Count > 0 &&
-                targetFrameworkAttr.ConstructorArguments[0].Value != null)
-            {
-                var targetFramework = new FrameworkName(targetFrameworkAttr.ConstructorArguments[0].Value.ToString());
-
-                var netcoreAssemblyPath = string.Format(@"Reference Assemblies\Microsoft\Framework\{0}\v{1}",
-                    targetFramework.Identifier,
-                    targetFramework.Version);
-                netcoreAssemblyPath = Path.Combine(ProgramFilesx86(), netcoreAssemblyPath);
-                if(Directory.Exists(netcoreAssemblyPath))
-                {
-                    resolver.AddSearchDirectory(netcoreAssemblyPath);
-                }
-            }
 
             // Import void* and int32 
             voidType = assembly.MainModule.TypeSystem.Void.Resolve();
-            voidPointerType = new PointerType(assembly.MainModule.Import(voidType));
-            intType = assembly.MainModule.Import( assembly.MainModule.TypeSystem.Int32.Resolve());
+            voidPointerType = new PointerType(assembly.MainModule.ImportReference(voidType));
+            intType = assembly.MainModule.ImportReference(assembly.MainModule.TypeSystem.Int32.Resolve());
 
             // Remove CompilationRelaxationsAttribute
             for (int i = 0; i < assembly.CustomAttributes.Count; i++)
@@ -791,30 +771,19 @@ namespace SharpCli
             Log("SharpDX patch done for assembly [{0}]", file);
             return true;
         }
-        /// <summary>
-        /// Main of this program.
-        /// </summary>
-        /// <param name="args">The args.</param>
-        static void Main(string[] args)
-        {
-            try
-            {
-                if (args.Length != 1)
-                {
-                    Console.WriteLine("{0} file_path is expecting one file argument",
-                                      Assembly.GetExecutingAssembly().GetName().Name);
-                    Environment.Exit(1);
-                }
 
-                string file = args[0];
-                var program = new InteropApp();
-                program.PatchFile(file);
-            } 
-            catch (Exception ex)
+        private static ISymbolReaderProvider GetSymbolReaderProvider(string pdbName)
+        {
+            using (var pdbStream = File.OpenRead(pdbName))
+            using (var reader = new BinaryReader(pdbStream))
             {
-                Console.WriteLine(ex);
-                Environment.Exit(1);
+                var headerBytes = reader.ReadBytes(4);
+                if(Encoding.ASCII.GetString(headerBytes) == "DSJB") // Start of the portable pdb format
+                {
+                    return new PortablePdbReaderProvider();
+                }
             }
+            return new PdbReaderProvider(); // otherwise assume full pdb format
         }
 
         public void Log(string message, params object[] parameters)
