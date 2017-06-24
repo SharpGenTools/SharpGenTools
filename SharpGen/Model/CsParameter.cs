@@ -263,7 +263,7 @@ namespace SharpGen.Model
                 {
                     return HasNativeValueType ? "&" + TempName : "&" + Name;
                 }
-                if (PublicType.QualifiedName == Global.Name + ".Color4" && MarshalType.Type == typeof(int))
+                if (PublicType.QualifiedName == Global.GetGlobalName("Color4") && MarshalType.Type == typeof(int))
                 {
                     return Name + ".ToArgb()";
                 }
@@ -294,7 +294,7 @@ namespace SharpGen.Model
                 {
                     return IsIn ? TempName : "&" + TempName;
                 }
-                if (PublicType.Name == "SharpDX.PointerSize")
+                if (PublicType.Name == Global.GetGlobalName("PointerSize"))
                     return "(void*)" + Name;
                 return Name;
             }

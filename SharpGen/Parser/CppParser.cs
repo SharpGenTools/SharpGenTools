@@ -893,7 +893,7 @@ namespace SharpGen.Parser
                 if (_bindings.TryGetValue(baseTypeName, out string bindedValueTo))
                 {
                     if (baseTypeName != "IUnknown" && baseTypeName != "IDispatch" && (
-                            bindedValueTo == "SharpDX.ComObject"
+                            bindedValueTo == Global.GetGlobalName("ComObject")
                             || bindedValueTo == "System.IntPtr"))
                     {
                         Logger.Error("Error binding interface type [{0}] defined in file [{1}]. Interface is inherited and binded to [{2}] and not valid for inheritance", baseTypeName, baseTypeFile, bindedValueTo);

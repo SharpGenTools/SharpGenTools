@@ -25,8 +25,10 @@ namespace SharpGen
     public class Global
     {
         /// <summary>
-        /// Name of root package for SharpDX.
+        /// Name of root package.
         /// </summary>
-        public const string Name = "SharpDX";
+        private const string Name = "SharpDX";
+
+        public static string GetGlobalName(string typeName) => $"{Name}.{typeName}";
     }
 }

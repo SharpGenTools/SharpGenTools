@@ -58,7 +58,7 @@ namespace SharpGen.Model
         }
 
         /// <summary>
-        /// Performs an implicit conversion from <see cref="System.Type"/> to <see cref="SharpDX.TypeWrapper"/>.
+        /// Performs an implicit conversion from <see cref="System.Type"/> to <see cref="InteropType"/>.
         /// </summary>
         /// <param name="input">The input.</param>
         /// <returns>The result of the conversion.</returns>
@@ -68,7 +68,7 @@ namespace SharpGen.Model
         }
 
         /// <summary>
-        /// Performs an implicit conversion from <see cref="System.String"/> to <see cref="SharpDX.TypeWrapper"/>.
+        /// Performs an implicit conversion from <see cref="System.String"/> to <see cref="InteropType"/>.
         /// </summary>
         /// <param name="input">The input.</param>
         /// <returns>The result of the conversion.</returns>

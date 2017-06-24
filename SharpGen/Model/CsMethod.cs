@@ -96,7 +96,7 @@ namespace SharpGen.Model
 
         public bool IsHResult
         {
-            get { return HasReturnType && ReturnType.PublicType.Name == Global.Name + ".Result"; }
+            get { return HasReturnType && ReturnType.PublicType.Name == Global.GetGlobalName("Result"); }
         }
 
         public bool IsReturnStructLarge
