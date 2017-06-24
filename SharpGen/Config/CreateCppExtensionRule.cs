@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2014 SharpDX - Alexandre Mutel
+﻿// Copyright (c) 2010-2014 SharpDX - Alexandre Mutel
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -17,10 +17,28 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System.Xml.Serialization;
 
 namespace SharpGen.Config
 {
-    public abstract class ExtensionBaseRule : ConfigBaseRule
+    [XmlType("create-cpp")]
+    public class CreateCppExtensionRule : ExtensionBaseRule
     {
+        [XmlIgnore]
+        public Visibility? Visibility { get; set; }
+        [XmlAttribute("visibility")]
+        public Visibility _Visibility_ { get { return Visibility.Value; } set { Visibility = value; } }
+        public bool ShouldSerialize_Visibility_() { return Visibility != null; }
+
+        [XmlAttribute("enum")]
+        public string Enum { get; set; }
+
+        [XmlAttribute("macro")]
+        public string Macro { get; set; }
+
+        public override string ToString()
+        {
+            return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} macro:{1}", base.ToString(), Macro);
+        }
     }
 }

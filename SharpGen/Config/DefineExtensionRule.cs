@@ -39,6 +39,15 @@ namespace SharpGen.Config
             Align = align;
         }
 
+        [XmlAttribute("class")]
+        public string NewClass { get; set; }
+        [XmlAttribute("enum")]
+        public string Enum { get; set; }
+        [XmlAttribute("struct")]
+        public string Struct { get; set; }
+        [XmlAttribute("interface")]
+        public string Interface { get; set; }
+
 
         [XmlIgnore]
         public int? SizeOf { get; set; }
