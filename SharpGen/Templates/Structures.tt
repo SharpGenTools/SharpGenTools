@@ -243,7 +243,7 @@ foreach (var sharpStruct in Namespace.Structs)
 			
 		    if (sharpStructItem.IsBoolToInt) {
 				if (sharpStructItem.IsArray) {
-#>            fixed (int* __from = &@ref.<#= sharpStructItem.Name #>) this._<#= sharpStructItem.Name #> = <#= Global.Name #>.Utilities.ConvertToBoolArray(__from, <#= sharpStructItem.ArrayDimension #>);
+#>            fixed (int* __from = &@ref.<#= sharpStructItem.Name #>) this._<#= sharpStructItem.Name #> = <#= Generator.GlobalNamespace.Name #>.Utilities.ConvertToBoolArray(__from, <#= sharpStructItem.ArrayDimension #>);
 <#+				} else {
 #>			this._<#= sharpStructItem.Name #> = @ref._<#= sharpStructItem.Name #>;
 <#+				}
@@ -307,7 +307,7 @@ foreach (var sharpStruct in Namespace.Structs)
 		
 		    if (sharpStructItem.IsBoolToInt) {
 				if (sharpStructItem.IsArray) {
-#>            fixed (int* __from = &@ref.<#= sharpStructItem.Name #>) <#= Global.Name #>.Utilities.ConvertToIntArray(this.<#= sharpStructItem.Name #>, __from);
+#>            fixed (int* __from = &@ref.<#= sharpStructItem.Name #>) <#= Generator.GlobalNamespace.Name #>.Utilities.ConvertToIntArray(this.<#= sharpStructItem.Name #>, __from);
 <#+				} else {
 #>            @ref._<#= sharpStructItem.Name #> = this._<#= sharpStructItem.Name #>;
 <#+				}

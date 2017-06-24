@@ -16,8 +16,6 @@ using System.Xml.Serialization;
 using Xunit;
 using Xunit.Abstractions;
 
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
-
 namespace SharpGen.E2ETests
 {
     public abstract class TestBase : IDisposable
@@ -31,23 +29,23 @@ namespace SharpGen.E2ETests
             testDirectory = GenerateTestDirectory();
         }
 
-        public (bool success, string output) RunWithConfig(Config.ConfigFile config, string appType = "true", [CallerMemberName] string configName = "")
+        public (bool success, string output) RunWithConfig(Config.ConfigFile config, string appType = "true", [CallerMemberName] string configName = "", bool failTestOnError = true)
         {
             SaveConfigFile(config, configName);
-            var codeGenApp = new CodeGenApp
+            var xUnitLogger = new XUnitLogger(outputHelper, failTestOnError);
+            var logger = new Logger(xUnitLogger, null);
+            var codeGenApp = new CodeGenApp(logger)
             {
+                GlobalNamespace = new GlobalNamespaceProvider("SharpGen"),
                 CastXmlExecutablePath = "../../../../CastXML/bin/castxml.exe",
                 VcToolsPath = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.10.25017\",
                 AppType = appType,
                 ConfigRootPath = Path.Combine(testDirectory.FullName, configName + "-Mapping.xml"),
                 EnableCheckFiles = false,
             };
-            Logger.ResetErrors();
-            var logger = new XUnitLogger(outputHelper);
-            Logger.LoggerOutput = logger;
             codeGenApp.Init();
             codeGenApp.Run();
-            return (logger.Success, logger.ExitReason);
+            return (xUnitLogger.Success, xUnitLogger.ExitReason);
         }
 
         public static void AssertRanSuccessfully(bool success, string output)

@@ -49,7 +49,7 @@ namespace SharpGen.Interactive
             if (Output == null)
                 return;
 
-            Logger.Error("Process stopped. " + reason);
+            Log(LogLevel.Error, new LogLocation(""), "", "Process stopped. " + reason, null);
             Environment.Exit(exitCode);
         }
 

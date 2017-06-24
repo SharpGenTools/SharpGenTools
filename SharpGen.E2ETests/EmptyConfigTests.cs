@@ -19,7 +19,7 @@ namespace SharpGen.E2ETests
         {
             var testDirectory = GenerateTestDirectory();
             var config = new Config.ConfigFile { };
-            Assert.False(RunWithConfig(config).success);
+            Assert.False(RunWithConfig(config, failTestOnError: false).success);
         }
     }
 }

@@ -263,16 +263,16 @@ namespace SharpGen.Config
         /// Expands all dynamic variables used inside Bindings and Mappings tags.
         /// </summary>
         /// <param name="expandDynamicVariable">if set to <c>true</c> [expand dynamic variable].</param>
-        public void ExpandVariables(bool expandDynamicVariable)
+        public void ExpandVariables(bool expandDynamicVariable, Logger logger)
         {
-            ExpandVariables(Variables, expandDynamicVariable);
-            ExpandVariables(Includes, expandDynamicVariable);
-            ExpandVariables(IncludeDirs, expandDynamicVariable);
-            ExpandVariables(Bindings, expandDynamicVariable);
-            ExpandVariables(Mappings, expandDynamicVariable);
+            ExpandVariables(Variables, expandDynamicVariable, logger);
+            ExpandVariables(Includes, expandDynamicVariable, logger);
+            ExpandVariables(IncludeDirs, expandDynamicVariable, logger);
+            ExpandVariables(Bindings, expandDynamicVariable, logger);
+            ExpandVariables(Mappings, expandDynamicVariable, logger);
             // Do it recursively
             foreach (var configFile in References)
-                configFile.ExpandVariables(expandDynamicVariable);
+                configFile.ExpandVariables(expandDynamicVariable, logger);
         }
 
         /// <summary>
@@ -280,19 +280,18 @@ namespace SharpGen.Config
         /// </summary>
         /// <param name="objectToExpand">The object to expand.</param>
         /// <returns>the expanded object</returns>
-        private object ExpandVariables(object objectToExpand, bool expandDynamicVariable)
+        private object ExpandVariables(object objectToExpand, bool expandDynamicVariable, Logger logger)
         {
             if (objectToExpand == null)
                 return null;
-            if (objectToExpand is string)
-                return ExpandString((string)objectToExpand, expandDynamicVariable);
+            if (objectToExpand is string str)
+                return ExpandString(str, expandDynamicVariable, logger);
             if (objectToExpand.GetType().GetTypeInfo().IsPrimitive)
                 return objectToExpand;
-            if (objectToExpand is IList)
+            if (objectToExpand is IList list)
             {
-                var list = ((IList) objectToExpand);
                 for (int i = 0; i < list.Count; i++)
-                    list[i] = ExpandVariables(list[i], expandDynamicVariable);
+                    list[i] = ExpandVariables(list[i], expandDynamicVariable, logger);
                 return list;
             }
             foreach (var propertyInfo in objectToExpand.GetType().GetRuntimeProperties())
@@ -304,7 +303,7 @@ namespace SharpGen.Config
                     if (method != null && !((bool)method.Invoke(objectToExpand, null)))
                         continue;
 
-                    propertyInfo.SetValue(objectToExpand, ExpandVariables(propertyInfo.GetValue(objectToExpand, null), expandDynamicVariable), null);
+                    propertyInfo.SetValue(objectToExpand, ExpandVariables(propertyInfo.GetValue(objectToExpand, null), expandDynamicVariable, logger), null);
                 }
             }
             return objectToExpand;
@@ -316,15 +315,15 @@ namespace SharpGen.Config
         /// </summary>
         /// <param name="variableName">Name of the variable.</param>
         /// <returns>the value of this variable</returns>
-        private string GetVariable(string variableName)
+        private string GetVariable(string variableName, Logger logger)
         {
             foreach (var keyValue in Variables)
             {
                 if (keyValue.Name == variableName)
-                    return ExpandString(keyValue.Value, false);
+                    return ExpandString(keyValue.Value, false, logger);
             }
             if (Parent != null)
-                return Parent.GetVariable(variableName);
+                return Parent.GetVariable(variableName, logger);
             return null;
         }
 
@@ -339,7 +338,7 @@ namespace SharpGen.Config
         /// </summary>
         /// <param name="str">The string to expand.</param>
         /// <returns>the expanded string</returns>
-        public string ExpandString(string str, bool expandDynamicVariable)
+        public string ExpandString(string str, bool expandDynamicVariable, Logger logger)
         {
             var result = str;
 
@@ -349,12 +348,12 @@ namespace SharpGen.Config
                 result = ReplaceVariableRegex.Replace(result, delegate(Match match)
                                                                 {
                                                                     string name = match.Groups[1].Value;
-                                                                    string localResult = GetVariable(name);
+                                                                    string localResult = GetVariable(name, logger);
                                                                     if (localResult == null)
                                                                         localResult = Environment.GetEnvironmentVariable(name);
                                                                     if (localResult == null)
                                                                     {
-                                                                        Logger.Error("Unable to substitute config/environment variable $({0}). Variable is not defined", name);
+                                                                        logger.Error("Unable to substitute config/environment variable $({0}). Variable is not defined", name);
                                                                         return "";
                                                                     }
                                                                     return localResult;
@@ -370,7 +369,7 @@ namespace SharpGen.Config
                                                                              string localResult;
                                                                              if (!GetRoot().DynamicVariables.TryGetValue(name, out localResult))
                                                                              {
-                                                                                 Logger.Error("Unable to substitute dynamic variable #({0}). Variable is not defined", name);
+                                                                                 logger.Error("Unable to substitute dynamic variable #({0}). Variable is not defined", name);
                                                                                  return "";
                                                                              }
                                                                              localResult = localResult.Trim('"');
@@ -380,7 +379,7 @@ namespace SharpGen.Config
             return result;
         }
 
-        private void PostLoad(ConfigFile parent, string file, string[] macros, IEnumerable<KeyValue> variables)
+        private void PostLoad(ConfigFile parent, string file, string[] macros, IEnumerable<KeyValue> variables, Logger logger)
         {
             FilePath = file;
             Parent = parent;
@@ -391,11 +390,11 @@ namespace SharpGen.Config
             // Load all dependencies
             foreach (var dependFile in Files)
             {
-                var dependFilePath = ExpandString(dependFile, false);
+                var dependFilePath = ExpandString(dependFile, false, logger);
                 if (!Path.IsPathRooted(dependFilePath))
                     dependFilePath = Path.Combine(Path.GetDirectoryName(AbsoluteFilePath), dependFilePath);
                 
-                var subMapping = Load(this, dependFilePath, macros, variables);
+                var subMapping = Load(this, dependFilePath, macros, variables, logger);
                 if (subMapping != null)
                 {
                     subMapping.FilePath = dependFile;
@@ -439,25 +438,25 @@ namespace SharpGen.Config
         /// <param name="parent">The parent.</param>
         /// <param name="file">The file.</param>
         /// <returns>The loaded config</returns>
-        private static ConfigFile Load(ConfigFile parent, string file, string[] macros, IEnumerable<KeyValue> variables)
+        private static ConfigFile Load(ConfigFile parent, string file, string[] macros, IEnumerable<KeyValue> variables, Logger logger)
         {
             var deserializer = new XmlSerializer(typeof(ConfigFile));
             ConfigFile config = null;
             try
             {
-                Logger.PushLocation(file);
+                logger.PushLocation(file);
                 config = (ConfigFile)deserializer.Deserialize(new StringReader(Preprocessor.Preprocess(File.ReadAllText(file), macros)));
 
                 if (config != null)
-                    config.PostLoad(parent, file, macros, variables);
+                    config.PostLoad(parent, file, macros, variables, logger);
             }
             catch (Exception ex)
             {
-                Logger.Error("Unable to parse file [{0}]", ex, file);
+                logger.Error("Unable to parse file [{0}]", ex, file);
             }
             finally
             {
-                Logger.PopLocation();
+                logger.PopLocation();
             }
             return config;
         }
@@ -472,7 +471,7 @@ namespace SharpGen.Config
 
         private Dictionary<string,ConfigFile> MapIdToFile = new Dictionary<string, ConfigFile>();
 
-        private void Verify()
+        private void Verify(Logger logger)
         {
             Depends.Remove("");
 
@@ -487,7 +486,7 @@ namespace SharpGen.Config
             {
 
 
-                includeDir.Path = ExpandString(includeDir.Path, false);
+                includeDir.Path = ExpandString(includeDir.Path, false, logger);
 
                 if (!includeDir.Path.StartsWith("=") && !Directory.Exists(includeDir.Path))
                     throw new DirectoryNotFoundException("Directory [" + includeDir.Path + "] not found in config file [" + Id + "]");
@@ -495,7 +494,7 @@ namespace SharpGen.Config
 
             // Verify all dependencies
             foreach (var mappingFile in References)
-                mappingFile.Verify();
+                mappingFile.Verify(logger);
         }
 
         /// <summary>
@@ -503,11 +502,11 @@ namespace SharpGen.Config
         /// </summary>
         /// <param name="file">The MappingFile.</param>
         /// <returns>The MappingFile loaded</returns>
-        public static ConfigFile Load(string file, string[] macros, params KeyValue[] variables)
+        public static ConfigFile Load(string file, string[] macros, Logger logger, params KeyValue[] variables)
         {
-            var root =  Load(null, file, macros, variables);
-            root.Verify();
-            root.ExpandVariables(false);
+            var root =  Load(null, file, macros, variables, logger);
+            root.Verify(logger);
+            root.ExpandVariables(false, logger);
             return root;
         }
 

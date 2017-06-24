@@ -76,10 +76,13 @@ using System.Text.RegularExpressions;
 {3}
     }}
 ";
-        public TemplateEngine()
+        public TemplateEngine(Logger logger)
         {
             _parameters = new Dictionary<string, ParameterValueType>();
+            Logger = logger;
         }
+
+        public Logger Logger { get; }
 
 
         /// <summary>
@@ -191,15 +194,9 @@ using System.Text.RegularExpressions;
             // Returns the text
             return templatizer.ToString();
         }
-
-        private static Dictionary<string, Assembly> templateAssemblyCache = new Dictionary<string, Assembly>();
-
+        
         private Assembly GenerateTemplateAssembly(string templateText, string templateName)
         {
-            if (templateAssemblyCache.ContainsKey(templateName))
-            {
-                return templateAssemblyCache[templateName];
-            }
             // Initialize TemplateEngine state
             _doTemplateCode = new StringBuilder();
             _doTemplateClassCode = new StringBuilder();
@@ -248,7 +245,7 @@ using System.Text.RegularExpressions;
                 MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Runtime.dll")),
                 MetadataReference.CreateFromFile(typeof(System.Text.RegularExpressions.Regex).GetTypeInfo().Assembly.Location)
             };
-            var compilation = CSharpCompilation.Create($"SharpGen.{templateName}", options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+            var compilation = CSharpCompilation.Create($"SharpGen.{templateName}.{Guid.NewGuid()}", options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
             compilation = compilation.AddReferences(returnList.ToArray());
 
             compilation = compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText(templateSourceCode));
@@ -276,7 +273,6 @@ using System.Text.RegularExpressions;
             {
                 Logger.Fatal("Template [{0}] contains error", templateName);
             }
-            templateAssemblyCache[templateName] = templateAssembly;
             return templateAssembly;
         }
 

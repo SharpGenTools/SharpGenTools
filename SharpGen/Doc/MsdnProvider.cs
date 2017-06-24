@@ -23,7 +23,7 @@ namespace SharpGen.Doc
 
         private int filesAddedToArchive = 0;
 
-        public MsdnProvider()
+        public MsdnProvider(Logger logger)
         {
             ArchiveName = "MSDNDoc.zip";
             UseArchive = true;
@@ -32,6 +32,7 @@ namespace SharpGen.Doc
             ReplaceName("([a-z0-9])A::", @"$1::");
             ReplaceName("W$", @"");
             ReplaceName("^_+", @"");
+            Logger = logger;
         }
 
         public void ReplaceName(string fromNameRegex, string toName)
@@ -53,6 +54,7 @@ namespace SharpGen.Doc
         /// Set to true to use a zip for caching documentation
         /// </summary>
         public bool UseArchive { get; set; }
+        public Logger Logger { get; private set; }
 
         /// <summary>
         /// Begin to request MSDN

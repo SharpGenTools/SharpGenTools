@@ -39,9 +39,9 @@ namespace SharpGen.Generator
         private CsTypeBase DefaultCallbackable;
         private CsTypeBase DefaultComObjectCallback;
 
-        public override void Init(TransformManager manager)
+        public override void Init(TransformManager manager, Logger logger)
         {
-            base.Init(manager);
+            base.Init(manager, logger);
             DefaultInterfaceCppObject = new CsInterface { Name = manager.GlobalNamespace.GetTypeName("CppObject") };
             DefaultCallbackable = new CsInterface { Name = manager.GlobalNamespace.GetTypeName("ICallbackable") };
             DefaultComObjectCallback = new CsInterface { Name = manager.GlobalNamespace.GetTypeName("ComObjectCallback") };

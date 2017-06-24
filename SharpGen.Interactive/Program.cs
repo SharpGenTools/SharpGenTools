@@ -36,17 +36,17 @@ namespace SharpGen.Interactive
         /// <summary>
         /// Runs code generation asynchronously.
         /// </summary>
-        public static void RunAsync()
+        public static void RunAsync(Logger logger)
         {
             try
             {
-                Logger.Progress(0, "Starting code generation...");
+                logger.Progress(0, "Starting code generation...");
 
                 _codeGenApp.Run();
             }
             catch(Exception ex)
             {
-                Logger.Fatal("Unexpected exception", ex);
+                logger.Fatal("Unexpected exception", ex);
             }
             finally
             {
@@ -126,11 +126,11 @@ namespace SharpGen.Interactive
         [STAThread]
         public static void Main(string[] args)
         {
-            Logger.LoggerOutput = new ConsoleLogger();
-            _progressForm = null;
+            _progressForm = new ProgressForm();
+            var logger = new Logger(new ConsoleLogger(), _progressForm);
             try
             {
-                _codeGenApp = new CodeGenApp()
+                _codeGenApp = new CodeGenApp(logger)
                 {
                     GlobalNamespace = new GlobalNamespaceProvider("SharpDX") // Fall back to SharpDX for now
                 };
@@ -142,30 +142,29 @@ namespace SharpGen.Interactive
                     {
                         Application.EnableVisualStyles();
                         Application.SetCompatibleTextRenderingDefault(false);
-                        _progressForm = new ProgressForm();
-                        Logger.ProgressReport = _progressForm;
+
                         _progressForm.Show();
 
-                        var runningThread = new Thread(RunAsync) {IsBackground = true};
+                        var runningThread = new Thread(() => RunAsync(logger)) {IsBackground = true};
                         runningThread.Start();
 
                         Application.Run(_progressForm);
                     }
                     else
                     {
-                        RunAsync();
+                        RunAsync(logger);
                     }
 
                 }
                 else
                 {
-                    Logger.Message("Latest code generation is up to date. No need to run code generation");
+                    logger.Message("Latest code generation is up to date. No need to run code generation");
                 }
 
             }
             catch(Exception ex)
             {
-                Logger.Fatal("Unexpected exception", ex);
+                logger.Fatal("Unexpected exception", ex);
             }
             Environment.Exit(0);
         }

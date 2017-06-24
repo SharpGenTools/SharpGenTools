@@ -52,24 +52,25 @@ namespace SharpGen.Generator
         /// <summary>
         /// Initializes a new instance of the <see cref="TransformManager"/> class.
         /// </summary>
-        public TransformManager(GlobalNamespaceProvider globalNamespace)
+        public TransformManager(GlobalNamespaceProvider globalNamespace, Logger logger)
         {
             GlobalNamespace = globalNamespace;
+            Logger = logger;
 
             NamingRules = new NamingRulesManager();
             Assemblies = new List<CsAssembly>();
 
             EnumTransform = new EnumTransform();
-            EnumTransform.Init(this);
+            EnumTransform.Init(this, logger);
 
             StructTransform = new StructTransform();
-            StructTransform.Init(this);
+            StructTransform.Init(this, logger);
 
             MethodTransform = new MethodTransform();
-            MethodTransform.Init(this);
+            MethodTransform.Init(this, logger);
 
             InterfaceTransform = new InterfaceTransform();
-            InterfaceTransform.Init(this);
+            InterfaceTransform.Init(this, logger);
             
             GeneratedPath = @".\";
         }
@@ -151,6 +152,9 @@ namespace SharpGen.Generator
         /// </summary>
         /// <value>The name of the current namespace.</value>
         private string CurrentNamespaceName { get; set; }
+        
+        public GlobalNamespaceProvider GlobalNamespace { get; }
+        public Logger Logger { get; }
 
         /// <summary>
         /// Initializes this instance with the specified C++ module and config.
@@ -529,7 +533,7 @@ namespace SharpGen.Generator
                 Logger.Fatal("Transform failed");
 
             // Configure TextTemplateEngine
-            var engine = new TemplateEngine();
+            var engine = new TemplateEngine(Logger);
             engine.OnInclude += TextTemplatingCallback;
             engine.SetParameter("Generator", this);
 
@@ -1208,7 +1212,6 @@ namespace SharpGen.Generator
 
         private static Regex regextWithMethodW = new Regex("([^W])::");
         private static Regex regexWithTypeW = new Regex("([^W])$");
-        public GlobalNamespaceProvider GlobalNamespace { get; }
 
         private string RegexReplaceCReference(Match match)
         {

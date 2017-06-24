@@ -39,7 +39,7 @@
 		for(int i  = 0; i < maxParam; i++) {
 			var param = method.Parameters[i];
 			if (i>0) {#>, <#+}
-			#><#= param.GetCallName(Generator.GlobalNamespace.GetTypeName("PointerSize") #><#+				
+			#><#= param.GetCallName(Generator.GlobalNamespace.GetTypeName("PointerSize")) #><#+				
 		}
 		if (method is CsFunction) {
 			if (!method.UseDllImport) {
@@ -120,7 +120,7 @@
 					
 					// Handle In-Optional
 					if (param.IsArray && param.IsValueType && !param.HasNativeValueType) {
-						if (param.IsOptionnal) {#>
+						if (param.IsOptional) {#>
                 <#= param.PublicType.QualifiedName #>[] <#= param.TempName #>_ = <#= param.Name #>;
 <#+						} 
 						continue;
@@ -129,7 +129,7 @@
 					if (param.HasNativeValueType) {
 						// If Native Marshalling and array, then marshal from managed array to a native managed array
 						if (param.IsArray) {
-							if (param.IsOptionnal) {#>
+							if (param.IsOptional) {#>
                 <#= param.PublicType.QualifiedName #>.__Native[] <#= param.TempName #>_ = (<#= param.Name #> == null)? null : new <#= param.PublicType.QualifiedName #>.__Native[<#= param.Name #>.Length];
 <#+								if (param.IsRefIn) {#>
 				if (<#= param.Name #> != null)
@@ -150,7 +150,7 @@
                 <#= param.PublicType.QualifiedName #>.__MarshalTo(ref <#= param.Name #>, ref <#= param.TempName #>);
 <#+							
 								} else {
-									if (param.IsOptionnal && param.IsStructClass) {#>
+									if (param.IsOptional && param.IsStructClass) {#>
                 if (<#= param.Name #> != null)
 <#+									}#>
                 <#= param.Name #>.__MarshalTo(ref <#= param.TempName #>);
@@ -165,7 +165,7 @@
                 int <#= param.TempName #>;
 <#+						} else if (param.IsComObject) {
 							if (param.IsArray) {
-								if (param.IsOptionnal) {#>
+								if (param.IsOptional) {#>
                 IntPtr* <#= param.TempName #> = stackalloc IntPtr[<#= param.Name #> == null ? 0 : <#= param.Name #>.Length];
 <#+	
 								} else {#>
@@ -179,7 +179,7 @@
 					} else if (param.IsArray) {
 						// Handle Array Of Interface [In]
 						if (param.IsComObject) {
-							if (param.IsIn && param.IsOptionnal) {#>
+							if (param.IsIn && param.IsOptional) {#>
                 IntPtr* <#= param.TempName #> = (IntPtr*)0;
                 if ( <#= param.Name #> != null ) {
                     IntPtr* <#= param.TempName #>_ = stackalloc IntPtr[<#= param.Name #>.Length];
@@ -199,7 +199,7 @@
 					// Handle Input String 
 					} else if (param.IsString && !param.IsWideChar) {#>
                 IntPtr <#= param.TempName #> = Utilities.StringToHGlobalAnsi(<#= param.Name #>);
-<#+					} else if ( param.IsRefIn && param.IsValueType && param.IsOptionnal) {#>
+<#+					} else if ( param.IsRefIn && param.IsValueType && param.IsOptional) {#>
                 <#= param.PublicType.QualifiedName #> <#= param.TempName #>;
                 if (<#= param.Name #>.HasValue)
                     <#= param.TempName #> = <#= param.Name #>.Value;				
@@ -220,7 +220,7 @@
 				// ---------------------------------------------------------------------------------------------------
 				foreach (var param in method.Parameters) {
 					if (param.IsArray && param.IsValueType) {
-						if (param.HasNativeValueType || param.IsOptionnal) {#>
+						if (param.HasNativeValueType || param.IsOptional) {#>
                 fixed (void* <#= param.TempName #> = <#= param.TempName #>_)
 <#+	
 						} else {#>
@@ -277,7 +277,7 @@
 						} else if (param.IsComObject ) {
 							var paramInterface = param.PublicType as CsInterface;
 							if (param.IsArray) {
-								if (param.IsOptionnal) {#>
+								if (param.IsOptional) {#>
                 if (<#= param.Name #> != null)
 <#+								}
 #>                for (int i = 0; i < <#= param.Name #>.Length; i++)
@@ -299,7 +299,7 @@
 <#+						
 					} else if (param.HasNativeValueType) {
 						if (param.IsArray) {
-							if (param.IsOptionnal) {#>
+							if (param.IsOptional) {#>
                 if (<#= param.Name #> != null )															
 <#+							}#>
                 for (int i = 0; i < <#= param.Name #>.Length; i++)
@@ -314,7 +314,7 @@
 								if (param.IsRef) {
 #>                <#= param.Name #>.__MarshalFrom(ref <#= param.TempName #>);
 <#+								}
-								if (param.IsOptionnal) {#>
+								if (param.IsOptional) {#>
                 if (<#= param.Name #> != null)
 <#+								}
 
@@ -328,7 +328,7 @@
 				// Return value if any
 				// ---------------------------------------------------------------------------------------------------
 				if (method.HasPublicReturnType) {
-					if ((method.ReturnType.PublicType.Name == Global.Name +".Result") && method.CheckReturnType) {#>
+					if ((method.ReturnType.PublicType.Name == Generator.GlobalNamespace.GetTypeName("Result")) && method.CheckReturnType) {#>
                 __result__.CheckError();
 <#+					}
 					if (method.HasReturnTypeParameter || method.ForceReturnType || !method.HideReturnType) {#>

@@ -37,9 +37,10 @@ namespace SharpGen
         /// <summary>
         /// Initializes a new instance of the <see cref="CodeGenApp"/> class.
         /// </summary>
-        public CodeGenApp()
+        public CodeGenApp(Logger logger)
         {
             Macros = new HashSet<string>();
+            Logger = logger;
         }
 
         /// <summary>
@@ -79,6 +80,8 @@ namespace SharpGen
         /// </summary>
         /// <remarks>Null is allowed, in which case sharpgen will use default</remarks>
         public string OutputDirectory { get; set; }
+
+        public Logger Logger { get; }
 
         /// <summary>
         /// Gets or sets the macros.
@@ -121,7 +124,7 @@ namespace SharpGen
             
             Macros.Add(AppType);
 
-            Config = ConfigFile.Load(ConfigRootPath, Macros.ToArray(), new KeyValue("VC_TOOLS_PATH", VcToolsPath));
+            Config = ConfigFile.Load(ConfigRootPath, Macros.ToArray(), Logger, new KeyValue("VC_TOOLS_PATH", VcToolsPath));
             var latestConfigTime = ConfigFile.GetLatestTimestamp(Config.ConfigFilesLoaded);
             
             _allConfigCheck = Config.Id + "-" + AppType + "-CodeGen.check";
@@ -156,7 +159,7 @@ namespace SharpGen
             try
             {
                 // Run the parser
-                var parser = new Parser.CppParser(GlobalNamespace)
+                var parser = new Parser.CppParser(GlobalNamespace, Logger)
                                  {
                                      IsGeneratingDoc = IsGeneratingDoc,
                                      DocProviderAssembly = DocProviderAssemblyPath,
@@ -177,7 +180,7 @@ namespace SharpGen
                     Logger.Fatal("C++ compiler failed to parse header files");
 
                 // Run the main mapping process
-                var transformer = new TransformManager(GlobalNamespace)
+                var transformer = new TransformManager(GlobalNamespace, Logger)
                 {
                     GeneratedPath = _generatedPath,
                     ForceGenerator = _isAssemblyNew,

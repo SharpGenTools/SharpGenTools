@@ -122,6 +122,8 @@ namespace SharpGen.Parser
         /// <value>The include directory list.</value>
         public List<IncludeDirRule> IncludeDirectoryList { get; private set; }
 
+        public Logger Logger { get; }
+
         /// <summary>
         /// List of error filters regexp.
         /// </summary>
@@ -130,10 +132,11 @@ namespace SharpGen.Parser
         /// <summary>
         /// Initializes a new instance of the <see cref="CastXml"/> class.
         /// </summary>
-        public CastXml()
+        public CastXml(Logger logger)
         {
             IncludeDirectoryList = new List<IncludeDirRule>();
             _filterErrors = new List<Regex>();
+            Logger = logger;
         }
 
         /// <summary>
@@ -407,7 +410,7 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="sender">The sender.</param>
         /// <param name="e">The <see cref="System.Diagnostics.DataReceivedEventArgs"/> instance containing the event data.</param>
-        static void ProcessOutputFromHeaderFile(object sender, DataReceivedEventArgs e)
+        void ProcessOutputFromHeaderFile(object sender, DataReceivedEventArgs e)
         {
             if (e.Data != null)
                 Logger.Message(e.Data);

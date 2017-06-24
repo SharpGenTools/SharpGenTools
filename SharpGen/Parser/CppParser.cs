@@ -75,10 +75,11 @@ namespace SharpGen.Parser
         /// <summary>
         /// Initializes a new instance of the <see cref="CppParser"/> class.
         /// </summary>
-        public CppParser(GlobalNamespaceProvider globalNamespace)
+        public CppParser(GlobalNamespaceProvider globalNamespace, Logger logger)
         {
             ForceParsing = false;
             this.globalNamespace = globalNamespace;
+            this.Logger = logger;
         }
 
         /// <summary>
@@ -107,6 +108,8 @@ namespace SharpGen.Parser
         /// <value>The CastXML executable path.</value>
         public string CastXmlExecutablePath { get; set; }
 
+        public Logger Logger { get; }
+
         /// <summary>
         /// Initialize this Parser from a root ConfigFile.
         /// </summary>
@@ -116,7 +119,7 @@ namespace SharpGen.Parser
             _configRoot = configRoot ?? throw new ArgumentNullException("configRoot");
 
             _configRootHeader = _configRoot.Id + ".h";
-            _gccxml = new CastXml {ExecutablePath = CastXmlExecutablePath};
+            _gccxml = new CastXml (Logger) {ExecutablePath = CastXmlExecutablePath};
 
             // Config is updated if ForceParsing is true
             _isConfigUpdated = ForceParsing;
@@ -452,7 +455,7 @@ namespace SharpGen.Parser
             }
 
             // Expand all variables with all dynamic variables
-            _configRoot.ExpandVariables(true);
+            _configRoot.ExpandVariables(true, Logger);
 
             return _group;
         }
@@ -1439,7 +1442,7 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="typeName">Name of the gccxml fundamental type.</param>
         /// <returns>a shorten form</returns>
-        private static string ConvertFundamentalType(string typeName)
+        private string ConvertFundamentalType(string typeName)
         {
             var types = typeName.Split(' ');
 
@@ -1517,7 +1520,7 @@ namespace SharpGen.Parser
         private void ApplyDocumentation()
         {
             // Use default MSDN doc provider
-            IDocProvider docProvider = new MsdnProvider();
+            IDocProvider docProvider = new MsdnProvider(Logger);
 
             // Try to load doc provider from an external assembly
             if (DocProviderAssembly != null)

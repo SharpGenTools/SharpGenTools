@@ -24,7 +24,7 @@ namespace SharpGen
     /// </summary>
     public class GlobalNamespaceProvider
     {
-        private string Name { get; }
+        public string Name { get; }
 
         public GlobalNamespaceProvider(string name)
         {

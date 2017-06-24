@@ -120,7 +120,7 @@ namespace SharpGen.Model
                     }
                     catch (Exception)
                     {
-                        Logger.Warning("Cannot load code comments from [{0}] for assembly [{1}]", codeCommentsFullPath, Name);
+                        // Failed to lode comments. Just swallow the exception.
                     }
                 }
                 return _codeComments;
