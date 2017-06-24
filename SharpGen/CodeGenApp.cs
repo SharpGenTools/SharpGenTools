@@ -94,6 +94,8 @@ namespace SharpGen
 
         private ConfigFile Config { get; set; }
 
+        public GlobalNamespaceProvider GlobalNamespace { get; set; }
+
         private string _thisAssemblyPath;
         private bool _isAssemblyNew;
         private DateTime _assemblyDatetime;
@@ -154,7 +156,7 @@ namespace SharpGen
             try
             {
                 // Run the parser
-                var parser = new Parser.CppParser
+                var parser = new Parser.CppParser(GlobalNamespace)
                                  {
                                      IsGeneratingDoc = IsGeneratingDoc,
                                      DocProviderAssembly = DocProviderAssemblyPath,
@@ -175,7 +177,7 @@ namespace SharpGen
                     Logger.Fatal("C++ compiler failed to parse header files");
 
                 // Run the main mapping process
-                var transformer = new TransformManager
+                var transformer = new TransformManager(GlobalNamespace)
                 {
                     GeneratedPath = _generatedPath,
                     ForceGenerator = _isAssemblyNew,

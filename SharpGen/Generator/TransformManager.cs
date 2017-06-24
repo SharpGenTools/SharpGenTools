@@ -52,8 +52,10 @@ namespace SharpGen.Generator
         /// <summary>
         /// Initializes a new instance of the <see cref="TransformManager"/> class.
         /// </summary>
-        public TransformManager()
+        public TransformManager(GlobalNamespaceProvider globalNamespace)
         {
+            GlobalNamespace = globalNamespace;
+
             NamingRules = new NamingRulesManager();
             Assemblies = new List<CsAssembly>();
 
@@ -68,7 +70,7 @@ namespace SharpGen.Generator
 
             InterfaceTransform = new InterfaceTransform();
             InterfaceTransform.Init(this);
-
+            
             GeneratedPath = @".\";
         }
 
@@ -874,7 +876,7 @@ namespace SharpGen.Generator
                 if (isTypeUsedInStruct)
                 {
                     // Special case for Size type, as it is default marshal to IntPtr for method parameter
-                    if (publicType.QualifiedName == Global.GetGlobalName("PointerSize"))
+                    if (publicType.QualifiedName == GlobalNamespace.GetTypeName("PointerSize"))
                         marshalType = null;
                 }
             }
@@ -1206,6 +1208,7 @@ namespace SharpGen.Generator
 
         private static Regex regextWithMethodW = new Regex("([^W])::");
         private static Regex regexWithTypeW = new Regex("([^W])$");
+        public GlobalNamespaceProvider GlobalNamespace { get; }
 
         private string RegexReplaceCReference(Match match)
         {

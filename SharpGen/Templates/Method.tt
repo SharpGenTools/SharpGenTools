@@ -39,7 +39,7 @@
 		for(int i  = 0; i < maxParam; i++) {
 			var param = method.Parameters[i];
 			if (i>0) {#>, <#+}
-			#><#= param.CallName #><#+				
+			#><#= param.GetCallName(Generator.GlobalNamespace.GetTypeName("PointerSize") #><#+				
 		}
 		if (method is CsFunction) {
 			if (!method.UseDllImport) {

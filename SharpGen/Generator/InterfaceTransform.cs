@@ -35,9 +35,17 @@ namespace SharpGen.Generator
     public class InterfaceTransform : TransformBase
     {
         private readonly Dictionary<Regex, InnerInterfaceMethod> _mapMoveMethodToInnerInterface = new Dictionary<Regex, InnerInterfaceMethod>();
-        private readonly CsTypeBase DefaultInterfaceCppObject = new CsInterface { Name = Global.GetGlobalName("CppObject") };
-        private readonly CsTypeBase DefaultCallbackable = new CsInterface { Name = Global.GetGlobalName("ICallbackable") };
-        private readonly CsTypeBase DefaultComObjectCallback = new CsInterface { Name = Global.GetGlobalName("ComObjectCallback") };
+        private CsTypeBase DefaultInterfaceCppObject;
+        private CsTypeBase DefaultCallbackable;
+        private CsTypeBase DefaultComObjectCallback;
+
+        public override void Init(TransformManager manager)
+        {
+            base.Init(manager);
+            DefaultInterfaceCppObject = new CsInterface { Name = manager.GlobalNamespace.GetTypeName("CppObject") };
+            DefaultCallbackable = new CsInterface { Name = manager.GlobalNamespace.GetTypeName("ICallbackable") };
+            DefaultComObjectCallback = new CsInterface { Name = manager.GlobalNamespace.GetTypeName("ComObjectCallback") };
+    }
 
         /// <summary>
         /// Moves the methods to an inner C# interface.
@@ -134,7 +142,7 @@ namespace SharpGen.Generator
                 {
                     // If Guid == null && BaseRoot != null && BaseRoot is a ComObject
                     // then we probably missed a guid
-                    if (rootBase != null && rootBase.QualifiedName == Global.GetGlobalName("ComObject"))
+                    if (rootBase != null && rootBase.QualifiedName == Manager.GlobalNamespace.GetTypeName("ComObject"))
                         Logger.Warning("cannot find GUID");
                 } 
                 else
@@ -236,7 +244,7 @@ namespace SharpGen.Generator
 
                 nativeCallback.Base = interfaceType.Base;
 
-                if (nativeCallback.IsBaseComObject)
+                if ((nativeCallback.Base as CsInterface)?.QualifiedName == Manager.GlobalNamespace.GetTypeName("ComObject"))
                 {
                     nativeCallback.Base = DefaultComObjectCallback;
                 }
@@ -292,14 +300,14 @@ namespace SharpGen.Generator
             // If interface is a callback and parent is ComObject, then remove it
             if (interfaceType.IsCallback)
             {
-                if (interfaceType.IsBaseComObject)
+                if ((interfaceType.Base as CsInterface)?.QualifiedName == Manager.GlobalNamespace.GetTypeName("ComObject"))
                     interfaceType.Base = null;
                 if (interfaceType.Base == null)
                     interfaceType.Base = DefaultCallbackable;
             }
         }
 
-        private static void DuplicateMethodSpecial(CsInterface interfaceType, CsMethod csMethod, CsTypeBase intPtrType)
+        private void DuplicateMethodSpecial(CsInterface interfaceType, CsMethod csMethod, CsTypeBase intPtrType)
         {
             bool hasComArrayLike = false;
             foreach(var csParameter in csMethod.Parameters)
@@ -319,7 +327,7 @@ namespace SharpGen.Generator
                 foreach (var csSubParameter in newMethod.Parameters)
                 {
                     if (csSubParameter.IsInComArrayLike)
-                        csSubParameter.PublicType = new CsComArray((CsInterface)csSubParameter.PublicType);
+                        csSubParameter.PublicType = new CsComArray((CsInterface)csSubParameter.PublicType, Manager.GlobalNamespace.GetTypeName("ComArray"));
                 }
                 interfaceType.Add(newMethod);
             }
@@ -350,7 +358,7 @@ namespace SharpGen.Generator
         /// TODO describe the convention to create properties from methods here.
         /// </summary>
         /// <param name="methods">The methods.</param>
-        private static void CreateProperties(IEnumerable<CsMethod> methods)
+        private void CreateProperties(IEnumerable<CsMethod> methods)
         {
             var cSharpProperties = new Dictionary<string, CsProperty>();
 
@@ -385,7 +393,7 @@ namespace SharpGen.Generator
                 // Check Getter
                 if (isGet)
                 {
-                    if ((cSharpMethod.IsHResult || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
+                    if ((cSharpMethod.ReturnType?.Name == Manager.GlobalNamespace.GetTypeName("Result") || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
                         parameterList[0].IsOut && !parameterList[0].IsArray)
                     {
                         csProperty.Getter = cSharpMethod;
@@ -408,7 +416,7 @@ namespace SharpGen.Generator
                 else
                 {
                     // Check Setter
-                    if ((cSharpMethod.IsHResult || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
+                    if ((cSharpMethod.ReturnType?.Name == Manager.GlobalNamespace.GetTypeName("Result") || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
                         (parameterList[0].IsRefIn || parameterList[0].IsIn || parameterList[0].IsRef) && !parameterList[0].IsArray)
                     {
                         csProperty.Setter = cSharpMethod;

@@ -25,17 +25,19 @@ namespace SharpGen.Model
     public class CsComArray : CsInterface
     {
         private CsInterface baseElement;
+        private string comArrayTypeName;
 
-        public CsComArray(CsInterface element) : base((CppInterface)element.CppElement)
+        public CsComArray(CsInterface element, string comArrayTypeName) : base((CppInterface)element.CppElement)
         {
             baseElement = element;
+            this.comArrayTypeName = comArrayTypeName;
         }
 
         public override string QualifiedName
         {
             get
             {
-                return Global.GetGlobalName($"ComArray<{baseElement.QualifiedName}>");
+                return $"{comArrayTypeName}<{baseElement.QualifiedName}>";
             }
         }
     }

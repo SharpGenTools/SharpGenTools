@@ -79,6 +79,7 @@ namespace SharpGen.Interactive
                                   {"od|outputdir=", "Specify the base output directory for the generated code", opt => app.OutputDirectory = opt },
                                   {"a|apptype=", "Specify what app type to generate code for (i.e. DESKTOP_APP or STORE_APP)", opt => app.AppType = opt },
                                   {"D:", "Define a macro that is used in the config files", m => app.Macros.Add(m) },
+                                  {"g|global=", "Specify the namespace with the infrastructure types such as ComObject and FunctionCallback", opt => app.GlobalNamespace = new GlobalNamespaceProvider(opt) },
                                   "",
                                   {"h|help", "Show this message and exit", opt => showHelp = opt != null},
                                   // default
@@ -129,7 +130,10 @@ namespace SharpGen.Interactive
             _progressForm = null;
             try
             {
-                _codeGenApp = new CodeGenApp();
+                _codeGenApp = new CodeGenApp()
+                {
+                    GlobalNamespace = new GlobalNamespaceProvider("SharpDX") // Fall back to SharpDX for now
+                };
                 ParseArguments(args, _codeGenApp);
 
                 if(_codeGenApp.Init())

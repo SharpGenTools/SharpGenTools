@@ -94,11 +94,6 @@ namespace SharpGen.Model
                 docItems.Add("<returns>" + GetReturnTypeDoc(manager) + "</returns>");
         }
 
-        public bool IsHResult
-        {
-            get { return HasReturnType && ReturnType.PublicType.Name == Global.GetGlobalName("Result"); }
-        }
-
         public bool IsReturnStructLarge
         {
             get

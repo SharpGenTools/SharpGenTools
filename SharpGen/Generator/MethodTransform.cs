@@ -96,9 +96,9 @@ namespace SharpGen.Generator
                 {
                     // Patch for Mono bug with structs marshalling and calli.
                     var returnQualifiedName = csMethod.ReturnType.PublicType.QualifiedName;
-                    if (returnQualifiedName == Global.GetGlobalName("Result"))
+                    if (returnQualifiedName == Manager.GlobalNamespace.GetTypeName("Result"))
                         cSharpInteropCalliSignature.ReturnType = typeof (int);
-                    else if (returnQualifiedName == Global.GetGlobalName("PointerSize"))
+                    else if (returnQualifiedName == Manager.GlobalNamespace.GetTypeName("PointerSize"))
                         cSharpInteropCalliSignature.ReturnType = typeof(void*);
                     else
                         cSharpInteropCalliSignature.ReturnType = csMethod.ReturnType.PublicType.QualifiedName;
@@ -120,7 +120,7 @@ namespace SharpGen.Generator
                 InteropType interopType;
                 string publicName = param.PublicType.QualifiedName;
                 // Patch for Mono bug with structs marshalling and calli.
-                if (publicName == Global.GetGlobalName("PointerSize"))
+                if (publicName == Manager.GlobalNamespace.GetTypeName("PointerSize"))
                 {
                     interopType = typeof(void*);
                 }
@@ -203,7 +203,8 @@ namespace SharpGen.Generator
             method.ReturnType = Manager.GetCsType<CsMarshalBase>(cppMethod.ReturnType);
 
             // Hide return type only if it is a HRESULT and AlwaysReturnHResult is false
-            if (method.CheckReturnType && method.ReturnType.PublicType != null && method.ReturnType.PublicType.QualifiedName == Global.GetGlobalName("Result"))
+            if (method.CheckReturnType && method.ReturnType.PublicType != null &&
+                method.ReturnType.PublicType.QualifiedName == Manager.GlobalNamespace.GetTypeName("Result"))
             {
                 method.HideReturnType = !method.AlwaysReturnHResult;
             }
@@ -294,7 +295,7 @@ namespace SharpGen.Generator
 
                         if ((cppAttribute & ParamAttribute.In) != 0)
                         {
-                            parameterAttribute = publicType.Type == typeof(IntPtr) || publicType.Name == Global.GetGlobalName("FunctionCallback") ||
+                            parameterAttribute = publicType.Type == typeof(IntPtr) || publicType.Name == Manager.GlobalNamespace.GetTypeName("FunctionCallback") ||
                                                  publicType.Type == typeof(string)
                                                      ? CsParameterAttribute.In
                                                      : CsParameterAttribute.RefIn;

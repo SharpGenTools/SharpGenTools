@@ -70,13 +70,15 @@ namespace SharpGen.Parser
         private readonly Dictionary<string, int> _mapIncludeToAnonymousEnumCount = new Dictionary<string, int>();
         readonly List<string> _filesWithCreateFromMacros = new List<string>();
         private bool _isConfigUpdated;
+        private GlobalNamespaceProvider globalNamespace;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CppParser"/> class.
         /// </summary>
-        public CppParser()
+        public CppParser(GlobalNamespaceProvider globalNamespace)
         {
             ForceParsing = false;
+            this.globalNamespace = globalNamespace;
         }
 
         /// <summary>
@@ -893,7 +895,7 @@ namespace SharpGen.Parser
                 if (_bindings.TryGetValue(baseTypeName, out string bindedValueTo))
                 {
                     if (baseTypeName != "IUnknown" && baseTypeName != "IDispatch" && (
-                            bindedValueTo == Global.GetGlobalName("ComObject")
+                            bindedValueTo == globalNamespace.GetTypeName("ComObject")
                             || bindedValueTo == "System.IntPtr"))
                     {
                         Logger.Error("Error binding interface type [{0}] defined in file [{1}]. Interface is inherited and binded to [{2}] and not valid for inheritance", baseTypeName, baseTypeFile, bindedValueTo);
