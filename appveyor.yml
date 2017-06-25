@@ -14,9 +14,6 @@ before_build:
 build:
   verbosity: minimal
 test_script:
-- ps: >-
-    pushd SharpGen.E2ETests
-
-    dotnet-xunit
-
-    popd
+-  ps: pushd SharpGen.E2ETests
+-  ps: dotnet xunit
+-  ps: popd
