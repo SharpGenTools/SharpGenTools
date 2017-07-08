@@ -1,0 +1,21 @@
+﻿<Project>
+  <UsingTask Condition="'$(MSBuildRuntimeType)' == 'Full'" AssemblyFile="../tools/net46/SharpGenTools.Sdk.dll" TaskName="SharpPatchTask" />
+  <UsingTask Condition="'$(MSBuildRuntimeType)' == 'Full'" AssemblyFile="../tools/net46/SharpGenTools.Sdk.dll" TaskName="SharpGenTask" />
+  <UsingTask Condition="'$(MSBuildRuntimeType)' == 'Core'" AssemblyFile="../tools/netstandard1.5/SharpGenTools.Sdk.dll" TaskName="SharpPatchTask" />
+  <UsingTask Condition="'$(MSBuildRuntimeType)' == 'Core'" AssemblyFile="../tools/netstandard1.5/SharpGenTools.Sdk.dll" TaskName="SharpGenTask" />
+  
+  <Target Name="GenerateSharpGenBindings" BeforeTargets="CoreCompile" DependsOnTargets="PrepareForBuild">
+    <SharpGenTask
+      CastXmlPath="$(CastXmlPath)"
+      AppType="$(SharpGenAppType)"
+      GenerateDocs="$(SharpGenGenerateDoc)"
+      GlobalNamespace="$(SharpGenGlobalNamespace)"
+      VcToolsPath="$(VCToolsDir)"
+      MappingFiles="@(SharpGenMapping)"
+      >
+    </SharpGenTask>
+  </Target>
+  <Target Name="PatchAssembly" AfterTargets="AfterBuild">
+    <SharpPatchTask AssemblyToPatch="$(TargetPath)" />
+  </Target>
+</Project>
