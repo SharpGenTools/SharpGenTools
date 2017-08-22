@@ -993,7 +993,9 @@ namespace SharpGen.Generator
                 {
                     try
                     {
+#pragma warning disable 0618
                         sizeOf = Marshal.SizeOf(type);
+#pragma warning restore 0618
                     }
                     catch (Exception)
                     {
