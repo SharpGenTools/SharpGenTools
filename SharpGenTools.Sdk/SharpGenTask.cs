@@ -19,7 +19,7 @@ namespace SharpGenTools.Sdk
         public string CastXmlPath { get; set; }
 
         [Required]
-        public string AppType { get; set; }
+        public string[] AppTypes { get; set; }
 
         [Required]
         public string GlobalNamespace { get; set; }
@@ -44,22 +44,25 @@ namespace SharpGenTools.Sdk
 
             try
             {
-                var codeGenApp = new CodeGenApp(new SharpGen.Logging.Logger(new MsBuildLogger(Log), null))
+                foreach (var appType in AppTypes)
                 {
-                    CastXmlExecutablePath = CastXmlPath,
-                    AppType = AppType,
-                    ConfigRootPath = MappingFiles[0].ItemSpec,
-                    GlobalNamespace = new GlobalNamespaceProvider(GlobalNamespace),
-                    IsGeneratingDoc = GenerateDocs,
-                    VcToolsPath = VcToolsPath
-                };
+                    var codeGenApp = new CodeGenApp(new SharpGen.Logging.Logger(new MsBuildLogger(Log), null))
+                    {
+                        CastXmlExecutablePath = CastXmlPath,
+                        AppType = appType,
+                        ConfigRootPath = MappingFiles[0].ItemSpec,
+                        GlobalNamespace = new GlobalNamespaceProvider(GlobalNamespace),
+                        IsGeneratingDoc = GenerateDocs,
+                        VcToolsPath = VcToolsPath
+                    };
 
-                if(!codeGenApp.Init())
-                {
-                    return false;
+                    if(!codeGenApp.Init())
+                    {
+                        return false;
+                    }
+                    codeGenApp.Run();
+                    // TODO: Get output items
                 }
-                codeGenApp.Run();
-                // TODO: Get output items
                 return true;
             }
             catch (CodeGenFailedException)

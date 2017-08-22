@@ -12,7 +12,7 @@
   <PropertyGroup>
     <SharpGenGenerateDoc>false</SharpGenGenerateDoc>
     <SharpGenGlobalNamespace>SharpGen</SharpGenGlobalNamespace>
-    <SharpGenAppType>1</SharpGenAppType>
+    <SharpGenAppTypes>1</SharpGenAppTypes>
     <CastXmlPath>../tools/CastXML/bin/castxml.exe</CastXmlPath>
   </PropertyGroup>
 </Project>
