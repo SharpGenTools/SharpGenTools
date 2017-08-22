@@ -108,6 +108,8 @@ namespace SharpGen.Parser
         /// <value>The CastXML executable path.</value>
         public string CastXmlExecutablePath { get; set; }
 
+        public string OutputPath { get; set; }
+
         public Logger Logger { get; }
 
         /// <summary>
@@ -118,8 +120,12 @@ namespace SharpGen.Parser
         {
             _configRoot = configRoot ?? throw new ArgumentNullException("configRoot");
 
-            _configRootHeader = _configRoot.Id + ".h";
-            _gccxml = new CastXml (Logger) {ExecutablePath = CastXmlExecutablePath};
+            _configRootHeader = Path.Combine(OutputPath, _configRoot.Id + ".h");
+            _gccxml = new CastXml (Logger)
+            {
+                ExecutablePath = CastXmlExecutablePath,
+                OutputPath = OutputPath,
+            };
 
             // Config is updated if ForceParsing is true
             _isConfigUpdated = ForceParsing;
@@ -287,13 +293,13 @@ namespace SharpGen.Parser
                         _includeIsAttached.Add(configFile.ExtensionId, true);
 
                     // Create Extension file name if it doesn't exist);
-                    if (!File.Exists(configFile.ExtensionFileName))
-                        File.WriteAllText(configFile.ExtensionFileName, "");
+                    if (!File.Exists(Path.Combine(OutputPath, configFile.ExtensionFileName)))
+                        File.WriteAllText(Path.Combine(OutputPath, configFile.ExtensionFileName), "");
                 }
 
                 var outputConfigStr = outputConfig.ToString();
 
-                var fileName = configFile.Id + ".h";
+                var fileName = Path.Combine(OutputPath, configFile.Id + ".h");
 
                 // Test if Last config file was generated. If not, then we need to generate it
                 // If it exists, then we need to test if it is the same than previous run
@@ -311,7 +317,7 @@ namespace SharpGen.Parser
                         Logger.Message("Config file changed for C++ headers [{0}]/[{1}]", configFile.Id, configFile.FilePath);
 
                     _isConfigUpdated = true;
-                    using (var file = File.OpenWrite($"{configFile.Id}.h"))
+                    using (var file = File.OpenWrite(fileName))
                     using (var fileWriter = new StreamWriter(file))
                     {
                         fileWriter.Write(outputConfigStr);

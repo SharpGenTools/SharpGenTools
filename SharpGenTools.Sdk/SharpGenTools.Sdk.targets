@@ -12,6 +12,7 @@
       GlobalNamespace="$(SharpGenGlobalNamespace)"
       VcToolsPath="$(VCToolsDir)"
       MappingFiles="@(SharpGenMapping)"
+      IntermediateOutputPath="$(IntermediateOutputPath)/SharpGen"
       >
     </SharpGenTask>
   </Target>

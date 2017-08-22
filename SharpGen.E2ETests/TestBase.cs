@@ -41,7 +41,7 @@ namespace SharpGen.E2ETests
                 VcToolsPath = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.10.25017\",
                 AppType = appType,
                 ConfigRootPath = Path.Combine(testDirectory.FullName, configName + "-Mapping.xml"),
-                EnableCheckFiles = false,
+                IntermediateOutputPath = testDirectory.FullName
             };
             codeGenApp.Init();
             codeGenApp.Run();

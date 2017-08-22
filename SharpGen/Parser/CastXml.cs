@@ -116,6 +116,8 @@ namespace SharpGen.Parser
         /// <value>The executable path.</value>
         public string ExecutablePath {get;set;}
 
+        public string OutputPath { get; set; }
+
         /// <summary>
         /// Gets or sets the include directory list.
         /// </summary>
@@ -173,7 +175,7 @@ namespace SharpGen.Parser
                                 RedirectStandardError = true,
                                 UseShellExecute = false,
                                 CreateNoWindow = true,
-                                WorkingDirectory = Directory.GetCurrentDirectory()
+                                WorkingDirectory = OutputPath
                             };
 
                             var arguments = GetCastXmlArgs();
@@ -300,7 +302,7 @@ namespace SharpGen.Parser
                         RedirectStandardError = true,
                         UseShellExecute = false,
                         CreateNoWindow = true,
-                        WorkingDirectory = Directory.GetCurrentDirectory()
+                        WorkingDirectory = OutputPath
                     };
 
                     // Delete any previously generated xml file
@@ -332,7 +334,6 @@ namespace SharpGen.Parser
                 else
                 {
                     result = File.OpenText(xmlFile);
-
                 }
             });
 

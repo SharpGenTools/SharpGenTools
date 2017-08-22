@@ -30,6 +30,9 @@ namespace SharpGenTools.Sdk
         [Required]
         public string VcToolsPath { get; set; }
 
+        [Required]
+        public string IntermediateOutputPath { get; set; }
+
         public override bool Execute()
         {
             if (MappingFiles.Length == 0)
@@ -53,7 +56,8 @@ namespace SharpGenTools.Sdk
                         ConfigRootPath = MappingFiles[0].ItemSpec,
                         GlobalNamespace = new GlobalNamespaceProvider(GlobalNamespace),
                         IsGeneratingDoc = GenerateDocs,
-                        VcToolsPath = VcToolsPath
+                        VcToolsPath = VcToolsPath,
+                        IntermediateOutputPath = IntermediateOutputPath
                     };
 
                     if(!codeGenApp.Init())

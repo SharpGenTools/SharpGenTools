@@ -161,7 +161,7 @@ namespace SharpGen.Generator
         /// </summary>
         /// <param name="cppModule">The C++ module.</param>
         /// <param name="config">The root config file.</param>
-        public void Init(CppModule cppModule, ConfigFile config, bool enableCheckFiles)
+        public void Init(CppModule cppModule, ConfigFile config, string checkFilesPath)
         {
             CppModule = cppModule;
             var configFiles = config.ConfigFilesLoaded;
@@ -173,7 +173,7 @@ namespace SharpGen.Generator
 
             // Check which assembly to update
             foreach (var assembly in Assemblies)
-                CheckAssemblyUpdate(assembly, enableCheckFiles);
+                CheckAssemblyUpdate(assembly, checkFilesPath);
 
 
             int numberOfConfigFilesToParse = 0;
@@ -245,21 +245,13 @@ namespace SharpGen.Generator
         /// Checks the assembly is up to date relative to its config dependencies.
         /// </summary>
         /// <param name="assembly">The assembly.</param>
-        private void CheckAssemblyUpdate(CsAssembly assembly, bool enableCheckFiles)
+        private void CheckAssemblyUpdate(CsAssembly assembly, string checkFilesPath)
         {
-            if (!enableCheckFiles)
-            {
-                assembly.IsToUpdate = true;
-                foreach (var linkedConfigFile in assembly.ConfigFilesLinked)
-                    linkedConfigFile.IsMappingToProcess = true;
-                return;
-            }
-
             var maxUpdateTime = ConfigFile.GetLatestTimestamp(assembly.ConfigFilesLinked);
 
             if (File.Exists(assembly.CheckFileName))
             {
-                if (maxUpdateTime > File.GetLastWriteTime(assembly.CheckFileName))
+                if (maxUpdateTime > File.GetLastWriteTime(Path.Combine(checkFilesPath, assembly.CheckFileName)))
                     assembly.IsToUpdate = true;
             }
             else
@@ -525,7 +517,7 @@ namespace SharpGen.Generator
         /// <summary>
         /// Generates the C# code.
         /// </summary>
-        public void Generate(bool enableCheckFiles)
+        public void Generate(string checkFilesPath)
         {
             Transform();
 
@@ -626,16 +618,13 @@ namespace SharpGen.Generator
                     }
                 }
             }
-            if (enableCheckFiles)
+            // Update check files for all assemblies
+            var processTime = DateTime.Now;
+            foreach (CsAssembly assembly in Assemblies)
             {
-                // Update check files for all assemblies
-                var processTime = DateTime.Now;
-                foreach (CsAssembly assembly in Assemblies)
-                {
-                    File.WriteAllText(assembly.CheckFileName, "");
-                    File.SetLastWriteTime(assembly.CheckFileName, processTime);
-                } 
-            }
+                File.WriteAllText(Path.Combine(checkFilesPath, assembly.CheckFileName), "");
+                File.SetLastWriteTime(Path.Combine(checkFilesPath, assembly.CheckFileName), processTime);
+            } 
         }
 
         /// <summary>

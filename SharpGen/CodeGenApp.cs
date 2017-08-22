@@ -93,7 +93,7 @@ namespace SharpGen
 
         public string ConfigRootPath { get; set; }
 
-        public bool EnableCheckFiles { get; set; } = true;
+        public string IntermediateOutputPath { get; set; } = "";
 
         private ConfigFile Config { get; set; }
 
@@ -115,9 +115,9 @@ namespace SharpGen
         public bool Init()
         {
             _thisAssemblyPath = GetType().GetTypeInfo().Assembly.Location;
-            _assemblyCheckFile = Path.ChangeExtension(_thisAssemblyPath, ".check-" + AppType);
+            _assemblyCheckFile = Path.Combine(IntermediateOutputPath, $"SharpGen.{AppType}.check");
             _assemblyDatetime = File.GetLastWriteTime(_thisAssemblyPath);
-            _isAssemblyNew = (File.GetLastWriteTime(_thisAssemblyPath) != File.GetLastWriteTime(_assemblyCheckFile));
+            _isAssemblyNew = (_assemblyDatetime != File.GetLastWriteTime(_assemblyCheckFile));
             _generatedPath = OutputDirectory != null ? Path.GetDirectoryName(OutputDirectory) : Path.GetDirectoryName(ConfigRootPath);
 
             Logger.Message("Loading config files...");
@@ -127,26 +127,22 @@ namespace SharpGen
             Config = ConfigFile.Load(ConfigRootPath, Macros.ToArray(), Logger, new KeyValue("VC_TOOLS_PATH", VcToolsPath));
             var latestConfigTime = ConfigFile.GetLatestTimestamp(Config.ConfigFilesLoaded);
             
-            _allConfigCheck = Config.Id + "-" + AppType + "-CodeGen.check";
+            _allConfigCheck = Path.Combine(IntermediateOutputPath, Config.Id + "-" + AppType + "-CodeGen.check");
 
-            if (EnableCheckFiles)
+            var isConfigFileChanged = !File.Exists(_allConfigCheck) || latestConfigTime > File.GetLastWriteTime(_allConfigCheck);
+
+            if (_isAssemblyNew)
             {
-                var isConfigFileChanged = !File.Exists(_allConfigCheck) || latestConfigTime > File.GetLastWriteTime(_allConfigCheck);
-
-                if (_isAssemblyNew)
-                {
-                    Logger.Message("Assembly [{0}] changed. All files will be generated", _thisAssemblyPath);
-                }
-                else if (isConfigFileChanged)
-                {
-                    Logger.Message("Config files [{0}] changed", string.Join(",", Config.ConfigFilesLoaded.Select(file => Path.GetFileName(file.AbsoluteFilePath))));
-                }
-
-
-                // Return true if a config file changed or the assembly changed
-                return isConfigFileChanged || _isAssemblyNew;
+                Logger.Message("Assembly [{0}] changed. All files will be generated", _thisAssemblyPath);
             }
-            return true;
+            else if (isConfigFileChanged)
+            {
+                Logger.Message("Config files [{0}] changed", string.Join(",", Config.ConfigFilesLoaded.Select(file => Path.GetFileName(file.AbsoluteFilePath))));
+            }
+
+
+            // Return true if a config file changed or the assembly changed
+            return isConfigFileChanged || _isAssemblyNew;
         }
 
         /// <summary>
@@ -164,7 +160,8 @@ namespace SharpGen
                                      IsGeneratingDoc = IsGeneratingDoc,
                                      DocProviderAssembly = DocProviderAssemblyPath,
                                      ForceParsing = _isAssemblyNew,
-                                     CastXmlExecutablePath = CastXmlExecutablePath
+                                     CastXmlExecutablePath = CastXmlExecutablePath,
+                                     OutputPath = IntermediateOutputPath
                                  };
 
                 // Init the parser
@@ -187,12 +184,12 @@ namespace SharpGen
                     AppType = AppType
                 };
 
-                transformer.Init(group, Config, EnableCheckFiles);
+                transformer.Init(group, Config, IntermediateOutputPath);
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Mapping rules initialization failed");
 
-                transformer.Generate(EnableCheckFiles);
+                transformer.Generate(IntermediateOutputPath);
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Code generation failed");
@@ -209,16 +206,13 @@ namespace SharpGen
                     transformer.NamingRules.DumpRenames(fileWriter);
                 }
 
-                if (EnableCheckFiles)
-                {
-                    // Update Checkfile for assembly
-                    File.WriteAllText(_assemblyCheckFile, "");
-                    File.SetLastWriteTime(_assemblyCheckFile, _assemblyDatetime);
+                // Update Checkfile for assembly
+                File.WriteAllText(_assemblyCheckFile, "");
+                File.SetLastWriteTime(_assemblyCheckFile, _assemblyDatetime);
 
-                    // Update Checkfile for all config files
-                    File.WriteAllText(_allConfigCheck, "");
-                    File.SetLastWriteTime(_allConfigCheck, DateTime.Now);
-                }
+                // Update Checkfile for all config files
+                File.WriteAllText(_allConfigCheck, "");
+                File.SetLastWriteTime(_allConfigCheck, DateTime.Now);
             }
             finally
             {
