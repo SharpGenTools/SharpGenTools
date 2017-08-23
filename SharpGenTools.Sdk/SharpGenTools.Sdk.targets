@@ -5,6 +5,7 @@
   <UsingTask Condition="'$(MSBuildRuntimeType)' == 'Core'" AssemblyFile="../tools/netstandard1.5/SharpGenTools.Sdk.dll" TaskName="SharpGenTask" />
   
   <Target Name="GenerateSharpGenBindings" BeforeTargets="CoreCompile" DependsOnTargets="PrepareForBuild" Outputs="@(SharpGenMapping->'$(IntermediateOutputPath)\%(Filename)-$(AppType).check')">
+    <MakeDir Directories="$(IntermediateOutputPath)/SharpGen" />
     <SharpGenTask
       CastXmlPath="$(CastXmlPath)"
       AppTypes="$(SharpGenAppType)"
@@ -12,7 +13,7 @@
       GlobalNamespace="$(SharpGenGlobalNamespace)"
       VcToolsPath="$(VCToolsDir)"
       MappingFiles="@(SharpGenMapping)"
-      IntermediateOutputPath="$(IntermediateOutputPath)/SharpGen"
+      IntermediateOutputPath="$(MSBuildProjectDirectory)\$(IntermediateOutputPath)SharpGen"
       >
     </SharpGenTask>
   </Target>

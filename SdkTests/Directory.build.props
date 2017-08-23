@@ -3,6 +3,7 @@
         <RestorePackagesPath>$(MSBuildThisFileDirectory)RestoredPackages/</RestorePackagesPath>
         <RestoreNoCache>true</RestoreNoCache>
         <RestoreSources>$(RestoreSources);$(MSBuildThisFileDirectory)LocalPackages</RestoreSources>
+        <VsInstallRoot>C:\Program Files (x86)\Microsoft Visual Studio\2017\Community</VsInstallRoot>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="SharpGenTools.Sdk" Version="1.0.0-test" />

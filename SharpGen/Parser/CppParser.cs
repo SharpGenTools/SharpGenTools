@@ -419,7 +419,7 @@ namespace SharpGen.Parser
                     Logger.Progress(30, progressMessage);
 
                     // Save back the C++ parsed includes
-                    _group.Write(GroupFileName);
+                    _group.Write(Path.Combine(OutputPath, GroupFileName));
                 }
                 catch (Exception ex)
                 {
@@ -430,7 +430,7 @@ namespace SharpGen.Parser
                    xmlReader?.Dispose();
 
                     // Write back GCCXML document on the disk
-                    using (var stream = File.OpenWrite(GccXmlFileName))
+                    using (var stream = File.OpenWrite(Path.Combine(OutputPath, GccXmlFileName)))
                     {
                         GccXmlDoc?.Save(stream); 
                     }
@@ -440,7 +440,7 @@ namespace SharpGen.Parser
             else
             {
                 Logger.Progress(10, "Config files unchanged. Read previous C++ parsing...");
-                _group = CppModule.Read(GroupFileName);
+                _group = CppModule.Read(Path.Combine(OutputPath, GroupFileName));
             }
 
             IncludeMacroCounts = new Dictionary<string, int>();
