@@ -4,10 +4,10 @@
   <UsingTask Condition="'$(MSBuildRuntimeType)' == 'Core'" AssemblyFile="../tools/netstandard1.5/SharpGenTools.Sdk.dll" TaskName="SharpPatchTask" />
   <UsingTask Condition="'$(MSBuildRuntimeType)' == 'Core'" AssemblyFile="../tools/netstandard1.5/SharpGenTools.Sdk.dll" TaskName="SharpGenTask" />
   
-  <Target Name="GenerateSharpGenBindings" BeforeTargets="CoreCompile" DependsOnTargets="PrepareForBuild">
+  <Target Name="GenerateSharpGenBindings" BeforeTargets="CoreCompile" DependsOnTargets="PrepareForBuild" Outputs="@(SharpGenMapping->'$(IntermediateOutputPath)\%(Filename)-$(AppType).check')">
     <SharpGenTask
       CastXmlPath="$(CastXmlPath)"
-      AppTypes="$(SharpGenAppTypes)"
+      AppTypes="$(SharpGenAppType)"
       GenerateDocs="$(SharpGenGenerateDoc)"
       GlobalNamespace="$(SharpGenGlobalNamespace)"
       VcToolsPath="$(VCToolsDir)"

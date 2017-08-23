@@ -12,7 +12,7 @@ namespace SharpPatch
     class AssemblyResolver : IAssemblyResolver // Code adapted from https://github.com/jbevain/cecil/issues/306
     {
         Dictionary<string, Lazy<AssemblyDefinition>> _libraries;
-        public AssemblyResolver(DependencyContext context)
+        public AssemblyResolver(DependencyContext context, string currentPath)
         {
             _libraries = new Dictionary<string, Lazy<AssemblyDefinition>>();
 
@@ -22,10 +22,12 @@ namespace SharpPatch
                 var path = library.Assemblies.FirstOrDefault();
                 if (string.IsNullOrEmpty(path))
                     continue;
-                if (path.StartsWith("lib") && path.StartsWith("ref"))
+                if (path.StartsWith("lib") || path.StartsWith("ref"))
                     _libraries.Add(library.Name.ToLower(), ResolveNugetAssemblyPath(library.Path, path));
-                else
+                else if (path.StartsWith(".NET"))
                     _libraries.Add(library.Name.ToLower(), ResolveFrameworkAssemblyPath(path));
+                else
+                    _libraries.Add(library.Name.ToLower(), ResolveRefsAssembly(currentPath, path));
             }
         }
         /// <summary>
@@ -70,6 +72,13 @@ namespace SharpPatch
         {
             var assemblyPath = Path.Combine(homeDir.Value, ".nuget", "packages", package, path);
 
+            return new Lazy<AssemblyDefinition>(() =>
+                AssemblyDefinition.ReadAssembly(assemblyPath, new ReaderParameters() { AssemblyResolver = this }));
+        }
+
+        private Lazy<AssemblyDefinition> ResolveRefsAssembly(string path, string package)
+        {
+            var assemblyPath = Path.Combine(path, "refs", package);
             return new Lazy<AssemblyDefinition>(() =>
                 AssemblyDefinition.ReadAssembly(assemblyPath, new ReaderParameters() { AssemblyResolver = this }));
         }

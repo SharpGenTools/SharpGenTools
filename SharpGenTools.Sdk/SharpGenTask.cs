@@ -4,6 +4,7 @@ using SharpGen;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.IO;
 
 namespace SharpGenTools.Sdk
 {
@@ -35,43 +36,42 @@ namespace SharpGenTools.Sdk
 
         public override bool Execute()
         {
-            if (MappingFiles.Length == 0)
-            {
-                return true;
-            }
-            if (MappingFiles.Length != 1)
-            {
-                Log.LogError("Only one root MappingFile is supported.");
-                return false;
-            }
-
+            List<ITaskItem> outputItems = new List<ITaskItem>();
             try
             {
-                foreach (var appType in AppTypes)
+                foreach (var mappingFile in MappingFiles)
                 {
-                    var codeGenApp = new CodeGenApp(new SharpGen.Logging.Logger(new MsBuildLogger(Log), null))
+                    foreach (var appType in AppTypes)
                     {
-                        CastXmlExecutablePath = CastXmlPath,
-                        AppType = appType,
-                        ConfigRootPath = MappingFiles[0].ItemSpec,
-                        GlobalNamespace = new GlobalNamespaceProvider(GlobalNamespace),
-                        IsGeneratingDoc = GenerateDocs,
-                        VcToolsPath = VcToolsPath,
-                        IntermediateOutputPath = IntermediateOutputPath
-                    };
+                        var codeGenApp = new CodeGenApp(new SharpGen.Logging.Logger(new MsBuildLogger(Log), null))
+                        {
+                            CastXmlExecutablePath = CastXmlPath,
+                            AppType = appType,
+                            ConfigRootPath = mappingFile.ItemSpec,
+                            GlobalNamespace = new GlobalNamespaceProvider(GlobalNamespace),
+                            IsGeneratingDoc = GenerateDocs,
+                            VcToolsPath = VcToolsPath,
+                            IntermediateOutputPath = IntermediateOutputPath
+                        };
 
-                    if(!codeGenApp.Init())
-                    {
-                        return false;
+                        if(!codeGenApp.Init())
+                        {
+                            return false;
+                        }
+                        codeGenApp.Run();
+                        outputItems.Add(new TaskItem(Path.Combine(IntermediateOutputPath, $"{mappingFile.GetMetadata("Filename")}-{appType}.check")));
+                        outputItems.Add(new TaskItem(Path.Combine(IntermediateOutputPath, $"{mappingFile.GetMetadata("Filename")}-{appType}-CodeGen.check")));
                     }
-                    codeGenApp.Run();
-                    // TODO: Get output items
                 }
                 return true;
             }
             catch (CodeGenFailedException)
             {
                 return false;
+            }
+            finally
+            {
+                GeneratedFiles = outputItems.ToArray();
             }
         }
     }

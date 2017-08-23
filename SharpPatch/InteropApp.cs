@@ -721,7 +721,7 @@ namespace SharpPatch
             using (var depsFile = File.OpenRead(depsFilePath))
             {
                 var reader = new DependencyContextJsonReader();
-                var resolver = new AssemblyResolver(reader.Read(depsFile)); 
+                var resolver = new AssemblyResolver(reader.Read(depsFile), Path.GetDirectoryName(file)); 
                 readerParameters.AssemblyResolver = resolver;
             }
 
