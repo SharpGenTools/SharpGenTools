@@ -240,7 +240,7 @@ using System.Text.RegularExpressions;
             {
                 MetadataReference.CreateFromFile(GetType().GetTypeInfo().Assembly.Location),
                 MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "mscorlib.dll")),
-                MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Private.CoreLib.dll")),
+                MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location),
                 MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Collections.dll")),
                 MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Runtime.dll")),
                 MetadataReference.CreateFromFile(typeof(System.Text.RegularExpressions.Regex).GetTypeInfo().Assembly.Location)

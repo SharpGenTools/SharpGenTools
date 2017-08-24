@@ -12,7 +12,7 @@
   <PropertyGroup>
     <SharpGenGenerateDoc>false</SharpGenGenerateDoc>
     <SharpGenGlobalNamespace>SharpGen</SharpGenGlobalNamespace>
-    <SharpGenAppType>1</SharpGenAppType>
+    <SharpGenAppType>true</SharpGenAppType>
     <CastXmlPath>$(MSBuildThisFileDirectory)../tools/CastXML/bin/castxml.exe</CastXmlPath>
     <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>

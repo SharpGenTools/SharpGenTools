@@ -13,9 +13,6 @@ namespace SharpGenTools.Sdk
         [Required]
         public ITaskItem[] MappingFiles { get; set; }
 
-        [Output]
-        public ITaskItem[] GeneratedFiles { get; set; }
-
         [Required]
         public string CastXmlPath { get; set; }
 
@@ -24,7 +21,7 @@ namespace SharpGenTools.Sdk
 
         [Required]
         public string GlobalNamespace { get; set; }
-        
+
         [Required]
         public bool GenerateDocs { get; set; }
 
@@ -36,7 +33,7 @@ namespace SharpGenTools.Sdk
 
         public override bool Execute()
         {
-            List<ITaskItem> outputItems = new List<ITaskItem>();
+            BindingRedirectResolution.Enable();
             try
             {
                 foreach (var mappingFile in MappingFiles)
@@ -56,11 +53,8 @@ namespace SharpGenTools.Sdk
 
                         if(!codeGenApp.Init())
                         {
-                            return false;
                         }
                         codeGenApp.Run();
-                        outputItems.Add(new TaskItem(Path.Combine(IntermediateOutputPath, $"{mappingFile.GetMetadata("Filename")}-{appType}.check")));
-                        outputItems.Add(new TaskItem(Path.Combine(IntermediateOutputPath, $"{mappingFile.GetMetadata("Filename")}-{appType}-CodeGen.check")));
                     }
                 }
                 return true;
@@ -68,10 +62,6 @@ namespace SharpGenTools.Sdk
             catch (CodeGenFailedException)
             {
                 return false;
-            }
-            finally
-            {
-                GeneratedFiles = outputItems.ToArray();
             }
         }
     }

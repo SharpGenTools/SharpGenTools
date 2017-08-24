@@ -14,6 +14,7 @@ namespace SharpGenTools.Sdk
 
         public override bool Execute()
         {
+            BindingRedirectResolution.Enable();
             var patchApp = new InteropApp();
             return patchApp.PatchFile(AssemblyToPatch);
         }

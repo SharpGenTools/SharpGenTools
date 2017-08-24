@@ -17,7 +17,10 @@
       >
     </SharpGenTask>
   </Target>
-  <Target Name="PatchAssembly" AfterTargets="AfterBuild">
+  <Target Name="CleanSharpGenBindings" AfterTargets="Clean">
+    <Delete Files="$(IntermediateOutputPath)/SharpGen/**/*" />
+  </Target>
+  <Target Name="PatchAssembly" AfterTargets="CopyFilesToOutputDirectory" BeforeTargets="IncrementalClean">
     <SharpPatchTask AssemblyToPatch="$(TargetPath)" />
   </Target>
 </Project>
