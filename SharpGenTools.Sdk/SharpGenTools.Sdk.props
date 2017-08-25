@@ -1,6 +1,9 @@
 ﻿<Project>
+  <PropertyGroup>
+    <VsInstallRoot Condition="'$(VsInstallRoot)' != ''">$(VSINSTALLDIR)</VsInstallRoot>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(VsInstallRoot)' != ''">
-    <VCInstallDir Condition="'$(VCInstallDir)' == ''">$(VsInstallRoot)\VC\</VCInstallDir>
+    <VCInstallDir>$(VsInstallRoot)\VC\</VCInstallDir>
   </PropertyGroup>
   <PropertyGroup>
     <VCToolsVersionProps Condition="'$(VCToolsVersionProps)' == ''">$(VCInstallDir)Auxiliary\Build\Microsoft.VCToolsVersion.default.props</VCToolsVersionProps>

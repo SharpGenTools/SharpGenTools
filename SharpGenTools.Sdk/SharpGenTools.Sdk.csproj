@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="_._" PackagePath="lib/netstandard1.0" />
+    <Content Include="_._" PackagePath="lib/netstandard1.0;lib/net40" />
     <Content Include="../CastXML/**/*" PackagePath="tools/_/%(Identity)" />
     <Content Include="**/*.props" Exclude="obj/**" PackagePath="build;buildCrossTargeting" />
     <Content Include="**/*.targets" Exclude="obj/**" PackagePath="build;buildCrossTargeting" />
