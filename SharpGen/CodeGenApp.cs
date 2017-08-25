@@ -81,6 +81,10 @@ namespace SharpGen
         /// <remarks>Null is allowed, in which case sharpgen will use default</remarks>
         public string OutputDirectory { get; set; }
 
+        public bool IncludeAssemblyNameFolder { get; set; }
+
+        public string GeneratedCodeFolder { get; set; }
+
         public Logger Logger { get; }
 
         /// <summary>
@@ -118,7 +122,9 @@ namespace SharpGen
             _assemblyCheckFile = Path.Combine(IntermediateOutputPath, $"SharpGen.{AppType}.check");
             _assemblyDatetime = File.GetLastWriteTime(_thisAssemblyPath);
             _isAssemblyNew = (_assemblyDatetime != File.GetLastWriteTime(_assemblyCheckFile));
-            _generatedPath = OutputDirectory != null ? Path.GetDirectoryName(OutputDirectory) : Path.GetDirectoryName(ConfigRootPath);
+            _generatedPath = OutputDirectory != null ?
+                Path.GetDirectoryName(OutputDirectory)
+                : Path.GetDirectoryName(Path.GetFullPath(ConfigRootPath));
 
             Logger.Message("Loading config files...");
             
@@ -180,6 +186,8 @@ namespace SharpGen
                 var transformer = new TransformManager(GlobalNamespace, Logger)
                 {
                     GeneratedPath = _generatedPath,
+                    IncludeAssemblyNameFolder = IncludeAssemblyNameFolder,
+                    GeneratedCodeFolder = GeneratedCodeFolder,
                     ForceGenerator = _isAssemblyNew,
                     AppType = AppType
                 };

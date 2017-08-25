@@ -31,6 +31,11 @@ namespace SharpGenTools.Sdk
         [Required]
         public string IntermediateOutputPath { get; set; }
 
+        public string GeneratedCodeFolder { get; private set; }
+        
+        [Required]
+        public bool IncludeAssemblyNameFolder { get; private set; }
+
         public override bool Execute()
         {
             BindingRedirectResolution.Enable();
@@ -48,7 +53,9 @@ namespace SharpGenTools.Sdk
                             GlobalNamespace = new GlobalNamespaceProvider(GlobalNamespace),
                             IsGeneratingDoc = GenerateDocs,
                             VcToolsPath = VcToolsPath,
-                            IntermediateOutputPath = IntermediateOutputPath
+                            IntermediateOutputPath = IntermediateOutputPath,
+                            IncludeAssemblyNameFolder = IncludeAssemblyNameFolder,
+                            GeneratedCodeFolder = GeneratedCodeFolder
                         };
 
                         if(!codeGenApp.Init())

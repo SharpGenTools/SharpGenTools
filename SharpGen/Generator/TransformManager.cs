@@ -155,6 +155,8 @@ namespace SharpGen.Generator
         
         public GlobalNamespaceProvider GlobalNamespace { get; }
         public Logger Logger { get; }
+        public string GeneratedCodeFolder { get; internal set; }
+        public bool IncludeAssemblyNameFolder { get; internal set; }
 
         /// <summary>
         /// Initializes this instance with the specified C++ module and config.
@@ -553,7 +555,7 @@ namespace SharpGen.Generator
 
                     engine.SetParameter("Assembly", csAssembly);
 
-                    string generatedDirectoryForAssembly = Path.Combine(csAssembly.RootDirectory, "Generated", AppType);
+                    string generatedDirectoryForAssembly = Path.Combine(csAssembly.RootDirectory, GeneratedCodeFolder ?? "Generated", AppType);
 
                     // Remove the generated directory before creating it
                     if (!directoryToCreate.Contains(generatedDirectoryForAssembly))
@@ -1252,7 +1254,7 @@ namespace SharpGen.Generator
             if (selectedAssembly == null)
             {
                 selectedAssembly = new CsAssembly(assemblyName, AppType);
-                selectedAssembly.RootDirectory = Path.Combine(GeneratedPath, selectedAssembly.Name);
+                selectedAssembly.RootDirectory = IncludeAssemblyNameFolder ? Path.Combine(GeneratedPath, selectedAssembly.Name) : GeneratedPath;
                 Assemblies.Add(selectedAssembly);
             }
 

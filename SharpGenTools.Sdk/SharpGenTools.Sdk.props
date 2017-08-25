@@ -1,6 +1,6 @@
 ﻿<Project>
   <PropertyGroup>
-    <VsInstallRoot Condition="'$(VsInstallRoot)' != ''">$(VSINSTALLDIR)</VsInstallRoot>
+    <VsInstallRoot Condition="'$(VsInstallRoot)' == ''">$(VSINSTALLDIR)</VsInstallRoot>
   </PropertyGroup>
   <PropertyGroup Condition="'$(VsInstallRoot)' != ''">
     <VCInstallDir>$(VsInstallRoot)\VC\</VCInstallDir>
@@ -18,5 +18,6 @@
     <SharpGenAppType>true</SharpGenAppType>
     <CastXmlPath>$(MSBuildThisFileDirectory)../tools/CastXML/bin/castxml.exe</CastXmlPath>
     <PreserveCompilationContext>true</PreserveCompilationContext>
+    <SharpGenIncludeAssemblyNameFolder>false</SharpGenIncludeAssemblyNameFolder>
   </PropertyGroup>
 </Project>
