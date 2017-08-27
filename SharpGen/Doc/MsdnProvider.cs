@@ -100,7 +100,7 @@ namespace SharpGen.Doc
                 else
                 {
                     File.Delete(archiveFullPath);
-                    _zipFile = ZipFile.Open(archiveFullPath, ZipArchiveMode.Create);
+                    _zipFile = ZipFile.Open(archiveFullPath, ZipArchiveMode.Update);
                 }
             }
         }
