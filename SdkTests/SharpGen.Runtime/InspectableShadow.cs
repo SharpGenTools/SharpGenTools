@@ -66,9 +66,9 @@ namespace SharpGen.Runtime
                     var shadow = ToShadow<InspectableShadow>(thisPtr);
                     var callback = (IInspectable)shadow.Callback;
 
-                    var container = (ShadowContainer) callback.Shadow;
+                    var container = callback.Shadow;
 
-                    int countGuids = container.Guids.Length;
+                    var countGuids = container.Guids.Length;
 
                     // Copy GUIDs deduced from Callback
                     iids = (IntPtr*)Marshal.AllocCoTaskMem(IntPtr.Size * countGuids);
@@ -87,10 +87,10 @@ namespace SharpGen.Runtime
             //virtual HRESULT STDMETHODCALLTYPE GetRuntimeClassName( 
             //    /* [out] */ __RPC__deref_out_opt HSTRING *className) = 0;
 
-            /// <unmanaged>HRESULT ID2D1InspectableProvider::SetComputeInfo([In] ID2D1ComputeInfo* computeInfo)</unmanaged>	
+            /// <unmanaged>HRESULT STDMETHODCALLTYPE GetRuntimeClassName([out] __RPC__deref_out_opt HSTRING *className)/unmanaged>	
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-            private delegate int GetRuntimeClassNameDelegate(IntPtr thisPtr, IntPtr className);
-            private static int GetRuntimeClassName(IntPtr thisPtr, IntPtr className)
+            private unsafe delegate int GetRuntimeClassNameDelegate(IntPtr thisPtr, IntPtr* className);
+            private unsafe static int GetRuntimeClassName(IntPtr thisPtr, IntPtr* className)
             {
                 try
                 {
@@ -98,9 +98,9 @@ namespace SharpGen.Runtime
                     var callback = (IInspectable)shadow.Callback;
                     // Use the name of the callback class
                     
-                    // TODO: TO FIX FOR Windows Runtime
-                    //var hstring = WindowsRuntimeMarshal.StringToHString(callback.GetType().FullName);
-                    //Marshal.WriteIntPtr(className, hstring);
+                    var name = callback.GetType().FullName;
+                    Win32.WinRTStrings.WindowsCreateString(name, (uint)name.Length, out IntPtr str);
+                    *className = str;
                 }
                 catch (Exception exception)
                 {

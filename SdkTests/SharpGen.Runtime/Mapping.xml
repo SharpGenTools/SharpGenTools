@@ -27,6 +27,7 @@
   <include-dir override="false">=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\shared</include-dir>
   <include-dir override="false">=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\um</include-dir>
   <include-dir override="false">=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\ucrt</include-dir>
+  <include-dir override="false">=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\winrt</include-dir>
   <include-dir override="false">$(VC_TOOLS_PATH)\include</include-dir>
   <include-prolog>
     // Use unicode
@@ -64,6 +65,10 @@
 
   <include file="winerror.h" namespace="SharpGen.Runtime.Win32" output="Win32"/>
 
+  <include file="winstring.h" namespace="SharpGen.Runtime.Win32" output="Win32">
+    <attach>WindowsCreateString</attach>
+  </include>
+
   <!-- SharpGen global naming -->
   <naming />
 
@@ -94,6 +99,8 @@
 
     <define struct="SharpGen.Runtime.Win32.Variant" sizeof="16"/>
     <define struct="SharpGen.Runtime.Win32.BitmapInfoHeader" sizeof="40"/>
+
+    <create class="SharpGen.Runtime.Win32.WinRTStrings" visibility="internal static" />
     
   </extension>
 
@@ -196,6 +203,8 @@
     <bind from="IEnumUnknown" to="SharpGen.Runtime.ComObject"/>
     <bind from="IEnumString" to="SharpGen.Runtime.ComObject"/>
     <bind from="INamedPropertyStore" to="SharpGen.Runtime.ComObject"/>
+
+    <bind from="HSTRING" to="System.IntPtr" />
   </bindings>  
 
   <!-- SharpGen.Runtime global mapping -->
@@ -296,5 +305,9 @@
     <map method="IStream::.*" keep-implement-public="true"/>
     
     <context-clear/>
+
+    <context>winstring</context>
+    <map function="WindowsCreateString" dll='"api-ms-win-core-winrt-string-l1"' group="SharpGen.Runtime.Win32.WinRTStrings" />
+    <context-clear />
   </mapping>
 </config>

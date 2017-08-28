@@ -4,7 +4,7 @@ VisualStudioVersion = 15.0.26730.10
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BasicSdkMapping", "BasicSdkMapping\BasicSdkMapping.csproj", "{3293CC65-1763-4D99-8ED2-755E83EAD04A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpGen.Runtime", "SharpGen.Runtime\SharpGen.Runtime.csproj", "{068FAC43-D2BE-472F-8D61-66227591FFC7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpGen.Runtime", "SharpGen.Runtime\SharpGen.Runtime.csproj", "{068FAC43-D2BE-472F-8D61-66227591FFC7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,16 +30,16 @@ Global
 		{3293CC65-1763-4D99-8ED2-755E83EAD04A}.Release|x86.Build.0 = Release|Any CPU
 		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|x64.ActiveCfg = Debug|x64
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|x64.Build.0 = Debug|x64
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|x86.ActiveCfg = Debug|x86
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|x86.Build.0 = Debug|x86
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|x64.Build.0 = Debug|Any CPU
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|x86.Build.0 = Debug|Any CPU
 		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|x64.ActiveCfg = Release|x64
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|x64.Build.0 = Release|x64
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|x86.ActiveCfg = Release|x86
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|x86.Build.0 = Release|x86
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|x64.ActiveCfg = Release|Any CPU
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|x64.Build.0 = Release|Any CPU
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|x86.ActiveCfg = Release|Any CPU
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

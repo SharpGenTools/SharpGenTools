@@ -28,7 +28,7 @@ namespace SharpGen.Runtime
     /// </summary>
     internal abstract class ComObjectShadow : CppObjectShadow
     {
-        public static Guid IID_IUnknown = new Guid("00000000-0000-0000-C000-000000000046");
+        public static readonly Guid IID_IUnknown = new Guid("00000000-0000-0000-C000-000000000046");
 
         internal class ComObjectVtbl : CppObjectVtbl
         {
@@ -44,7 +44,7 @@ namespace SharpGen.Runtime
             }
 
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-            public delegate int QueryInterfaceDelegate(IntPtr thisObject, IntPtr guid, out IntPtr output);
+            public unsafe delegate int QueryInterfaceDelegate(IntPtr thisObject, Guid* guid, out IntPtr output);
 
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
             public delegate uint AddRefDelegate(IntPtr thisObject);
@@ -52,9 +52,9 @@ namespace SharpGen.Runtime
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
             public delegate uint ReleaseDelegate(IntPtr thisObject);
 
-            protected static unsafe int QueryInterfaceImpl(IntPtr thisObject, IntPtr guidPtr, out IntPtr output)
+            protected static unsafe int QueryInterfaceImpl(IntPtr thisObject, Guid* guidPtr, out IntPtr output)
             {
-                Guid guid = *((Guid*)guidPtr);
+                Guid guid = *guidPtr;
                 var shadow = ToShadow<ComObjectShadow>(thisObject);
                 if (shadow == null)
                 {

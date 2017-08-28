@@ -2,7 +2,7 @@
     <PropertyGroup>
         <RestorePackagesPath>$(MSBuildThisFileDirectory)RestoredPackages/</RestorePackagesPath>
         <RestoreNoCache>true</RestoreNoCache>
-        <RestoreSources>$(RestoreSources);$(MSBuildThisFileDirectory)LocalPackages</RestoreSources>
+        <RestoreSources>https://api.nuget.org/v3/index.json;$(MSBuildThisFileDirectory)LocalPackages</RestoreSources>
         <VsInstallRoot>C:\Program Files (x86)\Microsoft Visual Studio\2017\Community</VsInstallRoot>
         <PreserveCompilationContext>true</PreserveCompilationContext>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

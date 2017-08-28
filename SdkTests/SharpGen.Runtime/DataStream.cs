@@ -46,6 +46,7 @@
 
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace SharpGen.Runtime
@@ -102,6 +103,46 @@ namespace SharpGen.Runtime
                 return stream;
             }
         }
+
+#if !NET40
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SharpDX.DataStream"/> class, using a managed buffer as a backing store.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="userBuffer">A managed array to be used as a backing store.</param>
+        /// <param name="canRead"><c>true</c> if reading from the buffer should be allowed; otherwise, <c>false</c>.</param>
+        /// <param name="canWrite"><c>true</c> if writing to the buffer should be allowed; otherwise, <c>false</c>.</param>
+        /// <param name="index">Index inside the buffer in terms of element count (not size in bytes).</param>
+        /// <param name="pinBuffer">True to keep the managed buffer and pin it, false will allocate unmanaged memory and make a copy of it. Default is true.</param>
+        /// <returns></returns>
+        public static DataStream Create<T>(Span<T> userBuffer, bool canRead, bool canWrite, int index = 0, bool pinBuffer = true) where T : struct
+        {
+            unsafe
+            {
+                if (userBuffer == null)
+                    throw new ArgumentNullException(nameof(userBuffer));
+
+                if (index < 0 || index > userBuffer.Length)
+                    throw new IndexOutOfRangeException(nameof(index));
+
+                DataStream stream;
+
+                var byteSpan = userBuffer.Slice(index).AsBytes();
+
+                if (pinBuffer)
+                {
+                    var handle = GCHandle.Alloc(byteSpan.DangerousGetPinnableReference(), GCHandleType.Pinned);
+                    stream = new DataStream((void*)handle.AddrOfPinnedObject(), byteSpan.Length, canRead, canWrite, handle);
+                }
+                else
+                {
+                    stream = new DataStream(Interop.Fixed(ref byteSpan.DangerousGetPinnableReference()), byteSpan.Length, canRead, canWrite, true);
+                }
+
+                return stream;
+            }
+        }
+#endif
 
         /// <summary>
         ///   Initializes a new instance of the <see cref = "SharpDX.DataStream" /> class, and allocates a new buffer to use as a backing store.

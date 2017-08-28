@@ -24,19 +24,14 @@ using System.Runtime.InteropServices;
 namespace SharpGen.Runtime.Win32
 {
     /// <summary>
-    /// Internal FontFileEnumerator Callback
+    /// ComStreamBase Shadow Callback
     /// </summary>
     internal class ComStreamBaseShadow : ComObjectShadow
     {
         private static readonly ComStreamBaseVtbl Vtbl = new ComStreamBaseVtbl(0);
-
+        
         internal class ComStreamBaseVtbl : ComObjectVtbl
         {
-            //public static IntPtr CallbackToPtr(IStream fontFileEnumerator)
-            //{
-            //    return CallbackToPtr<IStreamBase, ComStreamBaseShadow>(fontFileEnumerator);
-            //}
-
             public ComStreamBaseVtbl(int numberOfMethods)
                 : base(numberOfMethods + 2)
             {

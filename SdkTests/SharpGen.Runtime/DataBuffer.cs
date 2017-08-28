@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace SharpGen.Runtime
@@ -49,10 +50,10 @@ namespace SharpGen.Runtime
             unsafe
             {
                 if (userBuffer == null)
-                    throw new ArgumentNullException("userBuffer");
+                    throw new ArgumentNullException(nameof(userBuffer));
 
                 if (index < 0 || index > userBuffer.Length)
-                    throw new ArgumentException("Index is out of range [0, userBuffer.Length-1]", "index");
+                    throw new ArgumentException("Index is out of range [0, userBuffer.Length-1]", nameof(index));
 
                 DataBuffer buffer;
 
@@ -73,6 +74,29 @@ namespace SharpGen.Runtime
                 return buffer;
             }
         }
+
+#if !NET40
+        public static unsafe DataBuffer Create<T>(Span<T> userBuffer, int index = 0, bool pinBuffer = true) where T : struct
+        {
+            if (userBuffer == null)
+                throw new ArgumentNullException(nameof(userBuffer));
+
+            if (index < 0 || index > userBuffer.Length)
+                throw new IndexOutOfRangeException(nameof(index));
+
+            var byteSpan = userBuffer.Slice(index).AsBytes();
+            
+            if (pinBuffer)
+            {
+                var handle = GCHandle.Alloc(userBuffer.DangerousGetPinnableReference());
+                return new DataBuffer((void*)handle.AddrOfPinnedObject(), byteSpan.Length, handle);
+            }
+            else
+            {
+                return new DataBuffer(Interop.Fixed(ref byteSpan.DangerousGetPinnableReference()), byteSpan.Length, true);
+            }
+        }
+#endif
 
         /// <summary>
         ///   Initializes a new instance of the <see cref = "SharpDX.DataBuffer" /> class, and allocates a new buffer to use as a backing store.
@@ -139,16 +163,6 @@ namespace SharpGen.Runtime
             _size = sizeInBytes;
             _ownsBuffer = makeCopy;
         }
-#if DESKTOP_APP
-        internal unsafe DataBuffer(Blob buffer)
-        {
-            System.Diagnostics.Debug.Assert(buffer.GetBufferSize() > 0);
-
-            _buffer = (sbyte*)buffer.GetBufferPointer();
-            _size = buffer.GetBufferSize();
-            _blob = buffer;
-        }
-#endif
 
         /// <summary>
         /// Releases unmanaged and - optionally - managed resources
@@ -156,17 +170,6 @@ namespace SharpGen.Runtime
         /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-#if DESKTOP_APP
-                if (_blob != null)
-                {
-                    _blob.Dispose();
-                    _blob = null;
-                }
-#endif
-            }
-
             if (_gCHandle.IsAllocated)
                 _gCHandle.Free();
 
@@ -183,6 +186,7 @@ namespace SharpGen.Runtime
         /// <summary>
         /// Clears the buffer.
         /// </summary>
+        /// <param name="value">The value to put in each entry of the buffer.</param>
         public unsafe void Clear(byte value = 0)
         {
             Utilities.ClearMemory((IntPtr)_buffer, value, Size);
