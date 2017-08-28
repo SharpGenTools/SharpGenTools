@@ -19,7 +19,6 @@
 // THE SOFTWARE.
 using System;
 using System.Runtime.InteropServices;
-//using System.Runtime.InteropServices.WindowsRuntime; // TODO: TO fix
 
 namespace SharpGen.Runtime
 {
