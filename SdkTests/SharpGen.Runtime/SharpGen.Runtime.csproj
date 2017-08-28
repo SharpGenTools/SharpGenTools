@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard1.1</TargetFramework>
+    <SharpGenGlobalNamespace>SharpGen.Runtime</SharpGenGlobalNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SharpGenMapping Include="Mapping.xml" />
+  </ItemGroup>
+
+</Project>

@@ -14,7 +14,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <SharpGenGenerateDoc>false</SharpGenGenerateDoc>
-    <SharpGenGlobalNamespace>SharpGen</SharpGenGlobalNamespace>
+    <SharpGenGlobalNamespace>SharpGen.Runtime</SharpGenGlobalNamespace>
     <SharpGenAppType>true</SharpGenAppType>
     <CastXmlPath>$(MSBuildThisFileDirectory)../tools/CastXML/bin/castxml.exe</CastXmlPath>
     <PreserveCompilationContext>true</PreserveCompilationContext>

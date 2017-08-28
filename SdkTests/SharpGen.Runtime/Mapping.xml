@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+// Copyright (c) 2010-2014 SharpGen.Runtime - Alexandre Mutel
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+-->
+<config id="sharpgen-runtime" xmlns="urn:SharpGen.Config">
+  <namespace>SharpGen.Runtime</namespace>
+  <assembly>SharpGen.Runtime</assembly>
+
+  <include-dir override="false">=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\shared</include-dir>
+  <include-dir override="false">=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\um</include-dir>
+  <include-dir override="false">=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\ucrt</include-dir>
+  <include-dir override="false">$(VC_TOOLS_PATH)\include</include-dir>
+  <include-prolog>
+    // Use unicode
+    #define UNICODE
+    
+    // for SAL annotations
+    #define _PREFAST_
+    
+    // To force GUID to be declared
+    #define INITGUID
+    
+    #define _ALLOW_KEYWORD_MACROS
+    
+    // Wrap all declspec for code-gen
+    #define __declspec(x) __attribute__((annotate(#x)))</include-prolog>
+  <include file="windows.h" />
+
+  <include file="Unknwnbase.h" namespace="SharpGen.Runtime">
+    <attach>IUnknown</attach>
+  </include>
+
+  <include file="objidlbase.h" namespace="SharpGen.Runtime.Win32" output="Win32">
+    <attach>STATSTG</attach>
+    <attach>tagLOCKTYPE</attach>
+    <attach>LOCKTYPE</attach>
+    <attach>ISequentialStream</attach>
+    <attach>IStream</attach>
+  </include>
+
+  <include file="wtypes.h" namespace="SharpGen.Runtime.Win32" output="Win32">
+    <attach>tagSTGC</attach>
+    <attach>STGC</attach>
+    <attach>STATFLAG</attach>    
+  </include>
+
+  <include file="winerror.h" namespace="SharpGen.Runtime.Win32" output="Win32"/>
+
+  <!-- SharpGen global naming -->
+  <naming />
+
+  <!-- SharpGen.Runtime global types -->
+  <extension>
+    <context>sharpgen-runtime-ext</context>
+    <context>sharpgen-runtime</context>
+    <context>winerror</context>
+    <create-cpp enum="SHARPGEN_RUNTIME_ERRORCODE" macro="ERROR_(.*)" />
+    <context-clear/>
+
+    <define enum="System.IO.SeekOrigin" sizeof="4" />
+    <define struct="SharpGen.Runtime.Size2F" sizeof="8" />
+    <define struct="SharpGen.Runtime.Size2" sizeof="8" />
+    <define struct="SharpGen.Runtime.Mathematics.Interop.RawPoint" sizeof="8" />
+    <define struct="SharpGen.Runtime.Result" sizeof="4" />
+    <define struct="SharpGen.Runtime.PointerSize" sizeof="8" />
+
+    <define struct="SharpGen.Runtime.Win32Native.TextMetric" sizeof="32"/> <!-- TODO calculate sizeof -->
+    <define struct="SharpGen.Runtime.Win32Native.TextMetricA" sizeof="32"/> <!-- TODO calculate sizeof -->
+
+    <define struct="SharpGen.Runtime.Mathematics.Interop.RawBool" sizeof="4" />
+    <define struct="SharpGen.Runtime.Mathematics.Interop.RawRectangle" sizeof="16" />
+    <define struct="SharpGen.Runtime.FunctionCallback" sizeof="8" />
+    <define interface="SharpGen.Runtime.Win32.PropertyBag"/>
+    <define struct="SharpGen.Runtime.Win32.SecurityAttributes" sizeof="16" />
+		<define struct="SharpGen.Runtime.Win32.NativeMessage" sizeof="28" />
+
+    <define struct="SharpGen.Runtime.Win32.Variant" sizeof="16"/>
+    <define struct="SharpGen.Runtime.Win32.BitmapInfoHeader" sizeof="40"/>
+    
+  </extension>
+
+  <!--
+    // *****************************************************************
+    // Bindings
+    // *****************************************************************
+    -->
+  <bindings>
+    <!-- Primitive bindings -->
+    <bind from="void" to="System.Void" />
+    <bind from="int" to="System.Int32" />
+    <bind from="unsigned int" to="System.UInt32" />
+    <bind from="short" to="System.Int16" />
+    <bind from="unsigned short" to="System.UInt16" />
+    <bind from="unsigned char" to="System.Byte" />
+    <bind from="longlong" to="System.Int64" />
+    <bind from="unsigned longlong" to="System.UInt64" />
+    <bind from="float" to="System.Single" />
+    <bind from="double" to="System.Double" />
+    <bind from="bool" to="System.Boolean" />
+
+    <!-- SharpGen.Runtime bindings -->
+    <bind from="SHARPGEN_RUNTIME_USHORT" to="System.UInt16" />
+    <bind from="SHARPGEN_RUNTIME_SEEKORIGIN" to="System.IO.SeekOrigin" />
+
+    <!-- Win32 bindings -->
+    <bind from="INT_PTR" to="System.IntPtr" />
+    <bind from="UINT_PTR" to="System.UIntPtr" />
+    <bind from="LONG_PTR" to="System.IntPtr" />
+    <bind from="ULONG_PTR" to="System.UIntPtr" />
+    <bind from="HANDLE_PTR" to="System.IntPtr" />    
+
+    <bind from="LPGLYPHMETRICSFLOAT" to="System.IntPtr" />
+    <bind from="POINT" to="SharpGen.Runtime.Mathematics.Interop.RawPoint" />
+    <bind from="RECT" to="SharpGen.Runtime.Mathematics.Interop.RawRectangle" />
+    <bind from="BOOL" to="SharpGen.Runtime.Mathematics.Interop.RawBool"/>
+    <bind from="HACCEL" to="System.IntPtr"/>    
+    <bind from="HWND" to="System.IntPtr"/>
+    <bind from="HDC" to="System.IntPtr"/>
+    <bind from="HICON" to="System.IntPtr"/>
+    <bind from="HKEY" to="System.IntPtr"/>
+    <bind from="HBITMAP" to="System.IntPtr"/>
+    <bind from="HINSTANCE" to="System.IntPtr"/>
+    <bind from="HMONITOR" to="System.IntPtr"/>
+    <bind from="HPALETTE" to="System.IntPtr"/>
+    <bind from="LUID" to="System.Int64"/>
+    <bind from="LARGE_INTEGER" to="System.Int64"/>
+    <bind from="ULARGE_INTEGER" to="System.Int64"/>    
+    <bind from="HRESULT" to="SharpGen.Runtime.Result" />
+    <bind from="FILETIME" to="System.Int64" />
+    <bind from="GUID" to="System.Guid" />
+    <bind from="COLORREF" to="System.Int32" />
+    <bind from="__function__stdcall" to="SharpGen.Runtime.FunctionCallback" />
+    <bind from="SIZE" to="SharpGen.Runtime.Size2" />
+    <bind from="SIZE_T" to="SharpGen.Runtime.PointerSize" marshal="System.IntPtr"/>
+    <bind from="SSIZE_T" to="SharpGen.Runtime.PointerSize" marshal="System.IntPtr"/>
+		<bind from="MSG" to="SharpGen.Runtime.Win32.NativeMessage" />
+
+    <bind from="SECURITY_ATTRIBUTES" to="SharpGen.Runtime.Win32.SecurityAttributes"/>
+
+    <!-- unsupported type yet -->
+    <bind from="HALF_PTR" to="SharpGen.Runtime.Win32.Unsupported.HALF_PTR"/>
+    <bind from="UHALF_PTR" to="SharpGen.Runtime.Win32.Unsupported.UHALF_PTR"/>
+    
+    <bind from="BITMAPINFOHEADER" to="SharpGen.Runtime.Win32.BitmapInfoHeader"/>
+    <bind from="VIDEOINFOHEADER" to="SharpGen.Runtime.Win32.Unsupported.VideoInfoHeader"/>
+    <bind from="AM_MEDIA_TYPE" to="SharpGen.Runtime.Win32.Unsupported.AMMediaType"/>
+    <bind from="RPC_MESSAGE" to="SharpGen.Runtime.Win32.Unsupported.RpcMessage"/>
+    <bind from="SAFEARRAY" to="SharpGen.Runtime.Win32.Unsupported.SafeArray"/>
+    <bind from="VARIANT" to="SharpGen.Runtime.Win32.Variant"/>
+    <bind from="PROPVARIANT" to="SharpGen.Runtime.Win32.Variant"/>
+
+    <!-- todo create those structures -->
+    <bind from="RGNDATA" to="System.IntPtr"/>
+    <bind from="TEXTMETRICW" to="SharpGen.Runtime.Win32Native.TextMetric"/>
+    <bind from="TEXTMETRICA" to="SharpGen.Runtime.Win32Native.TextMetricA"/>
+    <bind from="LOGFONTW" to="SharpGen.Runtime.DirectWrite.GdiInterop.LogFont"/>
+
+    <!-- Win32 structures -->
+    <bind from="DISPPARAMS" to="System.Runtime.InteropServices.ComTypes.DISPPARAMS"/>
+    <bind from="EXCEPINFO" to="System.Runtime.InteropServices.ComTypes.EXCEPINFO"/>
+
+    <!-- Root IUnknown interface -->
+    <bind from="IDispatch" to="SharpGen.Runtime.ComDispatch" />
+    <bind from="IPersist" to="SharpGen.Runtime.ComPersistBase" />
+    <bind from="IPropertyBag" to="SharpGen.Runtime.ComPropertyBag" />
+
+    <!-- COM interfaces not directly used -->
+    <bind from="ITypeInfo" to="SharpGen.Runtime.ComObject" />
+    <bind from="IErrorLog" to="SharpGen.Runtime.ComObject" />
+    <bind from="IMoniker" to="SharpGen.Runtime.ComObject" />
+    <bind from="IEnumMoniker" to="SharpGen.Runtime.ComObject" />
+    <bind from="IBindCtx" to="SharpGen.Runtime.ComObject" />
+    <bind from="IRpcStubBuffer" to="SharpGen.Runtime.ComObject"/>
+    <bind from="IRpcChannelBuffer" to="SharpGen.Runtime.ComObject"/>
+    <bind from="IPropertyStore" to="SharpGen.Runtime.ComObject"/>
+    <bind from="IPropertyBag2" to="SharpGen.Runtime.Win32.PropertyBag"/>
+    <bind from="IClassFactory" to="SharpGen.Runtime.ComObject"/>
+    <bind from="IEnumUnknown" to="SharpGen.Runtime.ComObject"/>
+    <bind from="IEnumString" to="SharpGen.Runtime.ComObject"/>
+    <bind from="INamedPropertyStore" to="SharpGen.Runtime.ComObject"/>
+  </bindings>  
+
+  <!-- SharpGen.Runtime global mapping -->
+  <mapping>
+    <context>sharpgen-runtime-ext</context>
+    <context>sharpgen-runtime</context>
+    <context>winerror</context>
+    <map enum="SHARPGEN_RUNTIME_ERRORCODE" assembly="SharpGen.Runtime" namespace="SharpGen.Runtime.Win32" name="ErrorCode"/>
+    <map enum-item="ERROR_(.*)" name-tmp="$1" naming="noexpand"/>
+    <context-clear/>
+
+    <!--
+    // *****************************************************************
+    // Global documentation link
+    // *****************************************************************
+    -->
+    <map doc="S_OK" name="SharpGen.Runtime.Result.Ok"/>
+    <map doc="FALSE" name="SharpGen.Runtime.Result.False"/>
+    <map doc="NULL" name="&lt;c&gt;null&lt;/c&gt;"/>
+
+    <!--
+    // *****************************************************************
+    // Modify all enums
+    // *****************************************************************
+    -->
+    <remove enum-item=".*_FORCE_DWORD" />
+    <remove enum-item=".*_FORCE_UINT" />
+
+    <!--
+    // *****************************************************************
+    // Modify all fields
+    // *****************************************************************
+    -->
+    <map field=".*::(.*)DescW?" name="$1Description" />
+    <map field=".*::(.*)Desc1" name="$1Description1" />
+    <map field=".*::(.*)Desc2" name="$1Description2" />
+
+    <!--
+    // *****************************************************************
+    // Modify all methods
+    // *****************************************************************
+    -->
+    <map method=".*::(.*)DescW?" name="$1Description" />
+    <map method=".*::(.*)Desc1" name="$1Description1" />
+    <map method=".*::(.*)Desc2" name="$1Description2" />
+    <map method=".*GetType" name="GetTypeInfo" />
+
+    <!--
+    // Some global macros are overriding method names
+    -->
+    <map method=".*::GetTextMetricsW" name="GetTextMetrics" />
+    <map method=".*::PreloadTextW" name="PreloadText" />
+    <map method=".*::GetMessageW" name="GetMessage" />
+    <map method=".*::DrawTextW" name="DrawText" />
+    <map method=".*::GetGlyphIndicesW" name="GetGlyphIndices" />
+
+    <context>unknwnbase</context>
+    <map interface="IUnknown" name="IUnknown" callback-visibility="public" callback="true" callback-dual="true" callback-name="ComObject" />
+    <map method="IUnknown::.*" keep-implement-public="true" />
+    <map param="IUnkown::QueryInterface::riid" attribute="inout" />
+    <context-clear/>
+
+    <!-- Map IStream -->
+    <context>objidlbase</context>
+    <context>wtypes</context>
+    <map struct="STATSTG" name="StorageStatistics" />
+
+    <map enum="STGC" name="CommitFlags" flags="true"/>
+    <map enum-item="STGC_(.*)" name-tmp="$1"/>
+    <map enum-item="STGC_ONLYIFCURRENT" name="OnlyCurrent"/>
+    <map enum-item="STGC_DANGEROUSLYCOMMITMERELYTODISKCACHE" name="DangerouslyCommitMerelyToDiskCache"/>
+
+    <map enum="LOCKTYPE" name="LockType" flags="true"/>
+    <map enum-item="LOCK_(.*)" name-tmp="$1"/>
+    <map enum-item="LOCK_ONLYONCE" name="OnlyOnce"/>
+
+    <map enum="STATFLAG" name="StorageStatisticsFlags"/>
+    <map enum-item="STATFLAG_DEFAULT" name="Default"/>
+    <map enum-item="STATFLAG_NONAME" name="NoName"/>
+    <remove enum-item="STATFLAG_NOOPEN"/>
+
+    <map interface="ISequentialStream" name="IStreamBase" callback-visibility="public" callback="true" callback-dual="true" callback-name="ComStreamBase"/>
+    <map param="ISequentialStream::Read::pcbRead" return="true"/>
+    <map param="ISequentialStream::Write::pcbWritten" return="true"/>
+    <map method="ISequentialStream::.*" keep-implement-public="true"/>
+
+    <map interface="IStream" name="IStream" callback-visibility="public" callback="true" callback-dual="true" callback-name="ComStream"/>
+    <map param="IStream::Seek::dwOrigin" type="SHARPGEN_RUNTIME_SEEKORIGIN"/>
+    <map param="IStream::Seek::plibNewPosition" return="true"/>
+    <map param="IStream::CopyTo::pcbRead" attribute="out" return="true"/>
+    <map param="IStream::CopyTo::pcbWritten" attribute="out"/>
+    <map param="IStream::Commit::grfCommitFlags" type="STGC"/>
+    <map param="IStream::.*::dwLockType" type="LOCKTYPE"/>
+    <map method="IStream::Stat" name="GetStatistics" />
+    <map param="IStream::Stat::pstatstg" attribute="out" return="true"/>
+    <map param="IStream::Stat::grfStatFlag" type="STATFLAG"/>
+    <map param="IStream::Clone::ppstm" return="true"/>
+    <map method="IStream::.*" keep-implement-public="true"/>
+    
+    <context-clear/>
+  </mapping>
+</config>
