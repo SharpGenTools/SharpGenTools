@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-#if BEFORE_NET45
+#if NET40
 // Copyright (c) 2010-2017 SharpDX - Alexandre Mutel
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy

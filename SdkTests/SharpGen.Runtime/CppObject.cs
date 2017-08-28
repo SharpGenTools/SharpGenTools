@@ -166,7 +166,7 @@ namespace SharpGen.Runtime
                 return ((CppObject)callback).NativePointer;
 
             // Setup the shadow container in order to support multiple inheritance
-            var shadowContainer = callback.Shadow as ShadowContainer;
+            var shadowContainer = callback.Shadow;
             if (shadowContainer == null)
             {
                 shadowContainer = new ShadowContainer();

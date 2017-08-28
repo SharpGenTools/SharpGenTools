@@ -18,14 +18,37 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Threading;
 
 namespace SharpGen.Runtime
 {
     /// <summary>
-    /// Callback base implementation of <see cref="ICallbackable"/>.
+    /// Base class for all callback objects written in managed code.
     /// </summary>
-    public abstract class CallbackBase : DisposeBase, ICallbackable
+    public abstract class CallbackBase : DisposeBase, ICallbackable, IUnknown
     {
+        private int count = 1;
+        void IUnknown.QueryInterface(Guid guid, out IntPtr output)
+        {
+            var shadow = (ComObjectShadow)((ShadowContainer)((ICallbackable)this).Shadow).FindShadow(guid);
+            if (shadow != null)
+            {
+                ((IUnknown)this).AddRef();
+                output = shadow.NativePointer;
+            }
+            output = IntPtr.Zero;
+        }
+
+        uint IUnknown.AddRef()
+        {
+            return (uint)Interlocked.Increment(ref count);
+        }
+
+        uint IUnknown.Release()
+        {
+            return (uint)Interlocked.Decrement(ref count);
+        }
+
         /// <summary>
         /// Releases unmanaged and - optionally - managed resources
         /// </summary>

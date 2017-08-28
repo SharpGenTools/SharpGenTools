@@ -70,7 +70,7 @@ namespace SharpGen.Runtime
                         }
 
                         // Keep only final interfaces and not intermediate.
-#if BEFORE_NET45
+#if NET40
                         var inheritList = item.GetTypeInfo().GetInterfaces();
 #else
                         var inheritList = item.GetTypeInfo().ImplementedInterfaces;
@@ -106,7 +106,7 @@ namespace SharpGen.Runtime
                 guidToShadow.Add(Utilities.GetGuidFromType(item), shadow);
 
                 // Associate also inherited interface to this shadow
-#if BEFORE_NET45
+#if NET40
                 var inheritList = item.GetTypeInfo().GetInterfaces();
 #else
                 var inheritList = item.GetTypeInfo().ImplementedInterfaces;

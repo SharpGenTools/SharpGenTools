@@ -248,7 +248,7 @@ namespace SharpGen.Runtime
 
         private static void AddDescriptorsFromType(Type type)
         {
-#if BEFORE_NET45
+#if NET40
             foreach(var field in type.GetTypeInfo().GetFields())
 #else
             foreach (var field in type.GetTypeInfo().DeclaredFields)

@@ -62,7 +62,7 @@ namespace SharpGen.Runtime
                     return Result.NoInterface.Code;
                 }
 
-                var callback = (ManagedComObjectCallback)shadow.Callback;
+                var callback = (IUnknown)shadow.Callback;
                 callback.QueryInterface(guid, out output);
                 return (int)(output == IntPtr.Zero ? Result.NoInterface : Result.Ok);
             }
@@ -75,7 +75,7 @@ namespace SharpGen.Runtime
                 if (shadow == null)
                     return 0;
 
-                var callback = (ManagedComObjectCallback)shadow.Callback;
+                var callback = (IUnknown)shadow.Callback;
                 return callback.AddRef();
             }
 
@@ -87,7 +87,7 @@ namespace SharpGen.Runtime
                 if (shadow == null)
                     return 0;
 
-                var callback = (ManagedComObjectCallback)shadow.Callback;
+                var callback = (IUnknown)shadow.Callback;
                 return callback.Release();
             }
         }

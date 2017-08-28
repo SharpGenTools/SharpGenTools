@@ -416,7 +416,7 @@ namespace SharpGen.Runtime
         public static bool IsAssignableToGenericType(Type givenType, Type genericType)
         {
             // from http://stackoverflow.com/a/1075059/1356325
-#if BEFORE_NET45
+#if NET40
             var interfaceTypes = givenType.GetTypeInfo().GetInterfaces();
 #else
             var interfaceTypes = givenType.GetTypeInfo().ImplementedInterfaces;
@@ -868,7 +868,7 @@ namespace SharpGen.Runtime
         }
 
         private static MethodInfo GetMethod(Type type, string name, Type[] typeArgs) {
-#if BEFORE_NET45
+#if NET40
             foreach( var method in type.GetTypeInfo().GetMethods(BindingFlags.Public|BindingFlags.Instance))
             {
                 if(method.Name != name)
@@ -968,7 +968,7 @@ namespace SharpGen.Runtime
             var tempType = sourceType;
             while (tempType != null)
             {
-#if BEFORE_NET45
+#if NET40
                 methods.AddRange(tempType.GetTypeInfo().GetMethods(BindingFlags.Public)); //target methods will be favored in the search
 #else
                 methods.AddRange(tempType.GetTypeInfo().DeclaredMethods); //target methods will be favored in the search
@@ -979,7 +979,7 @@ namespace SharpGen.Runtime
             tempType = targetType;
             while (tempType != null)
             {
-#if BEFORE_NET45
+#if NET40
                 methods.AddRange(tempType.GetTypeInfo().GetMethods(BindingFlags.Public)); //target methods will be favored in the search
 #else
                 methods.AddRange(tempType.GetTypeInfo().DeclaredMethods); //target methods will be favored in the search

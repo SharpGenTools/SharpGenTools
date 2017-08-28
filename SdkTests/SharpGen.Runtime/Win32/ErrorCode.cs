@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace SharpDX.Win32
+namespace SharpGen.Runtime.Win32
 {
     public partial class ErrorCodeHelper
     {
