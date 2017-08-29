@@ -208,7 +208,7 @@ namespace SharpGen
                 transformer.PrintStatistics();
 
                 // Output all elements
-                using (var renameLog = File.Open("SharpGen_rename.log", FileMode.OpenOrCreate, FileAccess.Write))
+                using (var renameLog = File.Open(Path.Combine(IntermediateOutputPath, "SharpGen_rename.log"), FileMode.OpenOrCreate, FileAccess.Write))
                 using (var fileWriter = new StreamWriter(renameLog))
                 {
                     transformer.NamingRules.DumpRenames(fileWriter);
