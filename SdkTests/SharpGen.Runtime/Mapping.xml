@@ -90,6 +90,8 @@
     <define struct="SharpGen.Runtime.Win32Native.TextMetric" sizeof="32"/> <!-- TODO calculate sizeof -->
     <define struct="SharpGen.Runtime.Win32Native.TextMetricA" sizeof="32"/> <!-- TODO calculate sizeof -->
 
+    <define interface="SharpGen.Runtime.ComObject" />
+
     <define struct="SharpGen.Runtime.Mathematics.Interop.RawBool" sizeof="4" />
     <define struct="SharpGen.Runtime.Mathematics.Interop.RawRectangle" sizeof="16" />
     <define struct="SharpGen.Runtime.FunctionCallback" sizeof="8" />
@@ -132,9 +134,8 @@
     <bind from="UINT_PTR" to="System.UIntPtr" />
     <bind from="LONG_PTR" to="System.IntPtr" />
     <bind from="ULONG_PTR" to="System.UIntPtr" />
-    <bind from="HANDLE_PTR" to="System.IntPtr" />    
+    <bind from="HANDLE_PTR" to="System.IntPtr" />
 
-    <bind from="LPGLYPHMETRICSFLOAT" to="System.IntPtr" />
     <bind from="POINT" to="SharpGen.Runtime.Mathematics.Interop.RawPoint" />
     <bind from="RECT" to="SharpGen.Runtime.Mathematics.Interop.RawRectangle" />
     <bind from="BOOL" to="SharpGen.Runtime.Mathematics.Interop.RawBool"/>
@@ -162,32 +163,18 @@
 
     <bind from="SECURITY_ATTRIBUTES" to="SharpGen.Runtime.Win32.SecurityAttributes"/>
 
-    <!-- unsupported type yet -->
-    <bind from="HALF_PTR" to="SharpGen.Runtime.Win32.Unsupported.HALF_PTR"/>
-    <bind from="UHALF_PTR" to="SharpGen.Runtime.Win32.Unsupported.UHALF_PTR"/>
-    
-    <bind from="BITMAPINFOHEADER" to="SharpGen.Runtime.Win32.BitmapInfoHeader"/>
-    <bind from="VIDEOINFOHEADER" to="SharpGen.Runtime.Win32.Unsupported.VideoInfoHeader"/>
-    <bind from="AM_MEDIA_TYPE" to="SharpGen.Runtime.Win32.Unsupported.AMMediaType"/>
-    <bind from="RPC_MESSAGE" to="SharpGen.Runtime.Win32.Unsupported.RpcMessage"/>
-    <bind from="SAFEARRAY" to="SharpGen.Runtime.Win32.Unsupported.SafeArray"/>
     <bind from="VARIANT" to="SharpGen.Runtime.Win32.Variant"/>
     <bind from="PROPVARIANT" to="SharpGen.Runtime.Win32.Variant"/>
 
     <!-- todo create those structures -->
     <bind from="RGNDATA" to="System.IntPtr"/>
-    <bind from="TEXTMETRICW" to="SharpGen.Runtime.Win32Native.TextMetric"/>
-    <bind from="TEXTMETRICA" to="SharpGen.Runtime.Win32Native.TextMetricA"/>
-    <bind from="LOGFONTW" to="SharpGen.Runtime.DirectWrite.GdiInterop.LogFont"/>
 
     <!-- Win32 structures -->
     <bind from="DISPPARAMS" to="System.Runtime.InteropServices.ComTypes.DISPPARAMS"/>
     <bind from="EXCEPINFO" to="System.Runtime.InteropServices.ComTypes.EXCEPINFO"/>
 
     <!-- Root IUnknown interface -->
-    <bind from="IDispatch" to="SharpGen.Runtime.ComDispatch" />
-    <bind from="IPersist" to="SharpGen.Runtime.ComPersistBase" />
-    <bind from="IPropertyBag" to="SharpGen.Runtime.ComPropertyBag" />
+
 
     <!-- COM interfaces not directly used -->
     <bind from="ITypeInfo" to="SharpGen.Runtime.ComObject" />

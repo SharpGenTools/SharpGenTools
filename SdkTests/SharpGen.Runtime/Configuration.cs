@@ -48,11 +48,6 @@ namespace SharpGen.Runtime
         public static bool EnableTrackingReleaseOnFinalizer = true;
 
         /// <summary>
-        /// Throws a <see cref="CompilationException"/> when a shader or effect compilation error occurred. Default is enabled (true).
-        /// </summary>
-        public static bool ThrowOnShaderCompileError = true;
-
-        /// <summary>
         /// By default all objects in the process are tracked.
         /// Use this property to track objects per thread.
         /// </summary>
