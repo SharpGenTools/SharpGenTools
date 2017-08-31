@@ -88,5 +88,6 @@
   <ItemGroup>
     <ProjectReference Include="..\SharpGen\SharpGen.csproj" />
   </ItemGroup>
+  <Target Name="Pack" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
