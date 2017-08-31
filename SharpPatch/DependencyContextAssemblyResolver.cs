@@ -9,10 +9,10 @@ using System.Text;
 
 namespace SharpPatch
 {
-    class AssemblyResolver : IAssemblyResolver // Code adapted from https://github.com/jbevain/cecil/issues/306
+    class DependencyContextAssemblyResolver : IAssemblyResolver // Code adapted from https://github.com/jbevain/cecil/issues/306
     {
         Dictionary<string, Lazy<AssemblyDefinition>> _libraries;
-        public AssemblyResolver(DependencyContext context, string currentPath)
+        public DependencyContextAssemblyResolver(DependencyContext context, string currentPath)
         {
             _libraries = new Dictionary<string, Lazy<AssemblyDefinition>>();
 

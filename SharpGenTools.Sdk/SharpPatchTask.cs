@@ -12,12 +12,16 @@ namespace SharpGenTools.Sdk
         [Required]
         public string AssemblyToPatch { get; set; }
 
+        [Required]
+        public ITaskItem[] References { get; set; }
+
         public override bool Execute()
         {
             BindingRedirectResolution.Enable();
             try
             {
                 var patchApp = new InteropApp();
+                patchApp.AssemblyResolver = new MSBuildAssemblyResolver(References);
                 patchApp.PatchFile(AssemblyToPatch);
                 return true;
             }
