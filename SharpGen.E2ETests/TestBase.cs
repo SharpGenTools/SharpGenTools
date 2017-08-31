@@ -34,11 +34,21 @@ namespace SharpGen.E2ETests
             SaveConfigFile(config, configName);
             var xUnitLogger = new XUnitLogger(outputHelper, failTestOnError);
             var logger = new Logger(xUnitLogger, null);
+
+            var vcInstallDir = Environment.ExpandEnvironmentVariables("VCINSTALLDIR");
+
+            if (!Directory.Exists(vcInstallDir))
+            {
+                vcInstallDir = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\";
+            }
+
+            var msvcToolsetVer = File.ReadAllText(vcInstallDir + Path.Combine(@"\Auxiliary\Build", "Microsoft.VCToolsVersion.default.txt")).Trim();
+
             var codeGenApp = new CodeGenApp(logger)
             {
                 GlobalNamespace = new GlobalNamespaceProvider("SharpGen.Runtime"),
                 CastXmlExecutablePath = "../../../../CastXML/bin/castxml.exe",
-                VcToolsPath = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.10.25017\",
+                VcToolsPath = Path.Combine(vcInstallDir, $@"Tools\MSVC\{msvcToolsetVer}\"),
                 AppType = appType,
                 ConfigRootPath = Path.Combine(testDirectory.FullName, configName + "-Mapping.xml"),
                 IntermediateOutputPath = testDirectory.FullName
