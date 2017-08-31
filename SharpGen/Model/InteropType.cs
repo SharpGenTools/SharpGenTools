@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Reflection;
 
 namespace SharpGen.Model
 {
@@ -57,7 +58,7 @@ namespace SharpGen.Model
         }
 
         /// <summary>
-        /// Performs an implicit conversion from <see cref="System.Type"/> to <see cref="SharpDX.TypeWrapper"/>.
+        /// Performs an implicit conversion from <see cref="System.Type"/> to <see cref="InteropType"/>.
         /// </summary>
         /// <param name="input">The input.</param>
         /// <returns>The result of the conversion.</returns>
@@ -67,7 +68,7 @@ namespace SharpGen.Model
         }
 
         /// <summary>
-        /// Performs an implicit conversion from <see cref="System.String"/> to <see cref="SharpDX.TypeWrapper"/>.
+        /// Performs an implicit conversion from <see cref="System.String"/> to <see cref="InteropType"/>.
         /// </summary>
         /// <param name="input">The input.</param>
         /// <returns>The result of the conversion.</returns>
@@ -132,7 +133,7 @@ namespace SharpGen.Model
             get
             {
                 if (Type != null)
-                    return Type.IsPrimitive;
+                    return Type.GetTypeInfo().IsPrimitive;
                 return false;
             }
         }
@@ -160,7 +161,7 @@ namespace SharpGen.Model
             get
             {
                 if (Type != null)
-                    return Type.IsValueType;
+                    return Type.GetTypeInfo().IsValueType;
                 // If typename != null is necessary a ValueType
                 return true;
             }

@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Reflection;
 
 namespace SharpGen.Model
 {
@@ -34,7 +35,7 @@ namespace SharpGen.Model
 
         public bool IsBlittable
         {
-            get { return (this is CsStruct || this is CsEnum || Type.IsValueType); }
+            get { return (this is CsStruct || this is CsEnum || Type.GetTypeInfo().IsValueType); }
         }
 
         /// <summary>

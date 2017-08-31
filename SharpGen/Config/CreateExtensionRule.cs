@@ -25,27 +25,19 @@ namespace SharpGen.Config
     [XmlType("create")]
     public class CreateExtensionRule : ExtensionBaseRule
     {
+        [XmlAttribute("class")]
+        public string NewClass { get; set; }
+
         [XmlIgnore]
         public Visibility? Visibility { get; set; }
         [XmlAttribute("visibility")]
-        public Visibility _Visibility_ { get { return Visibility.Value; } set { Visibility = value; } } public bool ShouldSerialize_Visibility_() { return Visibility != null; }
+        public Visibility _Visibility_ { get { return Visibility.Value; } set { Visibility = value; } }
+        public bool ShouldSerialize_Visibility_() { return Visibility != null; }
 
 
         public override string ToString()
         {
             return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} visibility:{1}", base.ToString(), Visibility.HasValue ? Visibility.Value.ToString() : "undef");
-        }
-    }
-
-    [XmlType("create-cpp")]
-    public class CreateCppExtensionRule : CreateExtensionRule
-    {
-        [XmlAttribute("macro")]
-        public string Macro { get; set; }
-
-        public override string ToString()
-        {
-            return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} macro:{1}", base.ToString(), Macro);
         }
     }
 }

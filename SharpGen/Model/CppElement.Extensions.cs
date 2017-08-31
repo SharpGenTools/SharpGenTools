@@ -21,6 +21,7 @@ using System;
 using System.Text.RegularExpressions;
 using SharpGen.Config;
 using SharpGen.CppModel;
+using System.Reflection;
 
 namespace SharpGen.Model
 {
@@ -32,7 +33,8 @@ namespace SharpGen.Model
         public static void Tag<T>(this CppElement element, string regex, MappingRule tag) where T : CppElement
         {
             string regexStr = CppElement.StripRegex(regex);
-            if (typeof(CppMethod).IsAssignableFrom(typeof(T)) || typeof(CppStruct).IsAssignableFrom(typeof(T)))
+            if (typeof(CppMethod).GetTypeInfo().IsAssignableFrom(typeof(T).GetTypeInfo())
+                || typeof(CppStruct).GetTypeInfo().IsAssignableFrom(typeof(T).GetTypeInfo()))
             {
                 LastCppOuterElement = regexStr;
             }

@@ -54,7 +54,7 @@ namespace SharpGen.Generator
         }
 
         /// <summary>
-        /// Renames a C++++ element
+        /// Renames a C++ element
         /// </summary>
         /// <param name="cppElement">The C++ element.</param>
         /// <param name="rootName">Name of the root.</param>

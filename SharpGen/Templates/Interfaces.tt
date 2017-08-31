@@ -28,7 +28,7 @@ foreach (var sharpInterface in Namespace.Interfaces)
     /// <unmanaged><#= sharpInterface.DocUnmanagedName #></unmanaged>
 <#+
 	} else {
-		foreach (var docItem in sharpInterface.DocItems) {
+		foreach (var docItem in Generator.GetDocItems(sharpInterface)) {
 #>
     /// <#= docItem #>	
 <#+			
@@ -139,7 +139,7 @@ foreach (var sharpInterface in Namespace.Interfaces)
 #>
         
 <#+	
-		foreach (var docItem in sharpProperty.DocItems) {
+		foreach (var docItem in Generator.GetDocItems(sharpProperty)) {
 #>
         /// <#= docItem #>	
 <#+			

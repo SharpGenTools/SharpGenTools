@@ -1,0 +1,14 @@
+version: 1.0.{build}
+image: Visual Studio 2017
+environment:
+  CLI_VERSION: 2.0.0
+
+build_script:
+-  ps: ./build
+build:
+  verbosity: minimal
+test_script:
+-  ps: ./test
+artifacts:
+  - path: 'Sharp*\**\Sharp*.nupkg'
+  - path: 'SdkTests\SharpGen.Runtime\**\*.nupkg'

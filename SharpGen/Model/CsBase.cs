@@ -22,9 +22,9 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Generator;
@@ -34,14 +34,11 @@ namespace SharpGen.Model
     /// <summary>
     /// Root class for all model elements.
     /// </summary>
-    public class CsBase : ICloneable
+    public class CsBase
     {
         private List<CsBase> _items;
         private CppElement _cppElement;
         private string _cppElementName;
-        private static readonly Regex RegexLinkStart = new Regex(@"^\s*\{\{.*?}}\s*(.*)", RegexOptions.Compiled);
-        private static readonly Regex RegexLink = new Regex(@"\{\{(.*?)}}", RegexOptions.Compiled);
-        private static readonly Regex RegexSpaceBegin = new Regex(@"^\s*(.*)", RegexOptions.Compiled);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CsBase"/> class.
@@ -49,14 +46,11 @@ namespace SharpGen.Model
         public CsBase()
         {
             _items = new List<CsBase>();
-            Generator = CallContext.GetData("Generator") as TransformManager;
             Visibility = Visibility.Public;
             IsFullyMapped = true;
             Description = "No documentation.";
             Remarks = "";
         }
-
-        internal TransformManager Generator { get; private set; }
 
         /// <summary>
         /// Gets or sets the parent of this container.
@@ -228,7 +222,7 @@ namespace SharpGen.Model
                 _cppElement = value;
                 if (_cppElement != null )
                 {
-                    MsdnId = string.IsNullOrEmpty(CppElement.Id) ? MsdnId : CppElement.Id;
+                    DocId = string.IsNullOrEmpty(CppElement.Id) ? DocId : CppElement.Id;
                     Description = string.IsNullOrEmpty(CppElement.Description) ? Description : CppElement.Description;
                     Remarks = string.IsNullOrEmpty(CppElement.Remarks) ? Remarks : CppElement.Remarks;
 
@@ -268,12 +262,12 @@ namespace SharpGen.Model
         public int Align { get; set; }
 
         /// <summary>
-        /// Gets or sets the MSDN doc id.
+        /// Gets or sets the doc id.
         /// </summary>
         /// <value>
         /// The id.
         /// </value>
-        public string MsdnId { get; set; }
+        public string DocId { get; set; }
 
         /// <summary>
         /// Gets or sets the description documentation.
@@ -289,66 +283,7 @@ namespace SharpGen.Model
 
         public bool HasPersistent { get; set; }
 
-        /// <summary>
-        /// Gets the XML C# doc items as a list of string (contains summary and remarks tags).
-        /// </summary>
-        /// <value>The XML C# doc items.</value>
-        public List<string> DocItems
-        {
-            get
-            {
-                var docItems = new List<string>();
-
-                // If doc comments are already stored in an external file, than don't emit them
-                if (!IsCodeCommentsExternal)
-                {
-                    string description = Description;
-                    string remarks = Remarks;
-
-                    description = RegexSpaceBegin.Replace(description, "$1");
-
-                    description = RegexLink.Replace(description, RegexReplaceCReference);
-                    // evaluator => "<see cref=\"$1\"/>");
-
-                    string line = null;
-
-                    StringReader stringReader = new StringReader(description);
-                    docItems.Add("<summary>");
-                    while ((line = stringReader.ReadLine()) != null)
-                        docItems.Add(line);
-                    docItems.Add("</summary>");
-
-                    FillDocItems(docItems);
-
-                    if (!string.IsNullOrEmpty(remarks))
-                    {
-                        remarks = RegexSpaceBegin.Replace(remarks, "$1");
-                        remarks = RegexLink.Replace(remarks, RegexReplaceCReference);
-
-                        stringReader = new StringReader(remarks);
-                        docItems.Add("<remarks>");
-                        while ((line = stringReader.ReadLine()) != null)
-                            docItems.Add(line);
-                        docItems.Add("</remarks>");
-                    }
-                }
-
-                docItems.Add(DocIncludeDirective);
-                if (CppElement != null)
-                {
-                    if (MsdnId != null)
-                    {
-                        docItems.Add("<msdn-id>" + Utilities.EscapeXml(MsdnId) + "</msdn-id>");
-                    }
-                    docItems.Add("<unmanaged>" + Utilities.EscapeXml(DocUnmanagedName) + "</unmanaged>");
-                    docItems.Add("<unmanaged-short>" + Utilities.EscapeXml(DocUnmanagedShortName) + "</unmanaged-short>");
-                }
-
-                return docItems;
-            }
-        }
-
-        protected virtual void FillDocItems(List<string> docItems) {}
+        public virtual void FillDocItems(List<string> docItems, TransformManager manager) {}
         
         public virtual string DocUnmanagedName
         {
@@ -360,35 +295,7 @@ namespace SharpGen.Model
             get { return CppElementName; }
         }
 
-        /// <summary>
-        /// Gets the description as a single line of documentation.
-        /// </summary>
-        /// <value>The single doc.</value>
-        public string SingleDoc
-        {
-            get
-            {
-                string description = Description;
-
-                if (RegexLinkStart.Match(description).Success)
-                    description = RegexLinkStart.Replace(description, "$1");
-
-                description = RegexSpaceBegin.Replace(description, "$1");
-
-                description = RegexLink.Replace(description, RegexReplaceCReference);
-
-                StringBuilder docItems = new StringBuilder();
-                string line = null;
-
-                StringReader stringReader = new StringReader(description);
-                while ((line = stringReader.ReadLine()) != null)
-                    docItems.Append(line);
-
-                return docItems.ToString();
-            }
-        }
-
-        private string DocIncludeDirective
+        internal string DocIncludeDirective
         {
             get
             {
@@ -398,7 +305,7 @@ namespace SharpGen.Model
             }
         }
 
-        private bool IsCodeCommentsExternal
+        public bool IsCodeCommentsExternal
         {
             get { return GetParent<CsAssembly>().CodeComments.SelectSingleNode(CodeCommentsXPath) != null; }
         }
@@ -416,30 +323,6 @@ namespace SharpGen.Model
         {
             if (tag.Visibility.HasValue)
                 Visibility = tag.Visibility.Value;
-        }
-
-        private static Regex regextWithMethodW = new Regex("([^W])::");
-        private static Regex regexWithTypeW = new Regex("([^W])$");
-
-        private string RegexReplaceCReference(Match match)
-        {
-            string matchName = match.Groups[1].Value;
-            var csName = Generator.FindDocName(matchName);
-
-            // Tries to match with W::
-            if (csName == null && regextWithMethodW.Match(matchName).Success)
-                csName = Generator.FindDocName(regextWithMethodW.Replace(matchName, "$1W::"));
-
-            // Or with W
-            if (csName == null && regexWithTypeW.Match(matchName).Success)
-                csName = Generator.FindDocName(regexWithTypeW.Replace(matchName, "$1W"));
-
-            if (csName == null) 
-                return matchName;
-
-            if (csName.StartsWith("<"))
-                return csName;
-            return string.Format(System.Globalization.CultureInfo.InvariantCulture, "<see cref=\"{0}\"/>", csName);
         }
 
         public virtual object Clone()

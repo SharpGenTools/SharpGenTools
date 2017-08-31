@@ -17,6 +17,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System.Linq;
+using System.Reflection;
 using System.Xml.Serialization;
 
 namespace SharpGen.Config
@@ -54,11 +56,11 @@ namespace SharpGen.Config
         {
             string type = "";
 
-            foreach(var property in typeof(MappingBaseRule).GetProperties())
+            foreach(var property in typeof(MappingBaseRule).GetRuntimeProperties())
             {
                 if (property.GetValue(this, null) != null)
                 {
-                    type = ((XmlAttributeAttribute) (property.GetCustomAttributes(typeof (XmlAttributeAttribute), false)[0])).AttributeName + ":" +
+                    type = property.GetCustomAttributes<XmlAttributeAttribute>(false).First().AttributeName + ":" +
                            property.GetValue(this, null);
                     break;
 

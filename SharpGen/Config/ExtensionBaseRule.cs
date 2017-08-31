@@ -20,7 +20,7 @@
 
 namespace SharpGen.Config
 {
-    public abstract class ExtensionBaseRule : MappingBaseRule
+    public abstract class ExtensionBaseRule : ConfigBaseRule
     {
     }
 }

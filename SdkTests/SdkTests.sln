@@ -1,0 +1,36 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.10
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpGen.Runtime", "SharpGen.Runtime\SharpGen.Runtime.csproj", "{068FAC43-D2BE-472F-8D61-66227591FFC7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|x64.Build.0 = Debug|Any CPU
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|x86.Build.0 = Debug|Any CPU
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|x64.ActiveCfg = Release|Any CPU
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|x64.Build.0 = Release|Any CPU
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|x86.ActiveCfg = Release|Any CPU
+		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {221879F6-15EA-4006-BE00-9BD3435C8062}
+	EndGlobalSection
+EndGlobal

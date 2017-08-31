@@ -30,35 +30,27 @@ namespace SharpGen.Logging
     /// </summary>
     public class Logger
     {
-        #region Delegates
+        private readonly string DefaultFilePathError = Path.GetFileNameWithoutExtension(typeof(Logger).GetTypeInfo().Assembly.Location);
 
-        /// <summary>
-        /// Public delegate for an execution inside a log context.
-        /// </summary>
-        public delegate void MethodLogInContext();
-
-        #endregion
-
-        private static readonly string DefaultFilePathError = Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location);
-
-        private static int _errorCount;
-        private static readonly List<string> ContextStack = new List<string>();
-        private static readonly Stack<LogLocation> FileLocationStack = new Stack<LogLocation>();
+        private int _errorCount;
+        private readonly List<string> ContextStack = new List<string>();
+        private readonly Stack<LogLocation> FileLocationStack = new Stack<LogLocation>();
 
         /// <summary>
         /// Initializes the <see cref="Logger"/> class.
         /// </summary>
-        static Logger()
+        public Logger(ILogger output, IProgressReport progress)
         {
             PushLocation(DefaultFilePathError);
-            LoggerOutput = new ConsoleLogger();
+            LoggerOutput = output;
+            ProgressReport = progress;
         }
 
         /// <summary>
         /// Gets the context as a string.
         /// </summary>
         /// <value>The context.</value>
-        private static string ContextAsText
+        private string ContextAsText
         {
             get { return HasContext ? string.Join("/", ContextStack) : null; }
         }
@@ -67,7 +59,7 @@ namespace SharpGen.Logging
         ///   Gets or sets the logger output.
         /// </summary>
         /// <value>The logger output.</value>
-        public static ILogger LoggerOutput { get; set; }
+        public ILogger LoggerOutput { get; }
 
         /// <summary>
         ///   Gets a value indicating whether this instance has context.
@@ -75,7 +67,7 @@ namespace SharpGen.Logging
         /// <value>
         ///   <c>true</c> if this instance has context; otherwise, <c>false</c>.
         /// </value>
-        private static bool HasContext
+        private bool HasContext
         {
             get { return ContextStack.Count > 0; }
         }
@@ -86,7 +78,7 @@ namespace SharpGen.Logging
         /// <value>
         ///   <c>true</c> if this instance has errors; otherwise, <c>false</c>.
         /// </value>
-        public static bool HasErrors
+        public bool HasErrors
         {
             get { return _errorCount > 0; }
         }
@@ -95,15 +87,14 @@ namespace SharpGen.Logging
         ///   Gets or sets the progress report.
         /// </summary>
         /// <value>The progress report.</value>
-        public static IProgressReport ProgressReport { get; set; }
-
+        public IProgressReport ProgressReport { get; }
 
         /// <summary>
         ///   Runs a delegate in the specified log context.
         /// </summary>
         /// <param name = "context">The context.</param>
         /// <param name = "method">The method.</param>
-        public static void RunInContext(string context, MethodLogInContext method)
+        public void RunInContext(string context, Action method)
         {
             try
             {
@@ -120,7 +111,7 @@ namespace SharpGen.Logging
         ///   Pushes a context string.
         /// </summary>
         /// <param name = "context">The context.</param>
-        public static void PushContext(string context)
+        public void PushContext(string context)
         {
             ContextStack.Add(context);
         }
@@ -131,7 +122,7 @@ namespace SharpGen.Logging
         /// <param name = "fileName">Name of the file.</param>
         /// <param name = "line">The line.</param>
         /// <param name = "column">The column.</param>
-        public static void PushLocation(string fileName, int line = 1, int column = 1)
+        public void PushLocation(string fileName, int line = 1, int column = 1)
         {
             FileLocationStack.Push(new LogLocation(fileName, line, column));
         }
@@ -139,7 +130,7 @@ namespace SharpGen.Logging
         /// <summary>
         ///   Pops the context location.
         /// </summary>
-        public static void PopLocation()
+        public void PopLocation()
         {
             FileLocationStack.Pop();
         }
@@ -149,7 +140,7 @@ namespace SharpGen.Logging
         /// </summary>
         /// <param name = "context">The context.</param>
         /// <param name = "parameters">The parameters.</param>
-        public static void PushContext(string context, params object[] parameters)
+        public void PushContext(string context, params object[] parameters)
         {
             ContextStack.Add(string.Format(context, parameters));
         }
@@ -157,7 +148,7 @@ namespace SharpGen.Logging
         /// <summary>
         ///   Pops the context.
         /// </summary>
-        public static void PopContext()
+        public void PopContext()
         {
             if (ContextStack.Count > 0)
                 ContextStack.RemoveAt(ContextStack.Count - 1);
@@ -167,7 +158,7 @@ namespace SharpGen.Logging
         ///   Logs the specified message.
         /// </summary>
         /// <param name = "message">The message.</param>
-        public static void Message(string message)
+        public void Message(string message)
         {
             Message("{0}", message);
         }
@@ -177,7 +168,7 @@ namespace SharpGen.Logging
         /// </summary>
         /// <param name = "message">The message.</param>
         /// <param name = "parameters">The parameters.</param>
-        public static void Message(string message, params object[] parameters)
+        public void Message(string message, params object[] parameters)
         {
             LogRawMessage(LogLevel.Info, message, null, parameters);
         }
@@ -188,7 +179,7 @@ namespace SharpGen.Logging
         /// <param name = "level">The level.</param>
         /// <param name = "message">The message.</param>
         /// <param name = "parameters">The parameters.</param>
-        public static void Progress(int level, string message, params object[] parameters)
+        public void Progress(int level, string message, params object[] parameters)
         {
             Message(message, parameters);
             if (ProgressReport != null)
@@ -202,7 +193,7 @@ namespace SharpGen.Logging
         ///   Logs the specified warning.
         /// </summary>
         /// <param name = "message">The message.</param>
-        public static void Warning(string message)
+        public void Warning(string message)
         {
             Warning("{0}", message);
         }
@@ -212,7 +203,7 @@ namespace SharpGen.Logging
         /// </summary>
         /// <param name = "message">The message.</param>
         /// <param name = "parameters">The parameters.</param>
-        public static void Warning(string message, params object[] parameters)
+        public void Warning(string message, params object[] parameters)
         {
             LogRawMessage(LogLevel.Warning, message, null, parameters);
         }
@@ -223,7 +214,7 @@ namespace SharpGen.Logging
         /// <param name = "message">The message.</param>
         /// <param name = "ex">The ex.</param>
         /// <param name = "parameters">The parameters.</param>
-        public static void Error(string message, Exception ex, params object[] parameters)
+        public void Error(string message, Exception ex, params object[] parameters)
         {
             LogRawMessage(LogLevel.Error, message, ex, parameters);
             _errorCount++;
@@ -233,7 +224,7 @@ namespace SharpGen.Logging
         ///   Logs the specified error.
         /// </summary>
         /// <param name = "message">The message.</param>
-        public static void Error(string message)
+        public void Error(string message)
         {
             Error("{0}", message);
         }
@@ -243,7 +234,7 @@ namespace SharpGen.Logging
         /// </summary>
         /// <param name = "message">The message.</param>
         /// <param name = "parameters">The parameters.</param>
-        public static void Error(string message, params object[] parameters)
+        public void Error(string message, params object[] parameters)
         {
             Error(message, null, parameters);
         }
@@ -254,7 +245,7 @@ namespace SharpGen.Logging
         /// <param name = "message">The message.</param>
         /// <param name = "ex">The exception.</param>
         /// <param name = "parameters">The parameters.</param>
-        public static void Fatal(string message, Exception ex, params object[] parameters)
+        public void Fatal(string message, Exception ex, params object[] parameters)
         {
             LogRawMessage(LogLevel.Fatal, message, ex, parameters);
             _errorCount++;
@@ -265,7 +256,7 @@ namespace SharpGen.Logging
         ///   Logs the specified fatal error.
         /// </summary>
         /// <param name = "message">The message.</param>
-        public static void Fatal(string message)
+        public void Fatal(string message)
         {
             Fatal("{0}", message);
         }
@@ -275,7 +266,7 @@ namespace SharpGen.Logging
         /// </summary>
         /// <param name = "message">The message.</param>
         /// <param name = "parameters">The parameters.</param>
-        public static void Fatal(string message, params object[] parameters)
+        public void Fatal(string message, params object[] parameters)
         {
             Fatal(message, null, parameters);
         }
@@ -285,7 +276,7 @@ namespace SharpGen.Logging
         /// </summary>
         /// <param name="reason">The reason.</param>
         /// <param name="parameters">The parameters.</param>
-        public static void Exit(string reason, params object[] parameters)
+        public void Exit(string reason, params object[] parameters)
         {
             string message = string.Format(reason, parameters);
             if (ProgressReport != null)
@@ -302,7 +293,7 @@ namespace SharpGen.Logging
         /// <param name = "message">The message.</param>
         /// <param name = "exception">The exception.</param>
         /// <param name = "parameters">The parameters.</param>
-        private static void LogRawMessage(LogLevel type, string message, Exception exception, params object[] parameters)
+        private void LogRawMessage(LogLevel type, string message, Exception exception, params object[] parameters)
         {
             var logLocation = FileLocationStack.Count > 0 ? FileLocationStack.Peek() : null;
 
