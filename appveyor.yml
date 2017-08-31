@@ -11,3 +11,4 @@ test_script:
 -  ps: ./test
 artifacts:
   - path: 'Sharp*\**\Sharp*.nupkg'
+  - path: 'SdkTests\SharpGen.Runtime\**\*.nupkg'
