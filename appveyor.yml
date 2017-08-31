@@ -10,4 +10,4 @@ build:
 test_script:
 -  ps: ./test
 artifacts:
-  - path: '**\Sharp*.nupkg'
+  - path: 'Sharp*\**\Sharp*.nupkg'
