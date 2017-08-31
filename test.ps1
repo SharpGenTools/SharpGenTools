@@ -8,7 +8,7 @@ popd
 rm -r -Force SdkTests/RestoredPackages/
 mkdir SdkTests/LocalPackages
 rm SdkTests/LocalPackages/*.nupkg
-mv SharpGenTools.Sdk/bin/Release/*.nupkg SdkTests/LocalPackages/
+cp SharpGenTools.Sdk/bin/Release/*.nupkg SdkTests/LocalPackages/
 
 pushd .\SdkTests
 msbuild /t:Restore
