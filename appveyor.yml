@@ -1,19 +1,13 @@
 version: 1.0.{build}
 image: Visual Studio 2017
 environment:
-  CLI_VERSION: 1.0.4
+  CLI_VERSION: 2.0.0
 
-install:
-  - ps: $env:DOTNET_INSTALL_DIR = "$pwd\.dotnetsdk"
-  - ps: mkdir $env:DOTNET_INSTALL_DIR -Force | Out-Null
-  - ps: Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0/scripts/obtain/dotnet-install.ps1" -OutFile "$($env:DOTNET_INSTALL_DIR)/dotnet-install.ps1"
-  - ps: '& "$($env:DOTNET_INSTALL_DIR)/dotnet-install.ps1" -Version $env:CLI_VERSION -InstallDir $env:DOTNET_INSTALL_DIR'
-  - ps: $env:Path = "$env:DOTNET_INSTALL_DIR;$env:Path"
-before_build:
-- ps: nuget restore
+build_script:
+-  ps: ./build
 build:
   verbosity: minimal
 test_script:
--  ps: pushd SharpGen.E2ETests
--  ps: dotnet xunit
--  ps: popd
+-  ps: ./test
+artifacts:
+  - path: '**\*.nupkg'

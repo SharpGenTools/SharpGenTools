@@ -36,7 +36,7 @@ namespace SharpGen.E2ETests
             var logger = new Logger(xUnitLogger, null);
             var codeGenApp = new CodeGenApp(logger)
             {
-                GlobalNamespace = new GlobalNamespaceProvider("SharpGen"),
+                GlobalNamespace = new GlobalNamespaceProvider("SharpGen.Runtime"),
                 CastXmlExecutablePath = "../../../../CastXML/bin/castxml.exe",
                 VcToolsPath = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.10.25017\",
                 AppType = appType,
@@ -87,14 +87,14 @@ namespace SharpGen.E2ETests
 
         public Compilation GetCompilationForGeneratedCode([CallerMemberName] string assemblyName = "")
         {
-            return CSharpCompilation.Create(assemblyName)
+            return CSharpCompilation.Create(assemblyName, options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
                 .AddReferences(MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location))
                 .AddSyntaxTrees(GetSyntaxTrees(assemblyName));
         }
 
         private IEnumerable<SyntaxTree> GetSyntaxTrees(string assemblyName)
         {
-            foreach (var child in testDirectory.CreateSubdirectory(assemblyName).EnumerateFiles("*.cs", SearchOption.AllDirectories))
+            foreach (var child in testDirectory.CreateSubdirectory("Generated").EnumerateFiles("*.cs", SearchOption.AllDirectories))
             {
                 using (var file = child.OpenRead())
                 {
