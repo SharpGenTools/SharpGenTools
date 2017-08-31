@@ -49,7 +49,7 @@
     <attach>IUnknown</attach>
   </include>
 
-  <include file="objidlbase.h" namespace="SharpGen.Runtime.Win32" output="Win32">
+  <include file="Objidlbase.h" namespace="SharpGen.Runtime.Win32" output="Win32">
     <attach>STATSTG</attach>
     <attach>tagLOCKTYPE</attach>
     <attach>LOCKTYPE</attach>
@@ -248,14 +248,14 @@
     <map method=".*::DrawTextW" name="DrawText" />
     <map method=".*::GetGlyphIndicesW" name="GetGlyphIndices" />
 
-    <context>unknwnbase</context>
+    <context>Unknwnbase</context>
     <map interface="IUnknown" name="IUnknown" callback-visibility="public" callback="true" callback-dual="true" callback-name="ComObject" />
     <map method="IUnknown::.*" keep-implement-public="true" />
     <map param="IUnkown::QueryInterface::riid" attribute="inout" />
     <context-clear/>
 
     <!-- Map IStream -->
-    <context>objidlbase</context>
+    <context>Objidlbase</context>
     <context>wtypes</context>
     <map struct="STATSTG" name="StorageStatistics" />
 

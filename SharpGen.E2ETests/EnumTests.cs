@@ -49,6 +49,67 @@ namespace SharpGen.E2ETests
         }
 
         [Fact]
+        public void CanCreateCSharpEnumFromCppMacros()
+        {
+            var config = new Config.ConfigFile
+            {
+                Assembly = nameof(CanCreateCSharpEnumFromCppMacros),
+                Namespace = nameof(CanCreateCSharpEnumFromCppMacros),
+                IncludeDirs =
+                {
+                    GetTestFileIncludeRule()
+                },
+                Includes =
+                {
+                    CreateCppFile("cppEnum", @"
+#                       define TESTENUM_Element1 0
+#                       define TESTENUM_Element2 1
+                    "),
+                },
+                Extension = new List<Config.ConfigBaseRule>
+                {
+                    new Config.ContextRule("cppEnum"),
+                    new Config.ContextRule(nameof(CanCreateCSharpEnumFromCppMacros)),
+                    new Config.ContextRule($"{nameof(CanCreateCSharpEnumFromCppMacros)}-ext"),
+                    new Config.CreateCppExtensionRule
+                    {
+                        Enum = "SHARPGEN_TESTENUM",
+                        Macro = "TESTENUM_(.*)"
+                    },
+                    new Config.ClearContextRule(),
+                },
+                Mappings =
+                {
+                    new Config.ContextRule("cppEnum"),
+                    new Config.ContextRule(nameof(CanCreateCSharpEnumFromCppMacros)),
+                    new Config.ContextRule($"{nameof(CanCreateCSharpEnumFromCppMacros)}-ext"),
+                    new Config.MappingRule
+                    {
+                        Enum = "SHARPGEN_TESTENUM",
+                        MappingName = "TestEnum",
+                        IsFinalMappingName = true,
+                        Assembly = nameof(CanCreateCSharpEnumFromCppMacros),
+                        Namespace = nameof(CanCreateCSharpEnumFromCppMacros)
+                    },
+                    new Config.MappingRule
+                    {
+                        EnumItem = "TESTENUM_(.*)",
+                        MappingName = "$1"
+                    },
+                    new Config.ClearContextRule()
+                }
+            };
+
+            (bool success, string output) = RunWithConfig(config);
+            AssertRanSuccessfully(success, output);
+            var compilation = GetCompilationForGeneratedCode();
+            var enumType = compilation.GetTypeByMetadataName($"{nameof(CanCreateCSharpEnumFromCppMacros)}.TestEnum");
+            Assert.Equal(compilation.GetSpecialType(SpecialType.System_Int32), enumType.EnumUnderlyingType);
+            AssertEnumMemberCorrect(enumType, "Element1", 0);
+            AssertEnumMemberCorrect(enumType, "Element2", 1);
+        }
+
+        [Fact]
         public void CppScopedEnumMapsToCSharpEnum()
         {
             var testDirectory = GenerateTestDirectory();

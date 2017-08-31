@@ -40,7 +40,7 @@ namespace SharpGen.Config
         /// </summary>
         /// <value>The id.</value>
         [XmlIgnore]
-        public string Id { get { return Path.GetFileNameWithoutExtension(File).ToLower(); } }
+        public string Id { get { return Path.GetFileNameWithoutExtension(File); } }
 
         /// <summary>
         /// Gets or sets the file to be included.

@@ -1517,7 +1517,7 @@ namespace SharpGen.Parser
             {
                 return "";
             }
-            return Path.GetFileNameWithoutExtension(filePath).ToLower();            
+            return Path.GetFileNameWithoutExtension(filePath);            
         }
 
         /// <summary>

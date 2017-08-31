@@ -135,6 +135,7 @@ namespace SharpGen.Config
 
         [XmlArray("extension")]
         [XmlArrayItem(typeof(ContextRule))]
+        [XmlArrayItem(typeof(ClearContextRule))]
         [XmlArrayItem(typeof(CreateExtensionRule))]
         [XmlArrayItem(typeof(CreateCppExtensionRule))]
         [XmlArrayItem(typeof(DefineExtensionRule))]
