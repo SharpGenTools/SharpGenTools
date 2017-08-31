@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using SharpGen.CppModel;
+using SharpGen.Logging;
 using SharpGen.Model;
 
 namespace SharpGen.Generator
@@ -31,10 +32,11 @@ namespace SharpGen.Generator
         /// Initializes this instance with the specified <see cref="TransformManager"/>.
         /// </summary>
         /// <param name="manager">The manager.</param>
-        public virtual void Init(TransformManager manager)
+        public virtual void Init(TransformManager manager, Logger logger)
         {
             Manager = manager;
             NamingRules = manager.NamingRules;
+            Logger = logger;
         }
 
         /// <summary>
@@ -48,6 +50,11 @@ namespace SharpGen.Generator
         /// </summary>
         /// <value>The naming rules manager.</value>
         public NamingRulesManager NamingRules { get; private set; }
+
+        /// <summary>
+        /// Gets the logger for this transformation
+        /// </summary>
+        public Logger Logger { get; private set; }
 
         /// <summary>
         /// Prepares the specified C++ element to a C# element.

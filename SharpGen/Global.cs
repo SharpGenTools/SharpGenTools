@@ -22,11 +22,15 @@ namespace SharpGen
     /// <summary>
     /// Global constant.
     /// </summary>
-    public class Global
+    public class GlobalNamespaceProvider
     {
-        /// <summary>
-        /// Name of root package for SharpDX.
-        /// </summary>
-        public const string Name = "SharpDX";
+        public string Name { get; }
+
+        public GlobalNamespaceProvider(string name)
+        {
+            Name = name;
+        }
+
+        public string GetTypeName(string typeName) => $"{Name}.{typeName}";
     }
 }

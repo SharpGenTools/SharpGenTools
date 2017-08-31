@@ -113,11 +113,14 @@ namespace SharpGen.Model
 
                     try
                     {
-                        _codeComments.Load(codeCommentsFullPath);
+                        using (var commentsFile = File.OpenRead(codeCommentsFullPath))
+                        {
+                            _codeComments.Load(commentsFile); 
+                        }
                     }
                     catch (Exception)
                     {
-                        Logger.Warning("Cannot load code comments from [{0}] for assembly [{1}]", codeCommentsFullPath, Name);
+                        // Failed to lode comments. Just swallow the exception.
                     }
                 }
                 return _codeComments;

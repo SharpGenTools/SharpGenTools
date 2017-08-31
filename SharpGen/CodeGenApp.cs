@@ -22,7 +22,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Mono.Options;
 using SharpGen.Logging;
 using SharpGen.Config;
 using SharpGen.Generator;
@@ -38,9 +37,10 @@ namespace SharpGen
         /// <summary>
         /// Initializes a new instance of the <see cref="CodeGenApp"/> class.
         /// </summary>
-        public CodeGenApp()
+        public CodeGenApp(Logger logger)
         {
             Macros = new HashSet<string>();
+            Logger = logger;
         }
 
         /// <summary>
@@ -81,6 +81,12 @@ namespace SharpGen
         /// <remarks>Null is allowed, in which case sharpgen will use default</remarks>
         public string OutputDirectory { get; set; }
 
+        public bool IncludeAssemblyNameFolder { get; set; }
+
+        public string GeneratedCodeFolder { get; set; }
+
+        public Logger Logger { get; }
+
         /// <summary>
         /// Gets or sets the macros.
         /// </summary>
@@ -89,7 +95,13 @@ namespace SharpGen
         /// </value>
         public HashSet<string> Macros { get; set; }
 
+        public string ConfigRootPath { get; set; }
+
+        public string IntermediateOutputPath { get; set; } = "";
+
         private ConfigFile Config { get; set; }
+
+        public GlobalNamespaceProvider GlobalNamespace { get; set; }
 
         private string _thisAssemblyPath;
         private bool _isAssemblyNew;
@@ -97,67 +109,8 @@ namespace SharpGen
         private string _assemblyCheckFile;
         private string _generatedPath;
         private string _allConfigCheck;
-        private string _configRootPath;
 
-        /// <summary>
-        /// Print usages the error.
-        /// </summary>
-        /// <param name="error">The error.</param>
-        /// <param name="parameters">The parameters.</param>
-        private static void UsageError(string error, params object[] parameters)
-        {
-            var exeName = Path.GetFileName(Assembly.GetEntryAssembly().Location);
-            Console.Write("{0}: ", exeName);
-            Console.WriteLine(error, parameters);
-            Console.WriteLine("Use {0} --help' for more information.", exeName);
-            Environment.Exit(1);
-        }
 
-        /// <summary>
-        /// Parses the command line arguments.
-        /// </summary>
-        /// <param name="args">The args.</param>
-        public void ParseArguments(string[] args)
-        {
-            var showHelp = false;
-
-            var options = new OptionSet()
-                              {
-                                  "Copyright (c) 2010-2014 SharpDX - Alexandre Mutel",
-                                  "Usage: SharpGen [options] config_file.xml",
-                                  "Code generator from C++ to C# for .Net languages",
-                                  "",
-                                  {"c|castxml=", "Specify the path to castxml.exe", opt => CastXmlExecutablePath = opt},
-                                  {"d|doc", "Specify to generate the documentation [default: false]", opt => IsGeneratingDoc = true},
-                                  {"p|docpath=", "Specify the path to the assembly doc provider [default: null]", opt => DocProviderAssemblyPath = opt},
-                                  {"v|vctools=", "Specify the path to the Visual C++ Toolset", opt => VcToolsPath = opt },
-                                  {"od|outputdir=", "Specify the base output directory for the generated code", opt => OutputDirectory = opt },
-                                  {"a|apptype=", "Specify what app type to generate code for (i.e. DESKTOP_APP or STORE_APP)", opt => AppType = opt },
-                                  "",
-                                  {"h|help", "Show this message and exit", opt => showHelp = opt != null},
-                                  // default
-                                  {"<>", opt => _configRootPath = opt },
-                              };
-            try
-            {
-                options.Parse(args);
-            }
-            catch (OptionException e)
-            {
-                UsageError(e.Message);
-            }
-
-            if (showHelp)
-            {
-                options.WriteOptionDescriptions(Console.Out);
-                Environment.Exit(0);
-            }
-
-            if (_configRootPath == null)
-                UsageError("Missing config.xml. A config.xml must be specified");
-            if (AppType == null)
-                UsageError("Missing apptype argument. an App type must be specified (for example: -apptype=DESKTOP_APP");
-        }
 
         /// <summary>
         /// Initializes the specified instance with a config root file.
@@ -165,29 +118,30 @@ namespace SharpGen
         /// <returns>true if the config or assembly changed from the last run; otherwise returns false</returns>
         public bool Init()
         {
-            _thisAssemblyPath = Assembly.GetExecutingAssembly().Location;
-            _assemblyCheckFile = Path.ChangeExtension(_thisAssemblyPath, ".check-" + AppType);
+            _thisAssemblyPath = GetType().GetTypeInfo().Assembly.Location;
+            _assemblyCheckFile = Path.Combine(IntermediateOutputPath, $"SharpGen.{AppType}.check");
             _assemblyDatetime = File.GetLastWriteTime(_thisAssemblyPath);
-            _isAssemblyNew = (File.GetLastWriteTime(_thisAssemblyPath) != File.GetLastWriteTime(_assemblyCheckFile));
-            _generatedPath = OutputDirectory != null ? Path.GetDirectoryName(OutputDirectory) : Path.GetDirectoryName(_configRootPath);
+            _isAssemblyNew = (_assemblyDatetime != File.GetLastWriteTime(_assemblyCheckFile));
+            _generatedPath = OutputDirectory != null ?
+                Path.GetDirectoryName(OutputDirectory)
+                : Path.GetDirectoryName(Path.GetFullPath(ConfigRootPath));
 
             Logger.Message("Loading config files...");
-
-            Macros.Add("DIRECTX11_1");
+            
             Macros.Add(AppType);
 
-            Config = ConfigFile.Load(_configRootPath, Macros.ToArray(), new KeyValue("VC_TOOLS_PATH", VcToolsPath));
+            Config = ConfigFile.Load(ConfigRootPath, Macros.ToArray(), Logger, new KeyValue("VC_TOOLS_PATH", VcToolsPath));
             var latestConfigTime = ConfigFile.GetLatestTimestamp(Config.ConfigFilesLoaded);
-
-            _allConfigCheck = Config.Id + "-" + AppType + "-CodeGen.check";
+            
+            _allConfigCheck = Path.Combine(IntermediateOutputPath, Config.Id + "-" + AppType + "-CodeGen.check");
 
             var isConfigFileChanged = !File.Exists(_allConfigCheck) || latestConfigTime > File.GetLastWriteTime(_allConfigCheck);
 
-            if(_isAssemblyNew)
+            if (_isAssemblyNew)
             {
                 Logger.Message("Assembly [{0}] changed. All files will be generated", _thisAssemblyPath);
             }
-            else if(isConfigFileChanged)
+            else if (isConfigFileChanged)
             {
                 Logger.Message("Config files [{0}] changed", string.Join(",", Config.ConfigFilesLoaded.Select(file => Path.GetFileName(file.AbsoluteFilePath))));
             }
@@ -207,12 +161,13 @@ namespace SharpGen
             try
             {
                 // Run the parser
-                var parser = new Parser.CppParser
+                var parser = new Parser.CppParser(GlobalNamespace, Logger)
                                  {
                                      IsGeneratingDoc = IsGeneratingDoc,
                                      DocProviderAssembly = DocProviderAssemblyPath,
                                      ForceParsing = _isAssemblyNew,
-                                     CastXmlExecutablePath = CastXmlExecutablePath
+                                     CastXmlExecutablePath = CastXmlExecutablePath,
+                                     OutputPath = IntermediateOutputPath
                                  };
 
                 // Init the parser
@@ -228,19 +183,21 @@ namespace SharpGen
                     Logger.Fatal("C++ compiler failed to parse header files");
 
                 // Run the main mapping process
-                var transformer = new TransformManager
+                var transformer = new TransformManager(GlobalNamespace, Logger)
                 {
                     GeneratedPath = _generatedPath,
+                    IncludeAssemblyNameFolder = IncludeAssemblyNameFolder,
+                    GeneratedCodeFolder = GeneratedCodeFolder,
                     ForceGenerator = _isAssemblyNew,
                     AppType = AppType
                 };
 
-                transformer.Init(group, Config);
+                transformer.Init(group, Config, IntermediateOutputPath);
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Mapping rules initialization failed");
 
-                transformer.Generate();
+                transformer.Generate(IntermediateOutputPath);
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Code generation failed");
@@ -251,9 +208,11 @@ namespace SharpGen
                 transformer.PrintStatistics();
 
                 // Output all elements
-                var fileWriter = new StreamWriter("SharpGen_rename.log");
-                transformer.NamingRules.DumpRenames(fileWriter);
-                fileWriter.Close();
+                using (var renameLog = File.Open(Path.Combine(IntermediateOutputPath, "SharpGen_rename.log"), FileMode.OpenOrCreate, FileAccess.Write))
+                using (var fileWriter = new StreamWriter(renameLog))
+                {
+                    transformer.NamingRules.DumpRenames(fileWriter);
+                }
 
                 // Update Checkfile for assembly
                 File.WriteAllText(_assemblyCheckFile, "");

@@ -1,0 +1,46 @@
+﻿<Project>
+  <PropertyGroup>
+    <SharpGenGeneratedCodeFolder Condition="'$(SharpGenGeneratedCodeFolder)' == ''">$(IntermediateOutputPath)/SharpGen</SharpGenGeneratedCodeFolder>
+  </PropertyGroup>
+
+  <UsingTask Condition="'$(MSBuildRuntimeType)' == 'Full'" AssemblyFile="../tools/net46/SharpGenTools.Sdk.dll" TaskName="SharpPatchTask" />
+  <UsingTask Condition="'$(MSBuildRuntimeType)' == 'Full'" AssemblyFile="../tools/net46/SharpGenTools.Sdk.dll" TaskName="SharpGenTask" />
+  <UsingTask Condition="'$(MSBuildRuntimeType)' == 'Core'" AssemblyFile="../tools/netstandard1.5/SharpGenTools.Sdk.dll" TaskName="SharpPatchTask" />
+  <UsingTask Condition="'$(MSBuildRuntimeType)' == 'Core'" AssemblyFile="../tools/netstandard1.5/SharpGenTools.Sdk.dll" TaskName="SharpGenTask" />
+  
+  <Target Name="CoreRemoveBindingsFiles">
+    <ItemGroup>
+        <Compile Remove="$(IntermediateOutputPath)/SharpGen/**/*.cs" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="GenerateSharpGenBindings" 
+    BeforeTargets="CoreCompile"
+    DependsOnTargets="PrepareForBuild;CoreRemoveBindingsFiles"
+    Inputs="@(SharpGenMapping)"
+    Outputs="@(SharpGenMapping->'$(IntermediateOutputPath)/SharpGen/%(Filename)-$(AppType)-CodeGen.check')">
+
+    <MakeDir Directories="$(IntermediateOutputPath)/SharpGen" />
+    <SharpGenTask
+      CastXmlPath="$(CastXmlPath)"
+      AppTypes="$(SharpGenAppType)"
+      GenerateDocs="$(SharpGenGenerateDoc)"
+      GlobalNamespace="$(SharpGenGlobalNamespace)"
+      VcToolsPath="$(VCToolsDir)"
+      MappingFiles="@(SharpGenMapping)"
+      IntermediateOutputPath="$(MSBuildProjectDirectory)\$(IntermediateOutputPath)SharpGen"
+      GeneratedCodeFolder="$(SharpGenGeneratedCodeFolder)"
+      IncludeAssemblyNameFolder="$(SharpGenIncludeAssemblyNameFolder)"
+    />
+
+    <ItemGroup>
+      <Compile Include="$(IntermediateOutputPath)/SharpGen/**/*.cs" />
+    </ItemGroup>
+  </Target>
+  <Target Name="CleanSharpGenBindings" BeforeTargets="Clean">
+    <RemoveDir Directories="$(IntermediateOutputPath)/SharpGen" />
+  </Target>
+  <Target Name="PatchAssembly" AfterTargets="CopyFilesToOutputDirectory" BeforeTargets="IncrementalClean">
+    <SharpPatchTask AssemblyToPatch="$(TargetPath)" />
+  </Target>
+</Project>

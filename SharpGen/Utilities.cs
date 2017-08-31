@@ -50,49 +50,17 @@ namespace SharpGen
         /// <returns>The text of resource</returns>
         public static string GetResourceAsString(string resourceName)
         {
-            Assembly asm = Assembly.GetExecutingAssembly();
+            Assembly asm = typeof(Utilities).GetTypeInfo().Assembly;
 
             string val = "";
             //' resources are named using a fully qualified name
             Stream strm = asm.GetManifestResourceStream(typeof (Utilities).Namespace + "." + resourceName);
 
             //' read the contents of the embedded file
-            var reader = new StreamReader(strm);
-            val = reader.ReadToEnd();
-            reader.Close();
+            using (var reader = new StreamReader(strm))
+                val = reader.ReadToEnd();
 
             return val;
-        }
-
-        /// <summary>
-        /// Imports the XML types.
-        /// </summary>
-        /// <param name="type">The type.</param>
-        /// <param name="mappings">The mappings.</param>
-        /// <param name="importedTypes">The imported types.</param>
-        /// <param name="importer">The importer.</param>
-        private static void ImportXmlTypes(Type type, List<XmlMapping> mappings, List<Type> importedTypes, XmlReflectionImporter importer)
-        {
-            XmlTypeMapping mapping = null;
-            var importer2 = new XmlReflectionImporter();
-            try
-            {
-                mapping = importer2.ImportTypeMapping(type);
-            }
-            catch (Exception exception)
-            {
-                if (((exception is ThreadAbortException) || (exception is StackOverflowException)) || (exception is OutOfMemoryException))
-                {
-                    throw;
-                }
-                return;
-            }
-            if (mapping != null)
-            {
-                mapping = importer.ImportTypeMapping(type);
-                mappings.Add(mapping);
-                importedTypes.Add(type);
-            }
         }
         
 		/// <summary>

@@ -13,7 +13,7 @@ foreach (var sharpEnum in Namespace.Enums)
 #>
     
 <#	
-	foreach (var docItem in sharpEnum.DocItems) {
+	foreach (var docItem in Generator.GetDocItems(sharpEnum)) {
 #>
     /// <#= docItem #>	
 <#			
@@ -29,7 +29,7 @@ foreach (var sharpEnum in Namespace.Enums)
 #>
         
 <#	
-		foreach (var docItem in sharpEnumItem.DocItems) {
+		foreach (var docItem in Generator.GetDocItems(sharpEnumItem)) {
 #>
         /// <#= docItem #>	
 <#			

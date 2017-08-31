@@ -11,7 +11,7 @@ namespace <#= Namespace.Name #> {
 <#
 foreach (var sharpFunctionGroup in Namespace.Classes)
 {
-		foreach (var docItem in sharpFunctionGroup.DocItems) {
+		foreach (var docItem in Generator.GetDocItems(sharpFunctionGroup)) {
 #>
         /// <#= docItem #>	
 <#		}#>

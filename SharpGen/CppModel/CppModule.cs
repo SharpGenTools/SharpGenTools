@@ -72,10 +72,10 @@ namespace SharpGen.CppModel
         /// <returns>A C++ module</returns>
         public static CppModule Read(string file)
         {
-            var input = new FileStream(file, FileMode.Open);
-            var result = Read(input);
-            input.Close();
-            return result;
+            using (var input = new FileStream(file, FileMode.Open))
+            {
+                return Read(input);
+            }
         }
 
         /// <summary>
@@ -103,9 +103,10 @@ namespace SharpGen.CppModel
         /// <param name="file">The file.</param>
         public void Write(string file)
         {
-            var output = new FileStream(file, FileMode.Create);
-            Write(output);
-            output.Close();
+            using (var output = new FileStream(file, FileMode.Create))
+            {
+                Write(output); 
+            }
         }
 
         /// <summary>

@@ -94,17 +94,6 @@ namespace SharpGen.Model
             get { return Items.OfType<CsInterface>().Count() > 0; }
         }
 
-        /// <summary>
-        /// Gets a value indicating whether this instance is base COM object.
-        /// </summary>
-        /// <value>
-        /// 	<c>true</c> if this instance is base COM object; otherwise, <c>false</c>.
-        /// </value>
-        public bool IsBaseComObject
-        {
-            get { return (Base as CsInterface)?.QualifiedName == Global.Name + ".ComObject"; }
-        }
-
         public override string ToString()
         {
             return string.Format(System.Globalization.CultureInfo.InvariantCulture, "csinterface {0} => {1}", CppElementName, QualifiedName);

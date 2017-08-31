@@ -23,7 +23,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Text.RegularExpressions;
 using SharpGen.Logging;
@@ -31,6 +30,7 @@ using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
 using SharpGen.TextTemplating;
+using System.Reflection;
 
 namespace SharpGen.Generator
 {
@@ -52,24 +52,26 @@ namespace SharpGen.Generator
         /// <summary>
         /// Initializes a new instance of the <see cref="TransformManager"/> class.
         /// </summary>
-        public TransformManager()
+        public TransformManager(GlobalNamespaceProvider globalNamespace, Logger logger)
         {
+            GlobalNamespace = globalNamespace;
+            Logger = logger;
+
             NamingRules = new NamingRulesManager();
             Assemblies = new List<CsAssembly>();
-            CallContext.SetData("Generator", this);
 
             EnumTransform = new EnumTransform();
-            EnumTransform.Init(this);
+            EnumTransform.Init(this, logger);
 
             StructTransform = new StructTransform();
-            StructTransform.Init(this);
+            StructTransform.Init(this, logger);
 
             MethodTransform = new MethodTransform();
-            MethodTransform.Init(this);
+            MethodTransform.Init(this, logger);
 
             InterfaceTransform = new InterfaceTransform();
-            InterfaceTransform.Init(this);
-
+            InterfaceTransform.Init(this, logger);
+            
             GeneratedPath = @".\";
         }
 
@@ -150,13 +152,18 @@ namespace SharpGen.Generator
         /// </summary>
         /// <value>The name of the current namespace.</value>
         private string CurrentNamespaceName { get; set; }
+        
+        public GlobalNamespaceProvider GlobalNamespace { get; }
+        public Logger Logger { get; }
+        public string GeneratedCodeFolder { get; internal set; }
+        public bool IncludeAssemblyNameFolder { get; internal set; }
 
         /// <summary>
         /// Initializes this instance with the specified C++ module and config.
         /// </summary>
         /// <param name="cppModule">The C++ module.</param>
         /// <param name="config">The root config file.</param>
-        public void Init(CppModule cppModule, ConfigFile config)
+        public void Init(CppModule cppModule, ConfigFile config, string checkFilesPath)
         {
             CppModule = cppModule;
             var configFiles = config.ConfigFilesLoaded;
@@ -168,7 +175,7 @@ namespace SharpGen.Generator
 
             // Check which assembly to update
             foreach (var assembly in Assemblies)
-                CheckAssemblyUpdate(assembly);
+                CheckAssemblyUpdate(assembly, checkFilesPath);
 
 
             int numberOfConfigFilesToParse = 0;
@@ -240,13 +247,13 @@ namespace SharpGen.Generator
         /// Checks the assembly is up to date relative to its config dependencies.
         /// </summary>
         /// <param name="assembly">The assembly.</param>
-        private void CheckAssemblyUpdate(CsAssembly assembly)
+        private void CheckAssemblyUpdate(CsAssembly assembly, string checkFilesPath)
         {
             var maxUpdateTime = ConfigFile.GetLatestTimestamp(assembly.ConfigFilesLinked);
 
             if (File.Exists(assembly.CheckFileName))
             {
-                if (maxUpdateTime > File.GetLastWriteTime(assembly.CheckFileName))
+                if (maxUpdateTime > File.GetLastWriteTime(Path.Combine(checkFilesPath, assembly.CheckFileName)))
                     assembly.IsToUpdate = true;
             }
             else
@@ -325,33 +332,31 @@ namespace SharpGen.Generator
                     // Register defined Types from <extension> tag
                     foreach (var extensionRule in file.Extension)
                     {
-                        if (extensionRule is DefineExtensionRule)
+                        if (extensionRule is DefineExtensionRule defineRule)
                         {
-                            var defineRule = (DefineExtensionRule) extensionRule;
-
                             CsTypeBase defineType = null;
 
                             if (defineRule.Enum != null)
-                                defineType = new CsEnum {Name = defineRule.Enum};
+                                defineType = new CsEnum { Name = defineRule.Enum };
                             else if (defineRule.Struct != null)
                             {
-                                defineType = new CsStruct {Name = defineRule.Struct};
+                                defineType = new CsStruct { Name = defineRule.Struct };
                                 if (defineRule.HasCustomMarshal.HasValue)
-                                    ((CsStruct) defineType).HasMarshalType = defineRule.HasCustomMarshal.Value;
+                                    ((CsStruct)defineType).HasMarshalType = defineRule.HasCustomMarshal.Value;
 
                                 if (defineRule.IsStaticMarshal.HasValue)
                                     ((CsStruct)defineType).IsStaticMarshal = defineRule.IsStaticMarshal.Value;
 
                                 if (defineRule.HasCustomNew.HasValue)
-                                    ((CsStruct) defineType).HasCustomNew = defineRule.HasCustomNew.Value;
+                                    ((CsStruct)defineType).HasCustomNew = defineRule.HasCustomNew.Value;
                             }
                             else if (defineRule.Interface != null)
-                                defineType = new CsInterface {Name = defineRule.Interface};
+                                defineType = new CsInterface { Name = defineRule.Interface };
                             else if (defineRule.NewClass != null)
-                                defineType = new CsClass {Name = defineRule.NewClass};
+                                defineType = new CsClass { Name = defineRule.NewClass };
                             else
                             {
-                                Logger.Error("Invalid rule [{0}]. Only valid for enum, struct, class or interface", defineRule);
+                                Logger.Error("Invalid rule [{0}]. Requires one of enum, struct, class or interface", defineRule);
                                 continue;
                             }
 
@@ -364,10 +369,8 @@ namespace SharpGen.Generator
                             // Define this type
                             DefineType(defineType);
                         }
-                        else if (extensionRule.GetType() == typeof (CreateExtensionRule))
+                        else if (extensionRule is CreateExtensionRule createRule)
                         {
-                            var createRule = (CreateExtensionRule) extensionRule;
-
                             if (createRule.NewClass != null)
                             {
                                 var functionGroup = CreateCsClassContainer(null, null, createRule.NewClass);
@@ -375,15 +378,15 @@ namespace SharpGen.Generator
                                     functionGroup.Visibility = createRule.Visibility.Value;
                             }
                             else
-                                Logger.Error("Invalid rule [{0}]. Only valid for class", createRule);
+                                Logger.Error("Invalid rule [{0}]. Requires class", createRule);
                         }
-                        else if (extensionRule is ConstantRule)
+                        else if (extensionRule is ConstantRule constantRule)
                         {
-                            HandleConstantRule((ConstantRule) extensionRule);
+                            HandleConstantRule(constantRule);
                         }
-                        else if (extensionRule is ContextRule)
+                        else if (extensionRule is ContextRule contextRule)
                         {
-                            HandleContextRule(file, (ContextRule) extensionRule);
+                            HandleContextRule(file, contextRule);
                         }
                     }
 
@@ -398,10 +401,8 @@ namespace SharpGen.Generator
                 // Perform all mappings from <mappings> tag
                 foreach (var configRule in file.Mappings)
                 {
-                    if (configRule is MappingRule)
+                    if (configRule is MappingRule mappingRule)
                     {
-                        var mappingRule = (MappingRule) configRule;
-
                         if (mappingRule.Enum != null)
                             CppModule.Tag<CppEnum>(mappingRule.Enum, mappingRule);
                         else if (mappingRule.EnumItem != null)
@@ -423,13 +424,12 @@ namespace SharpGen.Generator
                         else if (mappingRule.DocItem != null)
                             AddDocLink(mappingRule.DocItem, mappingRule.MappingNameFinal);
                     }
-                    else if (configRule is ContextRule)
+                    else if (configRule is ContextRule contextRule)
                     {
-                        HandleContextRule(file, (ContextRule) configRule);
+                        HandleContextRule(file, contextRule);
                     }
-                    else if (configRule is RemoveRule)
+                    else if (configRule is RemoveRule removeRule)
                     {
-                        var removeRule = (RemoveRule) configRule;
                         if (removeRule.Enum != null)
                             CppModule.Remove<CppEnum>(removeRule.Enum);
                         else if (removeRule.EnumItem != null)
@@ -449,9 +449,8 @@ namespace SharpGen.Generator
                         else if (removeRule.Element != null)
                             CppModule.Remove<CppElement>(removeRule.Element);
                     }
-                    else if (configRule is MoveRule)
+                    else if (configRule is MoveRule moveRule)
                     {
-                        var moveRule = (MoveRule) configRule;
                         if (moveRule.Struct != null)
                             StructTransform.MoveStructToInner(moveRule.Struct, moveRule.To);
                         else if (moveRule.Method != null)
@@ -496,30 +495,31 @@ namespace SharpGen.Generator
         /// <param name="fileName">Name of the output file.</param>
         public void Dump(string fileName)
         {
-            StreamWriter log = new StreamWriter(fileName, false, Encoding.ASCII);
-
-            string csv = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
-            string format = "{1}{0}{2}{0}{3}{0}{4}";
-
-            foreach (var assembly in Assemblies)
+            using (var logFile = File.OpenWrite(fileName))
+            using (var log = new StreamWriter(logFile, Encoding.ASCII))
             {
-                foreach (var ns in assembly.Namespaces)
+                string csv = CultureInfo.CurrentCulture.TextInfo.ListSeparator;
+                string format = "{1}{0}{2}{0}{3}{0}{4}";
+
+                foreach (var assembly in Assemblies)
                 {
-                    foreach (var element in ns.Enums)
-                        log.WriteLine(format, csv, "enum", ns.Name, element.Name, element.CppElementName);
-                    foreach (var element in ns.Structs)
-                        log.WriteLine(format, csv, "struct", ns.Name, element.Name, element.CppElementName);
-                    foreach (var element in ns.Interfaces)
-                        log.WriteLine(format, csv, "interface", ns.Name, element.Name, element.CppElementName);
+                    foreach (var ns in assembly.Namespaces)
+                    {
+                        foreach (var element in ns.Enums)
+                            log.WriteLine(format, csv, "enum", ns.Name, element.Name, element.CppElementName);
+                        foreach (var element in ns.Structs)
+                            log.WriteLine(format, csv, "struct", ns.Name, element.Name, element.CppElementName);
+                        foreach (var element in ns.Interfaces)
+                            log.WriteLine(format, csv, "interface", ns.Name, element.Name, element.CppElementName);
+                    }
                 }
             }
-            log.Close();
         }
 
         /// <summary>
         /// Generates the C# code.
         /// </summary>
-        public void Generate()
+        public void Generate(string checkFilesPath)
         {
             Transform();
 
@@ -527,14 +527,14 @@ namespace SharpGen.Generator
                 Logger.Fatal("Transform failed");
 
             // Configure TextTemplateEngine
-            var engine = new TemplateEngine();
+            var engine = new TemplateEngine(Logger);
             engine.OnInclude += TextTemplatingCallback;
             engine.SetParameter("Generator", this);
 
             int indexToGenerate = 0;
             var templateNames = new[] { "Enumerations", "Structures", "Interfaces", "Functions", "LocalInterop" };
 
-            var directoryToCreate = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+            var directoryToCreate = new HashSet<string>(StringComparer.CurrentCulture);
 
             // Iterates on templates
             foreach (string templateName in templateNames)
@@ -547,10 +547,6 @@ namespace SharpGen.Generator
 
                 string input = Utilities.GetResourceAsString("Templates." + templateFileName);
 
-                // Sets the template file name
-                engine.TemplateFileName =
-                    Path.GetFullPath(Path.Combine(Path.Combine(Path.GetDirectoryName(GetType().Assembly.Location), "..\\..\\Templates\\"), templateFileName));
-
                 // Iterates on assemblies
                 foreach (var csAssembly in Assemblies)
                 {
@@ -559,7 +555,7 @@ namespace SharpGen.Generator
 
                     engine.SetParameter("Assembly", csAssembly);
 
-                    string generatedDirectoryForAssembly = Path.Combine(csAssembly.RootDirectory, "Generated", AppType);
+                    string generatedDirectoryForAssembly = Path.Combine(csAssembly.RootDirectory, GeneratedCodeFolder ?? "Generated", AppType);
 
                     // Remove the generated directory before creating it
                     if (!directoryToCreate.Contains(generatedDirectoryForAssembly))
@@ -571,7 +567,6 @@ namespace SharpGen.Generator
                             {
                                 try
                                 {
-
                                     File.Delete(oldGeneratedFile);
                                 }
                                 catch (Exception)
@@ -592,7 +587,7 @@ namespace SharpGen.Generator
                         Logger.Message("\tProcess Interop {0} => {1}", csAssembly.Name, generatedDirectoryForAssembly);
 
                         //Transform the text template.
-                        string output = engine.ProcessTemplate(input);
+                        string output = engine.ProcessTemplate(input, templateName);
                         string outputFileName = Path.GetFileNameWithoutExtension(templateFileName);
 
                         outputFileName = Path.Combine(generatedDirectoryForAssembly, outputFileName);
@@ -614,11 +609,8 @@ namespace SharpGen.Generator
 
                             Logger.Message("\tProcess Namespace {0} => {1}", csNamespace.Name, nameSpaceDirectory);
 
-                            ////host.Session = new TextTemplatingSession();
-                            //host.Session = host.CreateSession();
-
                             //Transform the text template.
-                            string output = engine.ProcessTemplate(input);
+                            string output = engine.ProcessTemplate(input, templateName);
                             string outputFileName = Path.GetFileNameWithoutExtension(templateFileName);
 
                             outputFileName = Path.Combine(nameSpaceDirectory, outputFileName);
@@ -628,14 +620,13 @@ namespace SharpGen.Generator
                     }
                 }
             }
-
             // Update check files for all assemblies
             var processTime = DateTime.Now;
             foreach (CsAssembly assembly in Assemblies)
             {
-                File.WriteAllText(assembly.CheckFileName, "");
-                File.SetLastWriteTime(assembly.CheckFileName, processTime);
-            }
+                File.WriteAllText(Path.Combine(checkFilesPath, assembly.CheckFileName), "");
+                File.SetLastWriteTime(Path.Combine(checkFilesPath, assembly.CheckFileName), processTime);
+            } 
         }
 
         /// <summary>
@@ -880,7 +871,7 @@ namespace SharpGen.Generator
                 if (isTypeUsedInStruct)
                 {
                     // Special case for Size type, as it is default marshal to IntPtr for method parameter
-                    if (publicType.QualifiedName == "SharpDX.PointerSize")
+                    if (publicType.QualifiedName == GlobalNamespace.GetTypeName("PointerSize"))
                         marshalType = null;
                 }
             }
@@ -904,7 +895,6 @@ namespace SharpGen.Generator
         /// <returns>The attached namespace for this C++ element.</returns>
         internal CsNamespace ResolveNamespace(CppElement element)
         {
-            CsNamespace ns;
 
             var tag = element.GetTagOrDefault<MappingRule>();
 
@@ -920,7 +910,7 @@ namespace SharpGen.Generator
                     return regExp.Value;
             }
 
-            if (!_mapIncludeToNamespace.TryGetValue(element.ParentInclude.Name, out ns))
+            if (!_mapIncludeToNamespace.TryGetValue(element.ParentInclude.Name, out CsNamespace ns))
             {
                 Logger.Fatal("Unable to find namespace for element [{0}] from include [{1}]", element, element.ParentInclude.Name);
             }
@@ -944,8 +934,7 @@ namespace SharpGen.Generator
         /// <param name = "type">The C# type.</param>
         public CsTypeBase GetTypeDefined(CsTypeBase type)
         {
-            CsTypeBase outType;
-            _mapDefinedCSharpType.TryGetValue(type.QualifiedName, out outType);
+            _mapDefinedCSharpType.TryGetValue(type.QualifiedName, out CsTypeBase outType);
             return outType;
         }
 
@@ -984,9 +973,8 @@ namespace SharpGen.Generator
         /// <returns>The C# type base</returns>
         public CsTypeBase ImportType(string qualifiedName)
         {
-            CsTypeBase cSharpType;
             var typeName = GetShortNameForType(qualifiedName);
-            if (!_mapDefinedCSharpType.TryGetValue(typeName, out cSharpType))
+            if (!_mapDefinedCSharpType.TryGetValue(typeName, out CsTypeBase cSharpType))
             {
                 var type = Type.GetType(qualifiedName);
                 int sizeOf = 0;
@@ -996,7 +984,9 @@ namespace SharpGen.Generator
                 {
                     try
                     {
+#pragma warning disable 0618
                         sizeOf = Marshal.SizeOf(type);
+#pragma warning restore 0618
                     }
                     catch (Exception)
                     {
@@ -1109,8 +1099,7 @@ namespace SharpGen.Generator
         {
             if (cppName == null)
                 return null;
-            Tuple<CsTypeBase, CsTypeBase> typeMap;
-            _mapCppNameToCSharpType.TryGetValue(cppName, out typeMap);
+            _mapCppNameToCSharpType.TryGetValue(cppName, out Tuple<CsTypeBase, CsTypeBase> typeMap);
             if (typeMap == null) return null;
             return typeMap.Item1;
         }
@@ -1122,8 +1111,7 @@ namespace SharpGen.Generator
         /// <returns>Name of the C# type</returns>
         public string FindDocName(string cppName)
         {
-            string cSharpName = null;
-            if (_docToCSharp.TryGetValue(cppName, out cSharpName))
+            if (_docToCSharp.TryGetValue(cppName, out string cSharpName))
                 return cSharpName;
 
             var cSharpType = FindBindType(cppName);
@@ -1131,6 +1119,112 @@ namespace SharpGen.Generator
                 return cSharpType.QualifiedName;
 
             return null;
+        }
+        
+        private static readonly Regex RegexLinkStart = new Regex(@"^\s*\{\{.*?}}\s*(.*)", RegexOptions.Compiled);
+        private static readonly Regex RegexLink = new Regex(@"\{\{(.*?)}}", RegexOptions.Compiled);
+        private static readonly Regex RegexSpaceBegin = new Regex(@"^\s*(.*)", RegexOptions.Compiled);
+
+        public List<string> GetDocItems(CsBase element)
+        {
+            var docItems = new List<string>();
+
+            // If doc comments are already stored in an external file, than don't emit them
+            if (!element.IsCodeCommentsExternal)
+            {
+                string description = element.Description;
+                string remarks = element.Remarks;
+
+                description = RegexSpaceBegin.Replace(description, "$1");
+
+                description = RegexLink.Replace(description, RegexReplaceCReference);
+                // evaluator => "<see cref=\"$1\"/>");
+
+                string line = null;
+
+                StringReader stringReader = new StringReader(description);
+                docItems.Add("<summary>");
+                while ((line = stringReader.ReadLine()) != null)
+                    docItems.Add(line);
+                docItems.Add("</summary>");
+
+                element.FillDocItems(docItems, this);
+
+                if (!string.IsNullOrEmpty(remarks))
+                {
+                    remarks = RegexSpaceBegin.Replace(remarks, "$1");
+                    remarks = RegexLink.Replace(remarks, RegexReplaceCReference);
+
+                    stringReader = new StringReader(remarks);
+                    docItems.Add("<remarks>");
+                    while ((line = stringReader.ReadLine()) != null)
+                        docItems.Add(line);
+                    docItems.Add("</remarks>");
+                }
+            }
+
+            docItems.Add(element.DocIncludeDirective);
+            if (element.CppElement != null)
+            {
+                if (element.DocId != null)
+                {
+                    docItems.Add("<msdn-id>" + Utilities.EscapeXml(element.DocId) + "</msdn-id>");
+                }
+                docItems.Add("<unmanaged>" + Utilities.EscapeXml(element.DocUnmanagedName) + "</unmanaged>");
+                docItems.Add("<unmanaged-short>" + Utilities.EscapeXml(element.DocUnmanagedShortName) + "</unmanaged-short>");
+            }
+
+            return docItems;
+        }
+
+        /// <summary>
+        /// Gets the description as a single line of documentation.
+        /// </summary>
+        /// <value>The single doc.</value>
+        public string GetSingleDoc(CsBase element)
+        {
+            string description = element.Description;
+
+            if (RegexLinkStart.Match(description).Success)
+                description = RegexLinkStart.Replace(description, "$1");
+
+            description = RegexSpaceBegin.Replace(description, "$1");
+
+            description = RegexLink.Replace(description, RegexReplaceCReference);
+
+            StringBuilder docItems = new StringBuilder();
+            string line = null;
+
+            StringReader stringReader = new StringReader(description);
+            while ((line = stringReader.ReadLine()) != null)
+                docItems.Append(line);
+
+            return docItems.ToString();
+        }
+
+
+        private static Regex regextWithMethodW = new Regex("([^W])::");
+        private static Regex regexWithTypeW = new Regex("([^W])$");
+
+        private string RegexReplaceCReference(Match match)
+        {
+            string matchName = match.Groups[1].Value;
+            var csName = FindDocName(matchName);
+
+            // Tries to match with W::
+            if (csName == null && regextWithMethodW.Match(matchName).Success)
+                csName = FindDocName(regextWithMethodW.Replace(matchName, "$1W::"));
+
+            // Or with W
+            if (csName == null && regexWithTypeW.Match(matchName).Success)
+                csName = FindDocName(regexWithTypeW.Replace(matchName, "$1W"));
+
+            if (csName == null)
+                return matchName;
+
+            if (csName.StartsWith("<"))
+                return csName;
+            return string.Format(CultureInfo.InvariantCulture, "<see cref=\"{0}\"/>", csName);
         }
 
         /// <summary>
@@ -1142,8 +1236,7 @@ namespace SharpGen.Generator
         {
             if (cppName == null)
                 return null;
-            Tuple<CsTypeBase, CsTypeBase> typeMap;
-            _mapCppNameToCSharpType.TryGetValue(cppName, out typeMap);
+            _mapCppNameToCSharpType.TryGetValue(cppName, out Tuple<CsTypeBase, CsTypeBase> typeMap);
             if (typeMap == null) return null;
             return typeMap.Item2;
         }
@@ -1161,7 +1254,7 @@ namespace SharpGen.Generator
             if (selectedAssembly == null)
             {
                 selectedAssembly = new CsAssembly(assemblyName, AppType);
-                selectedAssembly.RootDirectory = Path.Combine(GeneratedPath, selectedAssembly.Name);
+                selectedAssembly.RootDirectory = IncludeAssemblyNameFolder ? Path.Combine(GeneratedPath, selectedAssembly.Name) : GeneratedPath;
                 Assemblies.Add(selectedAssembly);
             }
 
@@ -1200,7 +1293,7 @@ namespace SharpGen.Generator
         /// <returns>The C# class container</returns>
         private CsClass CreateCsClassContainer(string assemblyName = null, string namespaceName = null, string className = null)
         {
-            if (className == null) throw new ArgumentNullException("className");
+            if (className == null) throw new ArgumentNullException(nameof(className));
 
             if (className.Contains("."))
             {
@@ -1235,8 +1328,7 @@ namespace SharpGen.Generator
         /// <returns></returns>
         public CsClass FindCsClassContainer(string className)
         {
-            CsClass csClass = null;
-            _mapRegisteredFunctionGroup.TryGetValue(className, out csClass);
+            _mapRegisteredFunctionGroup.TryGetValue(className, out CsClass csClass);
             return csClass;
         }
 
@@ -1282,9 +1374,7 @@ namespace SharpGen.Generator
             {
                 string finalFieldName = fieldName == null ? macroDef.Name : NamingRules.ConvertToPascalCase(regex.Replace(macroDef.Name, fieldName), NamingFlags.Default);
                 string finalValue = valueMap == null ? macroDef.Value : string.Format(valueMap, macroDef.Name, macroDef.Value, finalFieldName, CurrentNamespaceName);
-                AddConstantToCSharpType(macroDef, fullNameCSharpType, type, finalFieldName, finalValue).Visibility = visibility.HasValue
-                                                                                                                         ? visibility.Value
-                                                                                                                         : Visibility.Public | Visibility.Const;
+                AddConstantToCSharpType(macroDef, fullNameCSharpType, type, finalFieldName, finalValue).Visibility = visibility ?? Visibility.Public | Visibility.Const;
             }
 
             var guidDefinitions = CppModule.Find<CppGuid>(macroRegexp);
@@ -1292,9 +1382,7 @@ namespace SharpGen.Generator
             {
                 string finalFieldName = fieldName == null ? guidDef.Name : NamingRules.ConvertToPascalCase(regex.Replace(guidDef.Name, fieldName), NamingFlags.Default);
                 string finalValue = valueMap == null ? guidDef.Guid.ToString() : string.Format(valueMap, guidDef.Name, guidDef.Guid.ToString(), finalFieldName, CurrentNamespaceName);
-                AddConstantToCSharpType(guidDef, fullNameCSharpType, type, finalFieldName, finalValue).Visibility = visibility.HasValue
-                                                                                                                        ? visibility.Value
-                                                                                                                        : Visibility.Public | Visibility.Static |
+                AddConstantToCSharpType(guidDef, fullNameCSharpType, type, finalFieldName, finalValue).Visibility = visibility ?? Visibility.Public | Visibility.Static |
                                                                                                                           Visibility.Readonly;
             }
         }
@@ -1310,8 +1398,7 @@ namespace SharpGen.Generator
         /// <returns>The C# variable declared.</returns>
         private CsVariable AddConstantToCSharpType(CppElement cppElement, string csClassName, string typeName, string fieldName, string value)
         {
-            List<CsVariable> constantDefinitions;
-            if (!_mapConstantToCSharpType.TryGetValue(csClassName, out constantDefinitions))
+            if (!_mapConstantToCSharpType.TryGetValue(csClassName, out List<CsVariable> constantDefinitions))
             {
                 constantDefinitions = new List<CsVariable>();
                 _mapConstantToCSharpType.Add(csClassName, constantDefinitions);

@@ -30,6 +30,9 @@ using SharpGen.Logging;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Doc;
+#if NETSTANDARD1_5
+using System.Runtime.Loader;
+#endif
 
 namespace SharpGen.Parser
 {
@@ -67,13 +70,16 @@ namespace SharpGen.Parser
         private readonly Dictionary<string, int> _mapIncludeToAnonymousEnumCount = new Dictionary<string, int>();
         readonly List<string> _filesWithCreateFromMacros = new List<string>();
         private bool _isConfigUpdated;
+        private GlobalNamespaceProvider globalNamespace;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CppParser"/> class.
         /// </summary>
-        public CppParser()
+        public CppParser(GlobalNamespaceProvider globalNamespace, Logger logger)
         {
             ForceParsing = false;
+            this.globalNamespace = globalNamespace;
+            this.Logger = logger;
         }
 
         /// <summary>
@@ -102,6 +108,10 @@ namespace SharpGen.Parser
         /// <value>The CastXML executable path.</value>
         public string CastXmlExecutablePath { get; set; }
 
+        public string OutputPath { get; set; }
+
+        public Logger Logger { get; }
+
         /// <summary>
         /// Initialize this Parser from a root ConfigFile.
         /// </summary>
@@ -110,8 +120,12 @@ namespace SharpGen.Parser
         {
             _configRoot = configRoot ?? throw new ArgumentNullException("configRoot");
 
-            _configRootHeader = _configRoot.Id + ".h";
-            _gccxml = new CastXml {ExecutablePath = CastXmlExecutablePath};
+            _configRootHeader = Path.Combine(OutputPath, _configRoot.Id + ".h");
+            _gccxml = new CastXml (Logger)
+            {
+                ExecutablePath = CastXmlExecutablePath,
+                OutputPath = OutputPath,
+            };
 
             // Config is updated if ForceParsing is true
             _isConfigUpdated = ForceParsing;
@@ -122,7 +136,7 @@ namespace SharpGen.Parser
             var prolog = new StringBuilder();
 
             // Add current directory for gccxml
-            _gccxml.IncludeDirectoryList.Add(new IncludeDirRule(Environment.CurrentDirectory));
+            _gccxml.IncludeDirectoryList.Add(new IncludeDirRule(Directory.GetCurrentDirectory()));
 
             // Configure gccxml with include directory
             foreach (var configFile in _configRoot.ConfigFilesLoaded)
@@ -279,14 +293,13 @@ namespace SharpGen.Parser
                         _includeIsAttached.Add(configFile.ExtensionId, true);
 
                     // Create Extension file name if it doesn't exist);
-                    if (!File.Exists(configFile.ExtensionFileName))
-                        File.WriteAllText(configFile.ExtensionFileName, "");
+                    if (!File.Exists(Path.Combine(OutputPath, configFile.ExtensionFileName)))
+                        File.WriteAllText(Path.Combine(OutputPath, configFile.ExtensionFileName), "");
                 }
-                outputConfig.Close();
 
                 var outputConfigStr = outputConfig.ToString();
 
-                var fileName = configFile.Id + ".h";
+                var fileName = Path.Combine(OutputPath, configFile.Id + ".h");
 
                 // Test if Last config file was generated. If not, then we need to generate it
                 // If it exists, then we need to test if it is the same than previous run
@@ -304,9 +317,11 @@ namespace SharpGen.Parser
                         Logger.Message("Config file changed for C++ headers [{0}]/[{1}]", configFile.Id, configFile.FilePath);
 
                     _isConfigUpdated = true;
-                    var fileWriter = new StreamWriter(configFile.Id + ".h");
-                    fileWriter.Write(outputConfigStr);
-                    fileWriter.Close();
+                    using (var file = File.OpenWrite(fileName))
+                    using (var fileWriter = new StreamWriter(file))
+                    {
+                        fileWriter.Write(outputConfigStr);
+                    }
                 }
             }
         }
@@ -375,16 +390,17 @@ namespace SharpGen.Parser
                         // Dump Create from macros
                         if (_filesWithCreateFromMacros.Contains(configFile.Id) && configFile.IsConfigUpdated)
                         {
-                            var extensionWriter = new StreamWriter(configFile.ExtensionFileName);
-
-                            foreach (var typeBaseRule in configFile.Extension)
+                            using (var extension = File.OpenWrite(Path.Combine(OutputPath, configFile.ExtensionFileName)))
+                            using (var extensionWriter = new StreamWriter(extension))
                             {
-                                if (CheckIfRuleIsCreatingHeadersExtension(typeBaseRule))
-                                    extensionWriter.Write(CreateCppFromMacro(typeBaseRule));
-                                else if (typeBaseRule is ContextRule)
-                                    HandleContextRule(configFile, (ContextRule) typeBaseRule);
+                                foreach (var typeBaseRule in configFile.Extension)
+                                {
+                                    if (CheckIfRuleIsCreatingHeadersExtension(typeBaseRule))
+                                        extensionWriter.Write(CreateCppFromMacro(typeBaseRule));
+                                    else if (typeBaseRule is ContextRule)
+                                        HandleContextRule(configFile, (ContextRule)typeBaseRule);
+                                }
                             }
-                            extensionWriter.Close();
                         }
                     }
 
@@ -403,7 +419,7 @@ namespace SharpGen.Parser
                     Logger.Progress(30, progressMessage);
 
                     // Save back the C++ parsed includes
-                    _group.Write(GroupFileName);
+                    _group.Write(Path.Combine(OutputPath, GroupFileName));
                 }
                 catch (Exception ex)
                 {
@@ -411,19 +427,20 @@ namespace SharpGen.Parser
                 }
                 finally
                 {
-                    if (xmlReader != null)
-                        xmlReader.Close();
+                   xmlReader?.Dispose();
 
                     // Write back GCCXML document on the disk
-                    if (GccXmlDoc != null)
-                        GccXmlDoc.Save(GccXmlFileName);
+                    using (var stream = File.OpenWrite(Path.Combine(OutputPath, GccXmlFileName)))
+                    {
+                        GccXmlDoc?.Save(stream); 
+                    }
                     Logger.Message("Parsing headers is finished.");
                 }
             }
             else
             {
                 Logger.Progress(10, "Config files unchanged. Read previous C++ parsing...");
-                _group = CppModule.Read(GroupFileName);
+                _group = CppModule.Read(Path.Combine(OutputPath, GroupFileName));
             }
 
             IncludeMacroCounts = new Dictionary<string, int>();
@@ -444,7 +461,7 @@ namespace SharpGen.Parser
             }
 
             // Expand all variables with all dynamic variables
-            _configRoot.ExpandVariables(true);
+            _configRoot.ExpandVariables(true, Logger);
 
             return _group;
         }
@@ -458,7 +475,7 @@ namespace SharpGen.Parser
         {
 
             var keys = IncludeMacroCounts.Keys.ToList();
-            keys.Sort(StringComparer.InvariantCultureIgnoreCase);
+            keys.Sort(StringComparer.CurrentCultureIgnoreCase);
 
             Logger.Message("Macro Statistics");
             foreach (var key in keys)
@@ -887,7 +904,7 @@ namespace SharpGen.Parser
                 if (_bindings.TryGetValue(baseTypeName, out string bindedValueTo))
                 {
                     if (baseTypeName != "IUnknown" && baseTypeName != "IDispatch" && (
-                            bindedValueTo == "SharpDX.ComObject"
+                            bindedValueTo == globalNamespace.GetTypeName("ComObject")
                             || bindedValueTo == "System.IntPtr"))
                     {
                         Logger.Error("Error binding interface type [{0}] defined in file [{1}]. Interface is inherited and binded to [{2}] and not valid for inheritance", baseTypeName, baseTypeFile, bindedValueTo);
@@ -1431,7 +1448,7 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="typeName">Name of the gccxml fundamental type.</param>
         /// <returns>a shorten form</returns>
-        private static string ConvertFundamentalType(string typeName)
+        private string ConvertFundamentalType(string typeName)
         {
             var types = typeName.Split(' ');
 
@@ -1509,20 +1526,24 @@ namespace SharpGen.Parser
         private void ApplyDocumentation()
         {
             // Use default MSDN doc provider
-            DocProvider docProvider = new DocProviderMsdn();
+            IDocProvider docProvider = new MsdnProvider(Logger);
 
             // Try to load doc provider from an external assembly
             if (DocProviderAssembly != null)
             {
                 try
                 {
+#if NETSTANDARD1_5
+                    var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(DocProviderAssembly);
+#else
                     var assembly = Assembly.LoadFrom(DocProviderAssembly);
+#endif
 
                     foreach (var type in assembly.GetTypes())
                     {
-                        if (typeof(DocProvider).IsAssignableFrom(type))
+                        if (typeof(IDocProvider).GetTypeInfo().IsAssignableFrom(type))
                         {
-                            docProvider = (DocProvider)Activator.CreateInstance(type);
+                            docProvider = (IDocProvider)Activator.CreateInstance(type);
                             break;
                         }
                     }
@@ -1549,12 +1570,7 @@ namespace SharpGen.Parser
 
                     if (cppEnum.IsEmpty)
                         continue;
-
-                    if(cppEnum.Items.Count != docItem.Items.Count)
-                    {
-                        //Logger.Warning("Warning Invalid number enum items in documentation for Enum {0}",
-                        //    cppEnum.Name);
-                    }
+                    
                     int count = Math.Min(cppEnum.Items.Count, docItem.Items.Count);
                     int i = 0;
                     foreach (CppEnumItem cppEnumItem in cppEnum.EnumItems)
