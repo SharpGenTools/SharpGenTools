@@ -80,7 +80,7 @@ namespace SharpGen.Runtime.Diagnostics
                 return "";
 
             var builder = new StringBuilder();
-            builder.AppendFormat(System.Globalization.CultureInfo.InvariantCulture, "Active COM Object: [0x{0:X}] Class: [{1}] Time [{2}] Stack:\r\n{3}", comObject.NativePointer.ToInt64(), comObject.GetType().FullName, CreationTime, StackTrace).AppendLine();
+            builder.AppendFormat(CultureInfo.InvariantCulture, "Active COM Object: [0x{0:X}] Class: [{1}] Time [{2}] Stack:\r\n{3}", comObject.NativePointer.ToInt64(), comObject.GetType().FullName, CreationTime, StackTrace).AppendLine();
             return builder.ToString();
         }
     }

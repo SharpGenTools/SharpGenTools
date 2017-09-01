@@ -21,7 +21,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace SharpGen.Runtime.Collections
+namespace SharpGen.Runtime.Diagnostics
 {
     /// <summary>
     /// Provides <see cref="IEqualityComparer{T}"/> for default value types.
