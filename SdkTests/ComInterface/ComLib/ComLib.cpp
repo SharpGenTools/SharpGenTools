@@ -1,7 +1,6 @@
 // ComLib.cpp : Defines the exported functions for the DLL application.
 //
 
-#include "stdafx.h"
 #include "ComLib.h"
 
 class ComClass : public IComInterface
