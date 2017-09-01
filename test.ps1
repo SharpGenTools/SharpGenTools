@@ -11,15 +11,15 @@ rm SdkTests/LocalPackages/*.nupkg
 cp SharpGenTools.Sdk/bin/Release/*.nupkg SdkTests/LocalPackages/
 
 pushd .\SdkTests
-msbuild /t:Restore
-msbuild /p:Configuration=Release /m
+msbuild /t:Restore /v:minimal
+msbuild /p:Configuration=Release /m /v:minimal
 
 if ($LastExitCode -ne 0) {
     exit 1
 }
 
 pushd SharpGen.Runtime
-msbuild /t:Pack /p:Configuration=Release
+msbuild /t:Pack /p:Configuration=Release /v:minimal
 popd
 rm RestoredPackages/**/*.nupkg
 popd
