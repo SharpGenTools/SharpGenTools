@@ -99,7 +99,7 @@ namespace SharpGen
 
         public string IntermediateOutputPath { get; set; } = "";
 
-        private ConfigFile Config { get; set; }
+        public ConfigFile Config { get; set; }
 
         public GlobalNamespaceProvider GlobalNamespace { get; set; }
 
@@ -122,15 +122,21 @@ namespace SharpGen
             _assemblyCheckFile = Path.Combine(IntermediateOutputPath, $"SharpGen.{AppType}.check");
             _assemblyDatetime = File.GetLastWriteTime(_thisAssemblyPath);
             _isAssemblyNew = (_assemblyDatetime != File.GetLastWriteTime(_assemblyCheckFile));
-            _generatedPath = OutputDirectory != null ?
-                Path.GetDirectoryName(OutputDirectory)
-                : Path.GetDirectoryName(Path.GetFullPath(ConfigRootPath));
+            _generatedPath = OutputDirectory ?? Path.GetDirectoryName(Path.GetFullPath(ConfigRootPath));
 
             Logger.Message("Loading config files...");
             
             Macros.Add(AppType);
 
-            Config = ConfigFile.Load(ConfigRootPath, Macros.ToArray(), Logger, new KeyValue("VC_TOOLS_PATH", VcToolsPath));
+            if (Config == null)
+            {
+                Config = ConfigFile.Load(ConfigRootPath, Macros.ToArray(), Logger, new KeyValue("VC_TOOLS_PATH", VcToolsPath));
+            }
+            else
+            {
+                Config = ConfigFile.Load(Config, Macros.ToArray(), Logger, new KeyValue("VC_TOOLS_PATH", VcToolsPath));
+            }
+
             var latestConfigTime = ConfigFile.GetLatestTimestamp(Config.ConfigFilesLoaded);
             
             _allConfigCheck = Path.Combine(IntermediateOutputPath, Config.Id + "-" + AppType + "-CodeGen.check");

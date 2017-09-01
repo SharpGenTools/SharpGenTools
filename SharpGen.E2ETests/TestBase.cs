@@ -23,7 +23,7 @@ namespace SharpGen.E2ETests
         private ITestOutputHelper outputHelper;
         private DirectoryInfo testDirectory;
 
-        public TestBase(ITestOutputHelper outputHelper)
+        protected TestBase(ITestOutputHelper outputHelper)
         {
             this.outputHelper = outputHelper;
             testDirectory = GenerateTestDirectory();
@@ -31,7 +31,6 @@ namespace SharpGen.E2ETests
 
         public (bool success, string output) RunWithConfig(Config.ConfigFile config, string appType = "true", [CallerMemberName] string configName = "", bool failTestOnError = true)
         {
-            SaveConfigFile(config, configName);
             var xUnitLogger = new XUnitLogger(outputHelper, failTestOnError);
             var logger = new Logger(xUnitLogger, null);
 
@@ -50,7 +49,8 @@ namespace SharpGen.E2ETests
                 CastXmlExecutablePath = "../../../../CastXML/bin/castxml.exe",
                 VcToolsPath = Path.Combine(vcInstallDir, $@"Tools\MSVC\{msvcToolsetVer}\"),
                 AppType = appType,
-                ConfigRootPath = Path.Combine(testDirectory.FullName, configName + "-Mapping.xml"),
+                Config = config,
+                OutputDirectory = testDirectory.FullName,
                 IntermediateOutputPath = testDirectory.FullName
             };
             codeGenApp.Init();
@@ -63,7 +63,7 @@ namespace SharpGen.E2ETests
             Assert.True(success, output);
         }
 
-        private void SaveConfigFile(Config.ConfigFile config, string configName)
+        public void SaveConfigFile(Config.ConfigFile config, string configName)
         {
             config.Id = configName;
 
@@ -87,11 +87,11 @@ namespace SharpGen.E2ETests
             };
         }
 
-        public static Config.IncludeDirRule GetTestFileIncludeRule([CallerMemberName] string testName = "")
+        public Config.IncludeDirRule GetTestFileIncludeRule([CallerMemberName] string testName = "")
         {
             return new Config.IncludeDirRule
             {
-                Path = "$(THIS_CONFIG_PATH)\\includes"
+                Path = $@"{testDirectory.FullName}\includes"
             };
         }
 
