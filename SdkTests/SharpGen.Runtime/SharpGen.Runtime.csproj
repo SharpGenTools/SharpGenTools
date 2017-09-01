@@ -1,13 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.1;net40;net45</TargetFrameworks>
-    <SharpGenGlobalNamespace>SharpGen.Runtime</SharpGenGlobalNamespace>
+    <TargetFrameworks>netstandard1.1;netstandard2.0;net40;net45</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
     <SharpGenMapping Include="Mapping.xml" />
     <PackageReference Include="System.Memory" Version="4.4.0-preview2-25405-01" Condition="'$(TargetFramework)' != 'net40'" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.4.0-preview2-25405-01" Condition="'$(TargetFramework)' != 'net40'" />
   </ItemGroup>
 </Project>

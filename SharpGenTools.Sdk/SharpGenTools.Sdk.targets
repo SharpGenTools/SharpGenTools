@@ -41,6 +41,6 @@
     <RemoveDir Directories="$(IntermediateOutputPath)/SharpGen" />
   </Target>
   <Target Name="PatchAssembly" AfterTargets="CopyFilesToOutputDirectory" BeforeTargets="IncrementalClean">
-    <SharpPatchTask AssemblyToPatch="$(TargetPath)" />
+    <SharpPatchTask AssemblyToPatch="$(TargetPath)" References="@(ReferencePath)" />
   </Target>
 </Project>

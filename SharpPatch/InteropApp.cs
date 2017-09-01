@@ -49,6 +49,8 @@ namespace SharpPatch
         private TypeReference voidType;
         private TypeReference voidPointerType;
         private TypeReference intType;
+        
+        public IAssemblyResolver AssemblyResolver { get; set; }
 
         /// <summary>
         /// Creates a module init for a C# assembly.
@@ -712,17 +714,14 @@ namespace SharpPatch
                 InMemory = true
             };
 
-            var depsFilePath = Path.Combine(Path.GetDirectoryName(file), $"{Path.GetFileNameWithoutExtension(file)}.deps.json");
-            if(!File.Exists(depsFilePath))
+            try
             {
-                LogError($"Could not find deps file: {depsFilePath}. Set PreserveCompilationContext to true while building to generate the deps file.");
-                return false;
+                readerParameters.AssemblyResolver = AssemblyResolver ?? CreateDepsFileAssemblyResolver(file);
             }
-            using (var depsFile = File.OpenRead(depsFilePath))
+            catch (Exception ex)
             {
-                var reader = new DependencyContextJsonReader();
-                var resolver = new AssemblyResolver(reader.Read(depsFile), Path.GetDirectoryName(file)); 
-                readerParameters.AssemblyResolver = resolver;
+                LogError($"Unable to load assembly resolver: {ex}");
+                return false;
             }
 
             var writerParameters = new WriterParameters();
@@ -767,9 +766,21 @@ namespace SharpPatch
             fileTime = new FileTime(file);
             // Update Check file
             fileTime.UpdateCheckFile(checkFile);
-                                
+
             Log("SharpDX patch done for assembly [{0}]", file);
             return true;
+        }
+
+        private static IAssemblyResolver CreateDepsFileAssemblyResolver(string file)
+        {
+            var depsFilePath = Path.Combine(Path.GetDirectoryName(file), $"{Path.GetFileNameWithoutExtension(file)}.deps.json");
+
+            using (var depsFile = File.OpenRead(depsFilePath))
+            using(var reader = new DependencyContextJsonReader())
+            {
+                var AssemblyResolver = new DependencyContextAssemblyResolver(reader.Read(depsFile), Path.GetDirectoryName(file));
+                return AssemblyResolver;
+            }
         }
 
         private static ISymbolReaderProvider GetSymbolReaderProvider(string pdbName)

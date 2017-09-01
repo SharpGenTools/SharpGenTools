@@ -57,7 +57,7 @@ namespace SharpGen.Parser
 
             foreach (var includeName in _mapIncludeToMacros.Keys)
             {
-                var includeId = Path.GetFileNameWithoutExtension(includeName).ToLower();
+                var includeId = Path.GetFileNameWithoutExtension(includeName);
                 var include = group.FindInclude(includeId);
                 if (include == null)
                 {
@@ -88,7 +88,7 @@ namespace SharpGen.Parser
                         _currentMacros = null;
                     else
                     {
-                        var currentFile = Path.GetFileName(result.Groups[1].Value).ToLower();
+                        var currentFile = Path.GetFileName(result.Groups[1].Value);
                         if (!_mapIncludeToMacros.TryGetValue(currentFile, out _currentMacros))
                         {
                             _currentMacros = new Dictionary<string,string>();

@@ -24,8 +24,6 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 
-using SharpGen.Runtime.Collections;
-
 namespace SharpGen.Runtime.Diagnostics
 {
     /// <summary>
@@ -104,6 +102,9 @@ namespace SharpGen.Runtime.Diagnostics
         /// </summary>
         public static string GetStackTrace()
         {
+#if NETSTANDARD2_0
+            return new StackTrace().ToString();
+#else
             try
             {
                 throw new GetStackTraceException();
@@ -112,6 +113,7 @@ namespace SharpGen.Runtime.Diagnostics
             {
                 return ex.StackTrace;
             }
+#endif
         }
 
         /// <summary>
@@ -124,9 +126,7 @@ namespace SharpGen.Runtime.Diagnostics
                 return;
             lock (ObjectReferences)
             {
-                List<ObjectReference> referenceList;
-                // Object is already tracked
-                if (!ObjectReferences.TryGetValue(comObject.NativePointer, out referenceList))
+                if (!ObjectReferences.TryGetValue(comObject.NativePointer, out List<ObjectReference> referenceList))
                 {
                     referenceList = new List<ObjectReference>();
                     ObjectReferences.Add(comObject.NativePointer, referenceList);
@@ -165,9 +165,7 @@ namespace SharpGen.Runtime.Diagnostics
         {
             lock (ObjectReferences)
             {
-                List<ObjectReference> referenceList;
-                // Object is already tracked
-                if (ObjectReferences.TryGetValue(comObject.NativePointer, out referenceList))
+                if (ObjectReferences.TryGetValue(comObject.NativePointer, out List<ObjectReference> referenceList))
                 {
                     foreach (var objectReference in referenceList)
                     {
@@ -238,7 +236,7 @@ namespace SharpGen.Runtime.Diagnostics
         public static string ReportActiveObjects()
         {
             var text = new StringBuilder();
-            int count = 0;
+            var count = 0;
             var countPerType = new Dictionary<string, int>();
 
             foreach (var findActiveObject in FindActiveObjects())
@@ -251,9 +249,8 @@ namespace SharpGen.Runtime.Diagnostics
                     var target = findActiveObject.Object.Target;
                     if (target != null)
                     {
-                        int typeCount;
                         var targetType = target.GetType().Name;
-                        if (!countPerType.TryGetValue(targetType, out typeCount))
+                        if (!countPerType.TryGetValue(targetType, out int typeCount))
                         {
                             countPerType[targetType] = 0;
                         }
@@ -279,20 +276,12 @@ namespace SharpGen.Runtime.Diagnostics
 
         private static void OnTracked(ComObject obj)
         {
-            var handler = Tracked;
-            if (handler != null)
-            {
-                handler(null, new ComObjectEventArgs(obj));
-            }
+            Tracked?.Invoke(null, new ComObjectEventArgs(obj));
         }
 
         private static void OnUnTracked(ComObject obj)
         {
-            var handler = UnTracked;
-            if (handler != null)
-            {
-                handler(null, new ComObjectEventArgs(obj));
-            }
+            UnTracked?.Invoke(null, new ComObjectEventArgs(obj));
         }
 
         private class GetStackTraceException : Exception
