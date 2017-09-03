@@ -25,30 +25,8 @@ namespace SharpGen.Runtime
     /// <summary>
     /// Base class for all callback objects written in managed code.
     /// </summary>
-    public abstract class CallbackBase : DisposeBase, ICallbackable, IUnknown
+    public abstract class CallbackBase : DisposeBase, ICallbackable
     {
-        private int count = 1;
-        void IUnknown.QueryInterface(Guid guid, out IntPtr output)
-        {
-            var shadow = (ComObjectShadow)((ShadowContainer)((ICallbackable)this).Shadow).FindShadow(guid);
-            if (shadow != null)
-            {
-                ((IUnknown)this).AddRef();
-                output = shadow.NativePointer;
-            }
-            output = IntPtr.Zero;
-        }
-
-        uint IUnknown.AddRef()
-        {
-            return (uint)Interlocked.Increment(ref count);
-        }
-
-        uint IUnknown.Release()
-        {
-            return (uint)Interlocked.Decrement(ref count);
-        }
-
         /// <summary>
         /// Releases unmanaged and - optionally - managed resources
         /// </summary>

@@ -1,15 +1,30 @@
 ﻿<Project>
   <PropertyGroup>
     <SharpGenGeneratedCodeFolder Condition="'$(SharpGenGeneratedCodeFolder)' == ''">$(IntermediateOutputPath)/SharpGen</SharpGenGeneratedCodeFolder>
-    <SharpGenConsumerBindMappingFilePrefix Condition="'$(SharpGenConsumerBindMappingFilePrefix)' == ''">$(MSBuildProjectName).$(TargetFramework)</SharpGenConsumerBindMappingFilePrefix>
+    <SharpGenConsumerBindMappingFilePrefix Condition="'$(SharpGenConsumerBindMappingFilePrefix)' == ''">$(AssemblyName).$(TargetFramework)</SharpGenConsumerBindMappingFilePrefix>
+    <SharpGenConsumerBindMappingConfigId Condition="'$(SharpGenConsumerBindMappingConfigId)' == ''">$(AssemblyName)</SharpGenConsumerBindMappingConfigId>
+    <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' == 'Full'">$(MSBuildThisFileDirectory)/../tools/net46/SharpGenTools.Sdk.dll</SharpGenSdkAssembly>
+    <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)/../tools/netstandard1.5/SharpGenTools.Sdk.dll</SharpGenSdkAssembly>
   </PropertyGroup>
 
-  <UsingTask Condition="'$(MSBuildRuntimeType)' == 'Full'" AssemblyFile="../tools/net46/SharpGenTools.Sdk.dll" TaskName="SharpPatchTask" />
-  <UsingTask Condition="'$(MSBuildRuntimeType)' == 'Full'" AssemblyFile="../tools/net46/SharpGenTools.Sdk.dll" TaskName="SharpGenTask" />
-  <UsingTask Condition="'$(MSBuildRuntimeType)' == 'Core'" AssemblyFile="../tools/netstandard1.5/SharpGenTools.Sdk.dll" TaskName="SharpPatchTask" />
-  <UsingTask Condition="'$(MSBuildRuntimeType)' == 'Core'" AssemblyFile="../tools/netstandard1.5/SharpGenTools.Sdk.dll" TaskName="SharpGenTask" />
+  <UsingTask AssemblyFile="$(SharpGenSdkAssembly)" TaskName="SharpPatchTask" />
+  <UsingTask AssemblyFile="$(SharpGenSdkAssembly)" TaskName="SharpGenTask" />
+
+  <Target Name="GetMappingsFromProjectReferences">
+    <MSBuild
+      Projects="@(_MSBuildProjectReferenceExistent)"
+      Targets="GenerateConsumerBindMappingFile"
+      BuildInParallel="$(BuildInParallel)"
+      Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration); %(_MSBuildProjectReferenceExistent.SetPlatform); %(_MSBuildProjectReferenceExistent.SetTargetFramework)"
+      ContinueOnError="$(ContinueOnError)"
+      RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)">
+      <Output TaskParameter="TargetOutputs" ItemName="SharpGenMapping" />
+    </MSBuild>
+  </Target>
   
-  <Target Name="CorePrepareSharpGen">
+  <Target
+    Name="CorePrepareSharpGen"
+    DependsOnTargets="GetMappingsFromProjectReferences">
     <ItemGroup>
       <Compile Remove="$(IntermediateOutputPath)/SharpGen/**/*.cs" />
       <SharpGenGeneratedSource Include="$(IntermediateOutputPath)/SharpGen/**/*.cs" />
@@ -17,15 +32,17 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="GenerateSharpGenBindings"
+  <Target
+    Name="GenerateSharpGenBindings"
     BeforeTargets="CoreCompile"
     DependsOnTargets="PrepareForBuild;CoreGenerateSharpGenBindings;GenerateConsumerBindMappingFile"
     />
 
-  <Target Name="CoreGenerateSharpGenBindings" 
+  <Target
+    Name="CoreGenerateSharpGenBindings" 
     BeforeTargets="CoreCompile"
     DependsOnTargets="PrepareForBuild;CorePrepareSharpGen"
-    Inputs="@(SharpGenMapping)"
+    Inputs="@(SharpGenMapping);$(SharpGenSdkAssembly)"
     Outputs="@(SharpGenConsumerBindMappingFile);@(SharpGenGeneratedSource)">
 
     <MakeDir Directories="$(IntermediateOutputPath)/SharpGen" />
@@ -49,17 +66,24 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="GenerateConsumerBindMappingFile"
+  <Target
+    Name="GenerateConsumerBindMappingFile"
     DependsOnTargets="CoreGenerateSharpGenBindings"
     Outputs="@(SharpGenConsumerBindMappingFile)"
   >
   </Target>
   
   <Target Name="CleanSharpGenBindings" BeforeTargets="Clean">
-    <RemoveDir Directories="$(IntermediateOutputPath)/SharpGen" />
+    <RemoveDir Directories="$(BaseIntermediateOutputPath)/**/SharpGen" />
   </Target>
   
-  <Target Name="PatchAssembly" AfterTargets="CopyFilesToOutputDirectory" BeforeTargets="IncrementalClean">
-    <SharpPatchTask AssemblyToPatch="$(TargetPath)" References="@(ReferencePath)" />
+  <Target
+    Name="PatchAssembly"
+    DependsOnTargets="CoreCompile"
+    BeforeTargets="CopyFilesToOutputDirectory"
+    Inputs="@(IntermediateAssembly)"
+    Outputs="@(IntermediateAssembly->'%(FullPath).check')"
+  >
+    <SharpPatchTask AssemblyToPatch="%(IntermediateAssembly.FullPath)" References="@(ReferencePath)" />
   </Target>
 </Project>

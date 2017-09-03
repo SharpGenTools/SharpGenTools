@@ -20,14 +20,16 @@ namespace SharpGenTools.Sdk
             BindingRedirectResolution.Enable();
             try
             {
-                var patchApp = new InteropApp();
-                patchApp.AssemblyResolver = new MSBuildAssemblyResolver(References);
+                var patchApp = new InteropApp
+                {
+                    AssemblyResolver = new MSBuildAssemblyResolver(References)
+                };
                 patchApp.PatchFile(AssemblyToPatch);
                 return true;
             }
             catch (Exception ex)
             {
-                Log.LogErrorFromException(ex);
+                Log.LogErrorFromException(ex, true, true, null);
                 return false;
             }
         }

@@ -25,6 +25,8 @@ namespace SharpGen.Runtime
     /// <summary>
     /// Base interface for Component Object Model (COM).
     /// </summary>
+    [Guid("00000000-0000-0000-C000-000000000046")]
+    [Shadow(typeof(ComObjectShadow))]
     public partial interface IUnknown
     {
         /// <summary>
@@ -33,7 +35,7 @@ namespace SharpGen.Runtime
         /// <param name="guid">The guid of the interface.</param>
         /// <param name="comObject">The output COM object reference.</param>
         /// <returns>If successful, <see cref="Result.Ok"/> </returns>
-        void QueryInterface(System.Guid riid, out System.IntPtr vObjectOut);
+        void QueryInterface(Guid riid, out IntPtr vObjectOut);
 
         /// <summary>
         /// Increments the reference count for an interface on this instance.

@@ -153,9 +153,17 @@ namespace SharpGen.Parser
                 }
 
                 // Prepare bindings
-                // TODO test duplicate bindings
                 foreach (var bindRule in configFile.Bindings)
-                    _bindings.Add(bindRule.From, bindRule.To);
+                {
+                    if (_bindings.ContainsKey(bindRule.From))
+                    {
+                        Logger.Error("Duplicate type bind specified.");
+                    }
+                    else
+                    {
+                        _bindings.Add(bindRule.From, bindRule.To);
+                    }
+                }
             }
 
             var filesWithIncludes = new List<string>();

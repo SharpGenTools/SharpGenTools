@@ -249,7 +249,7 @@
     <map method=".*::GetGlyphIndicesW" name="GetGlyphIndices" />
 
     <context>Unknwnbase</context>
-    <map interface="IUnknown" name="IUnknown" callback-visibility="public" callback="true" callback-dual="true" callback-name="ComObject" />
+    <map interface="IUnknown" name="ComObject" />
     <map method="IUnknown::.*" keep-implement-public="true" />
     <map param="IUnkown::QueryInterface::riid" attribute="inout" />
     <context-clear/>

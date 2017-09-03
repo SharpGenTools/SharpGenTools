@@ -208,7 +208,7 @@ namespace SharpGen
                     AppType = AppType
                 };
 
-                transformer.Init(group, Config, IntermediateOutputPath);
+                consumerConfig.Extension = transformer.Init(group, Config, IntermediateOutputPath);
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Mapping rules initialization failed");
@@ -230,7 +230,10 @@ namespace SharpGen
                     transformer.NamingRules.DumpRenames(fileWriter);
                 }
 
-                consumerConfig.Bindings.AddRange(transformer.GenerateTypeBindingsForConsumers());
+                var (bindings, defines) = transformer.GenerateTypeBindingsForConsumers();
+
+                consumerConfig.Bindings.AddRange(bindings);
+                consumerConfig.Extension.AddRange(defines);
 
 
                 // TODO: Include include-prolog's and include rules w/ pre or post text (no attaches).

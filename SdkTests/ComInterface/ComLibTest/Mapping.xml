@@ -30,22 +30,6 @@
   <include-dir override="false">=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\winrt</include-dir>
   <include-dir override="false">$(VC_TOOLS_PATH)\include</include-dir>
   <include-dir>$(THIS_CONFIG_PATH)\..\ComLib</include-dir>
-  <include-prolog>
-    // Use unicode
-    #define UNICODE
-
-    // for SAL annotations
-    #define _PREFAST_
-
-    // To force GUID to be declared
-    #define INITGUID
-
-    #define _ALLOW_KEYWORD_MACROS
-
-    // Wrap all declspec for code-gen
-    #define __declspec(x) __attribute__((annotate(#x)))
-  </include-prolog>
-  <include file="windows.h" />
   <include file="ComLib.h" attach="true" />
 
   <!-- SharpGen global naming -->
@@ -53,30 +37,7 @@
 
   <!-- SharpGen.Runtime global types -->
   <extension>
-    <define enum="System.IO.SeekOrigin" sizeof="4" />
-    <define struct="SharpGen.Runtime.Size2F" sizeof="8" />
-    <define struct="SharpGen.Runtime.Size2" sizeof="8" />
-    <define struct="SharpGen.Runtime.Mathematics.Interop.RawPoint" sizeof="8" />
-    <define struct="SharpGen.Runtime.Result" sizeof="4" />
-    <define struct="SharpGen.Runtime.PointerSize" sizeof="8" />
-
-    <define struct="SharpGen.Runtime.Win32Native.TextMetric" sizeof="32"/>
-    <define struct="SharpGen.Runtime.Win32Native.TextMetricA" sizeof="32"/>
-
-    <define interface="SharpGen.Runtime.ComObject" />
-
-    <define struct="SharpGen.Runtime.Mathematics.Interop.RawBool" sizeof="4" />
-    <define struct="SharpGen.Runtime.Mathematics.Interop.RawRectangle" sizeof="16" />
-    <define struct="SharpGen.Runtime.FunctionCallback" sizeof="8" />
-    <define interface="SharpGen.Runtime.Win32.PropertyBag"/>
-    <define struct="SharpGen.Runtime.Win32.SecurityAttributes" sizeof="16" />
-    <define struct="SharpGen.Runtime.Win32.NativeMessage" sizeof="28" />
-
-    <define struct="SharpGen.Runtime.Win32.Variant" sizeof="16"/>
-    <define struct="SharpGen.Runtime.Win32.BitmapInfoHeader" sizeof="40"/>
-
     <create class="ComLibTest.Functions" visibility="public static" />
-
   </extension>
 
   <!--
@@ -85,91 +46,12 @@
     // *****************************************************************
     -->
   <bindings>
-    <!-- Primitive bindings -->
-    <bind from="void" to="System.Void" />
-    <bind from="int" to="System.Int32" />
-    <bind from="unsigned int" to="System.UInt32" />
-    <bind from="short" to="System.Int16" />
-    <bind from="unsigned short" to="System.UInt16" />
-    <bind from="unsigned char" to="System.Byte" />
-    <bind from="longlong" to="System.Int64" />
-    <bind from="unsigned longlong" to="System.UInt64" />
-    <bind from="float" to="System.Single" />
-    <bind from="double" to="System.Double" />
-    <bind from="bool" to="System.Boolean" />
-
-    <!-- SharpGen.Runtime bindings -->
-    <bind from="SHARPGEN_RUNTIME_USHORT" to="System.UInt16" />
-    <bind from="SHARPGEN_RUNTIME_SEEKORIGIN" to="System.IO.SeekOrigin" />
-
-    <!-- Win32 bindings -->
-    <bind from="INT_PTR" to="System.IntPtr" />
-    <bind from="UINT_PTR" to="System.UIntPtr" />
-    <bind from="LONG_PTR" to="System.IntPtr" />
-    <bind from="ULONG_PTR" to="System.UIntPtr" />
-    <bind from="HANDLE_PTR" to="System.IntPtr" />
-
-    <bind from="POINT" to="SharpGen.Runtime.Mathematics.Interop.RawPoint" />
-    <bind from="RECT" to="SharpGen.Runtime.Mathematics.Interop.RawRectangle" />
-    <bind from="BOOL" to="SharpGen.Runtime.Mathematics.Interop.RawBool"/>
-    <bind from="HACCEL" to="System.IntPtr"/>
-    <bind from="HWND" to="System.IntPtr"/>
-    <bind from="HDC" to="System.IntPtr"/>
-    <bind from="HICON" to="System.IntPtr"/>
-    <bind from="HKEY" to="System.IntPtr"/>
-    <bind from="HBITMAP" to="System.IntPtr"/>
-    <bind from="HINSTANCE" to="System.IntPtr"/>
-    <bind from="HMONITOR" to="System.IntPtr"/>
-    <bind from="HPALETTE" to="System.IntPtr"/>
-    <bind from="LUID" to="System.Int64"/>
-    <bind from="LARGE_INTEGER" to="System.Int64"/>
-    <bind from="ULARGE_INTEGER" to="System.Int64"/>
-    <bind from="HRESULT" to="SharpGen.Runtime.Result" />
-    <bind from="FILETIME" to="System.Int64" />
-    <bind from="GUID" to="System.Guid" />
-    <bind from="COLORREF" to="System.Int32" />
-    <bind from="__function__stdcall" to="SharpGen.Runtime.FunctionCallback" />
-    <bind from="SIZE" to="SharpGen.Runtime.Size2" />
-    <bind from="SIZE_T" to="SharpGen.Runtime.PointerSize" marshal="System.IntPtr"/>
-    <bind from="SSIZE_T" to="SharpGen.Runtime.PointerSize" marshal="System.IntPtr"/>
-    <bind from="MSG" to="SharpGen.Runtime.Win32.NativeMessage" />
-
-    <bind from="SECURITY_ATTRIBUTES" to="SharpGen.Runtime.Win32.SecurityAttributes"/>
-
-    <bind from="VARIANT" to="SharpGen.Runtime.Win32.Variant"/>
-    <bind from="PROPVARIANT" to="SharpGen.Runtime.Win32.Variant"/>
-
-    <!-- todo create those structures -->
-    <bind from="RGNDATA" to="System.IntPtr"/>
-
-    <!-- Win32 structures -->
-    <bind from="DISPPARAMS" to="System.Runtime.InteropServices.ComTypes.DISPPARAMS"/>
-    <bind from="EXCEPINFO" to="System.Runtime.InteropServices.ComTypes.EXCEPINFO"/>
-
-    <!-- Root IUnknown interface -->
-
-
-    <!-- COM interfaces not directly used -->
-    <bind from="IUnknown" to="SharpGen.Runtime.ComObject" />
-    <bind from="ITypeInfo" to="SharpGen.Runtime.ComObject" />
-    <bind from="IErrorLog" to="SharpGen.Runtime.ComObject" />
-    <bind from="IMoniker" to="SharpGen.Runtime.ComObject" />
-    <bind from="IEnumMoniker" to="SharpGen.Runtime.ComObject" />
-    <bind from="IBindCtx" to="SharpGen.Runtime.ComObject" />
-    <bind from="IRpcStubBuffer" to="SharpGen.Runtime.ComObject"/>
-    <bind from="IRpcChannelBuffer" to="SharpGen.Runtime.ComObject"/>
-    <bind from="IPropertyStore" to="SharpGen.Runtime.ComObject"/>
-    <bind from="IPropertyBag2" to="SharpGen.Runtime.Win32.PropertyBag"/>
-    <bind from="IClassFactory" to="SharpGen.Runtime.ComObject"/>
-    <bind from="IEnumUnknown" to="SharpGen.Runtime.ComObject"/>
-    <bind from="IEnumString" to="SharpGen.Runtime.ComObject"/>
-    <bind from="INamedPropertyStore" to="SharpGen.Runtime.ComObject"/>
-
-    <bind from="HSTRING" to="System.IntPtr" />
   </bindings>
 
   <!-- SharpGen.Runtime global mapping -->
   <mapping>
     <map function="CreateInstance" dll='"ComLib.dll"' group="ComLibTest.Functions" />
   </mapping>
+
+  <depends>SharpGen.Runtime</depends>
 </config>

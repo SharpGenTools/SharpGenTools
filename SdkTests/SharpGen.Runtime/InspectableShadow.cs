@@ -25,7 +25,7 @@ namespace SharpGen.Runtime
     /// <summary>
     /// Internal IInspectable Callback
     /// </summary>
-    internal class InspectableShadow : ComObjectShadow
+    public class InspectableShadow : ComObjectShadow
     {
         private static readonly InspectableProviderVtbl Vtbl = new InspectableProviderVtbl();
 
@@ -39,7 +39,7 @@ namespace SharpGen.Runtime
             return ToCallbackPtr<IInspectable>(callback);
         }
 
-        public class InspectableProviderVtbl : ComObjectVtbl
+        protected class InspectableProviderVtbl : ComObjectVtbl
         {
             public InspectableProviderVtbl()
                 : base(3)

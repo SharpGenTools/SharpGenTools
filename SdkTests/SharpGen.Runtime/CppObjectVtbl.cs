@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace SharpGen.Runtime
 {
-    internal class CppObjectVtbl
+    public class CppObjectVtbl
     {
         private readonly List<Delegate> methods;
         private readonly IntPtr vtbl;

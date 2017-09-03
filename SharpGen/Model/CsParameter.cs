@@ -184,7 +184,7 @@ namespace SharpGen.Model
             get
             {
                 StringBuilder builder = new StringBuilder();
-                if (!IsFastOut && Attribute == CsParameterAttribute.Out && (!IsArray || PublicType.Name == "string"))
+                if (!IsFastOut && Attribute == CsParameterAttribute.Out && (!IsArray || PublicType.Name == "System.String"))
                     builder.Append("out ");
                 else if ((Attribute == CsParameterAttribute.Ref || Attribute == CsParameterAttribute.RefIn) && !IsArray)
                 {
@@ -201,7 +201,7 @@ namespace SharpGen.Model
                 else
                     builder.Append(PublicType.QualifiedName);
 
-                if (IsArray && PublicType.Name != "string" && !IsComArray)
+                if (IsArray && PublicType.Name != "System.String" && !IsComArray)
                     builder.Append("[]");
                 builder.Append(" ");
                 builder.Append(Name);
