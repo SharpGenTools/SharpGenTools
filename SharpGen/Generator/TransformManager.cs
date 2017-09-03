@@ -1544,20 +1544,12 @@ namespace SharpGen.Generator
                 Logger.Message("\tNumber of {0} : {1}", stat.Key, stat.Value);
         }
 
-        public void GenerateBindMappingForConsumers(TextWriter writer, string id)
+        public IEnumerable<BindRule> GenerateTypeBindingsForConsumers()
         {
-            var serializer = new XmlSerializer(typeof(ConfigFile));
-            var config = new ConfigFile
-            {
-                Id = id,
-                Bindings = (from record in _mapCppNameToCSharpType
-                            where !(record.Value.Item1 is CsMethod)
-                            && !(record.Value.Item1 is CsEnumItem)
-                            select new BindRule(record.Key, record.Value.Item1.QualifiedName)
-                            ).ToList()
-            };
-
-            serializer.Serialize(writer, config);
+            return from record in _mapCppNameToCSharpType
+                   where !(record.Value.Item1 is CsMethod)
+                   && !(record.Value.Item1 is CsEnumItem)
+                   select new BindRule(record.Key, record.Value.Item1.QualifiedName);
         }
     }
 }

@@ -116,12 +116,12 @@ namespace SharpGen.Parser
         /// Initialize this Parser from a root ConfigFile.
         /// </summary>
         /// <param name="configRoot">The root config file</param>
-        public void Init(ConfigFile configRoot)
+        public (List<string> prolog, List<IncludeDirRule> includeDirs, List<IncludeRule> includeRules) Init(ConfigFile configRoot)
         {
-            _configRoot = configRoot ?? throw new ArgumentNullException("configRoot");
+            _configRoot = configRoot ?? throw new ArgumentNullException(nameof(configRoot));
 
             _configRootHeader = Path.Combine(OutputPath, _configRoot.Id + ".h");
-            _gccxml = new CastXml (Logger)
+            _gccxml = new CastXml(Logger)
             {
                 ExecutablePath = CastXmlExecutablePath,
                 OutputPath = OutputPath,
@@ -135,8 +135,8 @@ namespace SharpGen.Parser
             // Get All include-directories to add to GccXmlApp
             var prolog = new StringBuilder();
 
-            // Add current directory for gccxml
-            _gccxml.IncludeDirectoryList.Add(new IncludeDirRule(Directory.GetCurrentDirectory()));
+            var includeDirsForConsumers = new SortedSet<IncludeDirRule>();
+            var includesForConsumers = new SortedSet<IncludeRule>();
 
             // Configure gccxml with include directory
             foreach (var configFile in _configRoot.ConfigFilesLoaded)
@@ -149,7 +149,7 @@ namespace SharpGen.Parser
                 foreach (var includeProlog in configFile.IncludeProlog)
                 {
                     if (!string.IsNullOrEmpty(includeProlog))
-                        prolog.Append(includeProlog);                    
+                        prolog.Append(includeProlog);
                 }
 
                 // Prepare bindings
@@ -265,10 +265,24 @@ namespace SharpGen.Parser
                         }
 
                         if (!string.IsNullOrEmpty(includeRule.Pre))
+                        {
                             outputConfig.WriteLine(includeRule.Pre);
+                            includesForConsumers.Add(includeRule);
+                            foreach (var includeDir in configFile.IncludeDirs)
+                            {
+                                includeDirsForConsumers.Add(includeDir);
+                            }
+                        }
                         outputConfig.WriteLine("#include \"{0}\"", includeRule.File);
                         if (!string.IsNullOrEmpty(includeRule.Post))
+                        {
                             outputConfig.WriteLine(includeRule.Post);
+                            includesForConsumers.Add(includeRule);
+                            foreach (var includeDir in configFile.IncludeDirs)
+                            {
+                                includeDirsForConsumers.Add(includeDir);
+                            }
+                        }
                     }
 
                     // Write includes to references
@@ -332,6 +346,18 @@ namespace SharpGen.Parser
                     }
                 }
             }
+
+            return (new List<string> { prolog.ToString() + Environment.NewLine },
+                includeDirsForConsumers.ToList(),
+                includesForConsumers.Select(include =>
+                new IncludeRule
+                {
+                    File = include.File,
+                    Pre = include.Pre,
+                    Post = include.Post,
+                    FilterErrors = include.FilterErrors
+                }).ToList()
+            );
         }
 
         /// <summary>

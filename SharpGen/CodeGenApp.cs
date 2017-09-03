@@ -26,6 +26,7 @@ using SharpGen.Logging;
 using SharpGen.Config;
 using SharpGen.Generator;
 using SharpGen.Parser;
+using System.Xml.Serialization;
 
 namespace SharpGen
 {
@@ -170,6 +171,11 @@ namespace SharpGen
 
             try
             {
+                var consumerConfig = new ConfigFile
+                {
+                    Id = ConsumerBindMappingConfigId
+                };
+
                 // Run the parser
                 var parser = new Parser.CppParser(GlobalNamespace, Logger)
                                  {
@@ -181,7 +187,7 @@ namespace SharpGen
                                  };
 
                 // Init the parser
-                parser.Init(Config);
+                (consumerConfig.IncludeProlog, consumerConfig.IncludeDirs, consumerConfig.Includes) = parser.Init(Config);
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Initializing parser failed");
@@ -224,19 +230,11 @@ namespace SharpGen
                     transformer.NamingRules.DumpRenames(fileWriter);
                 }
 
-                var consumerBindMappingFileName = Path.Combine(IntermediateOutputPath, $"{ConsumerBindMappingFilePrefix ?? Config.Id}.BindMapping.xml");
+                consumerConfig.Bindings.AddRange(transformer.GenerateTypeBindingsForConsumers());
 
-                if (File.Exists(consumerBindMappingFileName))
-                {
-                    File.Delete(consumerBindMappingFileName);
-                }
 
-                using (var consumerBindMapping = File.Open(consumerBindMappingFileName, FileMode.OpenOrCreate, FileAccess.Write))
-                using (var fileWriter = new StreamWriter(consumerBindMapping))
-                {
-                    // TODO: Include include-prolog's and include rules w/ pre or post text (no attaches).
-                    transformer.GenerateBindMappingForConsumers(fileWriter, ConsumerBindMappingConfigId);
-                }
+                // TODO: Include include-prolog's and include rules w/ pre or post text (no attaches).
+                GenerateConfigForConsumers(consumerConfig);
 
                 // Update Checkfile for assembly
                 File.WriteAllText(_assemblyCheckFile, "");
@@ -249,6 +247,23 @@ namespace SharpGen
             finally
             {
                 Logger.Progress(100, "Finished");
+            }
+        }
+
+        private void GenerateConfigForConsumers(ConfigFile consumerConfig)
+        {
+            var consumerBindMappingFileName = Path.Combine(IntermediateOutputPath, $"{ConsumerBindMappingFilePrefix ?? Config.Id}.BindMapping.xml");
+
+            if (File.Exists(consumerBindMappingFileName))
+            {
+                File.Delete(consumerBindMappingFileName);
+            }
+
+            using (var consumerBindMapping = File.Open(consumerBindMappingFileName, FileMode.OpenOrCreate, FileAccess.Write))
+            using (var fileWriter = new StreamWriter(consumerBindMapping))
+            {
+                var serializer = new XmlSerializer(typeof(ConfigFile));
+                serializer.Serialize(fileWriter, consumerConfig);
             }
         }
     }
