@@ -1392,8 +1392,10 @@ namespace SharpGen.Generator
                     return constantDefinition;
             }
 
-            var constantToAdd = new CsVariable(typeName, fieldName, value);
-            constantToAdd.CppElement = cppElement;
+            var constantToAdd = new CsVariable(typeName, fieldName, value)
+            {
+                CppElement = cppElement
+            };
             constantDefinitions.Add(constantToAdd);
 
             BindType(cppElement.Name, constantToAdd);
@@ -1530,7 +1532,52 @@ namespace SharpGen.Generator
                    where !(record.Value.Item1 is CsMethod)
                    && !(record.Value.Item1 is CsEnumItem)
                    select new BindRule(record.Key, record.Value.Item1.QualifiedName),
-                   Enumerable.Empty<DefineExtensionRule>()); // TODO: Generate define rules for structs/enums/interfaces/classes 
+                   GenerateDefinesForMappedTypes()); // TODO: Generate define rules for structs/enums/interfaces/classes 
+        }
+
+        private IEnumerable<DefineExtensionRule> GenerateDefinesForMappedTypes()
+        {
+            foreach (var mapping in _mapCppNameToCSharpType)
+            {
+                switch (mapping.Value.Item1)
+                {
+                    case CsEnum csEnum:
+                        yield return new DefineExtensionRule
+                        {
+                            Enum = csEnum.QualifiedName,
+                            SizeOf = csEnum.SizeOf,
+                            Align = csEnum.Align
+                        };
+                        break;
+                    case CsClass csClass:
+                        yield return new DefineExtensionRule
+                        {
+                            NewClass = csClass.QualifiedName,
+                            SizeOf = csClass.SizeOf,
+                            Align = csClass.Align
+                        };
+                        break;
+                    case CsStruct csStruct:
+                        yield return new DefineExtensionRule
+                        {
+                            Struct = csStruct.QualifiedName,
+                            SizeOf = csStruct.SizeOf,
+                            Align = csStruct.Align,
+                            HasCustomMarshal = csStruct.HasCustomMarshal,
+                            HasCustomNew = csStruct.HasCustomNew,
+                            IsStaticMarshal = csStruct.IsStaticMarshal
+                        };
+                        break;
+                    case CsInterface csInterface:
+                        yield return new DefineExtensionRule
+                        {
+                            Interface = csInterface.QualifiedName,
+                            SizeOf = csInterface.SizeOf,
+                            Align = csInterface.Align
+                        };
+                        break;
+                }
+            }
         }
     }
 }
