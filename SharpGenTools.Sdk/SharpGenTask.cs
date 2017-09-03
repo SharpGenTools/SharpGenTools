@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using SharpGen.Config;
+using System.Linq;
 
 namespace SharpGenTools.Sdk
 {
@@ -36,33 +38,23 @@ namespace SharpGenTools.Sdk
         [Required]
         public bool IncludeAssemblyNameFolder { get; private set; }
 
+        [Required]
+        public string OutputDirectory { get; private set; }
+
         public override bool Execute()
         {
             BindingRedirectResolution.Enable();
             try
             {
-                foreach (var mappingFile in MappingFiles)
+                var config = new ConfigFile
                 {
-                    foreach (var appType in AppTypes)
-                    {
-                        var codeGenApp = new CodeGenApp(new SharpGen.Logging.Logger(new MsBuildLogger(Log), null))
-                        {
-                            CastXmlExecutablePath = CastXmlPath,
-                            AppType = appType,
-                            ConfigRootPath = mappingFile.ItemSpec,
-                            GlobalNamespace = new GlobalNamespaceProvider(GlobalNamespace),
-                            IsGeneratingDoc = GenerateDocs,
-                            VcToolsPath = VcToolsPath,
-                            IntermediateOutputPath = IntermediateOutputPath,
-                            IncludeAssemblyNameFolder = IncludeAssemblyNameFolder,
-                            GeneratedCodeFolder = GeneratedCodeFolder
-                        };
+                    Files = MappingFiles.Select(file => file.ItemSpec).ToList(),
+                    Id = "SharpGen-MSBuild"
+                };
 
-                        if(!codeGenApp.Init())
-                        {
-                        }
-                        codeGenApp.Run();
-                    }
+                foreach (var appType in AppTypes)
+                {
+                    RunCodeGen(config, appType);
                 }
                 return true;
             }
@@ -70,6 +62,28 @@ namespace SharpGenTools.Sdk
             {
                 return false;
             }
+        }
+
+        private void RunCodeGen(ConfigFile config, string appType)
+        {
+            var codeGenApp = new CodeGenApp(new SharpGen.Logging.Logger(new MsBuildLogger(Log), null))
+            {
+                CastXmlExecutablePath = CastXmlPath,
+                AppType = appType,
+                Config = config,
+                GlobalNamespace = new GlobalNamespaceProvider(GlobalNamespace),
+                IsGeneratingDoc = GenerateDocs,
+                VcToolsPath = VcToolsPath,
+                IntermediateOutputPath = IntermediateOutputPath,
+                OutputDirectory = OutputDirectory,
+                IncludeAssemblyNameFolder = IncludeAssemblyNameFolder,
+                GeneratedCodeFolder = GeneratedCodeFolder
+            };
+
+            if (!codeGenApp.Init())
+            {
+            }
+            codeGenApp.Run();
         }
     }
 }

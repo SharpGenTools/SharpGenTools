@@ -94,8 +94,8 @@ namespace SharpGen.Config
                     return null;
                 if (Path.IsPathRooted(FilePath))
                     return FilePath;
-                if (Parent != null)
-                    return Path.Combine(Path.GetDirectoryName(Parent.AbsoluteFilePath), FilePath);;
+                if (Parent?.AbsoluteFilePath != null)
+                    return Path.Combine(Path.GetDirectoryName(Parent.AbsoluteFilePath), FilePath);
                 return Path.GetFullPath(Path.Combine(".", FilePath));
             }
         }

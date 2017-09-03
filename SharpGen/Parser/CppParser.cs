@@ -205,122 +205,130 @@ namespace SharpGen.Parser
                 if (!filesWithIncludes.Contains(configFile.Id))
                     continue;
 
-                var outputConfig = new StringWriter();
-                outputConfig.WriteLine("// SharpDX include config [{0}] - Version {1}", configFile.Id, Version);
-
-                if (_configRoot.Id == configFile.Id)
-                    outputConfig.WriteLine(prolog);
-
-                // Write includes
-                foreach (var includeRule in configFile.Includes)
+                using (var outputConfig = new StringWriter())
                 {
-                    var cppInclude = _group.FindInclude(includeRule.Id);
-                    if (cppInclude == null)
-                    {
-                        _includeToProcess.Add(includeRule.Id, true);
+                    outputConfig.WriteLine("// SharpDX include config [{0}] - Version {1}", configFile.Id, Version);
 
-                        cppInclude = new CppInclude() { Name = includeRule.Id };
-                        _group.Add(cppInclude);
-                    }
+                    if (_configRoot.Id == configFile.Id)
+                        outputConfig.WriteLine(prolog);
 
-                    // Handle attach types
-                    // Set that the include is attached (so that all types inside are attached
-                    bool isIncludeFullyAttached = includeRule.Attach.HasValue && includeRule.Attach.Value;
-                    if (isIncludeFullyAttached || includeRule.AttachTypes.Count > 0)
+                    // Write includes
+                    foreach (var includeRule in configFile.Includes)
                     {
-                        // An include can be fully attached ( include rule is set to true)
-                        // or partially attached (the include rule contains Attach for specific types)
-                        // We need to know which includes are attached, if they are fully or partially
-                        if (!_includeIsAttached.ContainsKey(includeRule.Id))
-                            _includeIsAttached.Add(includeRule.Id, isIncludeFullyAttached);
-                        else if (isIncludeFullyAttached)
+                        var cppInclude = _group.FindInclude(includeRule.Id);
+                        if (cppInclude == null)
                         {
-                            _includeIsAttached[includeRule.Id] = true;
+                            _includeToProcess.Add(includeRule.Id, true);
+
+                            cppInclude = new CppInclude() { Name = includeRule.Id };
+                            _group.Add(cppInclude);
                         }
 
-                        // Attach types if any
-                        if (includeRule.AttachTypes.Count > 0)
+                        // Handle attach types
+                        // Set that the include is attached (so that all types inside are attached
+                        bool isIncludeFullyAttached = includeRule.Attach ?? false;
+                        if (isIncludeFullyAttached || includeRule.AttachTypes.Count > 0)
                         {
-                            if (!_includeAttachedTypes.TryGetValue(includeRule.Id, out List<string> typesToAttach))
+                            // An include can be fully attached ( include rule is set to true)
+                            // or partially attached (the include rule contains Attach for specific types)
+                            // We need to know which includes are attached, if they are fully or partially
+                            if (!_includeIsAttached.ContainsKey(includeRule.Id))
+                                _includeIsAttached.Add(includeRule.Id, isIncludeFullyAttached);
+                            else if (isIncludeFullyAttached)
                             {
-                                typesToAttach = new List<string>();
-                                _includeAttachedTypes.Add(includeRule.Id, typesToAttach);
+                                _includeIsAttached[includeRule.Id] = true;
                             }
 
-                            // For specific attach types, register them
-                            foreach (var attachTypeName in includeRule.AttachTypes)
+                            // Attach types if any
+                            if (includeRule.AttachTypes.Count > 0)
                             {
-                                if (!typesToAttach.Contains(attachTypeName))
-                                    typesToAttach.Add(attachTypeName);
+                                if (!_includeAttachedTypes.TryGetValue(includeRule.Id, out List<string> typesToAttach))
+                                {
+                                    typesToAttach = new List<string>();
+                                    _includeAttachedTypes.Add(includeRule.Id, typesToAttach);
+                                }
+
+                                // For specific attach types, register them
+                                foreach (var attachTypeName in includeRule.AttachTypes)
+                                {
+                                    if (!typesToAttach.Contains(attachTypeName))
+                                        typesToAttach.Add(attachTypeName);
+                                }
                             }
                         }
+
+                        // Add filtering errors
+                        if (includeRule.FilterErrors.Count > 0)
+                        {
+                            foreach (var filterError in includeRule.FilterErrors)
+                                _gccxml.AddFilterError(includeRule.File.ToLower(), filterError);
+                        }
+
+                        if (!string.IsNullOrEmpty(includeRule.Pre))
+                            outputConfig.WriteLine(includeRule.Pre);
+                        outputConfig.WriteLine("#include \"{0}\"", includeRule.File);
+                        if (!string.IsNullOrEmpty(includeRule.Post))
+                            outputConfig.WriteLine(includeRule.Post);
                     }
 
-                    // Add filtering errors
-                    if (includeRule.FilterErrors.Count > 0 )
+                    // Write includes to references
+                    foreach (var reference in configFile.References)
                     {
-                        foreach (var filterError in includeRule.FilterErrors)
-                            _gccxml.AddFilterError(includeRule.File.ToLower(), filterError);    
+                        if (filesWithIncludes.Contains(reference.Id))
+                            outputConfig.WriteLine("#include \"{0}\"", reference.Id + ".h");
                     }
 
-                    if (!string.IsNullOrEmpty(includeRule.Pre))
-                        outputConfig.WriteLine(includeRule.Pre);
-                    outputConfig.WriteLine("#include \"{0}\"", includeRule.File);
-                    if (!string.IsNullOrEmpty(includeRule.Post))
-                        outputConfig.WriteLine(includeRule.Post);
-                }
-
-                // Write includes to references
-                foreach (var reference in configFile.References)
-                {
-                    if (filesWithIncludes.Contains(reference.Id))
-                        outputConfig.WriteLine("#include \"{0}\"", reference.Id + ".h");
-                }
-
-                // Dump Create from macros
-                if (_filesWithCreateFromMacros.Contains(configFile.Id))
-                {
-                    foreach (var typeBaseRule in configFile.Extension)
+                    // Dump Create from macros
+                    if (_filesWithCreateFromMacros.Contains(configFile.Id))
                     {
-                        if (CheckIfRuleIsCreatingHeadersExtension(typeBaseRule))
-                            outputConfig.WriteLine("// {0}", typeBaseRule);
+                        foreach (var typeBaseRule in configFile.Extension)
+                        {
+                            if (CheckIfRuleIsCreatingHeadersExtension(typeBaseRule))
+                                outputConfig.WriteLine("// {0}", typeBaseRule);
+                        }
+                        outputConfig.WriteLine("#include \"{0}\"", configFile.ExtensionFileName);
+
+
+                        _includeToProcess.Add(configFile.ExtensionId, true);
+                        if (!_includeIsAttached.ContainsKey(configFile.ExtensionId))
+                            _includeIsAttached.Add(configFile.ExtensionId, true);
+
+                        // Create Extension file name if it doesn't exist);
+                        if (!File.Exists(Path.Combine(OutputPath, configFile.ExtensionFileName)))
+                            File.WriteAllText(Path.Combine(OutputPath, configFile.ExtensionFileName), "");
                     }
-                    outputConfig.WriteLine("#include \"{0}\"", configFile.ExtensionFileName);
 
+                    var outputConfigStr = outputConfig.ToString();
 
-                    _includeToProcess.Add(configFile.ExtensionId, true);
-                    if (!_includeIsAttached.ContainsKey(configFile.ExtensionId))
-                        _includeIsAttached.Add(configFile.ExtensionId, true);
+                    var fileName = Path.Combine(OutputPath, configFile.Id + ".h");
 
-                    // Create Extension file name if it doesn't exist);
-                    if (!File.Exists(Path.Combine(OutputPath, configFile.ExtensionFileName)))
-                        File.WriteAllText(Path.Combine(OutputPath, configFile.ExtensionFileName), "");
-                }
+                    // Test if Last config file was generated. If not, then we need to generate it
+                    // If it exists, then we need to test if it is the same than previous run
+                    configFile.IsConfigUpdated = ForceParsing;
 
-                var outputConfigStr = outputConfig.ToString();
+                    if (File.Exists(fileName) && !ForceParsing)
+                        configFile.IsConfigUpdated = outputConfigStr != File.ReadAllText(fileName);
+                    else
+                        configFile.IsConfigUpdated = true;
 
-                var fileName = Path.Combine(OutputPath, configFile.Id + ".h");
-
-                // Test if Last config file was generated. If not, then we need to generate it
-                // If it exists, then we need to test if it is the same than previous run
-                configFile.IsConfigUpdated = ForceParsing;
-
-                if (File.Exists(fileName) && !ForceParsing)
-                    configFile.IsConfigUpdated = outputConfigStr != File.ReadAllText(fileName);
-                else
-                    configFile.IsConfigUpdated = true;
-
-                // Small optim: just write the header file when the file is updated or new
-                if (configFile.IsConfigUpdated)
-                {
-                    if (!ForceParsing)
-                        Logger.Message("Config file changed for C++ headers [{0}]/[{1}]", configFile.Id, configFile.FilePath);
-
-                    _isConfigUpdated = true;
-                    using (var file = File.OpenWrite(fileName))
-                    using (var fileWriter = new StreamWriter(file))
+                    // Small optim: just write the header file when the file is updated or new
+                    if (configFile.IsConfigUpdated)
                     {
-                        fileWriter.Write(outputConfigStr);
+                        if (!ForceParsing)
+                            Logger.Message("Config file changed for C++ headers [{0}]/[{1}]", configFile.Id, configFile.FilePath);
+
+                        _isConfigUpdated = true;
+
+                        if (File.Exists(fileName))
+                        {
+                            File.Delete(fileName);
+                        }
+
+                        using (var file = File.OpenWrite(fileName))
+                        using (var fileWriter = new StreamWriter(file))
+                        {
+                            fileWriter.Write(outputConfigStr);
+                        }
                     }
                 }
             }

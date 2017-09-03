@@ -31,6 +31,7 @@
       IntermediateOutputPath="$(MSBuildProjectDirectory)\$(IntermediateOutputPath)SharpGen"
       GeneratedCodeFolder="$(SharpGenGeneratedCodeFolder)"
       IncludeAssemblyNameFolder="$(SharpGenIncludeAssemblyNameFolder)"
+      OutputDirectory="$(MSBuildProjectDirectory)"
     />
 
     <ItemGroup>

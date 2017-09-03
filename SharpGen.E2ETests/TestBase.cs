@@ -31,6 +31,8 @@ namespace SharpGen.E2ETests
 
         public (bool success, string output) RunWithConfig(Config.ConfigFile config, string appType = "true", [CallerMemberName] string configName = "", bool failTestOnError = true)
         {
+            config.Id = configName;
+
             var xUnitLogger = new XUnitLogger(outputHelper, failTestOnError);
             var logger = new Logger(xUnitLogger, null);
 
