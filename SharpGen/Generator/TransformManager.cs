@@ -43,7 +43,7 @@ namespace SharpGen.Generator
         private readonly List<string> _includesToProcess = new List<string>();
         private readonly Dictionary<string, List<CsVariable>> _mapConstantToCSharpType = new Dictionary<string, List<CsVariable>>();
         private readonly Dictionary<string, string> _docToCSharp = new Dictionary<string, string>();
-        private readonly Dictionary<string, Tuple<CsTypeBase, CsTypeBase>> _mapCppNameToCSharpType = new Dictionary<string, Tuple<CsTypeBase, CsTypeBase>>();
+        private readonly Dictionary<string, (CsTypeBase CSharpType, CsTypeBase MarshalType)> _mapCppNameToCSharpType = new Dictionary<string, (CsTypeBase CSharpType, CsTypeBase MarshalType)>();
         private readonly Dictionary<string, CsTypeBase> _mapDefinedCSharpType = new Dictionary<string, CsTypeBase>();
 
         private readonly Dictionary<string, CsNamespace> _mapIncludeToNamespace = new Dictionary<string, CsNamespace>();
@@ -253,6 +253,7 @@ namespace SharpGen.Generator
         /// Checks the assembly is up to date relative to its config dependencies.
         /// </summary>
         /// <param name="assembly">The assembly.</param>
+        /// <param name="checkFilesPath">The path to where the check file is located.</param>
         private void CheckAssemblyUpdate(CsAssembly assembly, string checkFilesPath)
         {
             var maxUpdateTime = ConfigFile.GetLatestTimestamp(assembly.ConfigFilesLinked);
@@ -942,7 +943,7 @@ namespace SharpGen.Generator
         /// <param name = "type">The C# type.</param>
         public void DefineType(CsTypeBase type)
         {
-            string qualifiedName = type.QualifiedName;
+            var qualifiedName = type.QualifiedName;
             if (!_mapDefinedCSharpType.ContainsKey(qualifiedName))
                 _mapDefinedCSharpType.Add(qualifiedName, type);
         }
@@ -995,7 +996,7 @@ namespace SharpGen.Generator
             if (!_mapDefinedCSharpType.TryGetValue(typeName, out CsTypeBase cSharpType))
             {
                 var type = Type.GetType(typeName);
-                int sizeOf = 0;
+                var sizeOf = 0;
                 if (type == null)
                     Logger.Warning("Type [{0}] is not defined", typeName);
                 else
@@ -1063,11 +1064,11 @@ namespace SharpGen.Generator
             {
                 var old = _mapCppNameToCSharpType[cppName];
                 Logger.Error("Mapping C++ element [{0}] to CSharp type [{1}/{2}] is already mapped to [{3}/{4}]", cppName, type.CppElementName,
-                             type.QualifiedName, old.Item1.CppElementName, old.Item1.QualifiedName);
+                             type.QualifiedName, old.CSharpType.CppElementName, old.CSharpType.QualifiedName);
             }
             else
             {
-                _mapCppNameToCSharpType.Add(cppName, new Tuple<CsTypeBase, CsTypeBase>(type, marshalType));
+                _mapCppNameToCSharpType.Add(cppName, new ValueTuple<CsTypeBase, CsTypeBase>(type, marshalType));
             }
         }
 
@@ -1080,9 +1081,8 @@ namespace SharpGen.Generator
         {
             if (cppName == null)
                 return null;
-            _mapCppNameToCSharpType.TryGetValue(cppName, out Tuple<CsTypeBase, CsTypeBase> typeMap);
-            if (typeMap == null) return null;
-            return typeMap.Item1;
+            _mapCppNameToCSharpType.TryGetValue(cppName, out var typeMap);
+            return typeMap.CSharpType;
         }
 
         /// <summary>
@@ -1113,8 +1113,8 @@ namespace SharpGen.Generator
             // If doc comments are already stored in an external file, than don't emit them
             if (!element.IsCodeCommentsExternal)
             {
-                string description = element.Description;
-                string remarks = element.Remarks;
+                var description = element.Description;
+                var remarks = element.Remarks;
 
                 description = RegexSpaceBegin.Replace(description, "$1");
 
@@ -1123,7 +1123,7 @@ namespace SharpGen.Generator
 
                 string line = null;
 
-                StringReader stringReader = new StringReader(description);
+                var stringReader = new StringReader(description);
                 docItems.Add("<summary>");
                 while ((line = stringReader.ReadLine()) != null)
                     docItems.Add(line);
@@ -1217,9 +1217,8 @@ namespace SharpGen.Generator
         {
             if (cppName == null)
                 return null;
-            _mapCppNameToCSharpType.TryGetValue(cppName, out Tuple<CsTypeBase, CsTypeBase> typeMap);
-            if (typeMap == null) return null;
-            return typeMap.Item2;
+            _mapCppNameToCSharpType.TryGetValue(cppName, out var typeMap);
+            return typeMap.MarshalType;
         }
 
         /// <summary>
@@ -1285,7 +1284,7 @@ namespace SharpGen.Generator
             assemblyName = assemblyName ?? CurrentAssemblyName;
             namespaceName = namespaceName ?? CurrentNamespaceName;
 
-            CsNamespace csNameSpace = GetOrCreateNamespace(assemblyName, namespaceName);
+            var csNameSpace = GetOrCreateNamespace(assemblyName, namespaceName);
 
             foreach (var cSharpFunctionGroup in csNameSpace.Classes)
             {
@@ -1335,7 +1334,7 @@ namespace SharpGen.Generator
                                                      Visibility? visibility = null)
         {
             var constantDefinitions = CppModule.Find<CppConstant>(macroRegexp);
-            Regex regex = new Regex(macroRegexp);
+            var regex = new Regex(macroRegexp);
 
             // $0: Name of the C++ macro
             // $1: Value of the C++ macro
@@ -1529,17 +1528,17 @@ namespace SharpGen.Generator
         public (IEnumerable<BindRule> bindings, IEnumerable<DefineExtensionRule> defines) GenerateTypeBindingsForConsumers()
         {
             return (from record in _mapCppNameToCSharpType
-                   where !(record.Value.Item1 is CsMethod)
-                   && !(record.Value.Item1 is CsEnumItem)
-                   select new BindRule(record.Key, record.Value.Item1.QualifiedName),
-                   GenerateDefinesForMappedTypes()); // TODO: Generate define rules for structs/enums/interfaces/classes 
+                   where !(record.Value.CSharpType is CsMethod)
+                   && !(record.Value.CSharpType is CsEnumItem)
+                   select new BindRule(record.Key, record.Value.CSharpType.QualifiedName),
+                   GenerateDefinesForMappedTypes());
         }
 
         private IEnumerable<DefineExtensionRule> GenerateDefinesForMappedTypes()
         {
             foreach (var mapping in _mapCppNameToCSharpType)
             {
-                switch (mapping.Value.Item1)
+                switch (mapping.Value.CSharpType)
                 {
                     case CsEnum csEnum:
                         yield return new DefineExtensionRule

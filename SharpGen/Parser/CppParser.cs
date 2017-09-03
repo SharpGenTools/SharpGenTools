@@ -116,6 +116,7 @@ namespace SharpGen.Parser
         /// Initialize this Parser from a root ConfigFile.
         /// </summary>
         /// <param name="configRoot">The root config file</param>
+        /// <returns>Returns the full include prolog as well as any include rules with pre or post text and the relevant include directories to flow to consumers.</returns>
         public (List<string> prolog, List<IncludeDirRule> includeDirs, List<IncludeRule> includeRules) Init(ConfigFile configRoot)
         {
             _configRoot = configRoot ?? throw new ArgumentNullException(nameof(configRoot));
@@ -172,7 +173,7 @@ namespace SharpGen.Parser
             // Check if the file has any includes related config
             foreach (var configFile in _configRoot.ConfigFilesLoaded)
             {
-                bool isWithInclude = false;
+                var isWithInclude = false;
 
                 // Add this config file as an include to process
                 _includeToProcess.Add(configFile.Id, true);
@@ -234,7 +235,7 @@ namespace SharpGen.Parser
 
                         // Handle attach types
                         // Set that the include is attached (so that all types inside are attached
-                        bool isIncludeFullyAttached = includeRule.Attach ?? false;
+                        var isIncludeFullyAttached = includeRule.Attach ?? false;
                         if (isIncludeFullyAttached || includeRule.AttachTypes.Count > 0)
                         {
                             // An include can be fully attached ( include rule is set to true)
