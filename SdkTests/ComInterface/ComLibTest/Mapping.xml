@@ -27,28 +27,17 @@
   <include-dir override="false">=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\shared</include-dir>
   <include-dir override="false">=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\um</include-dir>
   <include-dir override="false">=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\ucrt</include-dir>
-  <include-dir override="false">=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\winrt</include-dir>
   <include-dir override="false">$(VC_TOOLS_PATH)\include</include-dir>
   <include-dir>$(THIS_CONFIG_PATH)\..\ComLib</include-dir>
   <include file="ComLib.h" attach="true" />
 
-  <!-- SharpGen global naming -->
-  <naming />
-
-  <!-- SharpGen.Runtime global types -->
   <extension>
     <create class="ComLibTest.Functions" visibility="public static" />
   </extension>
 
-  <!--
-    // *****************************************************************
-    // Bindings
-    // *****************************************************************
-    -->
   <bindings>
   </bindings>
 
-  <!-- SharpGen.Runtime global mapping -->
   <mapping>
     <map function="CreateInstance" dll='"ComLib.dll"' group="ComLibTest.Functions" />
   </mapping>
