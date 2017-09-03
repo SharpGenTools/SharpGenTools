@@ -33,13 +33,19 @@ namespace SharpGenTools.Sdk
         [Required]
         public string IntermediateOutputPath { get; set; }
 
-        public string GeneratedCodeFolder { get; private set; }
+        public string GeneratedCodeFolder { get; set; }
         
         [Required]
-        public bool IncludeAssemblyNameFolder { get; private set; }
+        public bool IncludeAssemblyNameFolder { get; set; }
 
         [Required]
-        public string OutputDirectory { get; private set; }
+        public string OutputDirectory { get; set; }
+
+        [Required]
+        public string ConsumerBindMappingFilePrefix { get; set; }
+
+        [Required]
+        public string ConsumerBindMappingConfigId { get; set; }
 
         public override bool Execute()
         {
@@ -77,7 +83,9 @@ namespace SharpGenTools.Sdk
                 IntermediateOutputPath = IntermediateOutputPath,
                 OutputDirectory = OutputDirectory,
                 IncludeAssemblyNameFolder = IncludeAssemblyNameFolder,
-                GeneratedCodeFolder = GeneratedCodeFolder
+                GeneratedCodeFolder = GeneratedCodeFolder,
+                ConsumerBindMappingFilePrefix = ConsumerBindMappingFilePrefix,
+                ConsumerBindMappingConfigId = ConsumerBindMappingConfigId
             };
 
             if (!codeGenApp.Init())

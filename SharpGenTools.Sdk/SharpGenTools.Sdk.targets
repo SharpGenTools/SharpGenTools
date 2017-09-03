@@ -1,6 +1,7 @@
 ﻿<Project>
   <PropertyGroup>
     <SharpGenGeneratedCodeFolder Condition="'$(SharpGenGeneratedCodeFolder)' == ''">$(IntermediateOutputPath)/SharpGen</SharpGenGeneratedCodeFolder>
+    <SharpGenConsumerBindMappingFilePrefix Condition="'$(SharpGenConsumerBindMappingFilePrefix)' == ''">$(MSBuildProjectName).$(TargetFramework)</SharpGenConsumerBindMappingFilePrefix>
   </PropertyGroup>
 
   <UsingTask Condition="'$(MSBuildRuntimeType)' == 'Full'" AssemblyFile="../tools/net46/SharpGenTools.Sdk.dll" TaskName="SharpPatchTask" />
@@ -32,6 +33,8 @@
       GeneratedCodeFolder="$(SharpGenGeneratedCodeFolder)"
       IncludeAssemblyNameFolder="$(SharpGenIncludeAssemblyNameFolder)"
       OutputDirectory="$(MSBuildProjectDirectory)"
+      ConsumerBindMappingFilePrefix="$(SharpGenConsumerBindMappingFilePrefix)"
+      ConsumerBindMappingConfigId ="$(SharpGenConsumerBindMappingConfigId)"
     />
 
     <ItemGroup>

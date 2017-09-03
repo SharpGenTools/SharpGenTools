@@ -28,12 +28,14 @@ using System.Xml;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Generator;
+using System.Diagnostics;
 
 namespace SharpGen.Model
 {
     /// <summary>
     /// Root class for all model elements.
     /// </summary>
+    [DebuggerDisplay("Name: {Name}")]
     public class CsBase
     {
         private List<CsBase> _items;

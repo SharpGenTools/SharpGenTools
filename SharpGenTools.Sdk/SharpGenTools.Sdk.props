@@ -19,5 +19,6 @@
     <CastXmlPath>$(MSBuildThisFileDirectory)../tools/CastXML/bin/castxml.exe</CastXmlPath>
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <SharpGenIncludeAssemblyNameFolder>false</SharpGenIncludeAssemblyNameFolder>
+    <SharpGenConsumerBindMappingConfigId>$(MSBuildProjectName)</SharpGenConsumerBindMappingConfigId>
   </PropertyGroup>
 </Project>

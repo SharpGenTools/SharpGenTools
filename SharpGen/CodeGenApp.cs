@@ -101,6 +101,10 @@ namespace SharpGen
 
         public ConfigFile Config { get; set; }
 
+        public string ConsumerBindMappingFilePrefix { get; set; }
+
+        public string ConsumerBindMappingConfigId { get; set; }
+
         public GlobalNamespaceProvider GlobalNamespace { get; set; }
 
         private string _thisAssemblyPath;
@@ -218,6 +222,20 @@ namespace SharpGen
                 using (var fileWriter = new StreamWriter(renameLog))
                 {
                     transformer.NamingRules.DumpRenames(fileWriter);
+                }
+
+                var consumerBindMappingFileName = Path.Combine(IntermediateOutputPath, $"{ConsumerBindMappingFilePrefix ?? Config.Id}.BindMapping.xml");
+
+                if (File.Exists(consumerBindMappingFileName))
+                {
+                    File.Delete(consumerBindMappingFileName);
+                }
+
+                using (var consumerBindMapping = File.Open(consumerBindMappingFileName, FileMode.OpenOrCreate, FileAccess.Write))
+                using (var fileWriter = new StreamWriter(consumerBindMapping))
+                {
+                    // TODO: Include include-prolog's and include rules w/ pre or post text (no attaches).
+                    transformer.GenerateBindMappingForConsumers(fileWriter, ConsumerBindMappingConfigId);
                 }
 
                 // Update Checkfile for assembly
