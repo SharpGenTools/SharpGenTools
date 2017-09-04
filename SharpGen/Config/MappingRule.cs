@@ -107,7 +107,7 @@ namespace SharpGen.Config
         public bool ShouldSerializeMappingName() { return IsFinalMappingName.HasValue && !IsFinalMappingName.Value; }
 
         /// <summary>
-        /// Mapping replace 
+        /// Mapping replace
         /// </summary>
         [XmlAttribute("replace")]
         public string Replace { get; set; }
@@ -127,16 +127,12 @@ namespace SharpGen.Config
         }
         public bool ShouldSerializeMappingNameFinal() { return !IsFinalMappingName.HasValue || IsFinalMappingName.Value; }
 
-        //[XmlAttribute("final")]
-        //public bool _IsFinalMappingName_ { get { return IsFinalMappingName.Value; } set { IsFinalMappingName = value; } } public bool ShouldSerialize_IsFinalMappingName_() { return IsFinalMappingName != null; }
 
         /// <summary>
         /// True if the MappingName doesn't need any further rename processing
         /// </summary>
         [XmlIgnore]
         public bool? IsFinalMappingName { get; set; }
-        //[XmlAttribute("final")]
-        //public bool _IsFinalMappingName_ { get { return IsFinalMappingName.Value; } set { IsFinalMappingName = value; } } public bool ShouldSerialize_IsFinalMappingName_() { return IsFinalMappingName != null; }
 
         /// <summary>
         /// True if a struct should used a native value type marshalling
@@ -249,7 +245,7 @@ namespace SharpGen.Config
         /// </summary>
         [XmlAttribute("dll")]
         public string FunctionDllName { get; set; }
-        
+
         /// <summary>
         /// By default true for DLL import
         /// </summary>

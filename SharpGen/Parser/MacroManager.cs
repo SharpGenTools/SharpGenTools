@@ -61,7 +61,7 @@ namespace SharpGen.Parser
                 var include = group.FindInclude(includeId);
                 if (include == null)
                 {
-                    include = new CppInclude() { Name = includeId };
+                    include = new CppInclude { Name = includeId };
                     group.Add(include);
                 }
                 foreach (var macroDefinition in _mapIncludeToMacros[includeName])

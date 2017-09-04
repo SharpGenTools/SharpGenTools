@@ -17,40 +17,40 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.Versioning;
+using Microsoft.Extensions.DependencyModel;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Pdb;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Text;
 using CallSite = Mono.Cecil.CallSite;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
-using System.Text;
-using Microsoft.Extensions.DependencyModel;
 
 namespace SharpPatch
 {
     /// <summary>
-    /// InteropBuilder is responsible to patch SharpDX assemblies and inject unmanaged interop call.
-    /// InteropBuilder is also adding several useful methods:
+    /// InteropApp is responsible to patch SharpGen assemblies and inject unmanaged interop call.
+    /// InteropApp is also adding several useful methods:
     /// - memcpy using cpblk
     /// - Read/ReadRange/Write/WriteRange of structured data to a memory location
     /// - SizeOf on generic structures (C# usually doesn't allow this).
     /// </summary>
     public class InteropApp
     {
-        private List<TypeDefinition> classToRemoveList = new List<TypeDefinition>();
+        private readonly List<TypeDefinition> classToRemoveList = new List<TypeDefinition>();
         AssemblyDefinition assembly;
         private TypeReference voidType;
         private TypeReference voidPointerType;
         private TypeReference intType;
-        
+
         public IAssemblyResolver AssemblyResolver { get; set; }
+
+        public string GlobalNamespace { get; set; }
+        public ILogger Logger { get; set; }
 
         /// <summary>
         /// Creates a module init for a C# assembly.
@@ -73,7 +73,7 @@ namespace SharpPatch
                 moduleType.Methods.Add(cctor);
             }
 
-            bool isCallAlreadyDone = cctor.Body.Instructions.Any(instruction => instruction.OpCode == OpCodes.Call && instruction.Operand == method);
+            var isCallAlreadyDone = cctor.Body.Instructions.Any(instruction => instruction.OpCode == OpCodes.Call && instruction.Operand == method);
 
             // If the method is not called, we can add it
             if (!isCallAlreadyDone)
@@ -97,7 +97,7 @@ namespace SharpPatch
         }
 
         /// <summary>
-        /// Creates the write method with the following signature: 
+        /// Creates the write method with the following signature:
         /// <code>
         /// public static unsafe void* Write&lt;T&gt;(void* pDest, ref T data) where T : struct
         /// </code>
@@ -147,14 +147,14 @@ namespace SharpPatch
             gen.Emit(OpCodes.Ret);
         }
 
-        private void ReplaceFixedStatement(MethodDefinition method, ILProcessor ilProcessor, Instruction fixedtoPatch)
+        private static void ReplaceFixedStatement(MethodDefinition method, ILProcessor ilProcessor, Instruction fixedtoPatch)
         {
             var paramT = ((GenericInstanceMethod)fixedtoPatch.Operand).GenericArguments[0];
             // Preparing locals
             // local(0) T*
             method.Body.Variables.Add(new VariableDefinition(new PinnedType(new ByReferenceType(paramT))));
 
-            int index = method.Body.Variables.Count - 1;
+            var index = method.Body.Variables.Count - 1;
 
             Instruction ldlocFixed;
             Instruction stlocFixed;
@@ -185,21 +185,21 @@ namespace SharpPatch
             ilProcessor.Replace(fixedtoPatch, ldlocFixed);
         }
 
-        private void ReplaceReadInline(MethodDefinition method, ILProcessor ilProcessor, Instruction fixedtoPatch)
+        private static void ReplaceReadInline(MethodDefinition method, ILProcessor ilProcessor, Instruction fixedtoPatch)
         {
             var paramT = ((GenericInstanceMethod)fixedtoPatch.Operand).GenericArguments[0];
             var copyInstruction = ilProcessor.Create(OpCodes.Ldobj, paramT);
             ilProcessor.Replace(fixedtoPatch, copyInstruction);
         }
 
-        private void ReplaceCopyInline(MethodDefinition method, ILProcessor ilProcessor, Instruction fixedtoPatch)
+        private static void ReplaceCopyInline(MethodDefinition method, ILProcessor ilProcessor, Instruction fixedtoPatch)
         {
             var paramT = ((GenericInstanceMethod)fixedtoPatch.Operand).GenericArguments[0];
             var copyInstruction = ilProcessor.Create(OpCodes.Cpobj, paramT);
             ilProcessor.Replace(fixedtoPatch, copyInstruction);
         }
 
-        private void ReplaceSizeOfStructGeneric(MethodDefinition method, ILProcessor ilProcessor, Instruction fixedtoPatch)
+        private static void ReplaceSizeOfStructGeneric(MethodDefinition method, ILProcessor ilProcessor, Instruction fixedtoPatch)
         {
             var paramT = ((GenericInstanceMethod)fixedtoPatch.Operand).GenericArguments[0];
             var copyInstruction = ilProcessor.Create(OpCodes.Sizeof, paramT);
@@ -213,7 +213,7 @@ namespace SharpPatch
         /// </code>
         /// </summary>
         /// <param name="method">The method cast.</param>
-        private void CreateCastMethod(MethodDefinition method)
+        private static void CreateCastMethod(MethodDefinition method)
         {
             method.Body.Instructions.Clear();
             method.Body.InitLocals = true;
@@ -233,7 +233,7 @@ namespace SharpPatch
         /// </code>
         /// </summary>
         /// <param name="method">The method cast array.</param>
-        private void CreateCastArrayMethod(MethodDefinition method)
+        private static void CreateCastArrayMethod(MethodDefinition method)
         {
             method.Body.Instructions.Clear();
             method.Body.InitLocals = true;
@@ -246,14 +246,14 @@ namespace SharpPatch
             gen.Emit(OpCodes.Ret);
         }
 
-        private void ReplaceFixedArrayStatement(MethodDefinition method, ILProcessor ilProcessor, Instruction fixedtoPatch)
+        private static void ReplaceFixedArrayStatement(MethodDefinition method, ILProcessor ilProcessor, Instruction fixedtoPatch)
         {
             var paramT = ((GenericInstanceMethod)fixedtoPatch.Operand).GenericArguments[0];
             // Preparing locals
             // local(0) T*
             method.Body.Variables.Add(new VariableDefinition(new PinnedType(new ByReferenceType(paramT))));
 
-            int index = method.Body.Variables.Count - 1;
+            var index = method.Body.Variables.Count - 1;
 
             Instruction ldlocFixed;
             Instruction stlocFixed;
@@ -398,26 +398,6 @@ namespace SharpPatch
         }
 
         /// <summary>
-        /// Creates the read method with the following signature:
-        /// <code>
-        /// public static unsafe void Read&lt;T&gt;(void* pSrc, ref T data) where T : struct
-        /// </code>
-        /// </summary>
-        /// <param name="method">The method copy struct.</param>
-        private void CreateReadRawMethod(MethodDefinition method)
-        {
-            method.Body.Instructions.Clear();
-            method.Body.InitLocals = true;
-
-            var gen = method.Body.GetILProcessor();
-            var paramT = method.GenericParameters[0];
-
-            // Push (1) pSrc for memcpy
-            gen.Emit(OpCodes.Cpobj);
-
-        }
-
-        /// <summary>
         /// Creates the read range method with the following signature:
         /// <code>
         /// public static unsafe void* Read&lt;T&gt;(void* pSrc, T[] data, int offset, int count) where T : struct
@@ -480,7 +460,7 @@ namespace SharpPatch
         /// </code>
         /// </summary>
         /// <param name="methodCopyStruct">The method copy struct.</param>
-        private void CreateMemcpy(MethodDefinition methodCopyStruct)
+        private static void CreateMemcpy(MethodDefinition methodCopyStruct)
         {
             methodCopyStruct.Body.Instructions.Clear();
 
@@ -503,7 +483,7 @@ namespace SharpPatch
         /// </code>
         /// </summary>
         /// <param name="methodSetStruct">The method set struct.</param>
-        private void CreateMemset(MethodDefinition methodSetStruct)
+        private static void CreateMemset(MethodDefinition methodSetStruct)
         {
             methodSetStruct.Body.Instructions.Clear();
 
@@ -524,23 +504,19 @@ namespace SharpPatch
         /// </summary>
         /// <param name="method">The method.</param>
         /// <param name="gen">The gen.</param>
-        private void EmitCpblk(MethodDefinition method, ILProcessor gen)
+        private static void EmitCpblk(MethodDefinition method, ILProcessor gen)
         {
             var cpblk = gen.Create(OpCodes.Cpblk);
-            //gen.Emit(OpCodes.Sizeof, voidPointerType);
-            //gen.Emit(OpCodes.Ldc_I4_8);
-            //gen.Emit(OpCodes.Bne_Un_S, cpblk);
             gen.Emit(OpCodes.Unaligned, (byte)1);       // unaligned to 1
             gen.Append(cpblk);
-            
         }
 
-        private List<string>  GetSharpDXAttributes(MethodDefinition method)
+        private List<string>  GetSharpGenAttributes(MethodDefinition method)
         {
             var attributes = new List<string>();
             foreach (var customAttribute in method.CustomAttributes)
             {
-                if (customAttribute.AttributeType.FullName == "SharpDX.TagAttribute")
+                if (customAttribute.AttributeType.FullName == GlobalNamespace + ".TagAttribute")
                 {
                     var value = customAttribute.ConstructorArguments[0].Value;
                     attributes.Add(value == null ? string.Empty : value.ToString());
@@ -556,8 +532,8 @@ namespace SharpPatch
         /// <param name="method">The method.</param>
         void PatchMethod(MethodDefinition method)
         {
-            var attributes = this.GetSharpDXAttributes(method);
-            if (attributes.Contains("SharpDX.ModuleInit"))
+            var attributes = GetSharpGenAttributes(method);
+            if (attributes.Contains(GlobalNamespace + ".ModuleInit"))
             {
                 CreateModuleInit(method);
             }
@@ -610,7 +586,7 @@ namespace SharpPatch
                     if (instruction.OpCode == OpCodes.Call && instruction.Operand is MethodReference)
                     {
                         var methodDescription = (MethodReference)instruction.Operand;
-                        
+
                         if (methodDescription.Name.StartsWith("Calli") && methodDescription.DeclaringType.Name == "LocalInterop")
                         {
                             var callSite = new CallSite(methodDescription.ReturnType) { CallingConvention = MethodCallingConvention.StdCall };
@@ -627,7 +603,7 @@ namespace SharpPatch
 
                             // Replace instruction
                             ilProcessor.Replace(instruction, callIInstruction);
-                        } 
+                        }
                         else if (methodDescription.DeclaringType.Name == "Interop")
                         {
                             if (methodDescription.FullName.Contains("Fixed"))
@@ -643,15 +619,15 @@ namespace SharpPatch
                             }
                             else if (methodDescription.Name.StartsWith("ReadInline"))
                             {
-                                this.ReplaceReadInline(method, ilProcessor, instruction);
+                                ReplaceReadInline(method, ilProcessor, instruction);
                             }
                             else if (methodDescription.Name.StartsWith("CopyInline") || methodDescription.Name.StartsWith("WriteInline"))
                             {
-                                this.ReplaceCopyInline(method, ilProcessor, instruction);
+                                ReplaceCopyInline(method, ilProcessor, instruction);
                             }
                             else if (methodDescription.Name.StartsWith("SizeOf"))
                             {
-                                this.ReplaceSizeOfStructGeneric(method, ilProcessor, instruction);
+                                ReplaceSizeOfStructGeneric(method, ilProcessor, instruction);
                             }
                         }
                     }
@@ -668,26 +644,13 @@ namespace SharpPatch
             // Patch methods
             foreach (var method in type.Methods)
                 PatchMethod(method);
-            
+
             if (type.Name == "LocalInterop")
                 classToRemoveList.Add(type);
 
             // Patch nested types
             foreach (var typeDefinition in type.NestedTypes)
                 PatchType(typeDefinition);
-        }
-
-        /// <summary>
-        /// Determines whether [is file check updated] [the specified file].
-        /// </summary>
-        /// <param name="file">The file.</param>
-        /// <param name="fromFile">From file.</param>
-        /// <returns>
-        /// 	<c>true</c> if [is file check updated] [the specified file]; otherwise, <c>false</c>.
-        /// </returns>
-        static bool IsFileCheckUpdated(string file, string fromFile)
-        {
-            return File.Exists(file) && File.GetLastWriteTime(file) == File.GetLastWriteTime(fromFile);
         }
 
         /// <summary>
@@ -699,12 +662,12 @@ namespace SharpPatch
             file = Path.Combine(Directory.GetCurrentDirectory(), file);
 
             var fileTime = new FileTime(file);
-            string checkFile = Path.GetFullPath(file) + ".check";
+            var checkFile = Path.GetFullPath(file) + ".check";
 
             // If checkFile and checkInteropBuilderFile up-to-date, then nothing to do
             if (fileTime.CheckFileUpToDate(checkFile))
             {
-                Log("Nothing to do. SharpDX patch was already applied for assembly [{0}]", file);
+                Log("Nothing to do. SharpPatch patch was already applied for assembly [{0}]", file);
                 return false;
             }
 
@@ -736,7 +699,7 @@ namespace SharpPatch
             // Read Assembly
             assembly = AssemblyDefinition.ReadAssembly(file, readerParameters);
 
-            // Import void* and int32 
+            // Import void* and int32
             voidType = assembly.MainModule.TypeSystem.Void.Resolve();
             voidPointerType = new PointerType(assembly.MainModule.ImportReference(voidType));
             intType = assembly.MainModule.ImportReference(assembly.MainModule.TypeSystem.Int32.Resolve());
@@ -752,7 +715,7 @@ namespace SharpPatch
                 }
             }
 
-            Log("SharpDX interop patch for assembly [{0}]", file);
+            Log("SharpPatch interop patch for assembly [{0}]", file);
             foreach (var type in assembly.MainModule.Types)
                 PatchType(type);
 
@@ -767,7 +730,7 @@ namespace SharpPatch
             // Update Check file
             fileTime.UpdateCheckFile(checkFile);
 
-            Log("SharpDX patch done for assembly [{0}]", file);
+            Log("SharpPatch patch done for assembly [{0}]", file);
             return true;
         }
 
@@ -799,57 +762,12 @@ namespace SharpPatch
 
         public void Log(string message, params object[] parameters)
         {
-            Console.WriteLine(message, parameters);
+            Logger.Log(message, parameters);
         }
 
         public void LogError(string message, params object[] parameters)
         {
-            Console.WriteLine(message, parameters);
-        }
-
-        public void LogError(Exception ex)
-        {
-            Console.WriteLine(ex.ToString());
-        }
-
-        /// <summary>
-        /// FileTime.
-        /// </summary>
-        class FileTime
-        {
-            private DateTime CreateTime;
-            private DateTime LastAccessTime;
-            private DateTime LastWriteTime;
-
-            public FileTime(string file)
-            {
-                CreateTime = File.GetCreationTime(file);
-                LastAccessTime = File.GetLastAccessTime(file);
-                LastWriteTime = File.GetLastWriteTime(file);
-            }
-
-            public void UpdateCheckFile(string checkFile)
-            {
-                File.WriteAllText(checkFile, "");
-                UpdateFile(checkFile);
-            }
-
-            /// <summary>
-            /// Checks the file.
-            /// </summary>
-            /// <param name="checkfile">The file to check.</param>
-            /// <returns>true if the file exist and has the same LastWriteTime </returns>
-            public bool CheckFileUpToDate(string checkfile)
-            {
-                return File.Exists(checkfile) && File.GetLastWriteTime(checkfile) == LastWriteTime;                
-            }
-
-            public void UpdateFile(string file)
-            {
-                File.SetCreationTime(file, CreateTime);
-                File.SetLastWriteTime(file, LastWriteTime);
-                File.SetLastAccessTime(file, LastAccessTime);
-            }
+            Logger.LogError(message, parameters);
         }
 
     }

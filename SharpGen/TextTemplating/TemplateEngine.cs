@@ -383,7 +383,7 @@ using System.Text.RegularExpressions;
                                 string includeFile = directive.Attributes["file"];
                                 if (OnInclude == null)
                                     throw new InvalidOperationException("Include file found. OnInclude event must be implemented");
-                                var includeArgs = new TemplateIncludeArgs() {IncludeName = includeFile};
+                                var includeArgs = new TemplateIncludeArgs {IncludeName = includeFile};
                                 OnInclude(this, includeArgs);
                                 Parse(includeArgs.Text ?? "", includeArgs.IncludeName);
                             }

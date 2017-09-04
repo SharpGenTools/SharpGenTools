@@ -32,7 +32,7 @@ namespace SharpGen.Config
 
         public ContextRule(string context)
         {
-            Ids = new List<string>() {context};
+            Ids = new List<string> {context};
         }
 
         public ContextRule(IEnumerable<string> ids)

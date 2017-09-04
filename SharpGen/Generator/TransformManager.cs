@@ -1,15 +1,15 @@
 ﻿// Copyright (c) 2010-2014 SharpDX - Alexandre Mutel
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -72,7 +72,7 @@ namespace SharpGen.Generator
 
             InterfaceTransform = new InterfaceTransform();
             InterfaceTransform.Init(this, logger);
-            
+
             GeneratedPath = @".\";
         }
 
@@ -91,7 +91,7 @@ namespace SharpGen.Generator
         public CppModule CppModule { get; private set; }
 
         /// <summary>
-        /// Gets assembly list that are processed. This is accessible after <see cref="Generate"/> 
+        /// Gets assembly list that are processed. This is accessible after <see cref="Generate"/>
         /// method has been called.
         /// </summary>
         /// <value>The assembly list that are processed.</value>
@@ -153,7 +153,7 @@ namespace SharpGen.Generator
         /// </summary>
         /// <value>The name of the current namespace.</value>
         private string CurrentNamespaceName { get; set; }
-        
+
         public GlobalNamespaceProvider GlobalNamespace { get; }
         public Logger Logger { get; }
         public string GeneratedCodeFolder { get; internal set; }
@@ -644,7 +644,7 @@ namespace SharpGen.Generator
             {
                 File.WriteAllText(Path.Combine(checkFilesPath, assembly.CheckFileName), "");
                 File.SetLastWriteTime(Path.Combine(checkFilesPath, assembly.CheckFileName), processTime);
-            } 
+            }
         }
 
         /// <summary>
@@ -680,7 +680,6 @@ namespace SharpGen.Generator
             Logger.Progress(80, "Transforming functions...");
             ProcessTransform<CsFunction>(MethodTransform, selectedCSharpType);
 
-            //// Sort all types inside each namespaces and add constant to FunctionGroup
             foreach (CsAssembly cSharpAssembly in Assemblies)
                 foreach (var ns in cSharpAssembly.Namespaces)
                 {
@@ -691,7 +690,7 @@ namespace SharpGen.Generator
                         AttachConstants(cSharpFunctionGroup);
                 }
         }
-        
+
         /// <summary>
         /// Prepares a transformer from C++ to C# model.
         /// </summary>
@@ -766,7 +765,7 @@ namespace SharpGen.Generator
                 else if (!int.TryParse(cppType.ArrayDimension, out arrayDimensionValue))
                     arrayDimensionValue = 1;
             }
-            
+
             // If array Dimension is 0, then it is not an array
             if (arrayDimensionValue == 0)
             {
@@ -774,7 +773,7 @@ namespace SharpGen.Generator
                 interopType.IsArray = false;
             }
             interopType.ArrayDimensionValue = arrayDimensionValue;
-            
+
             string typeName = cppType.GetTypeNameWithMapping();
 
             switch (typeName)
@@ -1101,7 +1100,7 @@ namespace SharpGen.Generator
 
             return null;
         }
-        
+
         private static readonly Regex RegexLinkStart = new Regex(@"^\s*\{\{.*?}}\s*(.*)", RegexOptions.Compiled);
         private static readonly Regex RegexLink = new Regex(@"\{\{(.*?)}}", RegexOptions.Compiled);
         private static readonly Regex RegexSpaceBegin = new Regex(@"^\s*(.*)", RegexOptions.Compiled);
@@ -1347,7 +1346,7 @@ namespace SharpGen.Generator
                 valueMap = valueMap.Replace("$0", "{0}");
                 valueMap = valueMap.Replace("$1", "{1}");
                 valueMap = valueMap.Replace("$2", "{2}");
-                valueMap = valueMap.Replace("$3", "{3}");                
+                valueMap = valueMap.Replace("$3", "{3}");
             }
 
             foreach (var macroDef in constantDefinitions)

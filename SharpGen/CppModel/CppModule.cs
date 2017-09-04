@@ -117,7 +117,7 @@ namespace SharpGen.CppModel
         {
             var ds = new XmlSerializer(typeof (CppModule));
 
-            var settings = new XmlWriterSettings() {Indent = true};
+            var settings = new XmlWriterSettings {Indent = true};
             using (XmlWriter w = XmlWriter.Create(output, settings))
             {
                 var ns = new XmlSerializerNamespaces();

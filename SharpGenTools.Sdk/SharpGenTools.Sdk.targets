@@ -98,7 +98,11 @@
     Inputs="@(IntermediateAssembly)"
     Outputs="@(IntermediateAssembly->'%(FullPath).check')"
   >
-    <SharpPatch AssemblyToPatch="%(IntermediateAssembly.FullPath)" References="@(ReferencePath)" />
+    <SharpPatch
+      AssemblyToPatch="%(IntermediateAssembly.FullPath)"
+      References="@(ReferencePath)"
+      GlobalNamespace="$(SharpGenGlobalNamespace)"
+    />
   </Target>
 
   <Target Name="GenerateConsumerProps">

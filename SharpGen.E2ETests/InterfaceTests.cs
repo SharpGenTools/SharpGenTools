@@ -1,9 +1,6 @@
 ﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -79,7 +76,7 @@ namespace SharpGen.E2ETests
                 Bindings =
                 {
                     new Config.BindRule("int", "System.Int32"),
-                    new Config.BindRule("IUnknown", "SharpDX.ComObject")
+                    new Config.BindRule("IUnknown", "SharpGen.Runtime.ComObject")
                 },
             };
 

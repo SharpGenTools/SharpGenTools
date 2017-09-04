@@ -11,13 +11,16 @@ namespace SharpPatch.Cli
             {
                 if (args.Length != 1)
                 {
-                    Console.WriteLine("{0} file_path is expecting one file argument",
-                                      typeof(Program).GetTypeInfo().Assembly.GetName().Name);
+                    Console.WriteLine($"{typeof(Program).GetTypeInfo().Assembly.GetName().Name} file_path is expecting one file argument");
                     return 1;
                 }
 
-                string file = args[0];
-                var program = new InteropApp();
+                var file = args[0];
+                var program = new InteropApp
+                {
+                    GlobalNamespace = "SharpDX",
+                    Logger = new Logger()
+                };
                 program.PatchFile(file);
             }
             catch (Exception ex)

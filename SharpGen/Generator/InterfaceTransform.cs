@@ -1,15 +1,15 @@
 ﻿// Copyright (c) 2010-2014 SharpDX - Alexandre Mutel
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -109,7 +109,6 @@ namespace SharpGen.Generator
             // Set IsFullyMapped to avoid recursive mapping
             interfaceType.IsFullyMapped = true;
 
-            // var cppInterface = interfaceType.CppElement as CppInterface;
             var cppInterface = (CppInterface)interfaceType.CppElement;
 
             // Associate Parent
@@ -144,7 +143,7 @@ namespace SharpGen.Generator
                     // then we probably missed a guid
                     if (rootBase != null && rootBase.QualifiedName == Manager.GlobalNamespace.GetTypeName("ComObject"))
                         Logger.Warning("cannot find GUID");
-                } 
+                }
                 else
                     interfaceType.Guid = cppGuid.Guid.ToString();
             }
@@ -162,13 +161,13 @@ namespace SharpGen.Generator
 
                 // Add specialized method for ComArray
                 DuplicateMethodSpecial(interfaceType, cSharpMethod, intPtrType);
-                
+
                 // Allow overloads by changing the name to <name>#
                 string origCppName = cppInterface.Name + "::" + cppMethod.Name;
                 string chosenCppName = origCppName;
                 for (int i = 0; Manager.FindBindType(chosenCppName) != null; i++)
                     chosenCppName = origCppName + i.ToString();
-                    
+
                 Manager.BindType(chosenCppName, cSharpMethod);
             }
 
@@ -441,9 +440,6 @@ namespace SharpGen.Generator
                 {
                     bool removeProperty = false;
 
-                    //// Don't add property that doesn't match with return type
-                    //if (property.Setter != property.Getter.IsHResult)
-                    //    continue;
                     if (csProperty.IsPropertyParam)
                     {
                         var getterParameter = csProperty.Getter.Parameters.First();
@@ -488,7 +484,7 @@ namespace SharpGen.Generator
 
                 var parent = getterOrSetter.Parent;
 
-                // If Getter has no property, 
+                // If Getter has no property,
                 if ((property.Getter != null && !property.Getter.AllowProperty) || (property.Setter != null && !property.Setter.AllowProperty))
                     continue;
 

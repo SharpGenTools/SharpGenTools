@@ -4,14 +4,9 @@ using Microsoft.CodeAnalysis.Text;
 using SharpGen.Logging;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Xunit;
 using Xunit.Abstractions;
@@ -89,7 +84,7 @@ namespace SharpGen.E2ETests
             };
         }
 
-        public Config.IncludeDirRule GetTestFileIncludeRule([CallerMemberName] string testName = "")
+        public Config.IncludeDirRule GetTestFileIncludeRule()
         {
             return new Config.IncludeDirRule
             {

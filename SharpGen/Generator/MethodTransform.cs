@@ -194,7 +194,7 @@ namespace SharpGen.Generator
             // So we are overriding the return type here
             var tag = cppMethod.GetTagOrDefault<MappingRule>();
             if (tag.MappingType != null)
-                cppMethod.ReturnType.Tag = new MappingRule() { MappingType = tag.MappingType };
+                cppMethod.ReturnType.Tag = new MappingRule { MappingType = tag.MappingType };
 
             // Apply any offset to the method's vtable
             method.Offset += tag.LayoutOffsetTranslate;

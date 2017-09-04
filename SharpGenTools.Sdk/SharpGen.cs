@@ -66,7 +66,7 @@ namespace SharpGenTools.Sdk
 
         private void RunCodeGen(ConfigFile config, string appType)
         {
-            var codeGenApp = new CodeGenApp(new global::SharpGen.Logging.Logger(new MsBuildLogger(Log), null))
+            var codeGenApp = new CodeGenApp(new global::SharpGen.Logging.Logger(new MsBuildSharpGenLogger(Log), null))
             {
                 CastXmlExecutablePath = CastXmlPath,
                 AppType = appType,

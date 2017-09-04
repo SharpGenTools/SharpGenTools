@@ -151,7 +151,7 @@ namespace SharpGen.Doc
             string doc = GetDocumentationFromCacheOrMsdn(name);
             if (doc == null)
             {
-                return new DocItem() { Description = "No documentation for Direct3D12" };
+                return new DocItem { Description = "No documentation for Direct3D12" };
             }
             return ParseDocumentation(doc);
         }
@@ -468,9 +468,9 @@ namespace SharpGen.Doc
                     contentIdentifier = shortId,
                     locale = "en-us",
                     version = "VS.85",
-                    requestedDocuments = new[] { new requestedDocument() { type = documentTypes.primary, selector = "Mtps.Xhtml" } }
+                    requestedDocuments = new[] { new requestedDocument { type = documentTypes.primary, selector = "Mtps.Xhtml" } }
                 };
-                var response = proxy.GetContent(new appId() { value = "Sandcastle" }, request);
+                var response = proxy.GetContent(new appId { value = "Sandcastle" }, request);
                 if (response.primaryDocuments[0].Any != null)
                     return response.primaryDocuments[0].Any.OuterXml;
             }
