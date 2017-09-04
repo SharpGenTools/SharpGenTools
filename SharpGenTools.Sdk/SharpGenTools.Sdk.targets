@@ -1,14 +1,14 @@
 ﻿<Project>
   <PropertyGroup>
     <SharpGenGeneratedCodeFolder Condition="'$(SharpGenGeneratedCodeFolder)' == ''">$(IntermediateOutputPath)/SharpGen</SharpGenGeneratedCodeFolder>
-    <SharpGenConsumerBindMappingFilePrefix Condition="'$(SharpGenConsumerBindMappingFilePrefix)' == ''">$(AssemblyName).$(TargetFramework)</SharpGenConsumerBindMappingFilePrefix>
     <SharpGenConsumerBindMappingConfigId Condition="'$(SharpGenConsumerBindMappingConfigId)' == ''">$(AssemblyName)</SharpGenConsumerBindMappingConfigId>
     <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' == 'Full'">$(MSBuildThisFileDirectory)/../tools/net46/SharpGenTools.Sdk.dll</SharpGenSdkAssembly>
     <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)/../tools/netstandard1.5/SharpGenTools.Sdk.dll</SharpGenSdkAssembly>
   </PropertyGroup>
 
-  <UsingTask AssemblyFile="$(SharpGenSdkAssembly)" TaskName="SharpPatchTask" />
-  <UsingTask AssemblyFile="$(SharpGenSdkAssembly)" TaskName="SharpGenTask" />
+  <UsingTask AssemblyFile="$(SharpGenSdkAssembly)" TaskName="SharpPatch" />
+  <UsingTask AssemblyFile="$(SharpGenSdkAssembly)" TaskName="SharpGen" />
+  <UsingTask AssemblyFile="$(SharpGenSdkAssembly)" TaskName="ResolveBestBindMapping" />
 
   <Target Name="GetMappingsFromProjectReferences">
     <MSBuild
@@ -21,21 +21,35 @@
       <Output TaskParameter="TargetOutputs" ItemName="SharpGenMapping" />
     </MSBuild>
   </Target>
+
+  <Target Name="GetMappingsFromPackageReferences">
+    <ResolveBestBindMapping
+      UnresolvedPackageBindMappings="@(UnresolvedPackageBindMapping)"
+      TargetFramework="$(TargetFramework)"
+    >
+      <Output TaskParameter="ResolvedPackageBindMappings" ItemName="SharpGenMapping" />
+    </ResolveBestBindMapping>
+  </Target>
   
   <Target
     Name="CorePrepareSharpGen"
-    DependsOnTargets="GetMappingsFromProjectReferences">
+    DependsOnTargets="">
     <ItemGroup>
       <Compile Remove="$(IntermediateOutputPath)/SharpGen/**/*.cs" />
       <SharpGenGeneratedSource Include="$(IntermediateOutputPath)/SharpGen/**/*.cs" />
-      <SharpGenConsumerBindMappingFile Include="$(MSBuildProjectDirectory)/$(IntermediateOutputPath)SharpGen/$(SharpGenConsumerBindMappingFilePrefix).BindMapping.xml" />
+      <SharpGenConsumerBindMappingFile Include="$(MSBuildProjectDirectory)/$(IntermediateOutputPath)SharpGen/$(SharpGenConsumerBindMappingConfigId).BindMapping.xml" />
     </ItemGroup>
   </Target>
 
   <Target
     Name="GenerateSharpGenBindings"
     BeforeTargets="CoreCompile"
-    DependsOnTargets="PrepareForBuild;CoreGenerateSharpGenBindings;GenerateConsumerBindMappingFile"
+    DependsOnTargets="PrepareForBuild;
+                      GetMappingsFromProjectReferences;
+                      GetMappingsFromPackageReferences;
+                      CoreGenerateSharpGenBindings;
+                      GenerateConsumerBindMappingFile;
+                      GenerateConsumerProps"
     />
 
   <Target
@@ -46,9 +60,9 @@
     Outputs="@(SharpGenConsumerBindMappingFile);@(SharpGenGeneratedSource)">
 
     <MakeDir Directories="$(IntermediateOutputPath)/SharpGen" />
-    <SharpGenTask
+    <SharpGen
       CastXmlPath="$(CastXmlPath)"
-      AppTypes="$(SharpGenAppType)"
+      AppType="$(SharpGenAppType)"
       GenerateDocs="$(SharpGenGenerateDoc)"
       GlobalNamespace="$(SharpGenGlobalNamespace)"
       VcToolsPath="$(VCToolsDir)"
@@ -57,7 +71,6 @@
       GeneratedCodeFolder="$(SharpGenGeneratedCodeFolder)"
       IncludeAssemblyNameFolder="$(SharpGenIncludeAssemblyNameFolder)"
       OutputDirectory="$(MSBuildProjectDirectory)"
-      ConsumerBindMappingFilePrefix="$(SharpGenConsumerBindMappingFilePrefix)"
       ConsumerBindMappingConfigId ="$(SharpGenConsumerBindMappingConfigId)"
     />
 
@@ -84,6 +97,52 @@
     Inputs="@(IntermediateAssembly)"
     Outputs="@(IntermediateAssembly->'%(FullPath).check')"
   >
-    <SharpPatchTask AssemblyToPatch="%(IntermediateAssembly.FullPath)" References="@(ReferencePath)" />
+    <SharpPatch AssemblyToPatch="%(IntermediateAssembly.FullPath)" References="@(ReferencePath)" />
+  </Target>
+
+  <Target Name="GenerateConsumerProps">
+    <PropertyGroup>
+      <EmbeddedConsumerProp>$</EmbeddedConsumerProp>
+    </PropertyGroup>
+    <ItemGroup>
+      <ConsumerPropsLines Include="&lt;Project&gt;" />
+      <ConsumerPropsLines Include="&lt;ItemGroup&gt;" />
+      <ConsumerPropsLines Include='&lt;UnresolvedPackageBindMapping Include=&quot;$(SharpGenConsumerBindMappingConfigId)&quot;&gt;' />
+      <ConsumerPropsLines Include='&lt;BasePath&gt;$(EmbeddedConsumerProp)(MSBuildThisFileDirectory)/../tools/SharpGen&lt;/BasePath&gt;' />
+      <ConsumerPropsLines Include='&lt;TargetFrameworks&gt;$([System.String]::new("$(TargetFrameworks)"))&lt;/TargetFrameworks&gt;' Condition="'$(TargetFrameworks)' != ''" />
+      <ConsumerPropsLines Include='&lt;TargetFrameworks&gt;$(TargetFramework)&lt;/TargetFrameworks&gt;' Condition="'$(TargetFrameworks)' == ''" />
+      <ConsumerPropsLines Include="&lt;/UnresolvedPackageBindMapping&gt;" />
+      <ConsumerPropsLines Include="&lt;/ItemGroup&gt;" />
+      <ConsumerPropsLines Include="&lt;/Project&gt;" />
+      <ConsumerProps Include="$(MSBuildProjectDirectory)/obj/$(Configuration)/$(PackageId).props" />
+    </ItemGroup>
+
+    <WriteLinesToFile
+      File="@(ConsumerProps)"
+      Lines="@(ConsumerPropsLines)"
+      Overwrite="true"
+     />
+
+  </Target>
+
+  <Target
+    Name="PackBindMappingFiles"
+    DependsOnTargets="GenerateConsumerProps"
+    BeforeTargets="GenerateNuspec"
+  >
+    <ItemGroup>
+      <_PackageFiles Include="$(MSBuildProjectDirectory)/obj/$(Configuration)/**/$(SharpGenConsumerBindMappingConfigId).BindMapping.xml">
+        <PackagePath>tools\SharpGen\</PackagePath>
+        <Visible>false</Visible>
+        <BuildAction>Content</BuildAction>
+      </_PackageFiles>
+    </ItemGroup>
+    <ItemGroup>
+      <_PackageFiles Include="@(ConsumerProps)">
+        <PackagePath>build;buildMultiTargeting</PackagePath>
+        <Visible>false</Visible>
+        <BuildAction>Content</BuildAction>
+      </_PackageFiles>
+    </ItemGroup>
   </Target>
 </Project>

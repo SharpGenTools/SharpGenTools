@@ -7,7 +7,7 @@ using System.Text;
 
 namespace SharpGenTools.Sdk
 {
-    public class SharpPatchTask : Task
+    public class SharpPatch : Task
     {
         [Required]
         public string AssemblyToPatch { get; set; }

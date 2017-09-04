@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace SharpGenTools.Sdk
 {
-    public class SharpGenTask : Task
+    public class SharpGen : Task
     {
         [Required]
         public ITaskItem[] MappingFiles { get; set; }
@@ -19,7 +19,7 @@ namespace SharpGenTools.Sdk
         public string CastXmlPath { get; set; }
 
         [Required]
-        public string[] AppTypes { get; set; }
+        public string AppType { get; set; }
 
         [Required]
         public string GlobalNamespace { get; set; }
@@ -42,9 +42,6 @@ namespace SharpGenTools.Sdk
         public string OutputDirectory { get; set; }
 
         [Required]
-        public string ConsumerBindMappingFilePrefix { get; set; }
-
-        [Required]
         public string ConsumerBindMappingConfigId { get; set; }
 
         public override bool Execute()
@@ -58,10 +55,7 @@ namespace SharpGenTools.Sdk
                     Id = "SharpGen-MSBuild"
                 };
 
-                foreach (var appType in AppTypes)
-                {
-                    RunCodeGen(config, appType);
-                }
+                RunCodeGen(config, AppType);
                 return true;
             }
             catch (CodeGenFailedException)
@@ -72,7 +66,7 @@ namespace SharpGenTools.Sdk
 
         private void RunCodeGen(ConfigFile config, string appType)
         {
-            var codeGenApp = new CodeGenApp(new SharpGen.Logging.Logger(new MsBuildLogger(Log), null))
+            var codeGenApp = new CodeGenApp(new global::SharpGen.Logging.Logger(new MsBuildLogger(Log), null))
             {
                 CastXmlExecutablePath = CastXmlPath,
                 AppType = appType,
@@ -84,7 +78,6 @@ namespace SharpGenTools.Sdk
                 OutputDirectory = OutputDirectory,
                 IncludeAssemblyNameFolder = IncludeAssemblyNameFolder,
                 GeneratedCodeFolder = GeneratedCodeFolder,
-                ConsumerBindMappingFilePrefix = ConsumerBindMappingFilePrefix,
                 ConsumerBindMappingConfigId = ConsumerBindMappingConfigId
             };
 

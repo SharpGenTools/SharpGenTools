@@ -102,8 +102,6 @@ namespace SharpGen
 
         public ConfigFile Config { get; set; }
 
-        public string ConsumerBindMappingFilePrefix { get; set; }
-
         public string ConsumerBindMappingConfigId { get; set; }
 
         public GlobalNamespaceProvider GlobalNamespace { get; set; }
@@ -255,7 +253,7 @@ namespace SharpGen
 
         private void GenerateConfigForConsumers(ConfigFile consumerConfig)
         {
-            var consumerBindMappingFileName = Path.Combine(IntermediateOutputPath, $"{ConsumerBindMappingFilePrefix ?? Config.Id}.BindMapping.xml");
+            var consumerBindMappingFileName = Path.Combine(IntermediateOutputPath, $"{ConsumerBindMappingConfigId ?? Config.Id}.BindMapping.xml");
 
             if (File.Exists(consumerBindMappingFileName))
             {

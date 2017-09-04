@@ -20,10 +20,4 @@
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <SharpGenIncludeAssemblyNameFolder>false</SharpGenIncludeAssemblyNameFolder>
   </PropertyGroup>
-  <ItemDefinitionGroup>
-    <SharpGenMapping></SharpGenMapping>
-    <SharpGenConsumerBindMappingFile>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </SharpGenConsumerBindMappingFile>
-  </ItemDefinitionGroup>
 </Project>
