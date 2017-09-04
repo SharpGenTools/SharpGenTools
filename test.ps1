@@ -5,7 +5,10 @@ if ($LastExitCode -ne 0) {
 }
 popd
 
-rm -r -Force SdkTests/RestoredPackages/
+if(Test-Path -Path SdkTests/RestoredPackages/){
+      rm -r -Force SdkTests/RestoredPackages/
+}
+
 mkdir SdkTests/LocalPackages -ErrorAction SilentlyContinue
 rm SdkTests/LocalPackages/*.nupkg
 cp SharpGenTools.Sdk/bin/Release/*.nupkg SdkTests/LocalPackages/
