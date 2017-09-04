@@ -25,7 +25,7 @@ namespace SharpGen.Runtime
     /// <summary>
     /// An Interface shadow callback
     /// </summary>
-    internal abstract class CppObjectShadow : CppObject
+    public abstract class CppObjectShadow : CppObject
     {
         /// <summary>
         /// Gets the callback.

@@ -93,7 +93,7 @@ foreach (var sharpStruct in Namespace.Structs)
 <#+
 
 			
-		} else if (sharpStructItem.IsArray && sharpStructItem.PublicType.QualifiedName != "string") {
+		} else if (sharpStructItem.IsArray && sharpStructItem.PublicType.QualifiedName != "System.String") {
 #>
         <#= sharpStructItem.VisibilityName #><#= sharpStructItem.PublicType.QualifiedName #>[] <#= sharpStructItem.Name #> { 
             get { return _<#= sharpStructItem.Name #> ?? (_<#= sharpStructItem.Name #> = new <#= sharpStructItem.PublicType.QualifiedName #>[<#= sharpStructItem.ArrayDimension #>]);}
@@ -212,7 +212,7 @@ foreach (var sharpStruct in Namespace.Structs)
 <#+	    	foreach (var sharpStructItem in sharpStruct.Fields) {			    
 				var sharpStructItemAsStruct = sharpStructItem.PublicType as CsStruct;
 				if (!sharpStructItem.IsArray) {
-					if (sharpStructItem.PublicType.QualifiedName == "string") {
+					if (sharpStructItem.PublicType.QualifiedName == "System.String") {
 #>
                 if (this.<#= sharpStructItem.Name #> != IntPtr.Zero)
                     Marshal.FreeHGlobal(this.<#= sharpStructItem.Name #>);		
@@ -257,7 +257,7 @@ foreach (var sharpStruct in Namespace.Structs)
 #>
             fixed (char* __ptr = &@ref.<#= sharpStructItem.Name #>) this.<#= sharpStructItem.Name #> = SharpDX.Utilities.PtrToStringUni((IntPtr)__ptr, <#= sharpStructItem.ArrayDimension #>);
 <#+
-					} else if (sharpStructItem.PublicType.QualifiedName == "string" && sharpStructItem.MarshalType.QualifiedName == "byte") {
+					} else if (sharpStructItem.PublicType.QualifiedName == "System.String" && sharpStructItem.MarshalType.QualifiedName == "byte") {
 #>
             fixed (void* __ptr = &@ref.<#= sharpStructItem.Name #>) this.<#= sharpStructItem.Name #> = SharpDX.Utilities.PtrToStringAnsi((IntPtr)__ptr, <#= sharpStructItem.ArrayDimension #>);
 <#+
@@ -268,7 +268,7 @@ foreach (var sharpStruct in Namespace.Structs)
 					}
 				}
 		    } else {
-					if (sharpStructItem.PublicType.QualifiedName == "string") {
+					if (sharpStructItem.PublicType.QualifiedName == "System.String") {
 						if (!sharpStructItem.IsWideChar) {
 				// Copy string
 #>
@@ -321,7 +321,7 @@ foreach (var sharpStruct in Namespace.Structs)
 #>
             fixed (char* __psrc = this.<#= sharpStructItem.Name #>) fixed (char* __ptr = &@ref.<#= sharpStructItem.Name #>) Utilities.CopyMemory((IntPtr)__ptr, (IntPtr)__psrc, <#= sharpStructItem.Name #>.Length * 2);
 <#+
-					} else if (sharpStructItem.PublicType.QualifiedName == "string") {
+					} else if (sharpStructItem.PublicType.QualifiedName == "System.String") {
 #>
             IntPtr <#= sharpStructItem.Name #>_ = Utilities.StringToHGlobalAnsi(this.<#= sharpStructItem.Name #>);
             fixed (void* __ptr = &@ref.<#= sharpStructItem.Name #>) Utilities.CopyMemory((IntPtr)__ptr, <#= sharpStructItem.Name #>_, this.<#= sharpStructItem.Name #>.Length);
@@ -334,7 +334,7 @@ foreach (var sharpStruct in Namespace.Structs)
 					}
 				}
 		    } else {
-					if (sharpStructItem.PublicType.QualifiedName == "string") {
+					if (sharpStructItem.PublicType.QualifiedName == "System.String") {
 						if (!sharpStructItem.IsWideChar) {
 				// Copy string
 #>

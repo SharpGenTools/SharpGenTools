@@ -26,11 +26,35 @@ namespace SharpGen.Runtime
     /// <summary>
     /// A COM Interface Callback
     /// </summary>
-    internal abstract class ComObjectShadow : CppObjectShadow
+    public abstract class ComObjectShadow : CppObjectShadow
     {
-        public static readonly Guid IID_IUnknown = new Guid("00000000-0000-0000-C000-000000000046");
+        private int count = 1;
+        public static Guid IID_IUnknown = new Guid("00000000-0000-0000-C000-000000000046");
 
-        internal class ComObjectVtbl : CppObjectVtbl
+        protected int QueryInterfaceImpl(ref Guid guid, out IntPtr output)
+        {
+            var shadow = (ComObjectShadow)Callback.Shadow.FindShadow(guid);
+            if (shadow != null)
+            {
+                shadow.AddRefImpl();
+                output = shadow.NativePointer;
+                return Result.Ok.Code;
+            }
+            output = IntPtr.Zero;
+            return Result.NoInterface.Code;
+        }
+
+        protected virtual int AddRefImpl()
+        {
+            return Interlocked.Increment(ref count);
+        }
+
+        protected virtual int ReleaseImpl()
+        {
+            return Interlocked.Decrement(ref count);
+        }
+
+        protected class ComObjectVtbl : CppObjectVtbl
         {
             public ComObjectVtbl(int numberOfCallbackMethods)
                 : base(numberOfCallbackMethods + 3)
@@ -44,51 +68,46 @@ namespace SharpGen.Runtime
             }
 
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-            public unsafe delegate int QueryInterfaceDelegate(IntPtr thisObject, Guid* guid, out IntPtr output);
+            public delegate int QueryInterfaceDelegate(IntPtr thisObject, IntPtr guid, out IntPtr output);
 
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-            public delegate uint AddRefDelegate(IntPtr thisObject);
+            public delegate int AddRefDelegate(IntPtr thisObject);
 
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-            public delegate uint ReleaseDelegate(IntPtr thisObject);
+            public delegate int ReleaseDelegate(IntPtr thisObject);
 
-            protected static unsafe int QueryInterfaceImpl(IntPtr thisObject, Guid* guidPtr, out IntPtr output)
+            protected static int QueryInterfaceImpl(IntPtr thisObject, IntPtr guid, out IntPtr output)
             {
-                Guid guid = *guidPtr;
                 var shadow = ToShadow<ComObjectShadow>(thisObject);
                 if (shadow == null)
                 {
                     output = IntPtr.Zero;
                     return Result.NoInterface.Code;
                 }
-
-                var callback = (IUnknown)shadow.Callback;
-                callback.QueryInterface(guid, out output);
-                return (int)(output == IntPtr.Zero ? Result.NoInterface : Result.Ok);
+                unsafe
+                {
+                    return shadow.QueryInterfaceImpl(ref *((Guid*)guid), out output);
+                }
             }
 
-            protected static uint AddRefImpl(IntPtr thisObject)
+            protected static int AddRefImpl(IntPtr thisObject)
             {
                 var shadow = ToShadow<ComObjectShadow>(thisObject);
                 // The shadow could be null if it is released explicitly
                 // But we are callbacked by a C++ that want to release it.
                 if (shadow == null)
                     return 0;
-
-                var callback = (IUnknown)shadow.Callback;
-                return callback.AddRef();
+                return shadow.AddRefImpl();
             }
 
-            protected static uint ReleaseImpl(IntPtr thisObject)
+            protected static int ReleaseImpl(IntPtr thisObject)
             {
                 var shadow = ToShadow<ComObjectShadow>(thisObject);
                 // The shadow could be null if it is released explicitly
                 // But we are callbacked by a C++ that want to release it.
                 if (shadow == null)
                     return 0;
-
-                var callback = (IUnknown)shadow.Callback;
-                return callback.Release();
+                return shadow.ReleaseImpl();
             }
         }
     }

@@ -10,10 +10,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.1.1012">
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.3.409">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Mono.Cecil" Version="0.10.0-beta6" />
+    <PackageReference Include="NuGet.Frameworks" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,8 +29,8 @@
   <ItemGroup>
     <Content Include="_._" PackagePath="lib/netstandard1.0;lib/net40" />
     <Content Include="../CastXML/**/*" PackagePath="tools/_/%(Identity)" />
-    <Content Include="**/*.props" Exclude="obj/**" PackagePath="build;buildCrossTargeting" />
-    <Content Include="**/*.targets" Exclude="obj/**" PackagePath="build;buildCrossTargeting" />
+    <Content Include="**/*.props" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
+    <Content Include="**/*.targets" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
   </ItemGroup>
 
   <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">

@@ -26,6 +26,7 @@ using SharpGen.Logging;
 using SharpGen.Config;
 using SharpGen.Generator;
 using SharpGen.Parser;
+using System.Xml.Serialization;
 
 namespace SharpGen
 {
@@ -99,7 +100,9 @@ namespace SharpGen
 
         public string IntermediateOutputPath { get; set; } = "";
 
-        private ConfigFile Config { get; set; }
+        public ConfigFile Config { get; set; }
+
+        public string ConsumerBindMappingConfigId { get; set; }
 
         public GlobalNamespaceProvider GlobalNamespace { get; set; }
 
@@ -122,15 +125,21 @@ namespace SharpGen
             _assemblyCheckFile = Path.Combine(IntermediateOutputPath, $"SharpGen.{AppType}.check");
             _assemblyDatetime = File.GetLastWriteTime(_thisAssemblyPath);
             _isAssemblyNew = (_assemblyDatetime != File.GetLastWriteTime(_assemblyCheckFile));
-            _generatedPath = OutputDirectory != null ?
-                Path.GetDirectoryName(OutputDirectory)
-                : Path.GetDirectoryName(Path.GetFullPath(ConfigRootPath));
+            _generatedPath = OutputDirectory ?? Path.GetDirectoryName(Path.GetFullPath(ConfigRootPath));
 
             Logger.Message("Loading config files...");
             
             Macros.Add(AppType);
 
-            Config = ConfigFile.Load(ConfigRootPath, Macros.ToArray(), Logger, new KeyValue("VC_TOOLS_PATH", VcToolsPath));
+            if (Config == null)
+            {
+                Config = ConfigFile.Load(ConfigRootPath, Macros.ToArray(), Logger, new KeyValue("VC_TOOLS_PATH", VcToolsPath));
+            }
+            else
+            {
+                Config = ConfigFile.Load(Config, Macros.ToArray(), Logger, new KeyValue("VC_TOOLS_PATH", VcToolsPath));
+            }
+
             var latestConfigTime = ConfigFile.GetLatestTimestamp(Config.ConfigFilesLoaded);
             
             _allConfigCheck = Path.Combine(IntermediateOutputPath, Config.Id + "-" + AppType + "-CodeGen.check");
@@ -160,6 +169,11 @@ namespace SharpGen
 
             try
             {
+                var consumerConfig = new ConfigFile
+                {
+                    Id = ConsumerBindMappingConfigId
+                };
+
                 // Run the parser
                 var parser = new Parser.CppParser(GlobalNamespace, Logger)
                                  {
@@ -171,7 +185,7 @@ namespace SharpGen
                                  };
 
                 // Init the parser
-                parser.Init(Config);
+                (consumerConfig.IncludeProlog, consumerConfig.IncludeDirs, consumerConfig.Includes) = parser.Init(Config);
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Initializing parser failed");
@@ -192,7 +206,7 @@ namespace SharpGen
                     AppType = AppType
                 };
 
-                transformer.Init(group, Config, IntermediateOutputPath);
+                consumerConfig.Extension = transformer.Init(group, Config, IntermediateOutputPath);
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Mapping rules initialization failed");
@@ -214,6 +228,15 @@ namespace SharpGen
                     transformer.NamingRules.DumpRenames(fileWriter);
                 }
 
+                var (bindings, defines) = transformer.GenerateTypeBindingsForConsumers();
+
+                consumerConfig.Bindings.AddRange(bindings);
+                consumerConfig.Extension.AddRange(defines);
+
+
+                // TODO: Include include-prolog's and include rules w/ pre or post text (no attaches).
+                GenerateConfigForConsumers(consumerConfig);
+
                 // Update Checkfile for assembly
                 File.WriteAllText(_assemblyCheckFile, "");
                 File.SetLastWriteTime(_assemblyCheckFile, _assemblyDatetime);
@@ -225,6 +248,23 @@ namespace SharpGen
             finally
             {
                 Logger.Progress(100, "Finished");
+            }
+        }
+
+        private void GenerateConfigForConsumers(ConfigFile consumerConfig)
+        {
+            var consumerBindMappingFileName = Path.Combine(IntermediateOutputPath, $"{ConsumerBindMappingConfigId ?? Config.Id}.BindMapping.xml");
+
+            if (File.Exists(consumerBindMappingFileName))
+            {
+                File.Delete(consumerBindMappingFileName);
+            }
+
+            using (var consumerBindMapping = File.Open(consumerBindMappingFileName, FileMode.OpenOrCreate, FileAccess.Write))
+            using (var fileWriter = new StreamWriter(consumerBindMapping))
+            {
+                var serializer = new XmlSerializer(typeof(ConfigFile));
+                serializer.Serialize(fileWriter, consumerConfig);
             }
         }
     }

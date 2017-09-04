@@ -5,13 +5,21 @@ if ($LastExitCode -ne 0) {
 }
 popd
 
-rm -r -Force SdkTests/RestoredPackages/
-mkdir SdkTests/LocalPackages
+if(Test-Path -Path SdkTests/RestoredPackages/){
+      rm -r -Force SdkTests/RestoredPackages/
+}
+
+mkdir SdkTests/LocalPackages -ErrorAction SilentlyContinue
 rm SdkTests/LocalPackages/*.nupkg
 cp SharpGenTools.Sdk/bin/Release/*.nupkg SdkTests/LocalPackages/
 
 pushd .\SdkTests
 msbuild /t:Restore /v:minimal
+
+if ($LastExitCode -ne 0) {
+    exit 1
+}
+
 msbuild /p:Configuration=Release /m /v:minimal
 
 if ($LastExitCode -ne 0) {
@@ -20,6 +28,27 @@ if ($LastExitCode -ne 0) {
 
 pushd SharpGen.Runtime
 msbuild /t:Pack /p:Configuration=Release /v:minimal
+cp bin/Release/*.nupkg ../LocalPackages
 popd
-rm RestoredPackages/**/*.nupkg
+
+pushd ComInterface
+pushd ComLibTest
+dotnet xunit
+if ($LastExitCode -ne 0) {
+    exit 1
+}
+popd
+
+msbuild ComLibTest.Package/ComLibTest.Package.csproj /t:Restore /v:minimal
+
+if ($LastExitCode -ne 0) {
+    exit 1
+}
+
+msbuild ComLibTest.Package/ComLibTest.Package.csproj /p:Configuration=Release /v:minimal
+
+if ($LastExitCode -ne 0) {
+    exit 1
+}
+
 popd

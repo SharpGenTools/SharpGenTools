@@ -30,7 +30,7 @@ namespace SharpGen.Runtime.Win32
     {
         private static readonly ComStreamBaseVtbl Vtbl = new ComStreamBaseVtbl(0);
         
-        internal class ComStreamBaseVtbl : ComObjectVtbl
+        protected class ComStreamBaseVtbl : ComObjectVtbl
         {
             public ComStreamBaseVtbl(int numberOfMethods)
                 : base(numberOfMethods + 2)

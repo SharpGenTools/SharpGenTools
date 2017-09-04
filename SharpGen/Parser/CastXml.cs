@@ -180,9 +180,12 @@ namespace SharpGen.Parser
 
                             var arguments = GetCastXmlArgs();
                             arguments += " -E -dD";
+                            var builder = new System.Text.StringBuilder();
+                            builder.Append(arguments);
 
                             foreach (var directory in GetIncludePaths())
-                                arguments += " " + directory;
+                                builder.Append(" ").Append(directory);
+                            arguments = builder.ToString();
 
                             startInfo.Arguments = arguments + " " + headerFile;
                             Logger.Message(startInfo.Arguments);
@@ -193,7 +196,7 @@ namespace SharpGen.Parser
                             currentProcess.BeginOutputReadLine();
                             currentProcess.BeginErrorReadLine();
 
-                            currentProcess.WaitForExit(); 
+                            currentProcess.WaitForExit();
                         }
 
                     });
@@ -210,51 +213,11 @@ namespace SharpGen.Parser
                 // Is Using registry?
                 if (path.StartsWith("="))
                 {
-                    var registryPath = directory.Path.Substring(1);
-                    var indexOfSubPath = registryPath.IndexOf(";");
-                    string subPath = "";
-                    if (indexOfSubPath >= 0)
-                    {
-                        subPath = registryPath.Substring(indexOfSubPath + 1);
-                        registryPath = registryPath.Substring(0, indexOfSubPath);
-                    }
-                    var indexOfKey = registryPath.LastIndexOf("\\");
-                    var subKeyStr = registryPath.Substring(indexOfKey + 1);
-                    registryPath = registryPath.Substring(0, indexOfKey);
+                    bool success;
+                    (path, success) = ResolveRegistryDirectory(directory);
 
-                    var indexOfHive = registryPath.IndexOf("\\");
-                    var hiveStr = registryPath.Substring(0, indexOfHive).ToUpper();
-                    registryPath = registryPath.Substring(indexOfHive+1);
-
-                    try
-                    {
-                        var hive = RegistryHive.LocalMachine;
-                        switch (hiveStr)
-                        {
-                            case "HKEY_LOCAL_MACHINE":
-                                hive = RegistryHive.LocalMachine;
-                                break;
-                            case "HKEY_CURRENT_USER":
-                                hive = RegistryHive.CurrentUser;
-                                break;
-                            case "HKEY_CURRENT_CONFIG":
-                                hive = RegistryHive.CurrentConfig;
-                                break;
-                        }
-                        var rootKey = RegistryKey.OpenBaseKey(hive, RegistryView.Registry32);
-                        var subKey = rootKey.OpenSubKey(registryPath);
-                        if (subKey == null)
-                        {
-                            Logger.Error("Unable to locate key [{0}] in registry", registryPath);
-                            continue;
-
-                        }
-                        path = Path.Combine(subKey.GetValue(subKeyStr).ToString(), subPath);
-                    } catch (Exception)
-                    {
-                        Logger.Error("Unable to locate key [{0}] in registry", registryPath);
+                    if (!success)
                         continue;
-                    }
                 }
 
                 if (directory.IsOverride)
@@ -273,6 +236,59 @@ namespace SharpGen.Parser
             }
 
             return paths;
+        }
+
+        private (string path, bool success) ResolveRegistryDirectory(IncludeDirRule directory)
+        {
+            string path = null;
+            var success = true;
+            var registryPath = directory.Path.Substring(1);
+            var indexOfSubPath = registryPath.IndexOf(";");
+            var subPath = "";
+            if (indexOfSubPath >= 0)
+            {
+                subPath = registryPath.Substring(indexOfSubPath + 1);
+                registryPath = registryPath.Substring(0, indexOfSubPath);
+            }
+            var indexOfKey = registryPath.LastIndexOf("\\");
+            var subKeyStr = registryPath.Substring(indexOfKey + 1);
+            registryPath = registryPath.Substring(0, indexOfKey);
+
+            var indexOfHive = registryPath.IndexOf("\\");
+            var hiveStr = registryPath.Substring(0, indexOfHive).ToUpper();
+            registryPath = registryPath.Substring(indexOfHive + 1);
+
+            try
+            {
+                var hive = RegistryHive.LocalMachine;
+                switch (hiveStr)
+                {
+                    case "HKEY_LOCAL_MACHINE":
+                        hive = RegistryHive.LocalMachine;
+                        break;
+                    case "HKEY_CURRENT_USER":
+                        hive = RegistryHive.CurrentUser;
+                        break;
+                    case "HKEY_CURRENT_CONFIG":
+                        hive = RegistryHive.CurrentConfig;
+                        break;
+                }
+                var rootKey = RegistryKey.OpenBaseKey(hive, RegistryView.Registry32);
+                var subKey = rootKey.OpenSubKey(registryPath);
+                if (subKey == null)
+                {
+                    Logger.Error("Unable to locate key [{0}] in registry", registryPath);
+                    success = false;
+
+                }
+                path = Path.Combine(subKey.GetValue(subKeyStr).ToString(), subPath);
+            }
+            catch (Exception)
+            {
+                Logger.Error("Unable to locate key [{0}] in registry", registryPath);
+                success = false;
+            }
+            return (path, success);
         }
 
         /// <summary>
@@ -343,7 +359,7 @@ namespace SharpGen.Parser
         private static string GetCastXmlArgs()
         {
             var arguments = "";
-            arguments += " --castxml-gccxml"; 
+            arguments += " --castxml-gccxml";
             arguments += " -x c++ -std=c++11 -fmsc-version=1900 -fms-extensions -fms-compatibility";
             arguments += " -Wno-microsoft-enum-value -Wmacro-redefined -Wno-invalid-token-paste -Wno-ignored-attributes";
             return arguments;

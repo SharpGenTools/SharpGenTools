@@ -223,16 +223,6 @@ namespace SharpGen.Runtime
             fromObject.QueryInterface(Utilities.GetGuidFromType(this.GetType()), out parentPtr);
             NativePointer = parentPtr;
         }
-        
-        /// <summary>
-        /// Implements <see cref="ICallbackable"/> but it cannot not be set. 
-        /// This is only used to support for interop with unmanaged callbacks.
-        /// </summary>
-        ShadowContainer ICallbackable.Shadow
-        {
-            get { throw new InvalidOperationException("Invalid access to shadow container on C++ COM object."); }
-            set { throw new InvalidOperationException("Invalid access to shadow container on C++ COM object."); }
-        }
 
         /// <summary>
         /// Releases unmanaged and - optionally - managed resources

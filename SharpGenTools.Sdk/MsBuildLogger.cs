@@ -43,7 +43,7 @@ namespace SharpGenTools.Sdk
                     log.LogError(context, null, null, logLocation.File, logLocation.Line, logLocation.Column, 0, 0, message, parameters);
                     if (exception != null)
                     {
-                        log.LogErrorFromException(exception);
+                        log.LogErrorFromException(exception, true, true, null);
                     }
                     break;
                 default:

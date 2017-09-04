@@ -41,6 +41,7 @@ namespace SharpGen.Config
         {
             Depends = new List<string>();
             Bindings = new List<BindRule>();
+            Extension = new List<ConfigBaseRule>();
             Files = new List<string>();
             References = new List<ConfigFile>();
             IncludeProlog = new List<string>();
@@ -89,10 +90,12 @@ namespace SharpGen.Config
         {
             get
             {
+                if (FilePath == null)
+                    return null;
                 if (Path.IsPathRooted(FilePath))
                     return FilePath;
-                if (Parent != null)
-                    return Path.Combine(Path.GetDirectoryName(Parent.AbsoluteFilePath), FilePath);;
+                if (Parent?.AbsoluteFilePath != null)
+                    return Path.Combine(Path.GetDirectoryName(Parent.AbsoluteFilePath), FilePath);
                 return Path.GetFullPath(Path.Combine(".", FilePath));
             }
         }
@@ -385,14 +388,18 @@ namespace SharpGen.Config
             FilePath = file;
             Parent = parent;
 
-            Variables.Add(new KeyValue("THIS_CONFIG_PATH", Path.GetDirectoryName(AbsoluteFilePath)));
+            if (AbsoluteFilePath != null)
+            {
+                Variables.Add(new KeyValue("THIS_CONFIG_PATH", Path.GetDirectoryName(AbsoluteFilePath)));
+            }
+
             Variables.AddRange(variables);
 
             // Load all dependencies
             foreach (var dependFile in Files)
             {
                 var dependFilePath = ExpandString(dependFile, false, logger);
-                if (!Path.IsPathRooted(dependFilePath))
+                if (!Path.IsPathRooted(dependFilePath) && AbsoluteFilePath != null)
                     dependFilePath = Path.Combine(Path.GetDirectoryName(AbsoluteFilePath), dependFilePath);
                 
                 var subMapping = Load(this, dependFilePath, macros, variables, logger);
@@ -424,6 +431,11 @@ namespace SharpGen.Config
         public static DateTime GetLatestTimestamp(IEnumerable<ConfigFile> files)
         {
             var latestTimestmap = new DateTime(0);
+            if (files.Any(cfg => cfg.AbsoluteFilePath == null))
+            {
+                return DateTime.Now;
+            }
+
             foreach (var configFile in files)
             {
                 var fileTime = File.GetLastWriteTime(configFile.AbsoluteFilePath);
@@ -496,6 +508,14 @@ namespace SharpGen.Config
             // Verify all dependencies
             foreach (var mappingFile in References)
                 mappingFile.Verify(logger);
+        }
+
+        public static ConfigFile Load(ConfigFile root, string[] macros, Logger logger, params KeyValue[] variables)
+        {
+            root.PostLoad(null, null, macros, variables, logger);
+            root.Verify(logger);
+            root.ExpandVariables(false, logger);
+            return root;
         }
 
         /// <summary>
