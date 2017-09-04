@@ -1,0 +1,3 @@
+﻿<Project>
+  <Target Name="GenerateConsumerBindMappingFile" />
+</Project>

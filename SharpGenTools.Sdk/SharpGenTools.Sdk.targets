@@ -4,6 +4,7 @@
     <SharpGenConsumerBindMappingConfigId Condition="'$(SharpGenConsumerBindMappingConfigId)' == ''">$(AssemblyName)</SharpGenConsumerBindMappingConfigId>
     <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' == 'Full'">$(MSBuildThisFileDirectory)/../tools/net46/SharpGenTools.Sdk.dll</SharpGenSdkAssembly>
     <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)/../tools/netstandard1.5/SharpGenTools.Sdk.dll</SharpGenSdkAssembly>
+    <GenerateConsumerBindMappingFilePlaceholderProperty>CustomBeforeMicrosoftCommonTargets=$(MSBuildThisFileDirectory)/GenerateConsumerBindMappingFile.targets</GenerateConsumerBindMappingFilePlaceholderProperty>
   </PropertyGroup>
 
   <UsingTask AssemblyFile="$(SharpGenSdkAssembly)" TaskName="SharpPatch" />
@@ -15,7 +16,7 @@
       Projects="@(_MSBuildProjectReferenceExistent)"
       Targets="GenerateConsumerBindMappingFile"
       BuildInParallel="$(BuildInParallel)"
-      Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration); %(_MSBuildProjectReferenceExistent.SetPlatform); %(_MSBuildProjectReferenceExistent.SetTargetFramework)"
+      Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration); %(_MSBuildProjectReferenceExistent.SetPlatform); %(_MSBuildProjectReferenceExistent.SetTargetFramework); $(GenerateConsumerBindMappingFilePlaceholderProperty)"
       ContinueOnError="$(ContinueOnError)"
       RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)">
       <Output TaskParameter="TargetOutputs" ItemName="SharpGenMapping" />
