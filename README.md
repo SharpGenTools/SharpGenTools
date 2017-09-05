@@ -26,6 +26,7 @@ Code-gen tools forked from SharpDX and independently mantained.
 ## Requirements
 ### To Use
 * Any projects using the SDK to generate code must use new SDK-style projects with MSBuild 15.3 or higher (.NET Core 2.0 SDK or VS 2017.3)
+* Make any mapping files a `SharpGenMapping` item in your `.csproj`.
 
 ### To Build
 * MSBuild 15.3

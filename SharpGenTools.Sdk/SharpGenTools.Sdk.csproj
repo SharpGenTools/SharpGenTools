@@ -7,6 +7,8 @@
     <!-- forces SDK to copy dependencies into build output to make packing easier -->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <BuildOutputTargetFolder>tools</BuildOutputTargetFolder>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <Description>MSBuild tooling for SharpGen and SharpPatch. Tooling for generating efficient C# code from C++ and COM headers.</Description>
   </PropertyGroup>
 
   <ItemGroup>
