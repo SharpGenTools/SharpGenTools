@@ -15,5 +15,16 @@ artifacts:
   - path: 'Sharp*\**\Sharp*.nupkg'
   - path: 'SdkTests\SharpGen.Runtime\**\*.nupkg'
 
-deploy_script:
-- ps: ./deploy
+deploy:
+- provider: NuGet
+  api_key:
+    secure: YllGn/UU5leb3rTBzsuJ/fBlD76dAnZ+V0OGI+AnptcdAUe5i9LqOsaz2VaL0kxo
+  on:
+    branch: master
+    APPVEYOR_REPO_TAG: true
+- provider: NuGet
+  server: https://www.myget.org/F/sharpgentools/api/v2/package
+  api_key:
+    secure: dtTGYQHgEupz5SmTDFkvDW1uEZH7mEM8PD948uzOZY/XCl965mhorbEl2e+6U8pO
+  on:
+    branch: master
