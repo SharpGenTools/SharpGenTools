@@ -1,0 +1,17 @@
+<Project>
+  <!-- Pulled from https://stackoverflow.com/questions/12781870/how-should-i-reference-sn-exe-in-msbuild-script -->
+  <Target Name="GetSnPath" Condition="'$(SnPath)' == '' OR !Exists('$(SnPath)')">
+    <GetFrameworkSdkPath>
+        <Output TaskParameter="Path" PropertyName="WindowsSdkPath" />
+    </GetFrameworkSdkPath>
+    <Exec Command=":; echo sn &gt; sn-path.txt; exit $?
+WHERE /r &quot;$(WindowsSdkPath.TrimEnd('\\'))&quot; sn &gt; sn-path.txt" WorkingDirectory="$(IntermediateOutputPath)"  />
+    <ReadLinesFromFile File="$(IntermediateOutputPath)/sn-path.txt">
+        <Output TaskParameter="Lines" PropertyName="SNPath"/>
+    </ReadLinesFromFile>
+    <Delete Files="sn-path.txt" />
+    <PropertyGroup>
+        <SnPath>$([System.Text.RegularExpressions.Regex]::Replace('$(SNPath)', ';.*', ''))</SnPath>
+    </PropertyGroup>
+    </Target>
+</Project>

@@ -92,7 +92,7 @@
   </Target>
   
   <Target
-    Name="PatchAssembly"
+    Name="RunSharpPatch"
     DependsOnTargets="CoreCompile"
     BeforeTargets="CopyFilesToOutputDirectory"
     Inputs="@(IntermediateAssembly)"
@@ -104,6 +104,29 @@
       GlobalNamespace="$(SharpGenGlobalNamespace)"
     />
   </Target>
+
+  <Import Project="$(MSBuildThisFileDirectory)/GetSnPath.$(MSBuildRuntimeType).props" />
+
+  <PropertyGroup>
+    <SnParam Condition="'$(OS)' == 'Windows_NT'">-Ra</SnParam>
+    <SnParam Condition="'$(OS)' == 'Unix'">-R</SnParam>
+  </PropertyGroup>
+
+  <Target
+    Name="ResignAssembly"
+    DependsOnTargets="GetSnPath"
+    Condition="'$(SignAssembly)' =='true'">
+    <Error Text="Could not find 'sn' executable. Cannot resign the patched assembly" Condition="'$(SnPath)' == '' OR !Exists('$(SnPath)')" />
+    <Exec Command='"$(SnPath)" $(SnParam) %(IntermediateAssembly.FullPath) $(AssemblyOriginatorKeyFile)' WorkingDirectory="$(MSBuildProjectDirectory)" />
+  </Target>
+
+  <Target
+    Name="PatchAssembly"
+    DependsOnTargets="RunSharpPatch;ResignAssembly"
+    BeforeTargets="CopyFilesToOutputDirectory"
+    Inputs="@(IntermediateAssembly)"
+    Outputs="@(IntermediateAssembly->'%(FullPath).check')"
+  />
 
   <Target Name="GenerateConsumerProps">
     <PropertyGroup>
