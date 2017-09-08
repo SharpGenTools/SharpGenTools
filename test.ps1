@@ -35,7 +35,7 @@ pushd .\SdkTests
 
     pushd ComInterface
         pushd ComLibTest
-            dotnet xunit -configuration Release
+            dotnet xunit
             if ($LastExitCode -ne 0) {
                 exit 1
             }
