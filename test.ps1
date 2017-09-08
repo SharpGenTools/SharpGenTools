@@ -33,7 +33,7 @@ pushd .\SdkTests
 
     pushd ComInterface
         pushd ComLibTest
-            dotnet xunit
+            dotnet xunit /p:SnPath="C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\sn.exe"
             if ($LastExitCode -ne 0) {
                 exit 1
             }
