@@ -1,3 +1,5 @@
+$env:Path += ";C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\"
+
 pushd SharpGen.E2ETests
     dotnet xunit
     if ($LastExitCode -ne 0) {
@@ -33,7 +35,7 @@ pushd .\SdkTests
 
     pushd ComInterface
         pushd ComLibTest
-            dotnet xunit /p:SnPath="C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\sn.exe"
+            dotnet xunit -configuration Release
             if ($LastExitCode -ne 0) {
                 exit 1
             }
