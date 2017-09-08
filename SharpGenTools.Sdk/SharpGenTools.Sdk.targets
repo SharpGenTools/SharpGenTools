@@ -105,28 +105,19 @@
     />
   </Target>
 
-  <!-- Pulled from https://stackoverflow.com/questions/12781870/how-should-i-reference-sn-exe-in-msbuild-script -->
-  <Target Name="GetSNPath">
-  <GetFrameworkSdkPath>
-    <Output TaskParameter="Path" PropertyName="WindowsSdkPath" />
-  </GetFrameworkSdkPath>
-  <Exec Command=":; echo sn &gt; sn-path.txt; exit $?
-WHERE /r &quot;$(WindowsSdkPath.TrimEnd('\\'))&quot; sn &gt; sn-path.txt" WorkingDirectory="$(IntermediateOutputPath)"  />
-  <ReadLinesFromFile File="$(IntermediateOutputPath)/sn-path.txt">
-    <Output TaskParameter="Lines" PropertyName="SNPath"/>
-  </ReadLinesFromFile>
-  <Delete Files="sn-path.txt" />
+  <Import Project="$(MSBuildThisFileDirectory)/GetSnPath.$(MSBuildRuntimeType).props" />
+
   <PropertyGroup>
-    <SNPath>$([System.Text.RegularExpressions.Regex]::Replace('$(SNPath)', ';.*', ''))</SNPath>
+    <SnParam Condition="'$(OS)' == 'Windows_NT'">-Ra</SnParam>
+    <SnParam Condition="'$(OS)' == 'Unix'">-R</SnParam>
   </PropertyGroup>
-</Target>
 
   <Target
     Name="ResignAssembly"
-    DependsOnTargets="GetSNPath"
+    DependsOnTargets="GetSnPath"
     Condition="'$(SignAssembly)' =='true'">
-    <Error Text="Could not find 'sn' executable. Cannot resign the patched assembly" Condition="'$(SNPath)' == ''" />
-    <Exec Command='"$(SNPath)" -Ra %(IntermediateAssembly.FullPath) $(AssemblyOriginatorKeyFile)' WorkingDirectory="$(MSBuildProjectDirectory)" />
+    <Error Text="Could not find 'sn' executable. Cannot resign the patched assembly" Condition="'$(SnPath)' == '' OR !Exists('$(SnPath)')" />
+    <Exec Command='"$(SnPath)" $(SnParam) %(IntermediateAssembly.FullPath) $(AssemblyOriginatorKeyFile)' WorkingDirectory="$(MSBuildProjectDirectory)" />
   </Target>
 
   <Target
