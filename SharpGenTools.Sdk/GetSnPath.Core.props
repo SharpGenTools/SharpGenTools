@@ -1,7 +1,7 @@
 <Project>
     <Target Name="GetSnPath">
-        <Exec Command="where sn &gt; sn-path.txt" Condition="'$(OS)' == 'Windows_NT'" WorkingDirectory="$(IntermediateOutputPath)" />
-        <Exec Command="which sn &gt; sn-path.txt" Condition="'$(OS)' == 'Unix'" WorkingDirectory="$(IntermediateOutputPath)"  />
+        <Exec Command="where sn &gt; sn-path.txt" ContinueOnError="true" Condition="'$(OS)' == 'Windows_NT'" WorkingDirectory="$(IntermediateOutputPath)" />
+        <Exec Command="which sn &gt; sn-path.txt" ContinueOnError="true" Condition="'$(OS)' == 'Unix'" WorkingDirectory="$(IntermediateOutputPath)"  />
         <ReadLinesFromFile File="$(IntermediateOutputPath)/sn-path.txt">
             <Output TaskParameter="Lines" PropertyName="SNPath"/>
         </ReadLinesFromFile>
