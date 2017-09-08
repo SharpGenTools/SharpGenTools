@@ -9,7 +9,6 @@
 
   <UsingTask AssemblyFile="$(SharpGenSdkAssembly)" TaskName="SharpPatch" />
   <UsingTask AssemblyFile="$(SharpGenSdkAssembly)" TaskName="SharpGen" />
-  <UsingTask AssemblyFile="$(SharpGenSdkAssembly)" TaskName="ResolveBestBindMapping" />
 
   <Target Name="GetMappingsFromProjectReferences">
     <MSBuild
@@ -26,7 +25,7 @@
   <PropertyGroup>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);GenerateConsumerBindMappingFile;GenerateTfmSpecificConsumerProps</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
-  
+
   <ItemGroup>
       <TfmConsumerProps Include="$(MSBuildProjectDirectory)/$(IntermediateOutputPath)SharpGen/$(PackageId).props">
         <PackagePath>build/$(TargetFramework);buildMultiTargeting/$(TargetFramework)</PackagePath>
