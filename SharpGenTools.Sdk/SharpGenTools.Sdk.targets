@@ -92,7 +92,7 @@
   </Target>
   
   <Target
-    Name="PatchAssembly"
+    Name="RunSharpPatch"
     DependsOnTargets="CoreCompile"
     BeforeTargets="CopyFilesToOutputDirectory"
     Inputs="@(IntermediateAssembly)"
@@ -104,6 +104,38 @@
       GlobalNamespace="$(SharpGenGlobalNamespace)"
     />
   </Target>
+
+  <!-- Pulled from https://stackoverflow.com/questions/12781870/how-should-i-reference-sn-exe-in-msbuild-script -->
+  <Target Name="GetSNPath">
+  <GetFrameworkSdkPath>
+    <Output TaskParameter="Path" PropertyName="WindowsSdkPath" />
+  </GetFrameworkSdkPath>
+  <Exec Command=":; echo sn &gt; sn-path.txt; exit $?
+WHERE /r &quot;$(WindowsSdkPath.TrimEnd('\\'))&quot; sn &gt; sn-path.txt"  />
+  <ReadLinesFromFile File="sn-path.txt">
+    <Output TaskParameter="Lines" PropertyName="SNPath"/>
+  </ReadLinesFromFile>
+  <Delete Files="sn-path.txt" />
+  <PropertyGroup>
+    <SNPath>$([System.Text.RegularExpressions.Regex]::Replace('$(SNPath)', ';.*', ''))</SNPath>
+  </PropertyGroup>
+</Target>
+
+  <Target
+    Name="ResignAssembly"
+    DependsOnTargets="GetSNPath"
+    Condition="'$(SignAssembly)' =='true'">
+    <Error Text="Could not find 'sn' executable. Cannot resign the patched assembly" Condition="'$(SNPath)' == ''" />
+    <Exec Command='"$(SNPath)" -Ra %(IntermediateAssembly.FullPath) $(AssemblyOriginatorKeyFile)' WorkingDirectory="$(MSBuildProjectDirectory)" />
+  </Target>
+
+  <Target
+    Name="PatchAssembly"
+    DependsOnTargets="RunSharpPatch;ResignAssembly"
+    BeforeTargets="CopyFilesToOutputDirectory"
+    Inputs="@(IntermediateAssembly)"
+    Outputs="@(IntermediateAssembly->'%(FullPath).check')"
+  />
 
   <Target Name="GenerateConsumerProps">
     <PropertyGroup>
