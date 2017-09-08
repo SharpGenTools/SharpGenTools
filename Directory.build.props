@@ -11,6 +11,5 @@
     <Tags>SharpGen;CodeGen;CPlusPlus;COM</Tags>
     <RepositoryUrl>https://github.com/jkoritzinsky/SharpGenTools</RepositoryUrl>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)/SharpGenTools.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
 </Project>
