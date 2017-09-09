@@ -9,7 +9,6 @@
 
   <UsingTask AssemblyFile="$(SharpGenSdkAssembly)" TaskName="SharpPatch" />
   <UsingTask AssemblyFile="$(SharpGenSdkAssembly)" TaskName="SharpGen" />
-  <UsingTask AssemblyFile="$(SharpGenSdkAssembly)" TaskName="ResolveBestBindMapping" />
 
   <Target Name="GetMappingsFromProjectReferences">
     <MSBuild
@@ -23,22 +22,50 @@
     </MSBuild>
   </Target>
 
-  <Target Name="GetMappingsFromPackageReferences">
-    <ResolveBestBindMapping
-      UnresolvedPackageBindMappings="@(UnresolvedPackageBindMapping)"
-      TargetFramework="$(TargetFramework)"
-    >
-      <Output TaskParameter="ResolvedPackageBindMappings" ItemName="SharpGenMapping" />
-    </ResolveBestBindMapping>
+  <PropertyGroup>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);GenerateConsumerBindMappingFile;GenerateTfmSpecificConsumerProps</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <ItemGroup>
+      <TfmConsumerProps Include="$(MSBuildProjectDirectory)/$(IntermediateOutputPath)SharpGen/$(PackageId).props">
+        <PackagePath>build/$(TargetFramework);buildMultiTargeting/$(TargetFramework)</PackagePath>
+        <Pack>true</Pack>
+      </TfmConsumerProps>
+      <SharpGenConsumerBindMappingFile Include="$(MSBuildProjectDirectory)/$(IntermediateOutputPath)SharpGen/$(SharpGenConsumerBindMappingConfigId).BindMapping.xml">
+        <PackagePath>build/$(TargetFramework);buildMultiTargeting/$(TargetFramework)</PackagePath>
+        <Pack>true</Pack>
+      </SharpGenConsumerBindMappingFile>
+      <TfmSpecificPackageFile Include="@(TfmConsumerProps);@(SharpGenConsumerBindMappingFile)" />
+  </ItemGroup>
+
+  <Target
+    Name="GenerateTfmSpecificConsumerProps"
+    DependsOnTargets="GenerateConsumerBindMappingFile"
+    Outputs="@(TfmConsumerProps)"
+  >
+    <PropertyGroup>
+      <EmbeddedConsumerProp>$</EmbeddedConsumerProp>
+    </PropertyGroup>
+    <ItemGroup>
+      <TfmConsumerPropsLines Include="&lt;Project&gt;" />
+      <TfmConsumerPropsLines Include="&lt;ItemGroup&gt;" />
+      <TfmConsumerPropsLines Include='&lt;SharpGenMapping Include=&quot;$(EmbeddedConsumerProp)(MSBuildThisFileDirectory)/$(SharpGenConsumerBindMappingConfigId).BindMapping.xml&quot;/&gt;' />
+      <TfmConsumerPropsLines Include="&lt;/ItemGroup&gt;" />
+      <TfmConsumerPropsLines Include="&lt;/Project&gt;" />
+    </ItemGroup>
+
+    <WriteLinesToFile
+      File="@(TfmConsumerProps)"
+      Lines="@(TfmConsumerPropsLines)"
+      Overwrite="true"
+     />
   </Target>
   
   <Target
-    Name="CorePrepareSharpGen"
-    DependsOnTargets="">
+    Name="CorePrepareSharpGen">
     <ItemGroup>
       <Compile Remove="$(IntermediateOutputPath)/SharpGen/**/*.cs" />
       <SharpGenGeneratedSource Include="$(IntermediateOutputPath)/SharpGen/**/*.cs" />
-      <SharpGenConsumerBindMappingFile Include="$(MSBuildProjectDirectory)/$(IntermediateOutputPath)SharpGen/$(SharpGenConsumerBindMappingConfigId).BindMapping.xml" />
     </ItemGroup>
   </Target>
 
@@ -47,10 +74,8 @@
     BeforeTargets="CoreCompile"
     DependsOnTargets="PrepareForBuild;
                       GetMappingsFromProjectReferences;
-                      GetMappingsFromPackageReferences;
                       CoreGenerateSharpGenBindings;
-                      GenerateConsumerBindMappingFile;
-                      GenerateConsumerProps"
+                      GenerateConsumerBindMappingFile"
     />
 
   <Target
@@ -84,8 +109,7 @@
     Name="GenerateConsumerBindMappingFile"
     DependsOnTargets="CoreGenerateSharpGenBindings"
     Outputs="@(SharpGenConsumerBindMappingFile)"
-  >
-  </Target>
+  />
   
   <Target Name="CleanSharpGenBindings" BeforeTargets="Clean">
     <RemoveDir Directories="$(BaseIntermediateOutputPath)/**/SharpGen" />
@@ -127,50 +151,4 @@
     Inputs="@(IntermediateAssembly)"
     Outputs="@(IntermediateAssembly->'%(FullPath).check')"
   />
-
-  <Target Name="GenerateConsumerProps">
-    <PropertyGroup>
-      <EmbeddedConsumerProp>$</EmbeddedConsumerProp>
-    </PropertyGroup>
-    <ItemGroup>
-      <ConsumerPropsLines Include="&lt;Project&gt;" />
-      <ConsumerPropsLines Include="&lt;ItemGroup&gt;" />
-      <ConsumerPropsLines Include='&lt;UnresolvedPackageBindMapping Include=&quot;$(SharpGenConsumerBindMappingConfigId)&quot;&gt;' />
-      <ConsumerPropsLines Include='&lt;BasePath&gt;$(EmbeddedConsumerProp)(MSBuildThisFileDirectory)/../tools/SharpGen&lt;/BasePath&gt;' />
-      <ConsumerPropsLines Include='&lt;TargetFrameworks&gt;$([System.String]::new("$(TargetFrameworks)"))&lt;/TargetFrameworks&gt;' Condition="'$(TargetFrameworks)' != ''" />
-      <ConsumerPropsLines Include='&lt;TargetFrameworks&gt;$(TargetFramework)&lt;/TargetFrameworks&gt;' Condition="'$(TargetFrameworks)' == ''" />
-      <ConsumerPropsLines Include="&lt;/UnresolvedPackageBindMapping&gt;" />
-      <ConsumerPropsLines Include="&lt;/ItemGroup&gt;" />
-      <ConsumerPropsLines Include="&lt;/Project&gt;" />
-      <ConsumerProps Include="$(MSBuildProjectDirectory)/obj/$(Configuration)/$(PackageId).props" />
-    </ItemGroup>
-
-    <WriteLinesToFile
-      File="@(ConsumerProps)"
-      Lines="@(ConsumerPropsLines)"
-      Overwrite="true"
-     />
-
-  </Target>
-
-  <Target
-    Name="PackBindMappingFiles"
-    DependsOnTargets="GenerateConsumerProps"
-    BeforeTargets="GenerateNuspec"
-  >
-    <ItemGroup>
-      <_PackageFiles Include="$(MSBuildProjectDirectory)/obj/$(Configuration)/**/$(SharpGenConsumerBindMappingConfigId).BindMapping.xml">
-        <PackagePath>tools\SharpGen\</PackagePath>
-        <Visible>false</Visible>
-        <BuildAction>Content</BuildAction>
-      </_PackageFiles>
-    </ItemGroup>
-    <ItemGroup>
-      <_PackageFiles Include="@(ConsumerProps)">
-        <PackagePath>build;buildMultiTargeting</PackagePath>
-        <Visible>false</Visible>
-        <BuildAction>Content</BuildAction>
-      </_PackageFiles>
-    </ItemGroup>
-  </Target>
 </Project>
