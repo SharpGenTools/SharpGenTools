@@ -74,7 +74,6 @@
     BeforeTargets="CoreCompile"
     DependsOnTargets="PrepareForBuild;
                       GetMappingsFromProjectReferences;
-                      GetMappingsFromPackageReferences;
                       CoreGenerateSharpGenBindings;
                       GenerateConsumerBindMappingFile"
     />
