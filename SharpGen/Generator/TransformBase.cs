@@ -17,6 +17,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using Microsoft.CodeAnalysis;
 using SharpGen.CppModel;
 using SharpGen.Logging;
 using SharpGen.Model;
@@ -26,7 +27,9 @@ namespace SharpGen.Generator
     /// <summary>
     /// Base class to convert a C++ type to a C# type.
     /// </summary>
-    public abstract class TransformBase
+    public abstract class TransformBase<TCsElement, TCppElement> : ITransform<TCsElement, TCppElement>
+        where TCsElement : CsBase
+        where TCppElement : CppElement
     {
         /// <summary>
         /// Initializes this instance with the specified <see cref="TransformManager"/>.
@@ -61,12 +64,14 @@ namespace SharpGen.Generator
         /// </summary>
         /// <param name="cppElement">The C++ element.</param>
         /// <returns>The C# element created and registered to the <see cref="TransformManager"/></returns>
-        public abstract CsBase Prepare(CppElement cppElement);
+        public abstract TCsElement Prepare(TCppElement cppElement);
 
         /// <summary>
         /// Processes the specified C# element to complete the mapping process between the C++ and C# element.
         /// </summary>
         /// <param name="csElement">The C# element.</param>
-        public abstract void Process(CsBase csElement);
+        public abstract void Process(TCsElement csElement);
+
+        public abstract SyntaxNode GenerateCodeForElement(TCsElement csElement);
     }
 }

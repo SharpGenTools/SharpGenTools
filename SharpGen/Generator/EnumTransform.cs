@@ -22,23 +22,27 @@ using SharpGen.Logging;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
+using Microsoft.CodeAnalysis;
 
 namespace SharpGen.Generator
 {
     /// <summary>
     /// Transforms a C++ enum to a C# enum definition.
     /// </summary>
-    public class EnumTransform : TransformBase
+    public class EnumTransform : TransformBase<CsEnum, CppEnum>
     {
+        public override SyntaxNode GenerateCodeForElement(CsEnum csElement)
+        {
+            throw new System.NotImplementedException();
+        }
+
         /// <summary>
         /// Prepares the specified C++ element to a C# element.
         /// </summary>
         /// <param name="cppElement">The C++ element.</param>
         /// <returns>The C# element created and registered to the <see cref="TransformManager"/></returns>
-        public override CsBase Prepare(CppElement cppElement)
+        public override CsEnum Prepare(CppEnum cppEnum)
         {
-            var cppEnum = (CppEnum) cppElement;
-
             // Create C# enum
             var newEnum = new CsEnum
             {
@@ -57,19 +61,10 @@ namespace SharpGen.Generator
         }
 
         /// <summary>
-        /// Processes the specified C# element to complete the mapping process between the C++ and C# element.
-        /// </summary>
-        /// <param name="csElement">The C# element.</param>
-        public override void Process(CsBase csElement)
-        {
-            Process((CsEnum)csElement);
-        }
-        
-        /// <summary>
         /// Maps a C++ Enum to a C# enum.
         /// </summary>
         /// <param name="newEnum">the C# enum.</param>
-        private void Process(CsEnum newEnum)
+        public override void Process(CsEnum newEnum)
         {
             var cppEnum = (CppEnum) newEnum.CppElement;
 

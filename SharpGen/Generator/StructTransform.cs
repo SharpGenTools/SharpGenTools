@@ -24,15 +24,21 @@ using System.Text.RegularExpressions;
 using SharpGen.Logging;
 using SharpGen.CppModel;
 using SharpGen.Model;
+using Microsoft.CodeAnalysis;
 
 namespace SharpGen.Generator
 {
     /// <summary>
     /// Transforms a C++ struct to a C# struct.
     /// </summary>
-    public class StructTransform : TransformBase
+    public class StructTransform : TransformBase<CsStruct, CppStruct>
     {
         private readonly Dictionary<Regex, string> _mapMoveStructToInner = new Dictionary<Regex, string>();
+
+        public override SyntaxNode GenerateCodeForElement(CsStruct csElement)
+        {
+            throw new System.NotImplementedException();
+        }
 
         /// <summary>
         /// Moves a C++ struct to an inner C# struct.
@@ -49,10 +55,8 @@ namespace SharpGen.Generator
         /// </summary>
         /// <param name="cppElement">The c++ struct.</param>
         /// <returns></returns>
-        public override CsBase Prepare(CppElement cppElement)
+        public override CsStruct Prepare(CppStruct cppStruct)
         {
-            var cppStruct = (CppStruct) cppElement;
-
             // Create a new C# struct
             var nameSpace = Manager.ResolveNamespace(cppStruct);
             var csStruct = new CsStruct(cppStruct)
@@ -70,21 +74,11 @@ namespace SharpGen.Generator
             return csStruct;
         }
 
-
-        /// <summary>
-        /// Processes the specified C# element to complete the mapping process between the C++ and C# element.
-        /// </summary>
-        /// <param name="csElement">The C# element.</param>
-        public override void Process(CsBase csElement)
-        {
-            Process((CsStruct)csElement);
-        }
-
         /// <summary>
         /// Maps the C++ struct to C# struct.
         /// </summary>
         /// <param name="csStruct">The c sharp struct.</param>
-        private void Process(CsStruct csStruct)
+        public override void Process(CsStruct csStruct)
         {
             // TODO: this mapping must be robust. Current calculation for field offset is not always accurate for union.
             // TODO: need to handle align/packing correctly.

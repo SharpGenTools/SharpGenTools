@@ -665,20 +665,20 @@ namespace SharpGen.Generator
             var selectedCSharpType = new List<CsBase>();
 
             // Prepare transform by defining/registering all types to process
-            PrepareTransform<CppEnum>(EnumTransform, selectedCSharpType);
-            PrepareTransform<CppStruct>(StructTransform, selectedCSharpType);
-            PrepareTransform<CppInterface>(InterfaceTransform, selectedCSharpType);
-            PrepareTransform<CppFunction>(MethodTransform, selectedCSharpType);
+            PrepareTransform(EnumTransform, selectedCSharpType);
+            PrepareTransform(StructTransform, selectedCSharpType);
+            PrepareTransform(InterfaceTransform, selectedCSharpType);
+            PrepareTransform<CppFunction, CsFunction>(MethodTransform, selectedCSharpType);
 
             // Transform all types
             Logger.Progress(65, "Transforming enums...");
-            ProcessTransform<CsEnum>(EnumTransform, selectedCSharpType);
+            ProcessTransform(EnumTransform, selectedCSharpType);
             Logger.Progress(70, "Transforming structs...");
-            ProcessTransform<CsStruct>(StructTransform, selectedCSharpType);
+            ProcessTransform(StructTransform, selectedCSharpType);
             Logger.Progress(75, "Transforming interfaces...");
-            ProcessTransform<CsInterface>(InterfaceTransform, selectedCSharpType);
+            ProcessTransform(InterfaceTransform, selectedCSharpType);
             Logger.Progress(80, "Transforming functions...");
-            ProcessTransform<CsFunction>(MethodTransform, selectedCSharpType);
+            ProcessTransform<CsFunction, CppFunction>(MethodTransform, selectedCSharpType);
 
             foreach (CsAssembly cSharpAssembly in Assemblies)
                 foreach (var ns in cSharpAssembly.Namespaces)
@@ -694,15 +694,17 @@ namespace SharpGen.Generator
         /// <summary>
         /// Prepares a transformer from C++ to C# model.
         /// </summary>
-        /// <typeparam name="T">The C++ type of data to process</typeparam>
+        /// <typeparam name="TCppElement">The C++ type of data to process</typeparam>
         /// <param name="transform">The transform.</param>
         /// <param name="typeToProcess">The type to process.</param>
-        private void PrepareTransform<T>(TransformBase transform, List<CsBase> typeToProcess) where T : CppElement
+        private void PrepareTransform<TCppElement, TCsElement>(ITransform<TCsElement, TCppElement> transform, List<CsBase> typeToProcess)
+            where TCppElement : CppElement
+            where TCsElement : CsBase
         {
             // Predefine all structs, typedefs and interfaces
             foreach (var cppInclude in IncludeToProcess)
             {
-                foreach (var cppItem in cppInclude.Iterate<T>())
+                foreach (var cppItem in cppInclude.Iterate<TCppElement>())
                 {
                     Logger.RunInContext(cppItem.ToString(), () =>
                                                                 {
@@ -724,7 +726,7 @@ namespace SharpGen.Generator
         /// <typeparam name="T">The C++ type of data to process</typeparam>
         /// <param name="transform">The transform.</param>
         /// <param name="typeToProcess">The type to process.</param>
-        private void ProcessTransform<T>(TransformBase transform, IEnumerable<CsBase> typeToProcess) where T : CsBase
+        private void ProcessTransform<T, TCppElement>(ITransform<T, TCppElement> transform, IEnumerable<CsBase> typeToProcess) where T : CsBase where TCppElement: CppElement
         {
             foreach (var csItem in typeToProcess.OfType<T>())
             {

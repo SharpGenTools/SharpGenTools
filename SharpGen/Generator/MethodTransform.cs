@@ -23,153 +23,77 @@ using SharpGen.Logging;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
+using Microsoft.CodeAnalysis;
 
 namespace SharpGen.Generator
 {
     /// <summary>
     /// Transform a C++ method/function to a C# method.
     /// </summary>
-    public class MethodTransform : TransformBase
+    public class MethodTransform : TransformBase<CsMethod, CppMethod>, ITransform<CsFunction, CppFunction>
     {
+
+        public SyntaxNode GenerateCodeForElement(CsFunction csElement)
+        {
+            return GenerateCodeForElement((CsMethod)csElement);
+        }
+
+        public override SyntaxNode GenerateCodeForElement(CsMethod csElement)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Prepares the specified C++ element to a C# element.
         /// </summary>
         /// <param name="cppElement">The C++ element.</param>
         /// <returns>The C# element created and registered to the <see cref="TransformManager"/></returns>
-        public override CsBase Prepare(CppElement cppElement)
+        public override CsMethod Prepare(CppMethod cppMethod) => new CsMethod(cppMethod);
+
+        public CsFunction Prepare(CppFunction cppFunction)
         {
-            var cppMethod = (CppMethod) cppElement;
-            var cSharpFunction = (cppElement is CppFunction) ? new CsFunction((CppFunction)cppMethod) : new CsMethod(cppMethod);
+            var cSharpFunction = new CsFunction(cppFunction);
+            // All functions must have a tag
+            var tag = cppFunction.GetTagOrDefault<MappingRule>();
 
-            if (cppElement is CppFunction)
+            if (tag == null || tag.CsClass == null)
             {
-                // All functions must have a tag
-                var tag = cppMethod.GetTagOrDefault<MappingRule>();
-
-                if (tag == null || tag.CsClass == null)
-                {
-                    Logger.Error("CppFunction [{0}] is not tagged and attached to any Class/FunctionGroup", cppMethod);
-                    return null;
-                }
-
-                var csClass = Manager.FindCsClassContainer(tag.CsClass);
-
-                if (csClass == null)
-                {
-                    Logger.Error("CppFunction [{0}] is not attached to a Class/FunctionGroup", cppMethod);
-                    return null;
-                }
-
-                // Set the DllName for this function
-                ((CsFunction)cSharpFunction).DllName = tag.FunctionDllName;
-
-                // Add the function to the ClassType
-                csClass.Add(cSharpFunction);
-
-                // Map the C++ name to the CSharpType
-                Manager.BindType(cppMethod.Name, cSharpFunction);
+                Logger.Error("CppFunction [{0}] is not tagged and attached to any Class/FunctionGroup", cppFunction);
+                return null;
             }
+
+            var csClass = Manager.FindCsClassContainer(tag.CsClass);
+
+            if (csClass == null)
+            {
+                Logger.Error("CppFunction [{0}] is not attached to a Class/FunctionGroup", cppFunction);
+                return null;
+            }
+
+            // Set the DllName for this function
+            cSharpFunction.DllName = tag.FunctionDllName;
+
+            // Add the function to the ClassType
+            csClass.Add(cSharpFunction);
+
+            // Map the C++ name to the CSharpType
+            Manager.BindType(cppFunction.Name, cSharpFunction);
 
             return cSharpFunction;
-        }
-
-        /// <summary>
-        /// Registers the native interop signature.
-        /// </summary>
-        /// <param name="csMethod">The cs method.</param>
-        private void RegisterNativeInteropSignature(CsMethod csMethod)
-        {
-            // Tag if the method is a function
-            var cSharpInteropCalliSignature = new InteropMethodSignature { IsFunction = (csMethod is CsFunction) };
-
-            // Handle Return Type parameter
-            // MarshalType.Type == null, then check that it is a structure
-            if (csMethod.ReturnType.PublicType is CsStruct || csMethod.ReturnType.PublicType is CsEnum)
-            {
-                // Return type and 1st parameter are implicitly a pointer to the structure to fill 
-                if (csMethod.IsReturnStructLarge)
-                {
-                    cSharpInteropCalliSignature.ReturnType = typeof(void*);
-                    cSharpInteropCalliSignature.ParameterTypes.Add(typeof(void*));
-                }
-                else
-                {
-                    // Patch for Mono bug with structs marshalling and calli.
-                    var returnQualifiedName = csMethod.ReturnType.PublicType.QualifiedName;
-                    if (returnQualifiedName == Manager.GlobalNamespace.GetTypeName("Result"))
-                        cSharpInteropCalliSignature.ReturnType = typeof (int);
-                    else if (returnQualifiedName == Manager.GlobalNamespace.GetTypeName("PointerSize"))
-                        cSharpInteropCalliSignature.ReturnType = typeof(void*);
-                    else
-                        cSharpInteropCalliSignature.ReturnType = csMethod.ReturnType.PublicType.QualifiedName;
-                }
-            }
-            else if (csMethod.ReturnType.MarshalType.Type != null)
-            {
-                Type type = csMethod.ReturnType.MarshalType.Type;
-                cSharpInteropCalliSignature.ReturnType = type;
-            }
-            else
-            {
-                throw new ArgumentException(string.Format(System.Globalization.CultureInfo.InvariantCulture, "Invalid return type {0} for method {1}", csMethod.ReturnType.PublicType.QualifiedName, csMethod.CppElement));
-            }
-
-            // Handle Parameters
-            foreach (var param in csMethod.Parameters)
-            {
-                InteropType interopType;
-                string publicName = param.PublicType.QualifiedName;
-                // Patch for Mono bug with structs marshalling and calli.
-                if (publicName == Manager.GlobalNamespace.GetTypeName("PointerSize"))
-                {
-                    interopType = typeof(void*);
-                }
-                else if (param.MarshalType.Type == null)
-                {
-                    if (param.PublicType is CsStruct)
-                    {
-                        // If parameter is a struct, then a LocalInterop is needed
-                        interopType = param.PublicType.QualifiedName;
-                        cSharpInteropCalliSignature.IsLocal = true;
-                    }
-                    else
-                    {
-                        throw new ArgumentException(string.Format(System.Globalization.CultureInfo.InvariantCulture, "Invalid parameter {0} for method {1}", param.PublicType.QualifiedName, csMethod.CppElement));
-                    }
-                }
-                else
-                {
-                    Type type = param.MarshalType.Type;
-                    // Patch for Mono bug with structs marshalling and calli.
-                    if (type == typeof(IntPtr))
-                        type = typeof(void*);
-                    interopType = type;
-                }
-
-                cSharpInteropCalliSignature.ParameterTypes.Add(interopType);
-            }
-
-            var assembly = csMethod.GetParent<CsAssembly>();
-            cSharpInteropCalliSignature = assembly.Interop.Add(cSharpInteropCalliSignature);
-
-            csMethod.Interop = cSharpInteropCalliSignature;
         }
 
         /// <summary>
         /// Processes the specified C# element to complete the mapping process between the C++ and C# element.
         /// </summary>
         /// <param name="csElement">The C# element.</param>
-        public override void Process(CsBase csElement)
+        public override void Process(CsMethod csElement)
         {
             try
             {
-                var csMethod = (CsMethod)csElement;
+                var csMethod = csElement;
                 Logger.PushContext("Method {0}", csMethod.CppElement);
 
-                Process(csMethod);
-
-                if (csMethod is CsFunction)
-                    csMethod.Visibility = csMethod.Visibility | Visibility.Static;
+                ProcessMethod(csMethod);
 
                 RegisterNativeInteropSignature(csMethod);
             }
@@ -179,11 +103,17 @@ namespace SharpGen.Generator
             }
         }
 
+        public void Process(CsFunction csFunction)
+        {
+            csFunction.Visibility = csFunction.Visibility | Visibility.Static;
+            Process((CsMethod)csFunction);
+        }
+
         /// <summary>
         /// Processes the specified method.
         /// </summary>
         /// <param name="method">The method.</param>
-        private void Process(CsMethod method)
+        private void ProcessMethod(CsMethod method)
         {
             var cppMethod = (CppMethod)method.CppElement;
 
@@ -252,7 +182,7 @@ namespace SharpGen.Generator
                                 cppAttribute = ParamAttribute.Out;
                         }
 
-                        if ( (cppAttribute & ParamAttribute.In) != 0 || (cppAttribute & ParamAttribute.InOut) != 0)
+                        if ((cppAttribute & ParamAttribute.In) != 0 || (cppAttribute & ParamAttribute.InOut) != 0)
                         {
                             parameterAttribute = CsParameterAttribute.In;
 
@@ -349,9 +279,91 @@ namespace SharpGen.Generator
                 // Force IsString to be only string (due to Buffer attribute)
                 if (paramMethod.IsString)
                     paramMethod.IsArray = false;
-                                
+
                 method.Add(paramMethod);
-            }            
+            }
+        }
+
+        /// <summary>
+        /// Registers the native interop signature.
+        /// </summary>
+        /// <param name="csMethod">The cs method.</param>
+        private void RegisterNativeInteropSignature(CsMethod csMethod)
+        {
+            // Tag if the method is a function
+            var cSharpInteropCalliSignature = new InteropMethodSignature { IsFunction = (csMethod is CsFunction) };
+
+            // Handle Return Type parameter
+            // MarshalType.Type == null, then check that it is a structure
+            if (csMethod.ReturnType.PublicType is CsStruct || csMethod.ReturnType.PublicType is CsEnum)
+            {
+                // Return type and 1st parameter are implicitly a pointer to the structure to fill 
+                if (csMethod.IsReturnStructLarge)
+                {
+                    cSharpInteropCalliSignature.ReturnType = typeof(void*);
+                    cSharpInteropCalliSignature.ParameterTypes.Add(typeof(void*));
+                }
+                else
+                {
+                    // Patch for Mono bug with structs marshalling and calli.
+                    var returnQualifiedName = csMethod.ReturnType.PublicType.QualifiedName;
+                    if (returnQualifiedName == Manager.GlobalNamespace.GetTypeName("Result"))
+                        cSharpInteropCalliSignature.ReturnType = typeof(int);
+                    else if (returnQualifiedName == Manager.GlobalNamespace.GetTypeName("PointerSize"))
+                        cSharpInteropCalliSignature.ReturnType = typeof(void*);
+                    else
+                        cSharpInteropCalliSignature.ReturnType = csMethod.ReturnType.PublicType.QualifiedName;
+                }
+            }
+            else if (csMethod.ReturnType.MarshalType.Type != null)
+            {
+                Type type = csMethod.ReturnType.MarshalType.Type;
+                cSharpInteropCalliSignature.ReturnType = type;
+            }
+            else
+            {
+                throw new ArgumentException(string.Format(System.Globalization.CultureInfo.InvariantCulture, "Invalid return type {0} for method {1}", csMethod.ReturnType.PublicType.QualifiedName, csMethod.CppElement));
+            }
+
+            // Handle Parameters
+            foreach (var param in csMethod.Parameters)
+            {
+                InteropType interopType;
+                string publicName = param.PublicType.QualifiedName;
+                // Patch for Mono bug with structs marshalling and calli.
+                if (publicName == Manager.GlobalNamespace.GetTypeName("PointerSize"))
+                {
+                    interopType = typeof(void*);
+                }
+                else if (param.MarshalType.Type == null)
+                {
+                    if (param.PublicType is CsStruct)
+                    {
+                        // If parameter is a struct, then a LocalInterop is needed
+                        interopType = param.PublicType.QualifiedName;
+                        cSharpInteropCalliSignature.IsLocal = true;
+                    }
+                    else
+                    {
+                        throw new ArgumentException(string.Format(System.Globalization.CultureInfo.InvariantCulture, "Invalid parameter {0} for method {1}", param.PublicType.QualifiedName, csMethod.CppElement));
+                    }
+                }
+                else
+                {
+                    Type type = param.MarshalType.Type;
+                    // Patch for Mono bug with structs marshalling and calli.
+                    if (type == typeof(IntPtr))
+                        type = typeof(void*);
+                    interopType = type;
+                }
+
+                cSharpInteropCalliSignature.ParameterTypes.Add(interopType);
+            }
+
+            var assembly = csMethod.GetParent<CsAssembly>();
+            cSharpInteropCalliSignature = assembly.Interop.Add(cSharpInteropCalliSignature);
+
+            csMethod.Interop = cSharpInteropCalliSignature;
         }
     }
 }
