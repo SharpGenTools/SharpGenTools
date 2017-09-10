@@ -540,7 +540,18 @@ namespace SharpGen.Generator
         public void Generate(string checkFilesPath)
         {
             Transform();
+            RunT4Generator();
+            // Update check files for all assemblies
+            var processTime = DateTime.Now;
+            foreach (CsAssembly assembly in Assemblies)
+            {
+                File.WriteAllText(Path.Combine(checkFilesPath, assembly.CheckFileName), "");
+                File.SetLastWriteTime(Path.Combine(checkFilesPath, assembly.CheckFileName), processTime);
+            }
+        }
 
+        private void RunT4Generator()
+        {
             if (Logger.HasErrors)
                 Logger.Fatal("Transform failed");
 
@@ -557,7 +568,7 @@ namespace SharpGen.Generator
             // Iterates on templates
             foreach (string templateName in templateNames)
             {
-                Logger.Progress(85 + (indexToGenerate*15/templateNames.Length), "Generating code for {0}...", templateName);
+                Logger.Progress(85 + (indexToGenerate * 15 / templateNames.Length), "Generating code for {0}...", templateName);
                 indexToGenerate++;
 
                 Logger.Message("\nGenerate {0}", templateName);
@@ -581,7 +592,7 @@ namespace SharpGen.Generator
                         directoryToCreate.Add(generatedDirectoryForAssembly);
                         if (Directory.Exists(generatedDirectoryForAssembly))
                         {
-                            foreach(var oldGeneratedFile in Directory.EnumerateFiles(generatedDirectoryForAssembly, "*.cs", SearchOption.AllDirectories))
+                            foreach (var oldGeneratedFile in Directory.EnumerateFiles(generatedDirectoryForAssembly, "*.cs", SearchOption.AllDirectories))
                             {
                                 try
                                 {
@@ -637,13 +648,6 @@ namespace SharpGen.Generator
                         }
                     }
                 }
-            }
-            // Update check files for all assemblies
-            var processTime = DateTime.Now;
-            foreach (CsAssembly assembly in Assemblies)
-            {
-                File.WriteAllText(Path.Combine(checkFilesPath, assembly.CheckFileName), "");
-                File.SetLastWriteTime(Path.Combine(checkFilesPath, assembly.CheckFileName), processTime);
             }
         }
 

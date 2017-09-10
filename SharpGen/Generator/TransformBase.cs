@@ -18,9 +18,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using Microsoft.CodeAnalysis;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SharpGen.CppModel;
 using SharpGen.Logging;
 using SharpGen.Model;
+using System.Linq;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SharpGen.Generator
 {
@@ -73,5 +77,27 @@ namespace SharpGen.Generator
         public abstract void Process(TCsElement csElement);
 
         public abstract SyntaxNode GenerateCodeForElement(TCsElement csElement);
+
+        protected DocumentationCommentTriviaSyntax GenerateDocumentationTrivia(CsBase csElement)
+        {
+            return DocumentationCommentTrivia(
+                    SyntaxKind.SingleLineDocumentationCommentTrivia,
+                    SingletonList<XmlNodeSyntax>(XmlText()
+                        .WithTextTokens(
+                            TokenList(Manager.GetDocItems(csElement).SelectMany(item =>
+                                new[]{
+                                    XmlTextLiteral(
+                                        TriviaList(
+                                            DocumentationCommentExterior("///")),
+                                        item,
+                                        item,
+                                        TriviaList()),
+                                    XmlTextNewLine(
+                                        TriviaList(),
+                                        "\n",
+                                        "\n",
+                                        TriviaList())
+                                }).ToArray()))));
+        }
     }
 }

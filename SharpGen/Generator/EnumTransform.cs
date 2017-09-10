@@ -23,6 +23,9 @@ using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
@@ -33,7 +36,52 @@ namespace SharpGen.Generator
     {
         public override SyntaxNode GenerateCodeForElement(CsEnum csElement)
         {
-            throw new System.NotImplementedException();
+            var enumDecl = EnumDeclaration(csElement.Name);
+            enumDecl = enumDecl.WithModifiers(
+                TokenList(
+                    Token(
+                        TriviaList(
+                            Trivia(
+                                GenerateDocumentationTrivia(csElement))),
+                                ParseToken(csElement.VisibilityName).Kind(),
+                                TriviaList())))
+                .WithBaseList(
+                    BaseList().
+                        WithTypes(SingletonSeparatedList<BaseTypeSyntax>
+                (
+                    SimpleBaseType(ParseTypeName(csElement.TypeName))
+                )))
+                .AddMembers(csElement.EnumItems.Select(item =>
+                {
+                    var itemDecl = EnumMemberDeclaration(item.Name);
+
+                    itemDecl = itemDecl.WithLeadingTrivia(Trivia(GenerateDocumentationTrivia(item)));
+
+                    if (!string.IsNullOrEmpty(item.Value))
+                    {
+                        itemDecl = itemDecl.WithEqualsValue(
+                        EqualsValueClause(
+                            CheckedExpression(
+                                SyntaxKind.UncheckedExpression,
+                                LiteralExpression(
+                                    SyntaxKind.NumericLiteralExpression,
+                                    Literal(int.Parse(item.Value))))));
+                    }
+                    return itemDecl;
+                }).ToArray());
+
+            if (csElement.IsFlag)
+            {
+                enumDecl = enumDecl.WithAttributeLists(new SyntaxList<AttributeListSyntax>
+                {
+                    AttributeList().WithAttributes(SingletonSeparatedList<AttributeSyntax>
+                    (
+                        Attribute(ParseName("System.FlagsAttribute"))
+                    ))
+                });
+            }
+
+            return enumDecl;
         }
 
         /// <summary>
