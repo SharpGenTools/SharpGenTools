@@ -247,14 +247,6 @@ namespace SharpGen.Config
         public string FunctionDllName { get; set; }
 
         /// <summary>
-        /// By default true for DLL import
-        /// </summary>
-        [XmlIgnore]
-        public bool? UseDllImport { get; set; }
-        [XmlAttribute("dllimport")]
-        public bool _UseDllImport_ { get { return UseDllImport.Value; } set { UseDllImport = value; } } public bool ShouldSerialize_UseDllImport_() { return UseDllImport != null; }
-
-        /// <summary>
         /// Used to duplicate methods taking pointers and generate an additional private method with pure pointer. This method
         /// is also disabling renaming
         /// </summary>

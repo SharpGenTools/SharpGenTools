@@ -44,7 +44,7 @@ namespace SharpGen.Generator
                             Trivia(
                                 GenerateDocumentationTrivia(csElement))),
                                 ParseToken(csElement.VisibilityName).Kind(),
-                                TriviaList())))
+                            TriviaList())))
                 .WithBaseList(
                     BaseList().
                         WithTypes(SingletonSeparatedList<BaseTypeSyntax>
@@ -53,9 +53,8 @@ namespace SharpGen.Generator
                 )))
                 .AddMembers(csElement.EnumItems.Select(item =>
                 {
-                    var itemDecl = EnumMemberDeclaration(item.Name);
-
-                    itemDecl = itemDecl.WithLeadingTrivia(Trivia(GenerateDocumentationTrivia(item)));
+                    var itemDecl = EnumMemberDeclaration(item.Name)
+                        .WithLeadingTrivia(Trivia(GenerateDocumentationTrivia(item)));
 
                     if (!string.IsNullOrEmpty(item.Value))
                     {

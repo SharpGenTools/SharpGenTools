@@ -27,6 +27,7 @@ namespace SharpGen.Model
     {
         public CsFunction(CppFunction cppMethod) : base(cppMethod)
         {
+            UseDllImport = true;
         }
 
         protected override int MaxSizeReturnParameter
@@ -40,7 +41,6 @@ namespace SharpGen.Model
         protected override void UpdateFromTag(MappingRule tag)
         {
             base.UpdateFromTag(tag);
-            UseDllImport = !tag.UseDllImport.HasValue || tag.UseDllImport.Value;
         }
 
         public string DllName { get; set; }
