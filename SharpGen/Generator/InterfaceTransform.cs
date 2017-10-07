@@ -48,7 +48,7 @@ namespace SharpGen.Generator
         /// <value>The method transformer.</value>
         private MethodTransform MethodTranform { get { return Manager.MethodTransform; } }
 
-        public override SyntaxNode GenerateCodeForElement(CsInterface csElement)
+        public override SyntaxNode GenerateCode(CsInterface csElement)
         {
             throw new NotImplementedException();
         }

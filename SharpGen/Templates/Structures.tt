@@ -183,17 +183,17 @@ foreach (var sharpStruct in Namespace.Structs)
 #>
             public <#= sharpStructItem.MarshalType.QualifiedName #> <#= sharpStructItem.Name #>;
 <#+
-					for(int i = 1; i < sharpStructItem.ArrayDimensionValue; i++) {
-		if (sharpStruct.ExplicitLayout) {
-			int arrayItemOffset = sharpStructItem.Offset + (sharpStructItem.SizeOf / sharpStructItem.ArrayDimensionValue ) * i;
+				for(int i = 1; i < sharpStructItem.ArrayDimensionValue; i++) {
+					if (sharpStruct.ExplicitLayout) {
+						int arrayItemOffset = sharpStructItem.Offset + (sharpStructItem.SizeOf / sharpStructItem.ArrayDimensionValue ) * i;
 #>
             [FieldOffset(<#= arrayItemOffset #>)]
 <#+			
-		}
+					}
 #>
             <#= sharpStructItem.MarshalType.QualifiedName #> __<#= sharpStructItem.Name #><#= i #>;
 <#+
-					}
+				}
 		    } else if ( sharpStructItemAsStruct != null && sharpStructItemAsStruct.HasMarshalType) {
 #>
             public <#= sharpStructItem.MarshalType.QualifiedName #>.__Native <#= sharpStructItem.Name #>;
@@ -250,20 +250,20 @@ foreach (var sharpStruct in Namespace.Structs)
 			} else  if (sharpStructItem.IsArray) {
 				if (sharpStructItem.IsFixedArrayOfStruct) {
 #>
-            fixed (void* __to = &this.<#= sharpStructItem.Name #>[0]) fixed (void* __from = &@ref.<#= sharpStructItem.Name #>) SharpDX.Utilities.CopyMemory((IntPtr) __to, (IntPtr) __from, <#= sharpStructItem.ArrayDimension #>*sizeof ( <#= sharpStructItem.MarshalType.QualifiedName #>));
+            fixed (void* __to = &this.<#= sharpStructItem.Name #>[0]) fixed (void* __from = &@ref.<#= sharpStructItem.Name #>) <#= Generator.GlobalNamespace.Name #>.Utilities.CopyMemory((IntPtr) __to, (IntPtr) __from, <#= sharpStructItem.ArrayDimension #>*sizeof ( <#= sharpStructItem.MarshalType.QualifiedName #>));
 <#+
 				} else {
-					if (sharpStructItem.MarshalType.QualifiedName == "char") {
+					if (sharpStructItem.MarshalType.QualifiedName == "System.Char") {
 #>
-            fixed (char* __ptr = &@ref.<#= sharpStructItem.Name #>) this.<#= sharpStructItem.Name #> = SharpDX.Utilities.PtrToStringUni((IntPtr)__ptr, <#= sharpStructItem.ArrayDimension #>);
+            fixed (char* __ptr = &@ref.<#= sharpStructItem.Name #>) this.<#= sharpStructItem.Name #> = <#= Generator.GlobalNamespace.Name #>.Utilities.PtrToStringUni((IntPtr)__ptr, <#= sharpStructItem.ArrayDimension #>);
 <#+
-					} else if (sharpStructItem.PublicType.QualifiedName == "System.String" && sharpStructItem.MarshalType.QualifiedName == "byte") {
+					} else if (sharpStructItem.PublicType.QualifiedName == "System.String" && sharpStructItem.MarshalType.QualifiedName == "System.Byte") {
 #>
-            fixed (void* __ptr = &@ref.<#= sharpStructItem.Name #>) this.<#= sharpStructItem.Name #> = SharpDX.Utilities.PtrToStringAnsi((IntPtr)__ptr, <#= sharpStructItem.ArrayDimension #>);
+            fixed (void* __ptr = &@ref.<#= sharpStructItem.Name #>) this.<#= sharpStructItem.Name #> = <#= Generator.GlobalNamespace.Name #>.Utilities.PtrToStringAnsi((IntPtr)__ptr, <#= sharpStructItem.ArrayDimension #>);
 <#+
 					} else {
 #>
-            fixed (void* __to = &this.<#= sharpStructItem.Name #>[0]) fixed (void* __from = &@ref.<#= sharpStructItem.Name #>) SharpDX.Utilities.CopyMemory((IntPtr) __to, (IntPtr) __from, <#= sharpStructItem.ArrayDimension #>*sizeof ( <#= sharpStructItem.MarshalType.QualifiedName #>));
+            fixed (void* __to = &this.<#= sharpStructItem.Name #>[0]) fixed (void* __from = &@ref.<#= sharpStructItem.Name #>) <#= Generator.GlobalNamespace.Name #>.Utilities.CopyMemory((IntPtr) __to, (IntPtr) __from, <#= sharpStructItem.ArrayDimension #>*sizeof ( <#= sharpStructItem.MarshalType.QualifiedName #>));
 <#+
 					}
 				}
@@ -314,22 +314,22 @@ foreach (var sharpStruct in Namespace.Structs)
 			} else  if (sharpStructItem.IsArray) {
 				if (sharpStructItem.IsFixedArrayOfStruct) {
 #>
-            fixed (void* __to = &@ref.<#= sharpStructItem.Name #>) fixed (void* __from = &this.<#= sharpStructItem.Name #>[0]) SharpDX.Utilities.CopyMemory((IntPtr) __to, (IntPtr) __from, <#= sharpStructItem.ArrayDimension #>*sizeof ( <#= sharpStructItem.MarshalType.QualifiedName #>));
+            fixed (void* __to = &@ref.<#= sharpStructItem.Name #>) fixed (void* __from = &this.<#= sharpStructItem.Name #>[0]) <#= Generator.GlobalNamespace.Name #>.Utilities.CopyMemory((IntPtr) __to, (IntPtr) __from, <#= sharpStructItem.ArrayDimension #>*sizeof ( <#= sharpStructItem.MarshalType.QualifiedName #>));
 <#+
 				} else {
-					if (sharpStructItem.MarshalType.QualifiedName == "char") {
+					if (sharpStructItem.MarshalType.QualifiedName == "System.Char") {
 #>
-            fixed (char* __psrc = this.<#= sharpStructItem.Name #>) fixed (char* __ptr = &@ref.<#= sharpStructItem.Name #>) Utilities.CopyMemory((IntPtr)__ptr, (IntPtr)__psrc, <#= sharpStructItem.Name #>.Length * 2);
+            fixed (char* __psrc = this.<#= sharpStructItem.Name #>) fixed (char* __ptr = &@ref.<#= sharpStructItem.Name #>) <#= Generator.GlobalNamespace.Name #>.Utilities.CopyMemory((IntPtr)__ptr, (IntPtr)__psrc, <#= sharpStructItem.Name #>.Length * 2);
 <#+
 					} else if (sharpStructItem.PublicType.QualifiedName == "System.String") {
 #>
-            IntPtr <#= sharpStructItem.Name #>_ = Utilities.StringToHGlobalAnsi(this.<#= sharpStructItem.Name #>);
-            fixed (void* __ptr = &@ref.<#= sharpStructItem.Name #>) Utilities.CopyMemory((IntPtr)__ptr, <#= sharpStructItem.Name #>_, this.<#= sharpStructItem.Name #>.Length);
+            IntPtr <#= sharpStructItem.Name #>_ = <#= Generator.GlobalNamespace.Name #>.Utilities.StringToHGlobalAnsi(this.<#= sharpStructItem.Name #>);
+            fixed (void* __ptr = &@ref.<#= sharpStructItem.Name #>) <#= Generator.GlobalNamespace.Name #>.Utilities.CopyMemory((IntPtr)__ptr, <#= sharpStructItem.Name #>_, this.<#= sharpStructItem.Name #>.Length);
             Marshal.FreeHGlobal( <#= sharpStructItem.Name #>_);
 <#+
 					} else {
 #>
-            fixed (void* __to = &@ref.<#= sharpStructItem.Name #>) fixed (void* __from = &this.<#= sharpStructItem.Name #>[0]) SharpDX.Utilities.CopyMemory((IntPtr) __to, (IntPtr) __from, <#= sharpStructItem.ArrayDimension #>*sizeof ( <#= sharpStructItem.MarshalType.QualifiedName #>));
+            fixed (void* __to = &@ref.<#= sharpStructItem.Name #>) fixed (void* __from = &this.<#= sharpStructItem.Name #>[0]) <#= Generator.GlobalNamespace.Name #>.Utilities.CopyMemory((IntPtr) __to, (IntPtr) __from, <#= sharpStructItem.ArrayDimension #>*sizeof ( <#= sharpStructItem.MarshalType.QualifiedName #>));
 <#+
 					}
 				}
@@ -338,11 +338,11 @@ foreach (var sharpStruct in Namespace.Structs)
 						if (!sharpStructItem.IsWideChar) {
 				// Copy string
 #>
-            @ref.<#= sharpStructItem.Name #> = ( this.<#= sharpStructItem.Name #> == null )?IntPtr.Zero : Utilities.StringToHGlobalAnsi(this.<#= sharpStructItem.Name #>);
+            @ref.<#= sharpStructItem.Name #> = ( this.<#= sharpStructItem.Name #> == null )?IntPtr.Zero : <#= Generator.GlobalNamespace.Name #>.Utilities.StringToHGlobalAnsi(this.<#= sharpStructItem.Name #>);
 <#+
 						} else {
 #>
-            @ref.<#= sharpStructItem.Name #> = ( this.<#= sharpStructItem.Name #> == null )?IntPtr.Zero : Utilities.StringToHGlobalUni(this.<#= sharpStructItem.Name #>);
+            @ref.<#= sharpStructItem.Name #> = ( this.<#= sharpStructItem.Name #> == null )?IntPtr.Zero : <#= Generator.GlobalNamespace.Name #>.Utilities.StringToHGlobalUni(this.<#= sharpStructItem.Name #>);
 <#+
 						}							
 					} else if ( sharpStructItemAsStruct != null && sharpStructItemAsStruct.HasMarshalType) {

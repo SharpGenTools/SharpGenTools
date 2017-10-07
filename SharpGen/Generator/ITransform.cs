@@ -15,6 +15,6 @@ namespace SharpGen.Generator
 
         void Process(TCsElement csElement);
 
-        SyntaxNode GenerateCodeForElement(TCsElement csElement);
+        SyntaxNode GenerateCode(TCsElement csElement);
     }
 }

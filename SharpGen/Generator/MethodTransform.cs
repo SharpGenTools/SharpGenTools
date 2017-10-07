@@ -33,12 +33,12 @@ namespace SharpGen.Generator
     public class MethodTransform : TransformBase<CsMethod, CppMethod>, ITransform<CsFunction, CppFunction>
     {
 
-        public SyntaxNode GenerateCodeForElement(CsFunction csElement)
+        public SyntaxNode GenerateCode(CsFunction csElement)
         {
-            return GenerateCodeForElement((CsMethod)csElement);
+            return GenerateCode((CsMethod)csElement);
         }
 
-        public override SyntaxNode GenerateCodeForElement(CsMethod csElement)
+        public override SyntaxNode GenerateCode(CsMethod csElement)
         {
             throw new NotImplementedException();
         }
