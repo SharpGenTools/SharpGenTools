@@ -159,6 +159,12 @@ namespace SharpGen.Generator
         public string GeneratedCodeFolder { get; internal set; }
         public bool IncludeAssemblyNameFolder { get; internal set; }
 
+
+        /// <summary>
+        /// Use Roslyn to generate code.
+        /// </summary>
+        public bool UseRoslynCodeGen { get; set; }
+
         /// <summary>
         /// Initializes this instance with the specified C++ module and config.
         /// </summary>
@@ -540,7 +546,14 @@ namespace SharpGen.Generator
         public void Generate(string checkFilesPath)
         {
             Transform();
-            RunT4Generator();
+            if (!UseRoslynCodeGen)
+            {
+                RunT4Generator();
+            }
+            else
+            {
+                RunRoslynGenerator();
+            }
             // Update check files for all assemblies
             var processTime = DateTime.Now;
             foreach (CsAssembly assembly in Assemblies)
@@ -548,6 +561,11 @@ namespace SharpGen.Generator
                 File.WriteAllText(Path.Combine(checkFilesPath, assembly.CheckFileName), "");
                 File.SetLastWriteTime(Path.Combine(checkFilesPath, assembly.CheckFileName), processTime);
             }
+        }
+
+        private void RunRoslynGenerator()
+        {
+            throw new NotImplementedException();
         }
 
         private void RunT4Generator()
