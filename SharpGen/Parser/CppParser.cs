@@ -1320,6 +1320,10 @@ namespace SharpGen.Parser
                     if (!isIncludeFullyAttached && !_includeAttachedTypes[includeId].Contains(elementName))
                         continue;
 
+                    // Ignore CastXML built-in functions
+                    if (isIncludeFullyAttached && elementName.StartsWith("__builtin"))
+                        continue;
+
                     CppElement cppElement = null;
                     switch (name)
                     {
