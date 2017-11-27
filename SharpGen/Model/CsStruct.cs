@@ -40,7 +40,6 @@ namespace SharpGen.Model
 
         public CsStruct(CppStruct cppStruct) 
         {
-            IsIn = true;
             IsOut = false; 
             CppElement = cppStruct;
         }
@@ -96,8 +95,6 @@ namespace SharpGen.Model
                 return GenerateAsClass ? "class" : "struct";
             }
         }
-
-        public bool IsIn { get; set; }
 
         public bool IsOut { get; set; }
 

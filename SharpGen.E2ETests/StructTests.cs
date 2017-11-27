@@ -179,8 +179,10 @@ namespace SharpGen.E2ETests
                 {
                     CreateCppFile("boolToInt", @"
                         struct BoolToInt {
-                            int test[2];
+                            int test[3];
                         };
+
+                        extern ""C"" bool TestFunction(BoolToInt t);
                     ")
                 },
                 Bindings =
@@ -188,12 +190,26 @@ namespace SharpGen.E2ETests
                     new Config.BindRule("int", "System.Int32"),
                     new Config.BindRule("bool", "System.Boolean")
                 },
+                Extension =
+                {
+                    new Config.CreateExtensionRule
+                    {
+                        NewClass = $"{nameof(StructWithBoolToIntArrayMemberGeneratesBoolArrayProperty)}.Functions",
+                        Visibility = Config.Visibility.Public
+                    }
+                },
                 Mappings =
                 {
                     new Config.MappingRule
                     {
                         Field = "BoolToInt::test",
                         MappingType = "bool",
+                    },
+                    new Config.MappingRule
+                    {
+                        Function = "TestFunction",
+                        CsClass = $"{nameof(StructWithBoolToIntArrayMemberGeneratesBoolArrayProperty)}.Functions",
+                        FunctionDllName="Dll"
                     }
                 }
             };
@@ -208,6 +224,8 @@ namespace SharpGen.E2ETests
             Assert.Equal(TypeKind.Array, member.Type.TypeKind);
             var memberType = (IArrayTypeSymbol)member.Type;
             Assert.Equal(compilation.GetSpecialType(SpecialType.System_Boolean), memberType.ElementType);
+            var marshalType = structType.GetTypeMembers("__Native")[0];
+            Assert.NotNull(marshalType);
         }
     }
 }

@@ -347,7 +347,7 @@ namespace SharpGen.Parser
                         }
 
                         using (var file = File.OpenWrite(fileName))
-                        using (var fileWriter = new StreamWriter(file))
+                        using (var fileWriter = new StreamWriter(file, Encoding.ASCII))
                         {
                             fileWriter.Write(outputConfigStr);
                         }

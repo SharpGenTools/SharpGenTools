@@ -310,6 +310,11 @@ namespace SharpGen.Generator
 
         private IEnumerable<MemberDeclarationSyntax> GenerateMarshallingStructAndConversions(CsStruct csStruct, AttributeListSyntax structLayoutAttributeList)
         {
+            if (!csStruct.HasMarshalType || csStruct.HasCustomMarshal)
+            {
+                yield break;
+            }
+
             var marshalStruct = StructDeclaration("__Native")
                 .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.PartialKeyword)))
                 .WithAttributeLists(SingletonList(structLayoutAttributeList))

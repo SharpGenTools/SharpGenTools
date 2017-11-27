@@ -41,7 +41,7 @@
 		{
 		#>,(*(void***)_nativePointer)[<#= method.Name #>__vtbl_index]<#+
 		}
-		else
+		else if(!(method is CsFunction))
 		{
 		#>,(*(void***)_nativePointer)[<#= method.Offset #>]<#+
 		}
