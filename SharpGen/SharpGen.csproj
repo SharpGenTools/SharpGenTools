@@ -3,6 +3,7 @@
     <OutputType>Library</OutputType>
     <TargetFrameworks>netstandard1.5;net46</TargetFrameworks>
     <Description>Library for generating efficient C# code from C++ and COM headers.</Description>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="**/*.tt" />

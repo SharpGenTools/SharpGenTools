@@ -232,9 +232,7 @@ namespace SharpGen
 
                 consumerConfig.Bindings.AddRange(bindings);
                 consumerConfig.Extension.AddRange(defines);
-
-
-                // TODO: Include include-prolog's and include rules w/ pre or post text (no attaches).
+                
                 GenerateConfigForConsumers(consumerConfig);
 
                 // Update Checkfile for assembly

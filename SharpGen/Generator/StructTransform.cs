@@ -65,24 +65,26 @@ namespace SharpGen.Generator
 
             var marshallingStructAndConversions = GenerateMarshallingStructAndConversions(csElement, AttributeList(SingletonSeparatedList(structLayoutAttribute)));
 
-            return csElement.GenerateAsClass ?
+            return (csElement.GenerateAsClass ?
                 (MemberDeclarationSyntax)ClassDeclaration(
-                    SingletonList(AttributeList(csElement.HasMarshalType ? SingletonSeparatedList(structLayoutAttribute) : SeparatedList(Enumerable.Empty<AttributeSyntax>()))),
-                    TokenList(Token(TriviaList(Trivia(documentationTrivia)), ParseToken(csElement.VisibilityName).Kind(), TriviaList())),
+                    SingletonList(AttributeList(csElement.HasMarshalType ? SingletonSeparatedList(structLayoutAttribute) : default)),
+                    TokenList(ParseTokens(csElement.VisibilityName)),
                     Identifier(csElement.Name),
                     TypeParameterList(SeparatedList(Enumerable.Empty<TypeParameterSyntax>())),
                     BaseList(SeparatedList(Enumerable.Empty<BaseTypeSyntax>())),
                     List(Enumerable.Empty<TypeParameterConstraintClauseSyntax>()),
                     List(innerStructs.Concat(constants).Concat(fields).Concat(marshallingStructAndConversions)))
+                .WithLeadingTrivia(Trivia(documentationTrivia))
                     :
                 StructDeclaration(
-                    SingletonList(AttributeList(csElement.HasMarshalType ? SingletonSeparatedList(structLayoutAttribute) : SeparatedList(Enumerable.Empty<AttributeSyntax>()))),
-                    TokenList(Token(TriviaList(Trivia(documentationTrivia)), ParseToken(csElement.VisibilityName).Kind(), TriviaList())),
+                    SingletonList(AttributeList(csElement.HasMarshalType ? SingletonSeparatedList(structLayoutAttribute) : default)),
+                    TokenList(ParseTokens(csElement.VisibilityName)),
                     Identifier(csElement.Name),
                     TypeParameterList(SeparatedList(Enumerable.Empty<TypeParameterSyntax>())),
                     BaseList(SeparatedList(Enumerable.Empty<BaseTypeSyntax>())),
                     List(Enumerable.Empty<TypeParameterConstraintClauseSyntax>()),
-                    List(innerStructs.Concat(constants).Concat(fields).Concat(marshallingStructAndConversions)));
+                    List(innerStructs.Concat(constants).Concat(fields).Concat(marshallingStructAndConversions))))
+                .WithLeadingTrivia(Trivia(documentationTrivia));
         }
 
         private IEnumerable<MemberDeclarationSyntax> GenerateFieldAccessors(CsField field, bool explicitLayout)
@@ -874,28 +876,28 @@ namespace SharpGen.Generator
                     SeparatedList(
                         new[]
                         {
-                                                    VariableDeclarator(copyFromNative ? "__to": "__from")
-                                                        .WithInitializer(EqualsValueClause(
-                                                            PrefixUnaryExpression(
-                                                                SyntaxKind.AddressOfExpression,
-                                                                ElementAccessExpression(
-                                                                    MemberAccessExpression(
-                                                                        SyntaxKind.SimpleMemberAccessExpression,
-                                                                        ThisExpression(),
-                                                                        IdentifierName(field.Name)))
-                                                                .WithArgumentList(
-                                                                    BracketedArgumentList(
-                                                                        SingletonSeparatedList(
-                                                                            Argument(
-                                                                                LiteralExpression(
-                                                                                    SyntaxKind.NumericLiteralExpression,
-                                                                                    Literal(0))))))))),
-                                                    VariableDeclarator(copyFromNative ? "__from" : "__to")
-                                                        .WithInitializer(EqualsValueClause(
-                                                            PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
-                                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                            IdentifierName("@ref"),
-                                                            IdentifierName(field.Name)))))
+                            VariableDeclarator(copyFromNative ? "__to": "__from")
+                                .WithInitializer(EqualsValueClause(
+                                    PrefixUnaryExpression(
+                                        SyntaxKind.AddressOfExpression,
+                                        ElementAccessExpression(
+                                            MemberAccessExpression(
+                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                ThisExpression(),
+                                                IdentifierName(field.Name)))
+                                        .WithArgumentList(
+                                            BracketedArgumentList(
+                                                SingletonSeparatedList(
+                                                    Argument(
+                                                        LiteralExpression(
+                                                            SyntaxKind.NumericLiteralExpression,
+                                                            Literal(0))))))))),
+                            VariableDeclarator(copyFromNative ? "__from" : "__to")
+                                .WithInitializer(EqualsValueClause(
+                                    PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
+                                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                    IdentifierName("@ref"),
+                                    IdentifierName(field.Name)))))
                         })
                     ),
                 ExpressionStatement(

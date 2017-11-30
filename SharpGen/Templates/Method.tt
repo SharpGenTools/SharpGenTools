@@ -187,7 +187,7 @@
 						}
 					// Handle Input String 
 					} else if (param.IsString && !param.IsWideChar) {#>
-                IntPtr <#= param.TempName #> = Utilities.StringToHGlobalAnsi(<#= param.Name #>);
+                IntPtr <#= param.TempName #> = <#= Generator.GlobalNamespace.Name #>.Utilities.StringToHGlobalAnsi(<#= param.Name #>);
 <#+					} else if ( param.IsRefIn && param.IsValueType && param.IsOptional) {#>
                 <#= param.PublicType.QualifiedName #> <#= param.TempName #>;
                 if (<#= param.Name #>.HasValue)

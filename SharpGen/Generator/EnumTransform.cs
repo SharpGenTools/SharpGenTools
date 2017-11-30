@@ -37,14 +37,7 @@ namespace SharpGen.Generator
         public override SyntaxNode GenerateCode(CsEnum csElement)
         {
             var enumDecl = EnumDeclaration(csElement.Name);
-            enumDecl = enumDecl.WithModifiers(
-                TokenList(
-                    Token(
-                        TriviaList(
-                            Trivia(
-                                GenerateDocumentationTrivia(csElement))),
-                                ParseToken(csElement.VisibilityName).Kind(),
-                            TriviaList())))
+            enumDecl = enumDecl.WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
                 .WithBaseList(
                     BaseList().
                         WithTypes(SingletonSeparatedList<BaseTypeSyntax>
@@ -67,7 +60,7 @@ namespace SharpGen.Generator
                                     Literal(int.Parse(item.Value))))));
                     }
                     return itemDecl;
-                }).ToArray());
+                }).ToArray()).WithLeadingTrivia(Trivia(GenerateDocumentationTrivia(csElement)));
 
             if (csElement.IsFlag)
             {
