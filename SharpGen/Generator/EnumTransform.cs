@@ -34,7 +34,7 @@ namespace SharpGen.Generator
     /// </summary>
     public class EnumTransform : TransformBase<CsEnum, CppEnum>
     {
-        public override SyntaxNode GenerateCode(CsEnum csElement)
+        public override MemberDeclarationSyntax GenerateCode(CsEnum csElement)
         {
             var enumDecl = EnumDeclaration(csElement.Name);
             enumDecl = enumDecl.WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))

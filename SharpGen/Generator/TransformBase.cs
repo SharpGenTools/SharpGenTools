@@ -76,7 +76,7 @@ namespace SharpGen.Generator
         /// <param name="csElement">The C# element.</param>
         public abstract void Process(TCsElement csElement);
 
-        public abstract SyntaxNode GenerateCode(TCsElement csElement);
+        public abstract MemberDeclarationSyntax GenerateCode(TCsElement csElement);
 
         protected DocumentationCommentTriviaSyntax GenerateDocumentationTrivia(CsBase csElement)
         {

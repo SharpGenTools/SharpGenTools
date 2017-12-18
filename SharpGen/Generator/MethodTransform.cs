@@ -166,7 +166,7 @@ namespace SharpGen.Generator
             return GenerateCode((CsMethod)csElement);
         }
 
-        public override SyntaxNode GenerateCode(CsMethod csElement)
+        public override MemberDeclarationSyntax GenerateCode(CsMethod csElement)
         {
             // TODO: Output custom vtbl variable
             var vtblVariable = FieldDeclaration(
@@ -186,7 +186,7 @@ namespace SharpGen.Generator
                     ParameterList(
                         SeparatedList(
                             csElement.PublicParameters.Select(param =>
-                                Parameter(Identifier(param.ParamName))
+                                Parameter(Identifier(param.ParamName)) // TODO: Fix this to generate correct semantics
                                     .WithDefault(param.DefaultValue == null ? default
                                         :
                                         EqualsValueClause(ParseExpression(param.DefaultValue)))

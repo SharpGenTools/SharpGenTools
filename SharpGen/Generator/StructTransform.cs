@@ -39,7 +39,7 @@ namespace SharpGen.Generator
     {
         private readonly Dictionary<Regex, string> _mapMoveStructToInner = new Dictionary<Regex, string>();
 
-        public override SyntaxNode GenerateCode(CsStruct csElement)
+        public override MemberDeclarationSyntax GenerateCode(CsStruct csElement)
         {
             var documentationTrivia = GenerateDocumentationTrivia(csElement);
             var layoutKind = csElement.ExplicitLayout ? "Explicit" : "Sequential";
@@ -59,7 +59,7 @@ namespace SharpGen.Generator
 
             var innerStructs = csElement.InnerStructs.Select(GenerateCode).Cast<MemberDeclarationSyntax>();
 
-            var constants = csElement.Variables.Select(var => GenerateConstant(var));
+            var constants = csElement.Variables.SelectMany(var => Generators.Constant.GenerateCode(var));
 
             var fields = csElement.Fields.SelectMany(field => GenerateFieldAccessors(field, !csElement.HasMarshalType && csElement.ExplicitLayout));
 
@@ -208,107 +208,7 @@ namespace SharpGen.Generator
             }
             return fieldDecl;
         }
-
-        private static FieldDeclarationSyntax GenerateConstant(CsVariable var)
-        {
-            return FieldDeclaration(
-                        VariableDeclaration(
-                            IdentifierName("TypeName"))
-                        .WithVariables(
-                            SingletonSeparatedList(
-                                VariableDeclarator(
-                                    Identifier("name"))
-                                .WithInitializer(
-                                    EqualsValueClause(
-                                        LiteralExpression(
-                                            SyntaxKind.NumericLiteralExpression,
-                                            Literal(0)))))))
-                    .WithModifiers(
-                        TokenList(
-                            Token(GenerateConstantDocumentationTrivia(var),
-                                ParseToken(var.VisibilityName).Kind(),
-                                TriviaList())));
-
-
-            SyntaxTriviaList GenerateConstantDocumentationTrivia(CsVariable csVar)
-            {
-                return TriviaList(
-                    Trivia(
-                        DocumentationCommentTrivia(
-                            SyntaxKind.SingleLineDocumentationCommentTrivia,
-                            List(
-                                new XmlNodeSyntax[]{
-                                XmlText()
-                                .WithTextTokens(
-                                    TokenList(
-                                        XmlTextLiteral(
-                                            TriviaList(
-                                                DocumentationCommentExterior("///")),
-                                            " ",
-                                            " ",
-                                            TriviaList()))),
-                                XmlExampleElement(
-                                    SingletonList<XmlNodeSyntax>(
-                                        XmlText()
-                                        .WithTextTokens(
-                                            TokenList(
-                                                XmlTextLiteral(
-                                                    TriviaList(),
-                                                    $"Constant {csVar.Name}.",
-                                                    $"Constant {csVar.Name}.",
-                                                    TriviaList())))))
-                                .WithStartTag(
-                                    XmlElementStartTag(
-                                        XmlName(
-                                            Identifier("summary"))))
-                                .WithEndTag(
-                                    XmlElementEndTag(
-                                        XmlName(
-                                            Identifier("summary")))),
-                                XmlText()
-                                .WithTextTokens(
-                                    TokenList(
-                                        new []{
-                                            XmlTextNewLine(
-                                                TriviaList(),
-                                                "\n",
-                                                "\n",
-                                                TriviaList()),
-                                            XmlTextLiteral(
-                                                TriviaList(
-                                                    DocumentationCommentExterior("///")),
-                                                " ",
-                                                " ",
-                                                TriviaList())})),
-                                XmlExampleElement(
-                                    SingletonList<XmlNodeSyntax>(
-                                        XmlText()
-                                        .WithTextTokens(
-                                            TokenList(
-                                                XmlTextLiteral(
-                                                    TriviaList(),
-                                                    csVar.CppElementName,
-                                                    csVar.CppElementName,
-                                                    TriviaList())))))
-                                .WithStartTag(
-                                    XmlElementStartTag(
-                                        XmlName(
-                                            Identifier("unmanaged"))))
-                                .WithEndTag(
-                                    XmlElementEndTag(
-                                        XmlName(
-                                            Identifier("unmanaged")))),
-                                XmlText()
-                                .WithTextTokens(
-                                    TokenList(
-                                        XmlTextNewLine(
-                                            TriviaList(),
-                                            "\n",
-                                            "\n",
-                                            TriviaList())))}))));
-            }
-
-        }
+        
 
         private IEnumerable<MemberDeclarationSyntax> GenerateMarshallingStructAndConversions(CsStruct csStruct, AttributeListSyntax structLayoutAttributeList)
         {
