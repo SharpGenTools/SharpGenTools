@@ -34,48 +34,6 @@ namespace SharpGen.Generator
     /// </summary>
     public class EnumTransform : TransformBase<CsEnum, CppEnum>
     {
-        public override MemberDeclarationSyntax GenerateCode(CsEnum csElement)
-        {
-            var enumDecl = EnumDeclaration(csElement.Name);
-            enumDecl = enumDecl.WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
-                .WithBaseList(
-                    BaseList().
-                        WithTypes(SingletonSeparatedList<BaseTypeSyntax>
-                (
-                    SimpleBaseType(ParseTypeName(csElement.TypeName))
-                )))
-                .AddMembers(csElement.EnumItems.Select(item =>
-                {
-                    var itemDecl = EnumMemberDeclaration(item.Name)
-                        .WithLeadingTrivia(Trivia(GenerateDocumentationTrivia(item)));
-
-                    if (!string.IsNullOrEmpty(item.Value))
-                    {
-                        itemDecl = itemDecl.WithEqualsValue(
-                        EqualsValueClause(
-                            CheckedExpression(
-                                SyntaxKind.UncheckedExpression,
-                                LiteralExpression(
-                                    SyntaxKind.NumericLiteralExpression,
-                                    Literal(int.Parse(item.Value))))));
-                    }
-                    return itemDecl;
-                }).ToArray()).WithLeadingTrivia(Trivia(GenerateDocumentationTrivia(csElement)));
-
-            if (csElement.IsFlag)
-            {
-                enumDecl = enumDecl.WithAttributeLists(new SyntaxList<AttributeListSyntax>
-                {
-                    AttributeList().WithAttributes(SingletonSeparatedList<AttributeSyntax>
-                    (
-                        Attribute(ParseName("System.FlagsAttribute"))
-                    ))
-                });
-            }
-
-            return enumDecl;
-        }
-
         /// <summary>
         /// Prepares the specified C++ element to a C# element.
         /// </summary>

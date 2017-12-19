@@ -75,29 +75,5 @@ namespace SharpGen.Generator
         /// </summary>
         /// <param name="csElement">The C# element.</param>
         public abstract void Process(TCsElement csElement);
-
-        public abstract MemberDeclarationSyntax GenerateCode(TCsElement csElement);
-
-        protected DocumentationCommentTriviaSyntax GenerateDocumentationTrivia(CsBase csElement)
-        {
-            return DocumentationCommentTrivia(
-                    SyntaxKind.SingleLineDocumentationCommentTrivia,
-                    SingletonList<XmlNodeSyntax>(XmlText()
-                        .WithTextTokens(
-                            TokenList(Manager.GetDocItems(csElement).SelectMany(item =>
-                                new[]{
-                                    XmlTextLiteral(
-                                        TriviaList(
-                                            DocumentationCommentExterior("///")),
-                                        item,
-                                        item,
-                                        TriviaList()),
-                                    XmlTextNewLine(
-                                        TriviaList(),
-                                        "\n",
-                                        "\n",
-                                        TriviaList())
-                                }).ToArray()))));
-        }
     }
 }

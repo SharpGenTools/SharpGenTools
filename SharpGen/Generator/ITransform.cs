@@ -1,4 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.CppModel;
 using SharpGen.Model;
 using System;
@@ -14,7 +14,5 @@ namespace SharpGen.Generator
         TCsElement Prepare(TCppElement cppElement);
 
         void Process(TCsElement csElement);
-
-        SyntaxNode GenerateCode(TCsElement csElement);
     }
 }

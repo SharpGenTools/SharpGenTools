@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace SharpGen.Generator
 {
-    abstract class MemberCodeGeneratorBase<T> : ICodeGenerator<T, MemberDeclarationSyntax>
+    abstract class MemberCodeGeneratorBase<T> : IMultiCodeGenerator<T, MemberDeclarationSyntax>
         where T : CsBase
     {
         public abstract IEnumerable<MemberDeclarationSyntax> GenerateCode(T csElement);
