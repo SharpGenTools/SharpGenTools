@@ -43,20 +43,20 @@ namespace SharpGen.Generator
         
         public ExpressionSyntax GenerateCode(CsMethod method)
         {
-            var arguments = new List<ExpressionSyntax>();
+            var arguments = new List<ArgumentSyntax>();
 
             if (method.IsReturnStructLarge)
             {
-                arguments.Add(CastExpression(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
+                arguments.Add(Argument(CastExpression(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
                                         PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
-                                            IdentifierName("__result__"))));
+                                            IdentifierName("__result__")))));
             }
 
-            arguments.AddRange(method.Parameters.Select(param => ParseExpression(param.GetCallName(GlobalNamespace.GetTypeName("PointerSize")))));
+            arguments.AddRange(method.Parameters.Select(param => Generators.Argument.GenerateCode(param)));
 
             if (!(method is CsFunction))
             {
-                arguments.Add(
+                arguments.Add(Argument(
                     ElementAccessExpression(
                         ParenthesizedExpression(
                             PrefixUnaryExpression(SyntaxKind.PointerIndirectionExpression,
@@ -72,7 +72,7 @@ namespace SharpGen.Generator
                                     IdentifierName($"{method.Name}__vtbl_index"))
                                 : LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(method.Offset))
                                 )
-                            ))));
+                            )))));
             }
 
             return GetCastedReturn(
@@ -80,7 +80,7 @@ namespace SharpGen.Generator
                     IdentifierName(method is CsFunction ?
                         method.CppElementName + "_"
                     : method.Assembly.QualifiedName + ".LocalInterop." + method.Interop.Name),
-                    ArgumentList(SeparatedList(arguments.Select(arg => Argument(arg))))),
+                    ArgumentList(SeparatedList(arguments))),
                 method.ReturnType
             );
         }

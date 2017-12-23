@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using System.Linq;
 
 namespace SharpGen.Generator
 {
@@ -93,7 +94,9 @@ namespace SharpGen.Generator
             
             if (csElement.Setter != null)
             {
-                var paramByRef = csElement.Setter.Parameters[0].ParamName.StartsWith("ref"); // TODO: Stop using param name and make this clean
+                var paramByRef = Generators.Parameter.GenerateCode(csElement.Setter.Parameters[0])
+                    .Modifiers.Select(token => token.Kind()).Contains(SyntaxKind.RefKeyword);
+
                 accessors.Add(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
                     .WithExpressionBody(ArrowExpressionClause(
                         InvocationExpression(ParseExpression(csElement.Getter.Name))
@@ -105,7 +108,9 @@ namespace SharpGen.Generator
                                                 paramByRef ? Token(SyntaxKind.RefKeyword) : default)))))));
             }
 
-            yield return PropertyDeclaration(ParseTypeName(csElement.PublicType.QualifiedName), Identifier(csElement.Name))
+            yield return PropertyDeclaration(
+                ParseTypeName(csElement.PublicType.QualifiedName),
+                Identifier(csElement.Name))
                 .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
                 .WithAccessorList(AccessorList(List(accessors)))
                 .WithLeadingTrivia(Trivia(documentation));

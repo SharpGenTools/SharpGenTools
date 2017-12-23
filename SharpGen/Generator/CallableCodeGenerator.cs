@@ -26,10 +26,9 @@ namespace SharpGen.Generator
                     ParameterList(
                         SeparatedList(
                             csElement.PublicParameters.Select(param =>
-                                Parameter(Identifier(param.ParamName)) // TODO: Fix this to generate correct semantics
+                                Generators.Parameter.GenerateCode(param)
                                     .WithDefault(param.DefaultValue == null ? default
-                                        :
-                                        EqualsValueClause(ParseExpression(param.DefaultValue)))
+                                        : EqualsValueClause(ParseExpression(param.DefaultValue)))
                                 )
                             )
                         )

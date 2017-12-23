@@ -35,5 +35,9 @@ namespace SharpGen.Generator
         public static readonly IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax> Function = new FunctionCodeGenerator();
 
         public static readonly IMultiCodeGenerator<CsInterface, MemberDeclarationSyntax> Interface = new InterfaceCodeGenerator();
+
+        public static readonly ICodeGenerator<CsParameter, ParameterSyntax> Parameter = new ParameterCodeGenerator();
+
+        public static readonly ICodeGenerator<CsParameter, ArgumentSyntax> Argument = new ArgumentGenerator();
     }
 }
