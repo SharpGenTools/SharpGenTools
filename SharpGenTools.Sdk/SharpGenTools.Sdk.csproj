@@ -41,8 +41,9 @@
     but before NuGet generates a nuspec.
     -->
     <ItemGroup>
-      <_PackageFiles Include="bin\$(Configuration)\$(TargetFramework)\*.dll">
-        <PackagePath>tools\$(TargetFramework)</PackagePath>
+      <ReferencedAssemblies Include="bin\$(Configuration)\**\*.dll" />
+      <_PackageFiles Include="@(ReferencedAssemblies)">
+        <PackagePath>tools\%(RecursiveDir)%(FileName)%(Extension)</PackagePath>
         <Visible>false</Visible>
         <BuildAction>Content</BuildAction>
       </_PackageFiles>
