@@ -30,7 +30,7 @@
 
   <ItemGroup>
     <Content Include="_._" PackagePath="lib/netstandard1.0;lib/net40" />
-    <Content Include="../CastXML/**/*" PackagePath="tools/_/%(Identity)" />
+    <Content Include="../CastXML/**/*" PackagePath="tools/CastXML/%(RecursiveDir)%(FileName)%(Extension)" />
     <Content Include="**/*.props" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
     <Content Include="**/*.targets" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
   </ItemGroup>
@@ -41,8 +41,8 @@
     but before NuGet generates a nuspec.
     -->
     <ItemGroup>
-      <_PackageFiles Include="bin\$(Configuration)\*\*.dll">
-        <PackagePath>tools\%(RecursiveDir)</PackagePath>
+      <_PackageFiles Include="bin\$(Configuration)\$(TargetFramework)\*.dll">
+        <PackagePath>tools\$(TargetFramework)</PackagePath>
         <Visible>false</Visible>
         <BuildAction>Content</BuildAction>
       </_PackageFiles>
