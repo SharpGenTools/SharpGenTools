@@ -285,7 +285,7 @@ namespace SharpGen.Model
 
         public bool HasPersistent { get; set; }
 
-        public virtual void FillDocItems(List<string> docItems, TransformManager manager) {}
+        public virtual void FillDocItems(IList<string> docItems, IDocumentationAggregator manager) {}
         
         public virtual string DocUnmanagedName
         {

@@ -124,7 +124,7 @@ namespace SharpGen.Generator
             method.Offset += tag.LayoutOffsetTranslate;
 
             // Get the inferred return type
-            method.ReturnType = Manager.GetCsType<CsMarshalBase>(cppMethod.ReturnType);
+            method.ReturnType = Manager.CreateMarshalledElement<CsMarshalBase>(cppMethod.ReturnType);
 
             // Hide return type only if it is a HRESULT and AlwaysReturnHResult is false
             if (method.CheckReturnType && method.ReturnType.PublicType != null &&
@@ -143,7 +143,7 @@ namespace SharpGen.Generator
                 bool hasParams = (cppAttribute & ParamAttribute.Params) == ParamAttribute.Params;
                 bool isOptional = (cppAttribute & ParamAttribute.Optional) != 0;
 
-                var paramMethod = Manager.GetCsType<CsParameter>(cppParameter);
+                var paramMethod = Manager.CreateMarshalledElement<CsParameter>(cppParameter);
 
                 paramMethod.Name = NamingRules.Rename(cppParameter);
 

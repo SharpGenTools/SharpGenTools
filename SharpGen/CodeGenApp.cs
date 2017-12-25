@@ -196,8 +196,17 @@ namespace SharpGen
                 if (Logger.HasErrors)
                     Logger.Fatal("C++ compiler failed to parse header files");
 
+                var typeRegistry = new TypeRegistry(Logger);
+                var namingRules = new NamingRulesManager();
+
                 // Run the main mapping process
-                var transformer = new TransformManager(GlobalNamespace, Logger)
+                var transformer = new TransformManager(
+                    GlobalNamespace,
+                    namingRules,
+                    Logger,
+                    typeRegistry,
+                    new DocumentationAggregator(typeRegistry),
+                    new ConstantManager(namingRules, typeRegistry))
                 {
                     GeneratedPath = _generatedPath,
                     IncludeAssemblyNameFolder = IncludeAssemblyNameFolder,

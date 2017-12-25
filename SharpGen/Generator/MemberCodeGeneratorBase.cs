@@ -20,7 +20,7 @@ namespace SharpGen.Generator
                     SyntaxKind.SingleLineDocumentationCommentTrivia,
                     SingletonList<XmlNodeSyntax>(XmlText()
                         .WithTextTokens(
-                            TokenList(Manager.GetDocItems(csElement).SelectMany(item =>
+                            TokenList(docAggregator.GetDocItems(csElement).SelectMany(item =>
                                 new[]{
                                     XmlTextNewLine("\n", true),
                                     XmlTextLiteral(item),
@@ -28,6 +28,6 @@ namespace SharpGen.Generator
                                 })))));
         }
 
-        private TransformManager Manager;
+        private IDocumentationAggregator docAggregator;
     }
 }

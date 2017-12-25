@@ -47,10 +47,6 @@ namespace SharpGen.Model
             element.Modify<T>(regexStr, ProcessTag(tag));
         }
 
-        /// <summary>
-        /// Tag an Enum and force it to be interpreted as a flag.
-        /// </summary>
-        /// <param name="cppType"></param>
         public static string GetTypeNameWithMapping(this CppElement cppType)
         {
             var tag = cppType.GetTagOrDefault<MappingRule>();

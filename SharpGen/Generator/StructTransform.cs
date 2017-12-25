@@ -100,7 +100,7 @@ namespace SharpGen.Generator
                 if (keyValuePair.Key.Match(csStruct.CppElementName).Success)
                 {
                     string cppName = keyValuePair.Key.Replace(csStruct.CppElementName, keyValuePair.Value);
-                    var destSharpStruct = (CsStruct)Manager.FindBindType(cppName);
+                    var destSharpStruct = (CsStruct)Manager.FindBoundType(cppName);
                     // Remove the struct from his container
                     csStruct.Parent.Remove(csStruct);
                     // Add this struct to the new container struct
@@ -130,7 +130,7 @@ namespace SharpGen.Generator
             while (currentStruct != null && currentStruct.ParentName != currentStruct.Name)
             {
                 inheritedStructs.Push(currentStruct);
-                currentStruct = Manager.FindBindType(currentStruct.ParentName)?.CppElement as CppStruct;
+                currentStruct = Manager.FindBoundType(currentStruct.ParentName)?.CppElement as CppStruct;
             }
 
             while (inheritedStructs.Count > 0)
@@ -147,7 +147,7 @@ namespace SharpGen.Generator
                     var cppField = (CppField)currentStruct.Items[fieldIndex];
                     Logger.RunInContext(cppField.ToString(), () =>
                     {
-                        var fieldStruct = Manager.GetCsType<CsField>(cppField, true);
+                        var fieldStruct = Manager.CreateMarshalledElement<CsField>(cppField, true);
                         csStruct.Add(fieldStruct);
 
                         // Get name

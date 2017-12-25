@@ -107,7 +107,7 @@ namespace SharpGen.Generator
             var cppInterface = (CppInterface)interfaceType.CppElement;
 
             // Associate Parent
-            var parentType = Manager.FindBindType(cppInterface.ParentName);
+            var parentType = Manager.FindBoundType(cppInterface.ParentName);
             if (parentType != null)
             {
                 interfaceType.Base = parentType;
@@ -160,7 +160,7 @@ namespace SharpGen.Generator
                 // Allow overloads by changing the name to <name>#
                 string origCppName = cppInterface.Name + "::" + cppMethod.Name;
                 string chosenCppName = origCppName;
-                for (int i = 0; Manager.FindBindType(chosenCppName) != null; i++)
+                for (int i = 0; Manager.FindBoundType(chosenCppName) != null; i++)
                     chosenCppName = origCppName + i.ToString();
 
                 Manager.BindType(chosenCppName, cSharpMethod);
