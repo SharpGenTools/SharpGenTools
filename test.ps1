@@ -7,9 +7,10 @@ pushd SharpGen.E2ETests
     }
 popd
 
+
 if(Test-Path -Path SdkTests/RestoredPackages/sharpgentools.sdk){
     rm -r -Force SdkTests/RestoredPackages/sharpgentools.sdk
-    rm -r -Force SdkTests/RestoredPackages/sharpgen.runtime
+    rm -r -Force SdkTests/RestoredPackages/sharpgen.runtime -ErrorAction SilentlyContinue
 }
 
 mkdir SdkTests/LocalPackages -ErrorAction SilentlyContinue
