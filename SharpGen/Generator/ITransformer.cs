@@ -5,13 +5,7 @@ using System.Text;
 
 namespace SharpGen.Generator
 {
-
-    interface ITransformer
-    {
-        void Process(CsBase csElement);
-    }
-
-    interface ITransformer<TCsElement> : ITransformer
+    public interface ITransformer<TCsElement>
         where TCsElement: CsBase
     {
         void Process(TCsElement csElement);

@@ -210,22 +210,15 @@ namespace SharpGen
                     Logger,
                     typeRegistry,
                     docAggregator,
-                    new ConstantManager(namingRules, typeRegistry))
+                    new ConstantManager(namingRules, typeRegistry),
+                    new AssemblyManager(Logger, AppType, IncludeAssemblyNameFolder, _generatedPath))
                 {
-                    GeneratedPath = _generatedPath,
-                    IncludeAssemblyNameFolder = IncludeAssemblyNameFolder,
-                    ForceGenerator = _isAssemblyNew,
-                    AppType = AppType
+                    ForceGenerator = _isAssemblyNew
                 };
 
-                var defines = transformer.Init(group, Config, IntermediateOutputPath);
+                var (assemblies, defines) = transformer.Transform(group, Config, IntermediateOutputPath);
 
                 consumerConfig.Extension = new List<ConfigBaseRule>(defines);
-
-                if (Logger.HasErrors)
-                    Logger.Fatal("Mapping rules initialization failed");
-
-                var assemblies = transformer.Transform();
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Executing mapping rules failed");

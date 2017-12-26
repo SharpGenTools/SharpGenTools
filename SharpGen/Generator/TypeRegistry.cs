@@ -42,25 +42,32 @@ namespace SharpGen.Generator
             if (!_mapDefinedCSharpType.TryGetValue(typeName, out CsTypeBase cSharpType))
             {
                 var type = Type.GetType(typeName);
-                var sizeOf = 0;
-                if (type == null)
-                    Logger.Warning("Type [{0}] is not defined", typeName);
-                else
-                {
-                    try
-                    {
-#pragma warning disable 0618
-                        sizeOf = Marshal.SizeOf(type);
-#pragma warning restore 0618
-                    }
-                    catch (Exception)
-                    {
-                        Logger.Message($"Tried to get the size of type {typeName}, which is not a struct.");
-                    }
-                }
-                cSharpType = new CsTypeBase { Name = typeName, Type = type, SizeOf = sizeOf };
-                DefineType(cSharpType);
+                return ImportType(type);
             }
+            return cSharpType;
+        }
+
+        public CsTypeBase ImportType(Type type)
+        {
+            var typeName = type.FullName;
+            var sizeOf = 0;
+            if (type == null)
+                Logger.Warning("Type [{0}] is not defined", typeName);
+            else
+            {
+                try
+                {
+#pragma warning disable 0618
+                    sizeOf = Marshal.SizeOf(type);
+#pragma warning restore 0618
+                }
+                catch (Exception)
+                {
+                    Logger.Message($"Tried to get the size of type {typeName}, which is not a struct.");
+                }
+            }
+            var cSharpType = new CsTypeBase { Name = typeName, Type = type, SizeOf = sizeOf };
+            DefineType(cSharpType);
             return cSharpType;
         }
 

@@ -35,7 +35,7 @@ namespace SharpGen.Generator
     /// <summary>
     /// Transforms a C++ struct to a C# struct.
     /// </summary>
-    public class StructTransform : TransformBase<CsStruct, CppStruct>
+    public class StructTransform : TransformBase<CsStruct, CppStruct>, ITransformer<CsStruct>
     {
         private readonly Dictionary<Regex, string> _mapMoveStructToInner = new Dictionary<Regex, string>();
 
