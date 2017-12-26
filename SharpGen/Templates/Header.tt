@@ -4,7 +4,7 @@
 <#@ import namespace="SharpGen" #>
 <#@ import namespace="SharpGen.Model" #>
 <#@ import namespace="SharpGen.CppModel" #>
-<#@ parameter name="Generator" type="SharpGen.Generator.TransformManager" #>
+<#@ parameter name="Generator" type="SharpGen.Generator.T4Generator" #>
 <#@ parameter name="Namespace" type="SharpGen.Model.CsNamespace" #>
 <#@ parameter name="Assembly" type="SharpGen.Model.CsAssembly" #>
 //------------------------------------------------------------------------------

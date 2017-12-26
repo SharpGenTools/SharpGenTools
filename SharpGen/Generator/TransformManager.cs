@@ -99,7 +99,7 @@ namespace SharpGen.Generator
         public CppModule CppModule { get; private set; }
 
         /// <summary>
-        /// Gets assembly list that are processed. This is accessible after <see cref="Generate"/>
+        /// Gets assembly list that are processed. This is accessible after <see cref="Transform"/>
         /// method has been called.
         /// </summary>
         /// <value>The assembly list that are processed.</value>
@@ -152,15 +152,8 @@ namespace SharpGen.Generator
 
         public GlobalNamespaceProvider GlobalNamespace { get; }
         public Logger Logger { get; }
-        public string GeneratedCodeFolder { get; internal set; }
         public bool IncludeAssemblyNameFolder { get; internal set; }
-
-
-        /// <summary>
-        /// Use Roslyn to generate code.
-        /// </summary>
-        public bool UseRoslynCodeGen { get; set; }
-
+        
         /// <summary>
         /// Initializes this instance with the specified C++ module and config.
         /// </summary>
@@ -168,7 +161,7 @@ namespace SharpGen.Generator
         /// <param name="config">The root config file.</param>
         /// <param name="checkFilesPath">The path to place check files in.</param>
         /// <returns>Any rules that must flow to consuming projects.</returns>
-        public List<ConfigBaseRule> Init(CppModule cppModule, ConfigFile config, string checkFilesPath)
+        public List<DefineExtensionRule> Init(CppModule cppModule, ConfigFile config, string checkFilesPath)
         {
             CppModule = cppModule;
             var configFiles = config.ConfigFilesLoaded;
@@ -189,7 +182,7 @@ namespace SharpGen.Generator
                 if (configFile.IsMappingToProcess)
                     numberOfConfigFilesToParse++;
 
-            var defines = new List<ConfigBaseRule>();
+            var defines = new List<DefineExtensionRule>();
             int indexFile = 0;
             // Process each config file
             foreach (var configFile in configFiles)
@@ -562,148 +555,9 @@ namespace SharpGen.Generator
         }
 
         /// <summary>
-        /// Generates the C# code.
-        /// </summary>
-        public void Generate(string checkFilesPath)
-        {
-            Transform();
-            if (!UseRoslynCodeGen)
-            {
-                RunT4Generator();
-            }
-            else
-            {
-                RunRoslynGenerator();
-            }
-            // Update check files for all assemblies
-            var processTime = DateTime.Now;
-            foreach (CsAssembly assembly in Assemblies)
-            {
-                File.WriteAllText(Path.Combine(checkFilesPath, assembly.CheckFileName), "");
-                File.SetLastWriteTime(Path.Combine(checkFilesPath, assembly.CheckFileName), processTime);
-            }
-        }
-
-        private void RunRoslynGenerator()
-        {
-            throw new NotImplementedException();
-        }
-
-        private void RunT4Generator()
-        {
-            if (Logger.HasErrors)
-                Logger.Fatal("Transform failed");
-
-            // Configure TextTemplateEngine
-            var engine = new TemplateEngine(Logger);
-            engine.OnInclude += TextTemplatingCallback;
-            engine.SetParameter("Generator", this);
-
-            int indexToGenerate = 0;
-            var templateNames = new[] { "Enumerations", "Structures", "Interfaces", "Functions", "LocalInterop" };
-
-            var directoryToCreate = new HashSet<string>(StringComparer.CurrentCulture);
-
-            // Iterates on templates
-            foreach (string templateName in templateNames)
-            {
-                Logger.Progress(85 + (indexToGenerate * 15 / templateNames.Length), "Generating code for {0}...", templateName);
-                indexToGenerate++;
-
-                Logger.Message("\nGenerate {0}", templateName);
-                string templateFileName = templateName + ".tt";
-
-                string input = Utilities.GetResourceAsString("Templates." + templateFileName);
-
-                // Iterates on assemblies
-                foreach (var csAssembly in Assemblies)
-                {
-                    if (!csAssembly.IsToUpdate)
-                        continue;
-
-                    engine.SetParameter("Assembly", csAssembly);
-
-                    string generatedDirectoryForAssembly = Path.Combine(csAssembly.RootDirectory, GeneratedCodeFolder ?? "Generated", AppType);
-
-                    // Remove the generated directory before creating it
-                    if (!directoryToCreate.Contains(generatedDirectoryForAssembly))
-                    {
-                        directoryToCreate.Add(generatedDirectoryForAssembly);
-                        if (Directory.Exists(generatedDirectoryForAssembly))
-                        {
-                            foreach (var oldGeneratedFile in Directory.EnumerateFiles(generatedDirectoryForAssembly, "*.cs", SearchOption.AllDirectories))
-                            {
-                                try
-                                {
-                                    File.Delete(oldGeneratedFile);
-                                }
-                                catch (Exception)
-                                {
-                                }
-                            }
-                        }
-                    }
-
-                    if (!Directory.Exists(generatedDirectoryForAssembly))
-                        Directory.CreateDirectory(generatedDirectoryForAssembly);
-
-                    Logger.Message("Process Assembly {0} => {1}", csAssembly.Name, generatedDirectoryForAssembly);
-
-                    // LocalInterop is once generated per assembly
-                    if (templateName == "LocalInterop")
-                    {
-                        Logger.Message("\tProcess Interop {0} => {1}", csAssembly.Name, generatedDirectoryForAssembly);
-
-                        //Transform the text template.
-                        string output = engine.ProcessTemplate(input, templateName);
-                        string outputFileName = Path.GetFileNameWithoutExtension(templateFileName);
-
-                        outputFileName = Path.Combine(generatedDirectoryForAssembly, outputFileName);
-                        outputFileName = outputFileName + ".cs";
-                        File.WriteAllText(outputFileName, output, Encoding.ASCII);
-                    }
-                    else
-                    {
-                        // Else, iterates on each namespace
-                        foreach (var csNamespace in csAssembly.Namespaces)
-                        {
-                            engine.SetParameter("Namespace", csNamespace);
-
-                            string subDirectory = csNamespace.OutputDirectory ?? ".";
-
-                            string nameSpaceDirectory = generatedDirectoryForAssembly + "\\" + subDirectory;
-                            if (!Directory.Exists(nameSpaceDirectory))
-                                Directory.CreateDirectory(nameSpaceDirectory);
-
-                            Logger.Message("\tProcess Namespace {0} => {1}", csNamespace.Name, nameSpaceDirectory);
-
-                            //Transform the text template.
-                            string output = engine.ProcessTemplate(input, templateName);
-                            string outputFileName = Path.GetFileNameWithoutExtension(templateFileName);
-
-                            outputFileName = Path.Combine(nameSpaceDirectory, outputFileName);
-                            outputFileName = outputFileName + ".cs";
-                            File.WriteAllText(outputFileName, output, Encoding.ASCII);
-                        }
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Callback used by the text templating engine.
-        /// </summary>
-        /// <param name="sender">The sender.</param>
-        /// <param name="e">The e.</param>
-        private static void TextTemplatingCallback(object sender, TemplateIncludeArgs e)
-        {
-            e.Text = Utilities.GetResourceAsString("Templates." + e.IncludeName);
-        }
-
-        /// <summary>
         ///   Maps all C++ types to C#
         /// </summary>
-        private void Transform()
+        public void Transform()
         {
             var selectedCSharpType = new List<CsBase>();
 
@@ -749,16 +603,18 @@ namespace SharpGen.Generator
             {
                 foreach (var cppItem in cppInclude.Iterate<TCppElement>())
                 {
-                    Logger.RunInContext(cppItem.ToString(), () =>
-                                                                {
-                                                                    // If a struct is already mapped, it means that there is already a predefined mapping
-                                                                    if (FindBoundType(cppItem.Name) == null)
-                                                                    {
-                                                                        var csElement = transform.Prepare(cppItem);
-                                                                        if (csElement != null)
-                                                                            typeToProcess.Add(csElement);
-                                                                    }
-                                                                });
+                    Logger.RunInContext(
+                        cppItem.ToString(),
+                        () =>
+                        {
+                            // If a struct is already mapped, it means that there is already a predefined mapping
+                            if (typeRegistry.FindBoundType(cppItem.Name) == null)
+                            {
+                                var csElement = transform.Prepare(cppItem);
+                                if (csElement != null)
+                                    typeToProcess.Add(csElement);
+                            }
+                        });
                 }
             }
         }

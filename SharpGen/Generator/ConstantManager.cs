@@ -128,7 +128,7 @@ namespace SharpGen.Generator
             foreach (var innerElement in csType.Items)
                 AttachConstants(innerElement);
 
-            foreach (KeyValuePair<string, List<CsVariable>> keyValuePair in _mapConstantToCSharpType)
+            foreach (var keyValuePair in _mapConstantToCSharpType)
             {
                 if (csType.QualifiedName == keyValuePair.Key)
                 {

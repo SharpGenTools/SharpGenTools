@@ -27,6 +27,7 @@ using SharpGen.Config;
 using SharpGen.Generator;
 using SharpGen.Parser;
 using System.Xml.Serialization;
+using SharpGen.Model;
 
 namespace SharpGen
 {
@@ -106,6 +107,8 @@ namespace SharpGen
 
         public GlobalNamespaceProvider GlobalNamespace { get; set; }
 
+        public bool UseRoslynCodeGen { get; set; }
+
         private string _thisAssemblyPath;
         private bool _isAssemblyNew;
         private DateTime _assemblyDatetime;
@@ -176,13 +179,13 @@ namespace SharpGen
 
                 // Run the parser
                 var parser = new Parser.CppParser(GlobalNamespace, Logger)
-                                 {
-                                     IsGeneratingDoc = IsGeneratingDoc,
-                                     DocProviderAssembly = DocProviderAssemblyPath,
-                                     ForceParsing = _isAssemblyNew,
-                                     CastXmlExecutablePath = CastXmlExecutablePath,
-                                     OutputPath = IntermediateOutputPath
-                                 };
+                {
+                    IsGeneratingDoc = IsGeneratingDoc,
+                    DocProviderAssembly = DocProviderAssemblyPath,
+                    ForceParsing = _isAssemblyNew,
+                    CastXmlExecutablePath = CastXmlExecutablePath,
+                    OutputPath = IntermediateOutputPath
+                };
 
                 // Init the parser
                 (consumerConfig.IncludeProlog, consumerConfig.IncludeDirs, consumerConfig.Includes) = parser.Init(Config);
@@ -198,6 +201,7 @@ namespace SharpGen
 
                 var typeRegistry = new TypeRegistry(Logger);
                 var namingRules = new NamingRulesManager();
+                var docAggregator = new DocumentationAggregator(typeRegistry);
 
                 // Run the main mapping process
                 var transformer = new TransformManager(
@@ -205,22 +209,28 @@ namespace SharpGen
                     namingRules,
                     Logger,
                     typeRegistry,
-                    new DocumentationAggregator(typeRegistry),
+                    docAggregator,
                     new ConstantManager(namingRules, typeRegistry))
                 {
                     GeneratedPath = _generatedPath,
                     IncludeAssemblyNameFolder = IncludeAssemblyNameFolder,
-                    GeneratedCodeFolder = GeneratedCodeFolder,
                     ForceGenerator = _isAssemblyNew,
                     AppType = AppType
                 };
 
-                consumerConfig.Extension = transformer.Init(group, Config, IntermediateOutputPath);
+                var defines = transformer.Init(group, Config, IntermediateOutputPath);
+
+                consumerConfig.Extension = new List<ConfigBaseRule>(defines);
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Mapping rules initialization failed");
 
-                transformer.Generate(IntermediateOutputPath);
+                transformer.Transform();
+
+                if (Logger.HasErrors)
+                    Logger.Fatal("Executing mapping rules failed");
+
+                GenerateCode(docAggregator, transformer.Assemblies);
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Code generation failed");
@@ -237,11 +247,11 @@ namespace SharpGen
                     transformer.NamingRules.DumpRenames(fileWriter);
                 }
 
-                var (bindings, defines) = transformer.GenerateTypeBindingsForConsumers();
+                var (bindings, generatedDefines) = transformer.GenerateTypeBindingsForConsumers();
 
                 consumerConfig.Bindings.AddRange(bindings);
-                consumerConfig.Extension.AddRange(defines);
-                
+                consumerConfig.Extension.AddRange(generatedDefines);
+
                 GenerateConfigForConsumers(consumerConfig);
 
                 // Update Checkfile for assembly
@@ -255,6 +265,27 @@ namespace SharpGen
             finally
             {
                 Logger.Progress(100, "Finished");
+            }
+        }
+
+        private void GenerateCode(DocumentationAggregator docAggregator, List<CsAssembly> assemblies)
+        {
+            if (UseRoslynCodeGen)
+            {
+                throw new NotImplementedException();
+            }
+            else
+            {
+                var generator = new T4Generator(Logger, docAggregator, GlobalNamespace, AppType);
+                generator.Run(GeneratedCodeFolder, assemblies);
+            }
+
+            // Update check files for all assemblies
+            var processTime = DateTime.Now;
+            foreach (CsAssembly assembly in assemblies)
+            {
+                File.WriteAllText(Path.Combine(IntermediateOutputPath, assembly.CheckFileName), "");
+                File.SetLastWriteTime(Path.Combine(IntermediateOutputPath, assembly.CheckFileName), processTime);
             }
         }
 

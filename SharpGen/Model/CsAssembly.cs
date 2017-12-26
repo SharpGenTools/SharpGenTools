@@ -74,7 +74,7 @@ namespace SharpGen.Model
         /// Gets config files linked to this assembly
         /// </summary>
         /// <value>The config files linked to this assembly.</value>
-        public ReadOnlyCollection<ConfigFile> ConfigFilesLinked { get { return _configFilesLinked.AsReadOnly(); }}
+        public IReadOnlyList<ConfigFile> ConfigFilesLinked => _configFilesLinked;
 
         /// <summary>
         /// Adds linked config file to this instance.
