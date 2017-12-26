@@ -35,7 +35,7 @@ namespace SharpGen.E2ETests
 
             if (!Directory.Exists(vcInstallDir))
             {
-                vcInstallDir = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Avalonia-Dev\VC\";
+                vcInstallDir = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\";
             }
 
             var msvcToolsetVer = File.ReadAllText(vcInstallDir + Path.Combine(@"\Auxiliary\Build", "Microsoft.VCToolsVersion.default.txt")).Trim();
