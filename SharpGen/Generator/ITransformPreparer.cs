@@ -6,14 +6,10 @@ using System.Text;
 
 namespace SharpGen.Generator
 {
-    interface ITransformPreparer
-    {
-        CsBase Prepare(CppElement cppElement);
-    }
-
-    interface ITransformPreparer<TCppElement> : ITransformPreparer
+    public interface ITransformPreparer<in TCppElement, out TCsElement>
         where TCppElement: CppElement
+        where TCsElement : CsBase
     {
-        CsBase Prepare(TCppElement cppElement);
+        TCsElement Prepare(TCppElement cppElement);
     }
 }

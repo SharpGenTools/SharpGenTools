@@ -35,8 +35,28 @@ namespace SharpGen.Generator
     /// <summary>
     /// Transform a C++ method/function to a C# method.
     /// </summary>
-    public class MethodTransform : TransformBase<CsMethod, CppMethod>, ITransform<CsFunction, CppFunction>
+    public class MethodTransform : TransformBase<CsMethod, CppMethod>, ITransformer<CsMethod>, ITransformPreparer<CppMethod, CsMethod>, ITransformer<CsFunction>, ITransformPreparer<CppFunction, CsFunction>
     {
+        private readonly GroupRegistry groupRegistry;
+        private readonly MarshalledElementFactory factory;
+        private readonly GlobalNamespaceProvider globalNamespace;
+        private readonly TypeRegistry typeRegistry;
+
+        public MethodTransform(
+            NamingRulesManager namingRules,
+            Logger logger,
+            GroupRegistry groupRegistry,
+            MarshalledElementFactory factory,
+            GlobalNamespaceProvider globalNamespace,
+            TypeRegistry typeRegistry)
+            : base(namingRules, logger)
+        {
+            this.groupRegistry = groupRegistry;
+            this.factory = factory;
+            this.globalNamespace = globalNamespace;
+            this.typeRegistry = typeRegistry;
+        }
+
         /// <summary>
         /// Prepares the specified C++ element to a C# element.
         /// </summary>
@@ -56,7 +76,7 @@ namespace SharpGen.Generator
                 return null;
             }
 
-            var csClass = Manager.FindCsClassContainer(tag.CsClass);
+            var csClass = groupRegistry.FindGroup(tag.CsClass);
 
             if (csClass == null)
             {
@@ -121,11 +141,11 @@ namespace SharpGen.Generator
             method.Offset += tag.LayoutOffsetTranslate;
 
             // Get the inferred return type
-            method.ReturnType = Manager.CreateMarshalledElement<CsMarshalBase>(cppMethod.ReturnType);
+            method.ReturnType = factory.Create<CsMarshalBase>(cppMethod.ReturnType);
 
             // Hide return type only if it is a HRESULT and AlwaysReturnHResult is false
             if (method.CheckReturnType && method.ReturnType.PublicType != null &&
-                method.ReturnType.PublicType.QualifiedName == Manager.GlobalNamespace.GetTypeName("Result"))
+                method.ReturnType.PublicType.QualifiedName == globalNamespace.GetTypeName("Result"))
             {
                 method.HideReturnType = !method.AlwaysReturnHResult;
             }
@@ -140,7 +160,7 @@ namespace SharpGen.Generator
                 bool hasParams = (cppAttribute & ParamAttribute.Params) == ParamAttribute.Params;
                 bool isOptional = (cppAttribute & ParamAttribute.Optional) != 0;
 
-                var paramMethod = Manager.CreateMarshalledElement<CsParameter>(cppParameter);
+                var paramMethod = factory.Create<CsParameter>(cppParameter);
 
                 paramMethod.Name = NamingRules.Rename(cppParameter);
 
@@ -159,7 +179,7 @@ namespace SharpGen.Generator
                 // --------------------------------------------------------------------------------
                 if (hasPointer)
                 {
-                    marshalType = Manager.ImportType(typeof(IntPtr));
+                    marshalType = typeRegistry.ImportType(typeof(IntPtr));
 
                     // --------------------------------------------------------------------------------
                     // Handling Parameter Interface
@@ -187,7 +207,7 @@ namespace SharpGen.Generator
                             CsInterface publicCsInterface = (CsInterface)publicType;
                             if (publicCsInterface.IsCallback)
                             {
-                                publicType = Manager.ImportType(typeof(IntPtr));
+                                publicType = typeRegistry.ImportType(typeof(IntPtr));
                                 // By default, set the Visibility to internal for methods using callbacks
                                 // as we need to provide user method. Don't do this on functions as they
                                 // are already hidden by the container
@@ -207,7 +227,7 @@ namespace SharpGen.Generator
                     {
                         // If a pointer to array of bool are handle as array of int
                         if (paramMethod.IsBoolToInt && (cppAttribute & ParamAttribute.Buffer) != 0)
-                            publicType = Manager.ImportType(typeof(int));
+                            publicType = typeRegistry.ImportType(typeof(int));
 
                         // --------------------------------------------------------------------------------
                         // Handling Parameter Interface
@@ -216,7 +236,7 @@ namespace SharpGen.Generator
 
                         if ((cppAttribute & ParamAttribute.In) != 0)
                         {
-                            parameterAttribute = publicType.Type == typeof(IntPtr) || publicType.Name == Manager.GlobalNamespace.GetTypeName("FunctionCallback") ||
+                            parameterAttribute = publicType.Type == typeof(IntPtr) || publicType.Name == globalNamespace.GetTypeName("FunctionCallback") ||
                                                  publicType.Type == typeof(string)
                                                      ? CsParameterAttribute.In
                                                      : CsParameterAttribute.RefIn;
@@ -225,7 +245,7 @@ namespace SharpGen.Generator
                         {
                             if ((cppAttribute & ParamAttribute.Optional) != 0)
                             {
-                                publicType = Manager.ImportType(typeof(IntPtr));
+                                publicType = typeRegistry.ImportType(typeof(IntPtr));
                                 parameterAttribute = CsParameterAttribute.In;
                             }
                             else
@@ -245,7 +265,7 @@ namespace SharpGen.Generator
                         }
                         else if (publicType.Type == typeof(string) && (cppAttribute & ParamAttribute.Out) != 0)
                         {
-                            publicType = Manager.ImportType(typeof(IntPtr));
+                            publicType = typeRegistry.ImportType(typeof(IntPtr));
                             parameterAttribute = CsParameterAttribute.In;
                             hasArray = false;
                         }
@@ -302,9 +322,9 @@ namespace SharpGen.Generator
                 {
                     // Patch for Mono bug with structs marshalling and calli.
                     var returnQualifiedName = csMethod.ReturnType.PublicType.QualifiedName;
-                    if (returnQualifiedName == Manager.GlobalNamespace.GetTypeName("Result"))
+                    if (returnQualifiedName == globalNamespace.GetTypeName("Result"))
                         cSharpInteropCalliSignature.ReturnType = typeof(int);
-                    else if (returnQualifiedName == Manager.GlobalNamespace.GetTypeName("PointerSize"))
+                    else if (returnQualifiedName == globalNamespace.GetTypeName("PointerSize"))
                         cSharpInteropCalliSignature.ReturnType = typeof(void*);
                     else
                         cSharpInteropCalliSignature.ReturnType = csMethod.ReturnType.PublicType.QualifiedName;
@@ -326,7 +346,7 @@ namespace SharpGen.Generator
                 InteropType interopType;
                 string publicName = param.PublicType.QualifiedName;
                 // Patch for Mono bug with structs marshalling and calli.
-                if (publicName == Manager.GlobalNamespace.GetTypeName("PointerSize"))
+                if (publicName == globalNamespace.GetTypeName("PointerSize"))
                 {
                     interopType = typeof(void*);
                 }

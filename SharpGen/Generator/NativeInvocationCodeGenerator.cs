@@ -79,7 +79,7 @@ namespace SharpGen.Generator
                 InvocationExpression(
                     IdentifierName(method is CsFunction ?
                         method.CppElementName + "_"
-                    : method.Assembly.QualifiedName + ".LocalInterop." + method.Interop.Name),
+                    : method.GetParent<CsAssembly>().QualifiedName + ".LocalInterop." + method.Interop.Name),
                     ArgumentList(SeparatedList(arguments))),
                 method.ReturnType
             );

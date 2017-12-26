@@ -24,19 +24,32 @@ using System.Text.RegularExpressions;
 using SharpGen.Logging;
 using SharpGen.CppModel;
 using SharpGen.Model;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using Microsoft.CodeAnalysis.CSharp;
-using System;
 
 namespace SharpGen.Generator
 {
     /// <summary>
     /// Transforms a C++ struct to a C# struct.
     /// </summary>
-    public class StructTransform : TransformBase<CsStruct, CppStruct>, ITransformer<CsStruct>
+    public class StructTransform : TransformBase<CsStruct, CppStruct>, ITransformer<CsStruct>, ITransformPreparer<CppStruct, CsStruct>
     {
+        private readonly MarshalledElementFactory factory;
+        private readonly TypeRegistry typeRegistry;
+        private readonly NamespaceRegistry namespaceRegistry;
+
+        public StructTransform(
+            NamingRulesManager namingRules,
+            Logger logger,
+            NamespaceRegistry namespaceRegistry,
+            TypeRegistry typeRegistry,
+            MarshalledElementFactory factory)
+            : base(namingRules, logger)
+        {
+            this.namespaceRegistry = namespaceRegistry;
+            this.typeRegistry = typeRegistry;
+            this.factory = factory;
+            factory.RequestStructProcessing += Process;
+        }
+
         private readonly Dictionary<Regex, string> _mapMoveStructToInner = new Dictionary<Regex, string>();
 
         /// <summary>
@@ -52,12 +65,12 @@ namespace SharpGen.Generator
         /// <summary>
         /// Prepares C++ struct for mapping. This method is creating the associated C# struct.
         /// </summary>
-        /// <param name="cppElement">The c++ struct.</param>
+        /// <param name="cppStruct">The c++ struct.</param>
         /// <returns></returns>
         public override CsStruct Prepare(CppStruct cppStruct)
         {
             // Create a new C# struct
-            var nameSpace = Manager.ResolveNamespace(cppStruct);
+            var nameSpace = namespaceRegistry.ResolveNamespace(cppStruct);
             var csStruct = new CsStruct(cppStruct)
                                    {
                                        Name = NamingRules.Rename(cppStruct),
@@ -69,7 +82,7 @@ namespace SharpGen.Generator
             nameSpace.Add(csStruct);
 
             // Map the C++ name to the C# struct
-            Manager.BindType(cppStruct.Name, csStruct);
+            typeRegistry.BindType(cppStruct.Name, csStruct);
             return csStruct;
         }
 
@@ -100,7 +113,7 @@ namespace SharpGen.Generator
                 if (keyValuePair.Key.Match(csStruct.CppElementName).Success)
                 {
                     string cppName = keyValuePair.Key.Replace(csStruct.CppElementName, keyValuePair.Value);
-                    var destSharpStruct = (CsStruct)Manager.FindBoundType(cppName);
+                    var destSharpStruct = (CsStruct)typeRegistry.FindBoundType(cppName);
                     // Remove the struct from his container
                     csStruct.Parent.Remove(csStruct);
                     // Add this struct to the new container struct
@@ -130,7 +143,7 @@ namespace SharpGen.Generator
             while (currentStruct != null && currentStruct.ParentName != currentStruct.Name)
             {
                 inheritedStructs.Push(currentStruct);
-                currentStruct = Manager.FindBoundType(currentStruct.ParentName)?.CppElement as CppStruct;
+                currentStruct = typeRegistry.FindBoundType(currentStruct.ParentName)?.CppElement as CppStruct;
             }
 
             while (inheritedStructs.Count > 0)
@@ -147,7 +160,7 @@ namespace SharpGen.Generator
                     var cppField = (CppField)currentStruct.Items[fieldIndex];
                     Logger.RunInContext(cppField.ToString(), () =>
                     {
-                        var fieldStruct = Manager.CreateMarshalledElement<CsField>(cppField, true);
+                        var fieldStruct = factory.Create<CsField>(cppField, true);
                         csStruct.Add(fieldStruct);
 
                         // Get name

@@ -31,7 +31,7 @@ namespace SharpGen.Generator
     /// <summary>
     /// Base class to convert a C++ type to a C# type.
     /// </summary>
-    public abstract class TransformBase<TCsElement, TCppElement> : ITransform<TCsElement, TCppElement>
+    public abstract class TransformBase<TCsElement, TCppElement>
         where TCsElement : CsBase
         where TCppElement : CppElement
     {
@@ -39,18 +39,11 @@ namespace SharpGen.Generator
         /// Initializes this instance with the specified <see cref="TransformManager"/>.
         /// </summary>
         /// <param name="manager">The manager.</param>
-        public virtual void Init(TransformManager manager, Logger logger)
+        protected TransformBase(NamingRulesManager namingRules, Logger logger)
         {
-            Manager = manager;
-            NamingRules = manager.NamingRules;
+            NamingRules = namingRules;
             Logger = logger;
         }
-
-        /// <summary>
-        /// Gets the transform manager.
-        /// </summary>
-        /// <value>The transform manager.</value>
-        public TransformManager Manager { get; private set; }
 
         /// <summary>
         /// Gets the naming rules manager.

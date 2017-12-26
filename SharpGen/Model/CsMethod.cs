@@ -28,17 +28,6 @@ namespace SharpGen.Model
 {
     public class CsMethod : CsBase
     {
-        private CsAssembly _assembly;
-        public CsAssembly Assembly
-        {
-            get
-            {
-                if (_assembly == null)
-                    _assembly = GetParent<CsAssembly>();
-                return _assembly;
-            }
-        }
-
         protected virtual int MaxSizeReturnParameter
         {
             get { return 4; }

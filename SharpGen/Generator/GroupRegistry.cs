@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SharpGen.Generator
 {
-    class GroupRegistry
+    public class GroupRegistry
     {
         private readonly Dictionary<string, CsClass> _mapRegisteredFunctionGroup = new Dictionary<string, CsClass>();
 

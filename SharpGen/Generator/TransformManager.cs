@@ -64,27 +64,21 @@ namespace SharpGen.Generator
         {
             GlobalNamespace = globalNamespace;
             Logger = logger;
-
             NamingRules = namingRules;
-
-            EnumTransform = new EnumTransform();
-            EnumTransform.Init(this, logger);
-
-            StructTransform = new StructTransform();
-            StructTransform.Init(this, logger);
-
-            MethodTransform = new MethodTransform();
-            MethodTransform.Init(this, logger);
-
-            InterfaceTransform = new InterfaceTransform();
-            InterfaceTransform.Init(this, logger);
-
             this.docAggregator = docAggregator;
             this.typeRegistry = typeRegistry;
             this.constantManager = constantManager;
             this.assemblyManager = assemblyManager;
             namespaceRegistry = new NamespaceRegistry(logger, assemblyManager);
             marshalledElementFactory = new MarshalledElementFactory(Logger, GlobalNamespace, typeRegistry);
+
+            EnumTransform = new EnumTransform(namingRules, logger, namespaceRegistry, typeRegistry);
+
+            StructTransform = new StructTransform(namingRules, logger, namespaceRegistry, typeRegistry, marshalledElementFactory);
+
+            FunctionTransform = new MethodTransform(namingRules, logger, groupRegistry, marshalledElementFactory, globalNamespace, typeRegistry);
+
+            InterfaceTransform = new InterfaceTransform(namingRules, logger, globalNamespace, FunctionTransform, FunctionTransform, typeRegistry, namespaceRegistry);
         }
 
         public bool ForceGenerator { get; set; }
@@ -99,25 +93,25 @@ namespace SharpGen.Generator
         /// Gets or sets the enum transformer.
         /// </summary>
         /// <value>The enum transformer.</value>
-        internal EnumTransform EnumTransform { get; set; }
+        private EnumTransform EnumTransform { get; set; }
 
         /// <summary>
         /// Gets or sets the struct transformer.
         /// </summary>
         /// <value>The struct transformer.</value>
-        internal StructTransform StructTransform { get; set; }
+        private StructTransform StructTransform { get; set; }
 
         /// <summary>
         /// Gets or sets the method transformer.
         /// </summary>
         /// <value>The method transformer.</value>
-        internal MethodTransform MethodTransform { get; set; }
+        private MethodTransform FunctionTransform { get; set; }
 
         /// <summary>
         /// Gets or sets the interface transformer.
         /// </summary>
         /// <value>The interface transformer.</value>
-        internal InterfaceTransform InterfaceTransform { get; set; }
+        private InterfaceTransform InterfaceTransform { get; set; }
 
         public GlobalNamespaceProvider GlobalNamespace { get; }
         public Logger Logger { get; }
@@ -307,7 +301,7 @@ namespace SharpGen.Generator
         {
             foreach (var bindingRule in file.Bindings)
             {
-                BindType(bindingRule.From, typeRegistry.ImportType(bindingRule.To),
+                typeRegistry.BindType(bindingRule.From, typeRegistry.ImportType(bindingRule.To),
                          string.IsNullOrEmpty(bindingRule.Marshal) ?
                          null
                          : typeRegistry.ImportType(bindingRule.Marshal));
@@ -530,26 +524,29 @@ namespace SharpGen.Generator
         /// <summary>
         ///   Maps all C++ types to C#
         /// </summary>
+        /// <param name="cppModule">The C++ module to parse.</param>
+        /// <param name="configFile">The config file to use to transform the C++ module into C# assemblies.</param>
+        /// <param name="checkFilesPath">The path for the check files.</param>
         public (IEnumerable<CsAssembly> assemblies, IEnumerable<DefineExtensionRule> consumerExtensions) Transform(CppModule cppModule, ConfigFile configFile, string checkFilesPath)
         {
             var consumerDefines = Init(cppModule, configFile, checkFilesPath);
             var selectedCSharpType = new List<CsBase>();
 
             // Prepare transform by defining/registering all types to process
-            PrepareTransform(cppModule, EnumTransform, selectedCSharpType);
-            PrepareTransform(cppModule, StructTransform, selectedCSharpType);
-            PrepareTransform(cppModule, InterfaceTransform, selectedCSharpType);
-            PrepareTransform<CppFunction, CsFunction>(cppModule, MethodTransform, selectedCSharpType);
+            selectedCSharpType.AddRange(PrepareTransform(cppModule, EnumTransform));
+            selectedCSharpType.AddRange(PrepareTransform(cppModule, StructTransform));
+            selectedCSharpType.AddRange(PrepareTransform(cppModule, InterfaceTransform));
+            selectedCSharpType.AddRange(PrepareTransform<CppFunction, CsFunction>(cppModule, FunctionTransform));
 
             // Transform all types
             Logger.Progress(65, "Transforming enums...");
-            ProcessTransform(EnumTransform, selectedCSharpType);
+            ProcessTransform(EnumTransform, selectedCSharpType.OfType<CsEnum>());
             Logger.Progress(70, "Transforming structs...");
-            ProcessTransform(StructTransform, selectedCSharpType);
+            ProcessTransform(StructTransform, selectedCSharpType.OfType<CsStruct>());
             Logger.Progress(75, "Transforming interfaces...");
-            ProcessTransform(InterfaceTransform, selectedCSharpType);
+            ProcessTransform(InterfaceTransform, selectedCSharpType.OfType<CsInterface>());
             Logger.Progress(80, "Transforming functions...");
-            ProcessTransform<CsFunction, CppFunction>(MethodTransform, selectedCSharpType);
+            ProcessTransform(FunctionTransform, selectedCSharpType.OfType<CsFunction>());
 
             foreach (CsAssembly cSharpAssembly in assemblyManager.Assemblies)
                 foreach (var ns in cSharpAssembly.Namespaces)
@@ -570,10 +567,11 @@ namespace SharpGen.Generator
         /// <typeparam name="TCppElement">The C++ type of data to process</typeparam>
         /// <param name="transform">The transform.</param>
         /// <param name="typeToProcess">The type to process.</param>
-        private void PrepareTransform<TCppElement, TCsElement>(CppModule cppModule, ITransform<TCsElement, TCppElement> transform, List<CsBase> typeToProcess)
+        private IEnumerable<TCsElement> PrepareTransform<TCppElement, TCsElement>(CppModule cppModule, ITransformPreparer<TCppElement, TCsElement> transform)
             where TCppElement : CppElement
             where TCsElement : CsBase
         {
+            var csElements = new List<TCsElement>();
             // Predefine all structs, typedefs and interfaces
             foreach (var cppInclude in cppModule.Includes.Where(cppInclude => _includesToProcess.Contains(cppInclude.Name)))
             {
@@ -588,11 +586,12 @@ namespace SharpGen.Generator
                             {
                                 var csElement = transform.Prepare(cppItem);
                                 if (csElement != null)
-                                    typeToProcess.Add(csElement);
+                                    csElements.Add(csElement);
                             }
                         });
                 }
             }
+            return csElements;
         }
 
         /// <summary>
@@ -601,9 +600,10 @@ namespace SharpGen.Generator
         /// <typeparam name="T">The C++ type of data to process</typeparam>
         /// <param name="transform">The transform.</param>
         /// <param name="typeToProcess">The type to process.</param>
-        private void ProcessTransform<T, TCppElement>(ITransform<T, TCppElement> transform, IEnumerable<CsBase> typeToProcess) where T : CsBase where TCppElement: CppElement
+        private void ProcessTransform<T>(ITransformer<T> transform, IEnumerable<T> typeToProcess)
+            where T : CsBase
         {
-            foreach (var csItem in typeToProcess.OfType<T>())
+            foreach (var csItem in typeToProcess)
             {
                 Logger.RunInContext(
                     csItem.CppElement.ToString(),
@@ -615,60 +615,6 @@ namespace SharpGen.Generator
             }
         }
 
-        /// <summary>
-        /// Gets the C# type from a C++ type.
-        /// </summary>
-        /// <typeparam name="T">The C# type to return</typeparam>
-        /// <param name="cppType">The C++ type to process.</param>
-        /// <param name="isTypeUsedInStruct">if set to <c>true</c> this type is used in a struct declaration.</param>
-        /// <returns>An instantiated C# type</returns>
-        internal T CreateMarshalledElement<T>(CppType cppType, bool isTypeUsedInStruct = false)
-            where T : CsMarshalBase, new()
-        {
-            return marshalledElementFactory.Create<T>(cppType, isTypeUsedInStruct);
-        }
-
-        /// <summary>
-        /// Resolves the namespace for a C++ element.
-        /// </summary>
-        /// <param name="element">The C++ element.</param>
-        /// <returns>The attached namespace for this C++ element.</returns>
-        internal CsNamespace ResolveNamespace(CppElement element)
-        {
-            return namespaceRegistry.ResolveNamespace(element);
-        }
-
-        /// <summary>
-        /// Imports a defined C# type.
-        /// </summary>
-        /// <param name = "type">The C# type.</param>
-        /// <returns>The C# type base</returns>
-        public CsTypeBase ImportType(Type type)
-        {
-            return typeRegistry.ImportType(type);
-        }
-
-        /// <summary>
-        /// Maps a C++ type name to a C# class
-        /// </summary>
-        /// <param name = "cppName">Name of the CPP.</param>
-        /// <param name = "type">The C# type.</param>
-        /// <param name = "marshalType">The C# marshal type</param>
-        public void BindType(string cppName, CsTypeBase type, CsTypeBase marshalType = null)
-        {
-            typeRegistry.BindType(cppName, type, marshalType);
-        }
-
-        /// <summary>
-        ///   Finds the C# type binded from a C++ type name.
-        /// </summary>
-        /// <param name = "cppName">Name of a c++ type</param>
-        /// <returns>A C# type or null</returns>
-        public CsTypeBase FindBoundType(string cppName)
-        {
-            return typeRegistry.FindBoundType(cppName);
-        }
-        
         /// <summary>
         /// Creates the C# class container (used by functions, constants, variables).
         /// </summary>
@@ -702,13 +648,6 @@ namespace SharpGen.Generator
 
             return group;
         }
-
-        /// <summary>
-        /// Finds a C# class container by name.
-        /// </summary>
-        /// <param name="className">Name of the class.</param>
-        /// <returns></returns>
-        public CsClass FindCsClassContainer(string className) => groupRegistry.FindGroup(className);
 
         /// <summary>
         /// Handles the constant rule.

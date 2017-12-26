@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 
 namespace SharpGen.Generator
 {
-    class NamespaceRegistry
+    public class NamespaceRegistry
     {
         private readonly AssemblyManager manager;
         private readonly Dictionary<string, CsNamespace> _mapIncludeToNamespace = new Dictionary<string, CsNamespace>();

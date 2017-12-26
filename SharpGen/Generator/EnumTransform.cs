@@ -22,22 +22,32 @@ using SharpGen.Logging;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
     /// <summary>
     /// Transforms a C++ enum to a C# enum definition.
     /// </summary>
-    public class EnumTransform : TransformBase<CsEnum, CppEnum>
+    public class EnumTransform : TransformBase<CsEnum, CppEnum>, ITransformPreparer<CppEnum, CsEnum>, ITransformer<CsEnum>
     {
+        private readonly TypeRegistry typeRegistry;
+        private readonly NamespaceRegistry namespaceRegistry;
+
+        public EnumTransform(
+            NamingRulesManager namingRules,
+            Logger logger, 
+            NamespaceRegistry namespaceRegistry,
+            TypeRegistry typeRegistry)
+            : base(namingRules, logger)
+        {
+            this.namespaceRegistry = namespaceRegistry;
+            this.typeRegistry = typeRegistry;
+        }
+
         /// <summary>
         /// Prepares the specified C++ element to a C# element.
         /// </summary>
-        /// <param name="cppElement">The C++ element.</param>
+        /// <param name="cppEnum">The C++ element.</param>
         /// <returns>The C# element created and registered to the <see cref="TransformManager"/></returns>
         public override CsEnum Prepare(CppEnum cppEnum)
         {
@@ -49,11 +59,11 @@ namespace SharpGen.Generator
             };
 
             // Get the namespace for this particular include and enum
-            var nameSpace = Manager.ResolveNamespace(cppEnum);
+            var nameSpace = namespaceRegistry.ResolveNamespace(cppEnum);
             nameSpace.Add(newEnum);
 
             // Bind C++ enum to C# enum
-            Manager.BindType(cppEnum.Name, newEnum);
+            typeRegistry.BindType(cppEnum.Name, newEnum);
 
             return newEnum;
         }
@@ -132,7 +142,7 @@ namespace SharpGen.Generator
                 newEnum.IsFlag = true;
 
                 if (!tag.EnumHasNone.HasValue)
-                    tryToAddNone = !newEnum.Items.Cast<CsEnumItem>().Any(item => item.Name == "None");
+                    tryToAddNone = !newEnum.EnumItems.Any(item => item.Name == "None");
             }
 
             // Add None value
