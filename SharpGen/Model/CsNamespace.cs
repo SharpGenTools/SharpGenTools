@@ -64,12 +64,6 @@ namespace SharpGen.Model
         /// <value>The output directory.</value>
         public string OutputDirectory { get; set;}
 
-
-        public IEnumerable<CsTypeBase> Types
-        {
-            get { return Items.OfType<CsTypeBase>(); }
-        }
-
         /// <summary>
         /// Gets all declared enums from this namespace.
         /// </summary>

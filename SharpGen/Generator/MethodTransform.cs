@@ -70,9 +70,6 @@ namespace SharpGen.Generator
             // Add the function to the ClassType
             csClass.Add(cSharpFunction);
 
-            // Map the C++ name to the CSharpType
-            Manager.BindType(cppFunction.Name, cSharpFunction);
-
             return cSharpFunction;
         }
 

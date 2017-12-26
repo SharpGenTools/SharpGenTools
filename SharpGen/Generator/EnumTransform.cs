@@ -121,9 +121,6 @@ namespace SharpGen.Generator
                 var csharpEnumItem = new CsEnumItem(enumName, enumValue) { CppElement = cppEnumItem };
 
                 newEnum.Add(csharpEnumItem);
-
-                if (cppEnumItem.Name != "None")
-                    Manager.BindType(cppEnumItem.Name, csharpEnumItem);
             }
 
             bool tryToAddNone = tag.EnumHasNone ?? false;

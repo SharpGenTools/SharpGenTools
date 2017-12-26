@@ -136,8 +136,6 @@ namespace SharpGen.Generator
         public IEnumerable<(string CppType, CsTypeBase CSharpType)> GetTypeBindings()
         {
             return from record in _mapCppNameToCSharpType
-                   where !(record.Value.CSharpType is CsMethod)
-                   && !(record.Value.CSharpType is CsEnumItem)
                    select (record.Key, record.Value.CSharpType);
         }
     }
