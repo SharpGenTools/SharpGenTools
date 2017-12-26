@@ -225,12 +225,12 @@ namespace SharpGen
                 if (Logger.HasErrors)
                     Logger.Fatal("Mapping rules initialization failed");
 
-                transformer.Transform();
+                var assemblies = transformer.Transform();
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Executing mapping rules failed");
 
-                GenerateCode(docAggregator, transformer.Assemblies);
+                GenerateCode(docAggregator, assemblies);
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Code generation failed");
@@ -268,7 +268,7 @@ namespace SharpGen
             }
         }
 
-        private void GenerateCode(DocumentationAggregator docAggregator, List<CsAssembly> assemblies)
+        private void GenerateCode(DocumentationAggregator docAggregator, IEnumerable<CsAssembly> assemblies)
         {
             if (UseRoslynCodeGen)
             {

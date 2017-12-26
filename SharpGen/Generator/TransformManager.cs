@@ -99,11 +99,10 @@ namespace SharpGen.Generator
         public CppModule CppModule { get; private set; }
 
         /// <summary>
-        /// Gets assembly list that are processed. This is accessible after <see cref="Transform"/>
-        /// method has been called.
+        /// Gets assembly list that are processed.
         /// </summary>
         /// <value>The assembly list that are processed.</value>
-        public List<CsAssembly> Assemblies { get; private set; }
+        private List<CsAssembly> Assemblies { get; set; }
 
         /// <summary>
         /// Gets or sets the generated path.
@@ -557,7 +556,7 @@ namespace SharpGen.Generator
         /// <summary>
         ///   Maps all C++ types to C#
         /// </summary>
-        public void Transform()
+        public IEnumerable<CsAssembly> Transform()
         {
             var selectedCSharpType = new List<CsBase>();
 
@@ -586,6 +585,8 @@ namespace SharpGen.Generator
                     foreach (var cSharpFunctionGroup in ns.Classes)
                         constantManager.AttachConstants(cSharpFunctionGroup);
                 }
+
+            return Assemblies;
         }
 
         /// <summary>
