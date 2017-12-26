@@ -5,7 +5,7 @@
         <RestoreNoCache>true</RestoreNoCache>
         <RestoreSources>https://api.nuget.org/v3/index.json;$(MSBuildThisFileDirectory)LocalPackages</RestoreSources>
         <VsInstallRoot Condition="'$(VSINSTALLDIR)' != ''">$(VSINSTALLDIR)</VsInstallRoot>
-        <VsInstallRoot Condition="'$(VsInstallRoot)' != ''">C:\Program Files (x86)\Microsoft Visual Studio\2017\Avalonia-Dev</VsInstallRoot>
+        <VsInstallRoot Condition="'$(VsInstallRoot)' != ''">C:\Program Files (x86)\Microsoft Visual Studio\2017\Community</VsInstallRoot>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
     <ItemGroup>

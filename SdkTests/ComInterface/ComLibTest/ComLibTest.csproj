@@ -3,7 +3,6 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <SdkTestNative>ComLib</SdkTestNative>
     <IsPackable>false</IsPackable>
-    <VsInstallRoot Condition="'$(VSINSTALLDIR)' == ''">C:\Program Files (x86)\Microsoft Visual Studio\2017\Community</VsInstallRoot>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
