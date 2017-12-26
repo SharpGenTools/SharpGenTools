@@ -82,6 +82,7 @@
     Name="CoreGenerateSharpGenBindings" 
     BeforeTargets="CoreCompile"
     DependsOnTargets="PrepareForBuild;CorePrepareSharpGen"
+    Condition="'@(SharpGenMapping)' != ''"
     Inputs="@(SharpGenMapping);$(SharpGenSdkAssembly)"
     Outputs="@(SharpGenConsumerBindMappingFile);@(SharpGenGeneratedSource)">
 
