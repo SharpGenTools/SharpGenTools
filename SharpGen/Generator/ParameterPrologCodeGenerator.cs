@@ -10,7 +10,12 @@ namespace SharpGen.Generator
 {
     class ParameterPrologCodeGenerator : ParameterPrologEpilogBase, IMultiCodeGenerator<CsParameter, StatementSyntax>
     {
-        GlobalNamespaceProvider GlobalNamespace;
+        public ParameterPrologCodeGenerator(GlobalNamespaceProvider globalNamespace)
+        {
+            this.globalNamespace = globalNamespace;
+        }
+
+        GlobalNamespaceProvider globalNamespace;
 
         public IEnumerable<StatementSyntax> GenerateCode(CsParameter csElement)
         {
@@ -329,7 +334,7 @@ namespace SharpGen.Generator
                                     EqualsValueClause(
                                         InvocationExpression(
                                             MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                ParseTypeName(GlobalNamespace.GetTypeName("Utilities")),
+                                                ParseTypeName(globalNamespace.GetTypeName("Utilities")),
                                                 IdentifierName("StringToHGlobalAnsi")),
                                             ArgumentList(
                                                 SingletonSeparatedList(

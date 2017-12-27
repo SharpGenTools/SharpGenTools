@@ -6,12 +6,18 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using SharpGen.Transform;
 
 namespace SharpGen.Generator
 {
     abstract class MemberCodeGeneratorBase<T> : IMultiCodeGenerator<T, MemberDeclarationSyntax>
         where T : CsBase
     {
+        protected MemberCodeGeneratorBase(IDocumentationAggregator documentation)
+        {
+            docAggregator = documentation;
+        }
+
         public abstract IEnumerable<MemberDeclarationSyntax> GenerateCode(T csElement);
         
         protected DocumentationCommentTriviaSyntax GenerateDocumentationTrivia(CsBase csElement)
@@ -28,6 +34,6 @@ namespace SharpGen.Generator
                                 })))));
         }
 
-        private IDocumentationAggregator docAggregator;
+        private readonly IDocumentationAggregator docAggregator;
     }
 }

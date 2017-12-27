@@ -25,7 +25,7 @@ using SharpGen.Logging;
 using SharpGen.CppModel;
 using SharpGen.Model;
 
-namespace SharpGen.Generator
+namespace SharpGen.Transform
 {
     /// <summary>
     /// Transforms a C++ struct to a C# struct.

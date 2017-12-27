@@ -7,11 +7,19 @@ using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using SharpGen.Transform;
 
 namespace SharpGen.Generator
 {
     class StructCodeGenerator : MemberCodeGeneratorBase<CsStruct>
     {
+        public StructCodeGenerator(IGeneratorRegistry generators, IDocumentationAggregator documentation) : base(documentation)
+        {
+            Generators = generators;
+        }
+
+        public IGeneratorRegistry Generators { get; }
+
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsStruct csElement)
         {
             var documentationTrivia = GenerateDocumentationTrivia(csElement);

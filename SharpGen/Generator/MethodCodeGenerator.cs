@@ -10,6 +10,13 @@ namespace SharpGen.Generator
 {
     class MethodCodeGenerator : IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax>
     {
+        public MethodCodeGenerator(IGeneratorRegistry generators)
+        {
+            Generators = generators;
+        }
+
+        public IGeneratorRegistry Generators { get; }
+
         public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsMethod csElement)
         {
             if (csElement.CustomVtbl)

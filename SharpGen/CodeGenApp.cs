@@ -28,6 +28,7 @@ using SharpGen.Generator;
 using SharpGen.Parser;
 using System.Xml.Serialization;
 using SharpGen.Model;
+using SharpGen.Transform;
 
 namespace SharpGen
 {
@@ -265,7 +266,8 @@ namespace SharpGen
         {
             if (UseRoslynCodeGen)
             {
-                throw new NotImplementedException();
+                var generator = new RoslynGenerator(Logger, GlobalNamespace, docAggregator);
+                generator.Run(GeneratedCodeFolder, AppType, assemblies);
             }
             else
             {

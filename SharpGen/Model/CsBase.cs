@@ -29,6 +29,7 @@ using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Generator;
 using System.Diagnostics;
+using SharpGen.Transform;
 
 namespace SharpGen.Model
 {

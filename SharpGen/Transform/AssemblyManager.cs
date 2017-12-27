@@ -8,7 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace SharpGen.Generator
+namespace SharpGen.Transform
 {
     public class AssemblyManager
     {

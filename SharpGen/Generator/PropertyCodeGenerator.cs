@@ -7,11 +7,20 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Linq;
+using SharpGen.Transform;
 
 namespace SharpGen.Generator
 {
     class PropertyCodeGenerator : MemberCodeGeneratorBase<CsProperty>
     {
+        public PropertyCodeGenerator(IGeneratorRegistry generators, IDocumentationAggregator documentation)
+            :base(documentation)
+        {
+            Generators = generators;
+        }
+
+        private IGeneratorRegistry Generators { get; }
+
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsProperty csElement)
         {
             var documentation = GenerateDocumentationTrivia(csElement).AddContent(

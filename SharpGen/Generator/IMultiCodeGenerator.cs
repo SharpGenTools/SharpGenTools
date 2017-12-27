@@ -7,8 +7,7 @@ using System.Text;
 
 namespace SharpGen.Generator
 {
-    interface IMultiCodeGenerator<in TCsElement, out TSyntax>
-        where TCsElement: CsBase
+    public interface IMultiCodeGenerator<in TCsElement, out TSyntax>
         where TSyntax: SyntaxNode
     {
         IEnumerable<TSyntax> GenerateCode(TCsElement csElement);

@@ -7,11 +7,16 @@ using System.Text;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using SharpGen.Transform;
 
 namespace SharpGen.Generator
 {
     class EnumCodeGenerator : MemberCodeGeneratorBase<CsEnum>
     {
+        public EnumCodeGenerator(IDocumentationAggregator documentation) : base(documentation)
+        {
+        }
+
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsEnum csElement)
         {
             var enumDecl = EnumDeclaration(csElement.Name);

@@ -7,11 +7,20 @@ using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using SharpGen.Transform;
 
 namespace SharpGen.Generator
 {
     class GroupCodeGenerator : MemberCodeGeneratorBase<CsClass>
     {
+        public GroupCodeGenerator(IGeneratorRegistry generators, IDocumentationAggregator documentation)
+            : base(documentation)
+        {
+            Generators = generators;
+        }
+
+        public IGeneratorRegistry Generators { get; }
+
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsClass csElement)
         {
             yield return ClassDeclaration(Identifier(csElement.Name))

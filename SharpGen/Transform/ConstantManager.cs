@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace SharpGen.Generator
+namespace SharpGen.Transform
 {
     public class ConstantManager
     {

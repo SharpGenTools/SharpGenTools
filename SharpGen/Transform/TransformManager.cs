@@ -33,7 +33,7 @@ using SharpGen.TextTemplating;
 using System.Reflection;
 using System.Xml.Serialization;
 
-namespace SharpGen.Generator
+namespace SharpGen.Transform
 {
     /// <summary>
     /// This class is responsible for generating the C# model from C++ model.

@@ -25,4 +25,7 @@
     <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.3.0" Condition="'$(TargetFramework)' == 'net46'" />
     <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.0.1" Condition="'$(TargetFramework)' == 'netstandard1.5'" /> <!-- This needs to be <= the version of this package in MSBuild, otherwise .NET Core MSBuild will crash. -->
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Transform\" />
+  </ItemGroup>
 </Project>

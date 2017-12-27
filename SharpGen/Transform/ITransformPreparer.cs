@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace SharpGen.Generator
+namespace SharpGen.Transform
 {
     public interface ITransformPreparer<in TCppElement, out TCsElement>
         where TCppElement: CppElement

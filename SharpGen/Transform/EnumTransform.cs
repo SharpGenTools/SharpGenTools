@@ -23,7 +23,7 @@ using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
 
-namespace SharpGen.Generator
+namespace SharpGen.Transform
 {
     /// <summary>
     /// Transforms a C++ enum to a C# enum definition.

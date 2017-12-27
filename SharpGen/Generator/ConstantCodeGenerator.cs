@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace SharpGen.Generator
 {
-    class ConstantCodeGenerator : IMultiCodeGenerator<CsVariable, MemberDeclarationSyntax>
+    class ConstantCodeGenerator : IMultiCodeGenerator<CsVariable, FieldDeclarationSyntax>
     {
         private static SyntaxTrivia GenerateConstantDocumentationTrivia(CsVariable csVar)
         {
@@ -37,7 +37,7 @@ namespace SharpGen.Generator
                     })));
         }
 
-        public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsVariable var)
+        public IEnumerable<FieldDeclarationSyntax> GenerateCode(CsVariable var)
         {
             yield return FieldDeclaration(
                 VariableDeclaration(

@@ -9,6 +9,12 @@ namespace SharpGen.Generator
 {
     class FunctionCodeGenerator : IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax>
     {
+        public FunctionCodeGenerator(IGeneratorRegistry generators)
+        {
+            Generators = generators;
+        }
+
+        public IGeneratorRegistry Generators { get; }
 
         public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsFunction csElement)
         {

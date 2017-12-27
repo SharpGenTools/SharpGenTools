@@ -7,12 +7,22 @@ using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using SharpGen.Transform;
 
 namespace SharpGen.Generator
 {
     class CallableCodeGenerator : MemberCodeGeneratorBase<CsMethod>
     {
-        GlobalNamespaceProvider GlobalNamespace;
+        public CallableCodeGenerator(IGeneratorRegistry generators, IDocumentationAggregator documentation, GlobalNamespaceProvider globalNamespace)
+            :base(documentation)
+        {
+            Generators = generators;
+            this.globalNamespace = globalNamespace;
+        }
+
+        GlobalNamespaceProvider globalNamespace;
+
+        public IGeneratorRegistry Generators { get; }
 
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsMethod csElement)
         {
@@ -83,7 +93,7 @@ namespace SharpGen.Generator
             // Return
             if (csElement.HasPublicReturnType)
             {
-                if ((csElement.ReturnType.PublicType.Name == GlobalNamespace.GetTypeName("Result")) && csElement.CheckReturnType)
+                if ((csElement.ReturnType.PublicType.Name == globalNamespace.GetTypeName("Result")) && csElement.CheckReturnType)
                 {
                     statements.Add(ExpressionStatement(
                         InvocationExpression(

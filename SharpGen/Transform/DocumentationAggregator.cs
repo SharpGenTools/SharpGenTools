@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using SharpGen.Model;
 
-namespace SharpGen.Generator
+namespace SharpGen.Transform
 {
     class DocumentationAggregator : IDocumentationAggregator
     {

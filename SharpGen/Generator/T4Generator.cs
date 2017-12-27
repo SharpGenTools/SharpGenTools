@@ -1,6 +1,7 @@
 ﻿using SharpGen.Logging;
 using SharpGen.Model;
 using SharpGen.TextTemplating;
+using SharpGen.Transform;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -28,9 +29,6 @@ namespace SharpGen.Generator
 
         public void Run(string generatedCodeFolder, IEnumerable<CsAssembly> assemblies)
         {
-            if (Logger.HasErrors)
-                Logger.Fatal("Transform failed");
-
             // Configure TextTemplateEngine
             var engine = new TemplateEngine(Logger);
             engine.OnInclude += OnInclude;

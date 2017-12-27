@@ -10,7 +10,12 @@ namespace SharpGen.Generator
 {
     class ArgumentGenerator : ICodeGenerator<CsParameter, ArgumentSyntax>
     {
-        GlobalNamespaceProvider GlobalNamespace;
+        GlobalNamespaceProvider globalNamespace;
+
+        public ArgumentGenerator(GlobalNamespaceProvider globalNamespace)
+        {
+            this.globalNamespace = globalNamespace;
+        }
 
         public ArgumentSyntax GenerateCode(CsParameter csElement)
         {
@@ -179,7 +184,7 @@ namespace SharpGen.Generator
                     (ExpressionSyntax)IdentifierName(param.TempName)
                     : PrefixUnaryExpression(SyntaxKind.AddressOfExpression, IdentifierName(param.TempName));
             }
-            else if (param.PublicType.QualifiedName == GlobalNamespace.GetTypeName("PointerSize"))
+            else if (param.PublicType.QualifiedName == globalNamespace.GetTypeName("PointerSize"))
             {
                 return CastExpression(
                     PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),

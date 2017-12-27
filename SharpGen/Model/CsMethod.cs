@@ -23,6 +23,7 @@ using System.Linq;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Generator;
+using SharpGen.Transform;
 
 namespace SharpGen.Model
 {

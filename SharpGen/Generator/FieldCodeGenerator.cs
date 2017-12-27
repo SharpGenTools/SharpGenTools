@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis;
+using SharpGen.Transform;
 
 namespace SharpGen.Generator
 {
@@ -13,7 +14,8 @@ namespace SharpGen.Generator
     {
         private readonly bool explicitLayout;
 
-        public FieldCodeGenerator(bool explicitLayout)
+        public FieldCodeGenerator(IDocumentationAggregator documentation, bool explicitLayout)
+            :base(documentation)
         {
             this.explicitLayout = explicitLayout;
         }

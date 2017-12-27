@@ -11,7 +11,15 @@ namespace SharpGen.Generator
 {
     class NativeInvocationCodeGenerator : ICodeGenerator<CsMethod, ExpressionSyntax>
     {
-        GlobalNamespaceProvider GlobalNamespace;
+        public NativeInvocationCodeGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
+        {
+            Generators = generators;
+            this.globalNamespace = globalNamespace;
+        }
+
+        readonly GlobalNamespaceProvider globalNamespace;
+
+        public IGeneratorRegistry Generators { get; }
 
         private static ExpressionSyntax GetCastedReturn(ExpressionSyntax invocation, CsMarshalBase returnType)
         {
