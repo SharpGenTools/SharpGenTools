@@ -42,6 +42,13 @@ namespace SharpGen.Transform
             if (!_mapDefinedCSharpType.TryGetValue(typeName, out CsTypeBase cSharpType))
             {
                 var type = Type.GetType(typeName);
+                if (type == null)
+                {
+                    Logger.Warning("Type [{0}] is not defined", typeName);
+                    cSharpType = new CsTypeBase { Name = typeName };
+                    DefineType(cSharpType);
+                    return cSharpType;
+                }
                 return ImportType(type);
             }
             return cSharpType;
@@ -51,20 +58,15 @@ namespace SharpGen.Transform
         {
             var typeName = type.FullName;
             var sizeOf = 0;
-            if (type == null)
-                Logger.Warning("Type [{0}] is not defined", typeName);
-            else
+            try
             {
-                try
-                {
 #pragma warning disable 0618
-                    sizeOf = Marshal.SizeOf(type);
+                sizeOf = Marshal.SizeOf(type);
 #pragma warning restore 0618
-                }
-                catch (Exception)
-                {
-                    Logger.Message($"Tried to get the size of type {typeName}, which is not a struct.");
-                }
+            }
+            catch (Exception)
+            {
+                Logger.Message($"Tried to get the size of type {typeName}, which is not a struct.");
             }
             var cSharpType = new CsTypeBase { Name = typeName, Type = type, SizeOf = sizeOf };
             DefineType(cSharpType);

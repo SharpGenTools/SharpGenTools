@@ -28,7 +28,7 @@
 			if (method.IsReturnStructLarge) {#>(void*)&__result__<#+ if (maxParam > 0) {#>, <#+} }
 
 		} else {
-#><#= method.CastStart #><#= method.Assembly.QualifiedName #>.LocalInterop.<#= method.Interop.Name #>(_nativePointer<#+
+#><#= method.CastStart #><#= method.GetParent<CsAssembly>().QualifiedName #>.LocalInterop.<#= method.Interop.Name #>(_nativePointer<#+
 			if (method.IsReturnStructLarge) {#>,(void*)&__result__<#+}				
 			if (maxParam > 0) {#>, <#+}
 		}
