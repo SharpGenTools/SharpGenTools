@@ -24,7 +24,7 @@ namespace SharpGen.Generator
             {
                 yield return LocalDeclarationStatement(
                     VariableDeclaration(
-                        csElement.IsArray ? ArrayType(ParseTypeName(csElement.PublicType.QualifiedName)) : ParseTypeName(csElement.PublicType.QualifiedName),
+                        csElement.IsArray ? ArrayType(ParseTypeName(csElement.PublicType.QualifiedName), SingletonList(ArrayRankSpecifier())) : ParseTypeName(csElement.PublicType.QualifiedName),
                         SingletonSeparatedList(
                             VariableDeclarator(csElement.Name))));
             }
@@ -35,7 +35,7 @@ namespace SharpGen.Generator
                 {
                     yield return LocalDeclarationStatement(
                         VariableDeclaration(
-                            ArrayType(ParseTypeName(csElement.PublicType.QualifiedName)),
+                            ArrayType(ParseTypeName(csElement.PublicType.QualifiedName), SingletonList(ArrayRankSpecifier())),
                             SingletonSeparatedList(
                                 VariableDeclarator($"{csElement.TempName}_")
                                     .WithInitializer(EqualsValueClause(IdentifierName(csElement.Name))))));
@@ -49,7 +49,7 @@ namespace SharpGen.Generator
                 {
                     yield return LocalDeclarationStatement(
                         VariableDeclaration(
-                            ArrayType(ParseTypeName($"{csElement.PublicType.QualifiedName}.__Native")),
+                            ArrayType(ParseTypeName($"{csElement.PublicType.QualifiedName}.__Native"), SingletonList(ArrayRankSpecifier())),
                             SingletonSeparatedList(
                                 VariableDeclarator($"{csElement.TempName}_")
                                     .WithInitializer(EqualsValueClause(

@@ -44,6 +44,8 @@ namespace SharpGenTools.Sdk
         [Required]
         public string ConsumerBindMappingConfigId { get; set; }
 
+        public bool UseRoslynCodeGen { get; set; }
+
         public override bool Execute()
         {
             BindingRedirectResolution.Enable();
@@ -78,7 +80,8 @@ namespace SharpGenTools.Sdk
                 OutputDirectory = OutputDirectory,
                 IncludeAssemblyNameFolder = IncludeAssemblyNameFolder,
                 GeneratedCodeFolder = GeneratedCodeFolder,
-                ConsumerBindMappingConfigId = ConsumerBindMappingConfigId
+                ConsumerBindMappingConfigId = ConsumerBindMappingConfigId,
+                UseRoslynCodeGen = UseRoslynCodeGen
             };
 
             if (!codeGenApp.Init())

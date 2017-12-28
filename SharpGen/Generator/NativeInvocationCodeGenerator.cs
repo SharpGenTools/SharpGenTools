@@ -60,6 +60,10 @@ namespace SharpGen.Generator
                                             IdentifierName("__result__")))));
             }
 
+            arguments.Add(Argument(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                        ThisExpression(),
+                                        IdentifierName("_nativePointer"))));
+
             arguments.AddRange(method.Parameters.Select(param => Generators.Argument.GenerateCode(param)));
 
             if (!(method is CsFunction))
@@ -68,10 +72,10 @@ namespace SharpGen.Generator
                     ElementAccessExpression(
                         ParenthesizedExpression(
                             PrefixUnaryExpression(SyntaxKind.PointerIndirectionExpression,
-                                CastExpression(PointerType(PointerType(PointerType(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword)))))),
+                                CastExpression(PointerType(PointerType(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))))),
                                     MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                         ThisExpression(),
-                                        IdentifierName("nativePointer"))))),
+                                        IdentifierName("_nativePointer"))))),
                         BracketedArgumentList(
                             SingletonSeparatedList(
                                 Argument(method.CustomVtbl ?

@@ -22,16 +22,17 @@ namespace SharpGen.Generator
         
         protected DocumentationCommentTriviaSyntax GenerateDocumentationTrivia(CsBase csElement)
         {
-            return DocumentationCommentTrivia(
-                    SyntaxKind.SingleLineDocumentationCommentTrivia,
-                    SingletonList<XmlNodeSyntax>(XmlText()
-                        .WithTextTokens(
-                            TokenList(docAggregator.GetDocItems(csElement).SelectMany(item =>
-                                new[]{
-                                    XmlTextNewLine("\n", true),
-                                    XmlTextLiteral(item),
-                                    XmlTextNewLine("\n", true)
-                                })))));
+            var docItems = docAggregator.GetDocItems(csElement);
+
+            var builder = new StringBuilder();
+            foreach (var docItem in docItems)
+            {
+                builder.AppendLine($"/// {docItem}");
+            }
+            builder.AppendLine();
+
+            var tree = CSharpSyntaxTree.ParseText(builder.ToString());
+            return (DocumentationCommentTriviaSyntax)tree.GetCompilationUnitRoot().EndOfFileToken.LeadingTrivia[0].GetStructure();
         }
 
         private readonly IDocumentationAggregator docAggregator;

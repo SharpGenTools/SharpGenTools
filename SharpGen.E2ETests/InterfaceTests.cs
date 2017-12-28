@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+﻿using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
@@ -32,7 +33,10 @@ namespace SharpGen.E2ETests
             var methodSyntax = interfaceMethod.DeclaringSyntaxReferences[0].GetSyntax();
             var calliCall = methodSyntax.DescendantNodes().OfType<InvocationExpressionSyntax>().First();
             var nativePtrArgument = calliCall.ArgumentList.Arguments.First().Expression;
-            Assert.IsType<IdentifierNameSyntax>(nativePtrArgument);
+            Assert.IsType<MemberAccessExpressionSyntax>(nativePtrArgument);
+            var nativePtrExpression = (MemberAccessExpressionSyntax)nativePtrArgument;
+            Assert.Equal(SyntaxKind.ThisExpression, nativePtrExpression.Expression.Kind());
+            Assert.Equal("_nativePointer", nativePtrExpression.Name.ToString());
             var functionPtrArgument = calliCall.ArgumentList.Arguments.Last().Expression;
             var methodIndex = functionPtrArgument.DescendantNodes().OfType<BracketedArgumentListSyntax>().First();
             Assert.Equal(correctIndex.ToString(), methodIndex.Arguments.Single().ToString());

@@ -219,7 +219,7 @@ namespace SharpGen.Transform
         {
             var maxUpdateTime = ConfigFile.GetLatestTimestamp(assembly.ConfigFilesLinked);
 
-            if (File.Exists(assembly.CheckFileName))
+            if (checkFilesPath != null && File.Exists(Path.Combine(checkFilesPath, assembly.CheckFileName)))
             {
                 if (maxUpdateTime > File.GetLastWriteTime(Path.Combine(checkFilesPath, assembly.CheckFileName)))
                     assembly.IsToUpdate = true;

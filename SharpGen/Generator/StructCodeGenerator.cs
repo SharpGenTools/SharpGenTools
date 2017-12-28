@@ -53,22 +53,22 @@ namespace SharpGen.Generator
 
             yield return (csElement.GenerateAsClass ?
                 (MemberDeclarationSyntax)ClassDeclaration(
-                    SingletonList(AttributeList(csElement.HasMarshalType ? SingletonSeparatedList(structLayoutAttribute) : default)),
+                    !csElement.HasMarshalType ? SingletonList(AttributeList(SingletonSeparatedList(structLayoutAttribute))) : default,
                     TokenList(ParseTokens(csElement.VisibilityName)),
                     Identifier(csElement.Name),
-                    TypeParameterList(SeparatedList(Enumerable.Empty<TypeParameterSyntax>())),
-                    BaseList(SeparatedList(Enumerable.Empty<BaseTypeSyntax>())),
-                    List(Enumerable.Empty<TypeParameterConstraintClauseSyntax>()),
+                    default,
+                    default,
+                    default,
                     List(innerStructs.Concat(constants).Concat(fields).Concat(marshallingStructAndConversions)))
                 .WithLeadingTrivia(Trivia(documentationTrivia))
                     :
                 StructDeclaration(
-                    SingletonList(AttributeList(csElement.HasMarshalType ? SingletonSeparatedList(structLayoutAttribute) : default)),
+                    !csElement.HasMarshalType ? SingletonList(AttributeList(SingletonSeparatedList(structLayoutAttribute))) : default,
                     TokenList(ParseTokens(csElement.VisibilityName)),
                     Identifier(csElement.Name),
-                    TypeParameterList(SeparatedList(Enumerable.Empty<TypeParameterSyntax>())),
-                    BaseList(SeparatedList(Enumerable.Empty<BaseTypeSyntax>())),
-                    List(Enumerable.Empty<TypeParameterConstraintClauseSyntax>()),
+                    default,
+                    default,
+                    default,
                     List(innerStructs.Concat(constants).Concat(fields).Concat(marshallingStructAndConversions))))
                 .WithLeadingTrivia(Trivia(documentationTrivia));
         }

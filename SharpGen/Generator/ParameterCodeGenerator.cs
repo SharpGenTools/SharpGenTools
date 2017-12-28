@@ -45,7 +45,7 @@ namespace SharpGen.Generator
 
             if (csElement.IsArray && csElement.PublicType.Name != "System.String" && !csElement.IsComArray)
             {
-                type = ArrayType(type);
+                type = ArrayType(type, SingletonList(ArrayRankSpecifier()));
             }
 
             return param.WithType(type);

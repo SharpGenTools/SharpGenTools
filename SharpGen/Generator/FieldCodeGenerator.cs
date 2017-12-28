@@ -45,7 +45,7 @@ namespace SharpGen.Generator
             }
             else if (csElement.IsArray && csElement.QualifiedName != "System.String")
             {
-                yield return PropertyDeclaration(ArrayType(ParseTypeName(csElement.PublicType.QualifiedName)), csElement.Name)
+                yield return PropertyDeclaration(ArrayType(ParseTypeName(csElement.PublicType.QualifiedName), SingletonList(ArrayRankSpecifier())), csElement.Name)
                     .WithAccessorList(
                         AccessorList(
                             List(
@@ -59,11 +59,11 @@ namespace SharpGen.Generator
                                                 ParseName($"_{csElement.Name}"),
                                                 ObjectCreationExpression(
                                                     ArrayType(ParseTypeName(csElement.PublicType.QualifiedName),
-                                                    List(new [] {
+                                                    SingletonList(
                                                         ArrayRankSpecifier(
                                                             SingletonSeparatedList<ExpressionSyntax>(
                                                                 LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.ArrayDimensionValue))))
-                                                    })))))))
+                                                    )))))))
                                 })))
                     .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
                     .WithLeadingTrivia(Trivia(docComments));
@@ -121,7 +121,7 @@ namespace SharpGen.Generator
         {
             var fieldDecl = FieldDeclaration(
                 VariableDeclaration(isArray ?
-                    ArrayType(ParseTypeName(field.PublicType.QualifiedName))
+                    ArrayType(ParseTypeName(field.PublicType.QualifiedName), SingletonList(ArrayRankSpecifier()))
                     : ParseTypeName(field.PublicType.QualifiedName),
                     SingletonSeparatedList(
                         VariableDeclarator(field.Name)
@@ -139,7 +139,7 @@ namespace SharpGen.Generator
                                     LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(field.Offset))))))))
                 ));
             }
-            return fieldDecl.WithLeadingTrivia(Trivia(docTrivia));
+            return docTrivia != null ? fieldDecl.WithLeadingTrivia(Trivia(docTrivia)) : fieldDecl;
         }
 
     }
