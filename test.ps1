@@ -37,7 +37,7 @@ pushd .\SdkTests
 
     pushd ComInterface
         pushd ComLibTest
-            dotnet test
+            dotnet test --no-build --no-restore
             if ($LastExitCode -ne 0) {
                 exit 1
             }
