@@ -17,8 +17,8 @@ namespace SharpGen.E2ETests
 {
     public abstract class TestBase : IDisposable
     {
-        private ITestOutputHelper outputHelper;
-        private DirectoryInfo testDirectory;
+        private readonly ITestOutputHelper outputHelper;
+        private readonly DirectoryInfo testDirectory;
 
         protected TestBase(ITestOutputHelper outputHelper)
         {
