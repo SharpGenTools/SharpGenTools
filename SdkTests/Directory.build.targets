@@ -4,7 +4,7 @@
       <SdkTestNativeFiles Include="$(MSBuildThisFileDirectory)\x64\$(Configuration)\$(SdkTestNative).*" />
     </ItemGroup>
     <Copy 
-      DestinationFolder="$(OutputPath)"
+      DestinationFolder="$(MSBuildProjectDirectory)\$(OutputPath)"
       SourceFiles="@(SdkTestNativeFiles)"
     >
       <Output TaskParameter="CopiedFiles" ItemName="CopiedNativeFiles" />
