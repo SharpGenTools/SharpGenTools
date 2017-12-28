@@ -6,7 +6,10 @@
     <Copy 
       DestinationFolder="$(OutputPath)"
       SourceFiles="@(SdkTestNativeFiles)"
-      />
+    >
+      <Output TaskParameter="CopiedFiles" ItemName="CopiedNativeFiles" />
+    </Copy>
     <Message Text="Copied Native Test Dependencies" Importance="high" />
+    <Message Text="@(CopiedNativeFiles)" Importance="high" />
   </Target>
 </Project>
