@@ -3,10 +3,10 @@
     <ItemGroup>
       <SdkTestNativeFiles Include="$(MSBuildThisFileDirectory)\x64\$(Configuration)\$(SdkTestNative).*" />
     </ItemGroup>
-    <Copy 
-      DestinationFolder="$(OutputPath)"
+    <Copy
+      DestinationFolder="$(MSBuildProjectDirectory)\$(OutputPath)"
       SourceFiles="@(SdkTestNativeFiles)"
-      />
-    <Message Text="Copied Native Test Dependencies" Importance="high" />
+    />
+    <Message Text="Copied Native Test Dependencies" />
   </Target>
 </Project>

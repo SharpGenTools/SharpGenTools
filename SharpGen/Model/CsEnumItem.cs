@@ -20,7 +20,7 @@
 
 namespace SharpGen.Model
 {
-    public class CsEnumItem : CsTypeBase
+    public class CsEnumItem : CsBase
     {
         public CsEnumItem()
         {

@@ -184,7 +184,7 @@ foreach (var sharpInterface in Namespace.Interfaces)
 		}
 #>        }
 <#+	
-		if (sharpProperty.IsPropertyParam && sharpProperty.IsPersistent) {
+		if (sharpProperty.IsPersistent) {
 #>
 			protected internal <#= sharpProperty.PublicType.QualifiedName #> <#= sharpProperty.Name #>__;
 <#+		

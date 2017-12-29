@@ -7,8 +7,10 @@ pushd SharpGen.E2ETests
     }
 popd
 
-if(Test-Path -Path SdkTests/RestoredPackages/){
-    rm -r -Force SdkTests/RestoredPackages/
+
+if(Test-Path -Path SdkTests/RestoredPackages/sharpgentools.sdk){
+    rm -r -Force SdkTests/RestoredPackages/sharpgentools.sdk
+    rm -r -Force SdkTests/RestoredPackages/sharpgen.runtime -ErrorAction SilentlyContinue
 }
 
 mkdir SdkTests/LocalPackages -ErrorAction SilentlyContinue
@@ -35,7 +37,7 @@ pushd .\SdkTests
 
     pushd ComInterface
         pushd ComLibTest
-            dotnet xunit
+            dotnet test --no-build --no-restore -c Release
             if ($LastExitCode -ne 0) {
                 exit 1
             }

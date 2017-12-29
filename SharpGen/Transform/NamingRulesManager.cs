@@ -26,7 +26,7 @@ using System.Text.RegularExpressions;
 using SharpGen.Config;
 using SharpGen.CppModel;
 
-namespace SharpGen.Generator
+namespace SharpGen.Transform
 {
     /// <summary>
     /// This class handles renaming according to conventions. Pascal case (NamingRulesManager) for global types,  

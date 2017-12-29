@@ -23,22 +23,34 @@ using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
 
-namespace SharpGen.Generator
+namespace SharpGen.Transform
 {
     /// <summary>
     /// Transforms a C++ enum to a C# enum definition.
     /// </summary>
-    public class EnumTransform : TransformBase
+    public class EnumTransform : TransformBase<CsEnum, CppEnum>, ITransformPreparer<CppEnum, CsEnum>, ITransformer<CsEnum>
     {
+        private readonly TypeRegistry typeRegistry;
+        private readonly NamespaceRegistry namespaceRegistry;
+
+        public EnumTransform(
+            NamingRulesManager namingRules,
+            Logger logger, 
+            NamespaceRegistry namespaceRegistry,
+            TypeRegistry typeRegistry)
+            : base(namingRules, logger)
+        {
+            this.namespaceRegistry = namespaceRegistry;
+            this.typeRegistry = typeRegistry;
+        }
+
         /// <summary>
         /// Prepares the specified C++ element to a C# element.
         /// </summary>
-        /// <param name="cppElement">The C++ element.</param>
+        /// <param name="cppEnum">The C++ element.</param>
         /// <returns>The C# element created and registered to the <see cref="TransformManager"/></returns>
-        public override CsBase Prepare(CppElement cppElement)
+        public override CsEnum Prepare(CppEnum cppEnum)
         {
-            var cppEnum = (CppEnum) cppElement;
-
             // Create C# enum
             var newEnum = new CsEnum
             {
@@ -47,29 +59,20 @@ namespace SharpGen.Generator
             };
 
             // Get the namespace for this particular include and enum
-            var nameSpace = Manager.ResolveNamespace(cppEnum);
+            var nameSpace = namespaceRegistry.ResolveNamespace(cppEnum);
             nameSpace.Add(newEnum);
 
             // Bind C++ enum to C# enum
-            Manager.BindType(cppEnum.Name, newEnum);
+            typeRegistry.BindType(cppEnum.Name, newEnum);
 
             return newEnum;
         }
 
         /// <summary>
-        /// Processes the specified C# element to complete the mapping process between the C++ and C# element.
-        /// </summary>
-        /// <param name="csElement">The C# element.</param>
-        public override void Process(CsBase csElement)
-        {
-            Process((CsEnum)csElement);
-        }
-        
-        /// <summary>
         /// Maps a C++ Enum to a C# enum.
         /// </summary>
         /// <param name="newEnum">the C# enum.</param>
-        private void Process(CsEnum newEnum)
+        public override void Process(CsEnum newEnum)
         {
             var cppEnum = (CppEnum) newEnum.CppElement;
 
@@ -128,9 +131,6 @@ namespace SharpGen.Generator
                 var csharpEnumItem = new CsEnumItem(enumName, enumValue) { CppElement = cppEnumItem };
 
                 newEnum.Add(csharpEnumItem);
-
-                if (cppEnumItem.Name != "None")
-                    Manager.BindType(cppEnumItem.Name, csharpEnumItem);
             }
 
             bool tryToAddNone = tag.EnumHasNone ?? false;
@@ -142,7 +142,7 @@ namespace SharpGen.Generator
                 newEnum.IsFlag = true;
 
                 if (!tag.EnumHasNone.HasValue)
-                    tryToAddNone = !newEnum.Items.Cast<CsEnumItem>().Any(item => item.Name == "None");
+                    tryToAddNone = !newEnum.EnumItems.Any(item => item.Name == "None");
             }
 
             // Add None value

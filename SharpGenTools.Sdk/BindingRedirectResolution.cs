@@ -41,7 +41,6 @@ namespace SharpGenTools.Sdk
                 return null;
             };
 #else
-            // Isn't getting called???
             AssemblyLoadContext.Default.Resolving += (context, name) =>
             {
                 var assemblyPath = typeof(BindingRedirectResolution).GetTypeInfo().Assembly.Location;

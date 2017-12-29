@@ -15,7 +15,6 @@ namespace SharpGen.E2ETests
         [Fact]
         public void SimpleCppStructGeneratesCorrectCSharpStruct()
         {
-            var testDirectory = GenerateTestDirectory();
             var config = new Config.ConfigFile
             {
                 Namespace = nameof(SimpleCppStructGeneratesCorrectCSharpStruct),
@@ -52,7 +51,6 @@ namespace SharpGen.E2ETests
         [Fact]
         public void StructWithMultipleMembersGeneratesStructWithMembersInCorrectOrder()
         {
-            var testDirectory = GenerateTestDirectory();
             var config = new Config.ConfigFile
             {
                 Namespace = nameof(StructWithMultipleMembersGeneratesStructWithMembersInCorrectOrder),
@@ -90,7 +88,6 @@ namespace SharpGen.E2ETests
         [Fact]
         public void InheritingStructPutsItsMembersAfterBaseMembers()
         {
-            var testDirectory = GenerateTestDirectory();
             var config = new Config.ConfigFile
             {
                 Namespace = nameof(InheritingStructPutsItsMembersAfterBaseMembers),
@@ -127,6 +124,108 @@ namespace SharpGen.E2ETests
             Assert.Equal("Field1", members[0].Name);
             Assert.Equal("Field2", members[1].Name);
             Assert.Equal("Field3", members[2].Name);
+        }
+
+        [Fact]
+        public void StructWithBoolToIntMemberGeneratesBoolField()
+        {
+            var config = new Config.ConfigFile
+            {
+                Namespace = nameof(StructWithBoolToIntMemberGeneratesBoolField),
+                Assembly = nameof(StructWithBoolToIntMemberGeneratesBoolField),
+                IncludeDirs = { GetTestFileIncludeRule() },
+                Includes =
+                {
+                    CreateCppFile("boolToInt", @"
+                        struct BoolToInt {
+                            int test;
+                        };
+                    ")
+                },
+                Bindings =
+                {
+                    new Config.BindRule("int", "System.Int32"),
+                    new Config.BindRule("bool", "System.Boolean")
+                },
+                Mappings =
+                {
+                    new Config.MappingRule
+                    {
+                        Field = "BoolToInt::test",
+                        MappingType = "bool",
+                    }
+                }
+            };
+
+            var result = RunWithConfig(config);
+            AssertRanSuccessfully(result.success, result.output);
+
+            var compilation = GetCompilationForGeneratedCode();
+            var structType = compilation.GetTypeByMetadataName($"{nameof(StructWithBoolToIntMemberGeneratesBoolField)}.BoolToInt");
+            var member = structType.GetMembers("Test")[0] as IFieldSymbol;
+            Assert.NotNull(member);
+            Assert.Equal(compilation.GetSpecialType(SpecialType.System_Boolean), member.Type);
+        }
+
+        [Fact]
+        public void StructWithBoolToIntArrayMemberGeneratesBoolArrayProperty()
+        {
+            var config = new Config.ConfigFile
+            {
+                Namespace = nameof(StructWithBoolToIntArrayMemberGeneratesBoolArrayProperty),
+                Assembly = nameof(StructWithBoolToIntArrayMemberGeneratesBoolArrayProperty),
+                IncludeDirs = { GetTestFileIncludeRule() },
+                Includes =
+                {
+                    CreateCppFile("boolToInt", @"
+                        struct BoolToInt {
+                            int test[3];
+                        };
+
+                        extern ""C"" bool TestFunction(BoolToInt t);
+                    ")
+                },
+                Bindings =
+                {
+                    new Config.BindRule("int", "System.Int32"),
+                    new Config.BindRule("bool", "System.Boolean")
+                },
+                Extension =
+                {
+                    new Config.CreateExtensionRule
+                    {
+                        NewClass = $"{nameof(StructWithBoolToIntArrayMemberGeneratesBoolArrayProperty)}.Functions",
+                        Visibility = Config.Visibility.Public
+                    }
+                },
+                Mappings =
+                {
+                    new Config.MappingRule
+                    {
+                        Field = "BoolToInt::test",
+                        MappingType = "bool",
+                    },
+                    new Config.MappingRule
+                    {
+                        Function = "TestFunction",
+                        CsClass = $"{nameof(StructWithBoolToIntArrayMemberGeneratesBoolArrayProperty)}.Functions",
+                        FunctionDllName="Dll"
+                    }
+                }
+            };
+
+            var result = RunWithConfig(config);
+            AssertRanSuccessfully(result.success, result.output);
+
+            var compilation = GetCompilationForGeneratedCode();
+            var structType = compilation.GetTypeByMetadataName($"{nameof(StructWithBoolToIntArrayMemberGeneratesBoolArrayProperty)}.BoolToInt");
+            var member = structType.GetMembers("Test")[0] as IPropertySymbol;
+            Assert.NotNull(member);
+            Assert.Equal(TypeKind.Array, member.Type.TypeKind);
+            var memberType = (IArrayTypeSymbol)member.Type;
+            Assert.Equal(compilation.GetSpecialType(SpecialType.System_Boolean), memberType.ElementType);
+            var marshalType = structType.GetTypeMembers("__Native")[0];
+            Assert.NotNull(marshalType);
         }
     }
 }

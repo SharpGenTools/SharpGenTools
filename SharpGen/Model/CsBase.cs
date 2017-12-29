@@ -29,6 +29,7 @@ using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Generator;
 using System.Diagnostics;
+using SharpGen.Transform;
 
 namespace SharpGen.Model
 {
@@ -285,7 +286,7 @@ namespace SharpGen.Model
 
         public bool HasPersistent { get; set; }
 
-        public virtual void FillDocItems(List<string> docItems, TransformManager manager) {}
+        public virtual void FillDocItems(IList<string> docItems, IDocumentationAggregator manager) {}
         
         public virtual string DocUnmanagedName
         {

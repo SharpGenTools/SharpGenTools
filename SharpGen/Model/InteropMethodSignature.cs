@@ -17,41 +17,44 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System;
 using System.Collections.Generic;
 using System.Text;
 using SharpGen.Generator;
 
 namespace SharpGen.Model
 {
-    public class InteropMethodSignature
+    public class InteropMethodSignature : IEquatable<InteropMethodSignature>
     {
         public InteropMethodSignature()
         {
             ParameterTypes = new List<InteropType>();
         }
 
-        public int Index;
-        public InteropType ReturnType;
-        public List<InteropType> ParameterTypes;
-        public bool IsLocal;
-        public bool IsFunction;
+        public int Index { get; set; }
+        public InteropType ReturnType { get; set; }
+        public List<InteropType> ParameterTypes { get; set; }
+        public bool IsLocal { get; set; }
+        public bool IsFunction { get; set; }
 
         public string Name
         {
             get
             {
-                string returnTypeName = ReturnType.TypeName;
+                var returnTypeName = ReturnType.TypeName;
                 returnTypeName = returnTypeName.Replace("*", "Ptr");
                 returnTypeName = returnTypeName.Replace(".", "");
-                return "Calli" + ((IsFunction)?"Func":"") + returnTypeName + ((IsLocal) ? ""+ Index : "");
+                return "Calli" + ((IsFunction)?"Func":"") + returnTypeName + ((IsLocal) ? Index.ToString() : "");
             }
         }
 
         public override bool Equals(object obj)
         {
-            if (obj == null)
-                return false;
-            InteropMethodSignature against = obj as InteropMethodSignature;
+            return obj is InteropMethodSignature sig && Equals(sig);
+        }
+
+        public bool Equals(InteropMethodSignature against)
+        {
             if (against == null)
                 return false;
             if (this.ReturnType != against.ReturnType)

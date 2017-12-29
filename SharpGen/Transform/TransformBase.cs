@@ -17,33 +17,33 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using Microsoft.CodeAnalysis;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SharpGen.CppModel;
 using SharpGen.Logging;
 using SharpGen.Model;
+using System.Linq;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace SharpGen.Generator
+namespace SharpGen.Transform
 {
     /// <summary>
     /// Base class to convert a C++ type to a C# type.
     /// </summary>
-    public abstract class TransformBase
+    public abstract class TransformBase<TCsElement, TCppElement>
+        where TCsElement : CsBase
+        where TCppElement : CppElement
     {
         /// <summary>
         /// Initializes this instance with the specified <see cref="TransformManager"/>.
         /// </summary>
         /// <param name="manager">The manager.</param>
-        public virtual void Init(TransformManager manager, Logger logger)
+        protected TransformBase(NamingRulesManager namingRules, Logger logger)
         {
-            Manager = manager;
-            NamingRules = manager.NamingRules;
+            NamingRules = namingRules;
             Logger = logger;
         }
-
-        /// <summary>
-        /// Gets the transform manager.
-        /// </summary>
-        /// <value>The transform manager.</value>
-        public TransformManager Manager { get; private set; }
 
         /// <summary>
         /// Gets the naming rules manager.
@@ -61,12 +61,12 @@ namespace SharpGen.Generator
         /// </summary>
         /// <param name="cppElement">The C++ element.</param>
         /// <returns>The C# element created and registered to the <see cref="TransformManager"/></returns>
-        public abstract CsBase Prepare(CppElement cppElement);
+        public abstract TCsElement Prepare(TCppElement cppElement);
 
         /// <summary>
         /// Processes the specified C# element to complete the mapping process between the C++ and C# element.
         /// </summary>
         /// <param name="csElement">The C# element.</param>
-        public abstract void Process(CsBase csElement);
+        public abstract void Process(TCsElement csElement);
     }
 }

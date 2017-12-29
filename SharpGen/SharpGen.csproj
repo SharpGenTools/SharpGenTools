@@ -3,11 +3,12 @@
     <OutputType>Library</OutputType>
     <TargetFrameworks>netstandard1.5;net46</TargetFrameworks>
     <Description>Library for generating efficient C# code from C++ and COM headers.</Description>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="**/*.tt" />
     <PackageReference Include="HtmlAgilityPack" Version="1.5.0-beta9" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="2.2.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="2.1.0" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="4.3.0" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.2" />
     <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
@@ -23,5 +24,8 @@
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.3.0" Condition="'$(TargetFramework)' == 'net46'" />
     <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.0.1" Condition="'$(TargetFramework)' == 'netstandard1.5'" /> <!-- This needs to be <= the version of this package in MSBuild, otherwise .NET Core MSBuild will crash. -->
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Transform\" />
   </ItemGroup>
 </Project>

@@ -89,10 +89,7 @@ namespace SharpGen.Model
         /// <summary>
         ///   List of declared inner structs
         /// </summary>
-        public bool HasInnerInterfaces
-        {
-            get { return Items.OfType<CsInterface>().Count() > 0; }
-        }
+        public bool HasInnerInterfaces => Items.OfType<CsInterface>().Any();
 
         public override string ToString()
         {

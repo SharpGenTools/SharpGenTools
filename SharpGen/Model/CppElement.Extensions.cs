@@ -47,10 +47,6 @@ namespace SharpGen.Model
             element.Modify<T>(regexStr, ProcessTag(tag));
         }
 
-        /// <summary>
-        /// Tag an Enum and force it to be interpreted as a flag.
-        /// </summary>
-        /// <param name="cppType"></param>
         public static string GetTypeNameWithMapping(this CppElement cppType)
         {
             var tag = cppType.GetTagOrDefault<MappingRule>();
@@ -133,7 +129,6 @@ namespace SharpGen.Model
                     if (fromTag.IsDualCallbackInterface != null) tag.IsDualCallbackInterface = fromTag.IsDualCallbackInterface;
                     if (fromTag.IsKeepImplementPublic != null) tag.IsKeepImplementPublic = fromTag.IsKeepImplementPublic;
                     if (fromTag.FunctionDllName != null) tag.FunctionDllName = RegexRename(patchRegex, element.FullName, fromTag.FunctionDllName);
-                    if (fromTag.UseDllImport != null) tag.UseDllImport = fromTag.UseDllImport;
                     if (fromTag.FunctionDllNameFromMacro != null)
                         tag.FunctionDllName = element.ParentRoot.FindFirst<CppDefine>(fromTag.FunctionDllNameFromMacro).StripStringValue;
                     if (fromTag.CsClass != null) tag.CsClass = fromTag.CsClass;

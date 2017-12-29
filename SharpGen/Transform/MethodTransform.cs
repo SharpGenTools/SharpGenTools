@@ -23,54 +23,280 @@ using SharpGen.Logging;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+using Microsoft.CodeAnalysis.CSharp;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace SharpGen.Generator
+namespace SharpGen.Transform
 {
     /// <summary>
     /// Transform a C++ method/function to a C# method.
     /// </summary>
-    public class MethodTransform : TransformBase
+    public class MethodTransform : TransformBase<CsMethod, CppMethod>, ITransformer<CsMethod>, ITransformPreparer<CppMethod, CsMethod>, ITransformer<CsFunction>, ITransformPreparer<CppFunction, CsFunction>
     {
+        private readonly GroupRegistry groupRegistry;
+        private readonly MarshalledElementFactory factory;
+        private readonly GlobalNamespaceProvider globalNamespace;
+        private readonly TypeRegistry typeRegistry;
+
+        public MethodTransform(
+            NamingRulesManager namingRules,
+            Logger logger,
+            GroupRegistry groupRegistry,
+            MarshalledElementFactory factory,
+            GlobalNamespaceProvider globalNamespace,
+            TypeRegistry typeRegistry)
+            : base(namingRules, logger)
+        {
+            this.groupRegistry = groupRegistry;
+            this.factory = factory;
+            this.globalNamespace = globalNamespace;
+            this.typeRegistry = typeRegistry;
+        }
+
         /// <summary>
         /// Prepares the specified C++ element to a C# element.
         /// </summary>
-        /// <param name="cppElement">The C++ element.</param>
+        /// <param name="cppMethod">The C++ element.</param>
         /// <returns>The C# element created and registered to the <see cref="TransformManager"/></returns>
-        public override CsBase Prepare(CppElement cppElement)
+        public override CsMethod Prepare(CppMethod cppMethod) => new CsMethod(cppMethod);
+
+        public CsFunction Prepare(CppFunction cppFunction)
         {
-            var cppMethod = (CppMethod) cppElement;
-            var cSharpFunction = (cppElement is CppFunction) ? new CsFunction((CppFunction)cppMethod) : new CsMethod(cppMethod);
+            var cSharpFunction = new CsFunction(cppFunction);
+            // All functions must have a tag
+            var tag = cppFunction.GetTagOrDefault<MappingRule>();
 
-            if (cppElement is CppFunction)
+            if (tag == null || tag.CsClass == null)
             {
-                // All functions must have a tag
-                var tag = cppMethod.GetTagOrDefault<MappingRule>();
-
-                if (tag == null || tag.CsClass == null)
-                {
-                    Logger.Error("CppFunction [{0}] is not tagged and attached to any Class/FunctionGroup", cppMethod);
-                    return null;
-                }
-
-                var csClass = Manager.FindCsClassContainer(tag.CsClass);
-
-                if (csClass == null)
-                {
-                    Logger.Error("CppFunction [{0}] is not attached to a Class/FunctionGroup", cppMethod);
-                    return null;
-                }
-
-                // Set the DllName for this function
-                ((CsFunction)cSharpFunction).DllName = tag.FunctionDllName;
-
-                // Add the function to the ClassType
-                csClass.Add(cSharpFunction);
-
-                // Map the C++ name to the CSharpType
-                Manager.BindType(cppMethod.Name, cSharpFunction);
+                Logger.Error("CppFunction [{0}] is not tagged and attached to any Class/FunctionGroup", cppFunction);
+                return null;
             }
 
+            var csClass = groupRegistry.FindGroup(tag.CsClass);
+
+            if (csClass == null)
+            {
+                Logger.Error("CppFunction [{0}] is not attached to a Class/FunctionGroup", cppFunction);
+                return null;
+            }
+
+            // Set the DllName for this function
+            cSharpFunction.DllName = tag.FunctionDllName;
+
+            // Add the function to the ClassType
+            csClass.Add(cSharpFunction);
+
             return cSharpFunction;
+        }
+
+        /// <summary>
+        /// Processes the specified C# element to complete the mapping process between the C++ and C# element.
+        /// </summary>
+        /// <param name="csElement">The C# element.</param>
+        public override void Process(CsMethod csElement)
+        {
+            try
+            {
+                var csMethod = csElement;
+                Logger.PushContext("Method {0}", csMethod.CppElement);
+
+                ProcessMethod(csMethod);
+
+                RegisterNativeInteropSignature(csMethod);
+            }
+            finally
+            {
+                Logger.PopContext();
+            }
+        }
+
+        public void Process(CsFunction csFunction)
+        {
+            csFunction.Visibility = csFunction.Visibility | Visibility.Static;
+            Process((CsMethod)csFunction);
+        }
+
+        /// <summary>
+        /// Processes the specified method.
+        /// </summary>
+        /// <param name="method">The method.</param>
+        private void ProcessMethod(CsMethod method)
+        {
+            var cppMethod = (CppMethod)method.CppElement;
+
+            method.Name = NamingRules.Rename(cppMethod);
+            method.Offset = cppMethod.Offset;
+
+            // For methods, the tag "type" is only used for return type
+            // So we are overriding the return type here
+            var tag = cppMethod.GetTagOrDefault<MappingRule>();
+            if (tag.MappingType != null)
+                cppMethod.ReturnType.Tag = new MappingRule { MappingType = tag.MappingType };
+
+            // Apply any offset to the method's vtable
+            method.Offset += tag.LayoutOffsetTranslate;
+
+            // Get the inferred return type
+            method.ReturnType = factory.Create<CsMarshalBase>(cppMethod.ReturnType);
+
+            // Hide return type only if it is a HRESULT and AlwaysReturnHResult is false
+            if (method.CheckReturnType && method.ReturnType.PublicType != null &&
+                method.ReturnType.PublicType.QualifiedName == globalNamespace.GetTypeName("Result"))
+            {
+                method.HideReturnType = !method.AlwaysReturnHResult;
+            }
+
+            // Iterates on parameters to convert them to C# parameters
+            foreach (var cppParameter in cppMethod.Parameters)
+            {
+                var cppAttribute = cppParameter.Attribute;
+                var paramTag = cppParameter.GetTagOrDefault<MappingRule>();
+
+                bool hasArray = cppParameter.IsArray || ((cppAttribute & ParamAttribute.Buffer) != 0);
+                bool hasParams = (cppAttribute & ParamAttribute.Params) == ParamAttribute.Params;
+                bool isOptional = (cppAttribute & ParamAttribute.Optional) != 0;
+
+                var paramMethod = factory.Create<CsParameter>(cppParameter);
+
+                paramMethod.Name = NamingRules.Rename(cppParameter);
+
+                bool hasPointer = paramMethod.HasPointer;
+
+                var publicType = paramMethod.PublicType;
+                var marshalType = paramMethod.MarshalType;
+
+                CsParameterAttribute parameterAttribute = CsParameterAttribute.In;
+
+                if (hasArray)
+                    hasPointer = true;
+
+                // --------------------------------------------------------------------------------
+                // Pointer - Handle special cases
+                // --------------------------------------------------------------------------------
+                if (hasPointer)
+                {
+                    marshalType = typeRegistry.ImportType(typeof(IntPtr));
+
+                    // --------------------------------------------------------------------------------
+                    // Handling Parameter Interface
+                    // --------------------------------------------------------------------------------
+                    if (publicType is CsInterface)
+                    {
+                        // Force Interface** to be ParamAttribute.Out when None
+                        if (cppAttribute == ParamAttribute.In)
+                        {
+                            if (cppParameter.Pointer == "**")
+                                cppAttribute = ParamAttribute.Out;
+                        }
+
+                        if ((cppAttribute & ParamAttribute.In) != 0 || (cppAttribute & ParamAttribute.InOut) != 0)
+                        {
+                            parameterAttribute = CsParameterAttribute.In;
+
+                            // Force all array of interface to support null
+                            if (hasArray)
+                            {
+                                isOptional = true;
+                            }
+
+                            // If Interface is a callback, use IntPtr as a public marshalling type
+                            CsInterface publicCsInterface = (CsInterface)publicType;
+                            if (publicCsInterface.IsCallback)
+                            {
+                                publicType = typeRegistry.ImportType(typeof(IntPtr));
+                                // By default, set the Visibility to internal for methods using callbacks
+                                // as we need to provide user method. Don't do this on functions as they
+                                // are already hidden by the container
+                                if (!(method is CsFunction))
+                                {
+                                    method.Visibility = Visibility.Internal;
+                                    method.Name = method.Name + "_";
+                                }
+                            }
+                        }
+                        //else if ((cppParameter.Attribute & ParamAttribute.InOut) != 0)
+                        //    parameterAttribute = method.ParameterAttribute.Ref;
+                        else if ((cppAttribute & ParamAttribute.Out) != 0)
+                            parameterAttribute = CsParameterAttribute.Out;
+                    }
+                    else
+                    {
+                        // If a pointer to array of bool are handle as array of int
+                        if (paramMethod.IsBoolToInt && (cppAttribute & ParamAttribute.Buffer) != 0)
+                            publicType = typeRegistry.ImportType(typeof(int));
+
+                        // --------------------------------------------------------------------------------
+                        // Handling Parameter Interface
+                        // --------------------------------------------------------------------------------
+
+
+                        if ((cppAttribute & ParamAttribute.In) != 0)
+                        {
+                            parameterAttribute = publicType.Type == typeof(IntPtr) || publicType.Name == globalNamespace.GetTypeName("FunctionCallback") ||
+                                                 publicType.Type == typeof(string)
+                                                     ? CsParameterAttribute.In
+                                                     : CsParameterAttribute.RefIn;
+                        }
+                        else if ((cppAttribute & ParamAttribute.InOut) != 0)
+                        {
+                            if ((cppAttribute & ParamAttribute.Optional) != 0)
+                            {
+                                publicType = typeRegistry.ImportType(typeof(IntPtr));
+                                parameterAttribute = CsParameterAttribute.In;
+                            }
+                            else
+                            {
+                                parameterAttribute = CsParameterAttribute.Ref;
+                            }
+
+                        }
+                        else if ((cppAttribute & ParamAttribute.Out) != 0)
+                            parameterAttribute = CsParameterAttribute.Out;
+
+                        // Handle void* with Buffer attribute
+                        if (cppParameter.TypeName == "void" && (cppAttribute & ParamAttribute.Buffer) != 0)
+                        {
+                            hasArray = false;
+                            parameterAttribute = CsParameterAttribute.In;
+                        }
+                        else if (publicType.Type == typeof(string) && (cppAttribute & ParamAttribute.Out) != 0)
+                        {
+                            publicType = typeRegistry.ImportType(typeof(IntPtr));
+                            parameterAttribute = CsParameterAttribute.In;
+                            hasArray = false;
+                        }
+                        else if (publicType is CsStruct structType &&
+                                 (parameterAttribute == CsParameterAttribute.Out || hasArray || parameterAttribute == CsParameterAttribute.RefIn || parameterAttribute == CsParameterAttribute.Ref))
+                        {
+                            // Set IsOut on structure to generate proper marshalling
+                            structType.IsOut = true;
+                        }
+                    }
+                }
+                else if (publicType is CsStruct structType && parameterAttribute != CsParameterAttribute.Out)
+                {
+                    structType.IsOut = true;
+                }
+
+                paramMethod.HasPointer = hasPointer;
+                paramMethod.Attribute = parameterAttribute;
+                paramMethod.IsArray = hasArray;
+                paramMethod.HasParams = hasParams;
+                paramMethod.HasPointer = hasPointer;
+                paramMethod.PublicType = publicType ?? throw new ArgumentException("Public type cannot be null");
+                paramMethod.MarshalType = marshalType;
+                paramMethod.IsOptional = isOptional;
+
+                // Force IsString to be only string (due to Buffer attribute)
+                if (paramMethod.IsString)
+                    paramMethod.IsArray = false;
+
+                method.Add(paramMethod);
+            }
         }
 
         /// <summary>
@@ -96,9 +322,9 @@ namespace SharpGen.Generator
                 {
                     // Patch for Mono bug with structs marshalling and calli.
                     var returnQualifiedName = csMethod.ReturnType.PublicType.QualifiedName;
-                    if (returnQualifiedName == Manager.GlobalNamespace.GetTypeName("Result"))
-                        cSharpInteropCalliSignature.ReturnType = typeof (int);
-                    else if (returnQualifiedName == Manager.GlobalNamespace.GetTypeName("PointerSize"))
+                    if (returnQualifiedName == globalNamespace.GetTypeName("Result"))
+                        cSharpInteropCalliSignature.ReturnType = typeof(int);
+                    else if (returnQualifiedName == globalNamespace.GetTypeName("PointerSize"))
                         cSharpInteropCalliSignature.ReturnType = typeof(void*);
                     else
                         cSharpInteropCalliSignature.ReturnType = csMethod.ReturnType.PublicType.QualifiedName;
@@ -120,7 +346,7 @@ namespace SharpGen.Generator
                 InteropType interopType;
                 string publicName = param.PublicType.QualifiedName;
                 // Patch for Mono bug with structs marshalling and calli.
-                if (publicName == Manager.GlobalNamespace.GetTypeName("PointerSize"))
+                if (publicName == globalNamespace.GetTypeName("PointerSize"))
                 {
                     interopType = typeof(void*);
                 }
@@ -153,205 +379,6 @@ namespace SharpGen.Generator
             cSharpInteropCalliSignature = assembly.Interop.Add(cSharpInteropCalliSignature);
 
             csMethod.Interop = cSharpInteropCalliSignature;
-        }
-
-        /// <summary>
-        /// Processes the specified C# element to complete the mapping process between the C++ and C# element.
-        /// </summary>
-        /// <param name="csElement">The C# element.</param>
-        public override void Process(CsBase csElement)
-        {
-            try
-            {
-                var csMethod = (CsMethod)csElement;
-                Logger.PushContext("Method {0}", csMethod.CppElement);
-
-                Process(csMethod);
-
-                if (csMethod is CsFunction)
-                    csMethod.Visibility = csMethod.Visibility | Visibility.Static;
-
-                RegisterNativeInteropSignature(csMethod);
-            }
-            finally
-            {
-                Logger.PopContext();
-            }
-        }
-
-        /// <summary>
-        /// Processes the specified method.
-        /// </summary>
-        /// <param name="method">The method.</param>
-        private void Process(CsMethod method)
-        {
-            var cppMethod = (CppMethod)method.CppElement;
-
-            method.Name = NamingRules.Rename(cppMethod);
-            method.Offset = cppMethod.Offset;
-
-            // For methods, the tag "type" is only used for return type
-            // So we are overriding the return type here
-            var tag = cppMethod.GetTagOrDefault<MappingRule>();
-            if (tag.MappingType != null)
-                cppMethod.ReturnType.Tag = new MappingRule { MappingType = tag.MappingType };
-
-            // Apply any offset to the method's vtable
-            method.Offset += tag.LayoutOffsetTranslate;
-
-            // Get the inferred return type
-            method.ReturnType = Manager.GetCsType<CsMarshalBase>(cppMethod.ReturnType);
-
-            // Hide return type only if it is a HRESULT and AlwaysReturnHResult is false
-            if (method.CheckReturnType && method.ReturnType.PublicType != null &&
-                method.ReturnType.PublicType.QualifiedName == Manager.GlobalNamespace.GetTypeName("Result"))
-            {
-                method.HideReturnType = !method.AlwaysReturnHResult;
-            }
-
-            // Iterates on parameters to convert them to C# parameters
-            foreach (var cppParameter in cppMethod.Parameters)
-            {
-                var cppAttribute = cppParameter.Attribute;
-                var paramTag = cppParameter.GetTagOrDefault<MappingRule>();
-
-                bool hasArray = cppParameter.IsArray || ((cppAttribute & ParamAttribute.Buffer) != 0);
-                bool hasParams = (cppAttribute & ParamAttribute.Params) == ParamAttribute.Params;
-                bool isOptional = (cppAttribute & ParamAttribute.Optional) != 0;
-
-                var paramMethod = Manager.GetCsType<CsParameter>(cppParameter);
-
-                paramMethod.Name = NamingRules.Rename(cppParameter);
-
-                bool hasPointer = paramMethod.HasPointer;
-
-                var publicType = paramMethod.PublicType;
-                var marshalType = paramMethod.MarshalType;
-
-                CsParameterAttribute parameterAttribute = CsParameterAttribute.In;
-
-                if (hasArray)
-                    hasPointer = true;
-
-                // --------------------------------------------------------------------------------
-                // Pointer - Handle special cases
-                // --------------------------------------------------------------------------------
-                if (hasPointer)
-                {
-                    marshalType = Manager.ImportType(typeof(IntPtr));
-
-                    // --------------------------------------------------------------------------------
-                    // Handling Parameter Interface
-                    // --------------------------------------------------------------------------------
-                    if (publicType is CsInterface)
-                    {
-                        // Force Interface** to be ParamAttribute.Out when None
-                        if (cppAttribute == ParamAttribute.In)
-                        {
-                            if (cppParameter.Pointer == "**")
-                                cppAttribute = ParamAttribute.Out;
-                        }
-
-                        if ( (cppAttribute & ParamAttribute.In) != 0 || (cppAttribute & ParamAttribute.InOut) != 0)
-                        {
-                            parameterAttribute = CsParameterAttribute.In;
-
-                            // Force all array of interface to support null
-                            if (hasArray)
-                            {
-                                isOptional = true;
-                            }
-
-                            // If Interface is a callback, use IntPtr as a public marshalling type
-                            CsInterface publicCsInterface = (CsInterface)publicType;
-                            if (publicCsInterface.IsCallback)
-                            {
-                                publicType = Manager.ImportType(typeof(IntPtr));
-                                // By default, set the Visibility to internal for methods using callbacks
-                                // as we need to provide user method. Don't do this on functions as they
-                                // are already hidden by the container
-                                if (!(method is CsFunction))
-                                {
-                                    method.Visibility = Visibility.Internal;
-                                    method.Name = method.Name + "_";
-                                }
-                            }
-                        }
-                        //else if ((cppParameter.Attribute & ParamAttribute.InOut) != 0)
-                        //    parameterAttribute = method.ParameterAttribute.Ref;
-                        else if ((cppAttribute & ParamAttribute.Out) != 0)
-                            parameterAttribute = CsParameterAttribute.Out;
-                    }
-                    else
-                    {
-                        // If a pointer to array of bool are handle as array of int
-                        if (paramMethod.IsBoolToInt && (cppAttribute & ParamAttribute.Buffer) != 0)
-                            publicType = Manager.ImportType(typeof(int));
-
-                        // --------------------------------------------------------------------------------
-                        // Handling Parameter Interface
-                        // --------------------------------------------------------------------------------
-
-
-                        if ((cppAttribute & ParamAttribute.In) != 0)
-                        {
-                            parameterAttribute = publicType.Type == typeof(IntPtr) || publicType.Name == Manager.GlobalNamespace.GetTypeName("FunctionCallback") ||
-                                                 publicType.Type == typeof(string)
-                                                     ? CsParameterAttribute.In
-                                                     : CsParameterAttribute.RefIn;
-                        }
-                        else if ((cppAttribute & ParamAttribute.InOut) != 0)
-                        {
-                            if ((cppAttribute & ParamAttribute.Optional) != 0)
-                            {
-                                publicType = Manager.ImportType(typeof(IntPtr));
-                                parameterAttribute = CsParameterAttribute.In;
-                            }
-                            else
-                            {
-                                parameterAttribute = CsParameterAttribute.Ref;
-                            }
-
-                        }
-                        else if ((cppAttribute & ParamAttribute.Out) != 0)
-                            parameterAttribute = CsParameterAttribute.Out;
-
-                        // Handle void* with Buffer attribute
-                        if (cppParameter.TypeName == "void" && (cppAttribute & ParamAttribute.Buffer) != 0)
-                        {
-                            hasArray = false;
-                            parameterAttribute = CsParameterAttribute.In;
-                        }
-                        else if (publicType.Type == typeof(string) && (cppAttribute & ParamAttribute.Out) != 0)
-                        {
-                            publicType = Manager.ImportType(typeof(IntPtr));
-                            parameterAttribute = CsParameterAttribute.In;
-                            hasArray = false;
-                        }
-                        else if (publicType is CsStruct &&
-                                 (parameterAttribute == CsParameterAttribute.Out || hasArray || parameterAttribute == CsParameterAttribute.RefIn || parameterAttribute == CsParameterAttribute.Ref))
-                        {
-                            // Set IsOut on structure to generate proper marshalling
-                            (publicType as CsStruct).IsOut = true;
-                        }
-                    }
-                }
-
-                paramMethod.HasPointer = hasPointer;
-                paramMethod.Attribute = parameterAttribute;
-                paramMethod.IsArray = hasArray;
-                paramMethod.HasParams = hasParams;
-                paramMethod.HasPointer = hasPointer;
-                paramMethod.PublicType = publicType ?? throw new ArgumentException("Public type cannot be null");
-                paramMethod.MarshalType = marshalType;
-                paramMethod.IsOptional = isOptional;
-
-                // Force IsString to be only string (due to Buffer attribute)
-                if (paramMethod.IsString)
-                    paramMethod.IsArray = false;
-                                
-                method.Add(paramMethod);
-            }            
         }
     }
 }

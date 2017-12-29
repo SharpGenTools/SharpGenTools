@@ -347,7 +347,7 @@ namespace SharpGen.Parser
                         }
 
                         using (var file = File.OpenWrite(fileName))
-                        using (var fileWriter = new StreamWriter(file))
+                        using (var fileWriter = new StreamWriter(file, Encoding.ASCII))
                         {
                             fileWriter.Write(outputConfigStr);
                         }
@@ -1318,6 +1318,10 @@ namespace SharpGen.Parser
                     // If this include is partially attached and the current type is not attached
                     // Than skip it, as we are not mapping it
                     if (!isIncludeFullyAttached && !_includeAttachedTypes[includeId].Contains(elementName))
+                        continue;
+
+                    // Ignore CastXML built-in functions
+                    if (isIncludeFullyAttached && elementName.StartsWith("__builtin"))
                         continue;
 
                     CppElement cppElement = null;

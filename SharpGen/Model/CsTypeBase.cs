@@ -24,6 +24,9 @@ namespace SharpGen.Model
 {
     public class CsTypeBase : CsBase
     {
+        /// <summary>
+        /// The built-in .NET type that this type instance represents, if one exists.
+        /// </summary>
         public Type Type { get; set; }
 
         public bool IsReference { get; set; }
@@ -31,11 +34,6 @@ namespace SharpGen.Model
         public bool IsPointer
         {
             get { return Type == typeof (IntPtr); }
-        }
-
-        public bool IsBlittable
-        {
-            get { return (this is CsStruct || this is CsEnum || Type.GetTypeInfo().IsValueType); }
         }
 
         /// <summary>
