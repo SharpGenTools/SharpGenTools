@@ -54,7 +54,8 @@ namespace SharpGen.Generator
                     Parameter(Identifier("@ref")).WithType(RefType(ParseTypeName("__Native"))))))
                 .WithExpressionBody(ArrowExpressionClause(InvocationExpression(
                     MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("@ref"), IdentifierName("__MarshalFree")))))
-                .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword)));
+                .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword)))
+                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
 
             yield return GenerateMarshalFrom(csStruct);
 
@@ -545,6 +546,7 @@ namespace SharpGen.Generator
                                                 ThisExpression(),
                                                 IdentifierName(field.Name)),
                                             ObjectCreationExpression(ParseTypeName(field.PublicType.QualifiedName))
+                                                .WithArgumentList(ArgumentList())
                                         )),
                                         ExpressionStatement(InvocationExpression(
                                             MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
@@ -642,7 +644,8 @@ namespace SharpGen.Generator
             }
             else
             {
-                return ObjectCreationExpression(ParseTypeName($"{structType.QualifiedName}.__Native"));
+                return ObjectCreationExpression(ParseTypeName($"{structType.QualifiedName}.__Native"))
+                    .WithArgumentList(ArgumentList());
             }
         }
 

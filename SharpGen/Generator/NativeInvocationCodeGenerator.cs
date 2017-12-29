@@ -60,9 +60,12 @@ namespace SharpGen.Generator
                                             IdentifierName("__result__")))));
             }
 
-            arguments.Add(Argument(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                        ThisExpression(),
-                                        IdentifierName("_nativePointer"))));
+            if (!(method is CsFunction))
+            {
+                arguments.Add(Argument(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                            ThisExpression(),
+                                            IdentifierName("_nativePointer"))));
+            }
 
             arguments.AddRange(method.Parameters.Select(param => Generators.Argument.GenerateCode(param)));
 

@@ -57,7 +57,7 @@ namespace SharpGen.Generator
             AttributeListSyntax attributes = null;
             if (csElement.Guid != null)
             {
-                attributes = AttributeList(SingletonSeparatedList(Attribute(ParseName("System.GuidAttribute"),
+                attributes = AttributeList(SingletonSeparatedList(Attribute(ParseName("System.Runtime.InteropServices.GuidAttribute"),
                     AttributeArgumentList(SingletonSeparatedList(
                         AttributeArgument(
                             LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(csElement.Guid))))))));
@@ -142,7 +142,8 @@ namespace SharpGen.Generator
                                 ArgumentList(
                                     SingletonSeparatedList(
                                         Argument(
-                                            IdentifierName("nativePtr")))))))));
+                                            IdentifierName("nativePtr"))))))))
+                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
             }
 
             members.AddRange(csElement.Variables.SelectMany(var => Generators.Constant.GenerateCode(var)));

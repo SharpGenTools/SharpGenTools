@@ -63,7 +63,7 @@ namespace SharpGen.Generator
             {
                 statements.Add(LocalDeclarationStatement(
                     VariableDeclaration(
-                        ParseTypeName(csElement.ReturnType.QualifiedName),
+                        ParseTypeName(csElement.ReturnType.PublicType.QualifiedName),
                         SingletonSeparatedList(
                             VariableDeclarator("__result__")))));
             }

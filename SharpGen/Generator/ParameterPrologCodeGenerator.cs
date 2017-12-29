@@ -143,6 +143,7 @@ namespace SharpGen.Generator
                         AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                             IdentifierName(csElement.Name),
                             ObjectCreationExpression(ParseTypeName(csElement.PublicType.QualifiedName))
+                                .WithArgumentList(ArgumentList())
                     ));
                 }
                 else if (csElement.IsBoolToInt && !csElement.IsArray)

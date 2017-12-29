@@ -35,9 +35,11 @@ namespace SharpGen.Generator
                                     .WithExpressionBody(ArrowExpressionClause(
                                         BinaryExpression(SyntaxKind.NotEqualsExpression,
                                                 ParseName($"_{csElement.Name}"),
-                                                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))))),
+                                                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)))))
+                                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
                                 AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
                                     .WithExpressionBody(ArrowExpressionClause(CastExpression(ParseTypeName(csElement.PublicType.QualifiedName), ParseName("value"))))
+                                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
                             })))
                     .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
                     .WithLeadingTrivia(Trivia(docComments));
@@ -64,6 +66,7 @@ namespace SharpGen.Generator
                                                             SingletonSeparatedList<ExpressionSyntax>(
                                                                 LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.ArrayDimensionValue))))
                                                     )))))))
+                                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
                                 })))
                     .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
                     .WithLeadingTrivia(Trivia(docComments));
@@ -86,6 +89,7 @@ namespace SharpGen.Generator
                                                         ParseName(csElement.Name),
                                                         LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.BitOffset))),
                                                     LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.BitMask))))))
+                                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
                                     )))
                     .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
                     .WithLeadingTrivia(Trivia(docComments));

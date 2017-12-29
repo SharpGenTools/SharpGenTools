@@ -91,13 +91,15 @@ namespace SharpGen.Generator
                             IdentifierName($"{csElement.Name}__"),
                             AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                                 IdentifierName($"{csElement.Name}__"),
-                                InvocationExpression(ParseExpression(csElement.Getter.Name)))))));
+                                InvocationExpression(ParseExpression(csElement.Getter.Name))))))
+                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
                 }
                 else
                 {
                     accessors.Add(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
                        .WithExpressionBody(ArrowExpressionClause(
-                           InvocationExpression(ParseExpression(csElement.Getter.Name)))));
+                           InvocationExpression(ParseExpression(csElement.Getter.Name))))
+                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
                 }
             }
             
@@ -114,7 +116,8 @@ namespace SharpGen.Generator
                                         SingletonSeparatedList(
                                             Argument(IdentifierName("value"))
                                             .WithRefOrOutKeyword(
-                                                paramByRef ? Token(SyntaxKind.RefKeyword) : default)))))));
+                                                paramByRef ? Token(SyntaxKind.RefKeyword) : default))))))
+                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
             }
 
             yield return PropertyDeclaration(

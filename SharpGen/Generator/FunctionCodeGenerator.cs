@@ -25,7 +25,7 @@ namespace SharpGen.Generator
                 yield return member;
             }
 
-            yield return MethodDeclaration(ParseTypeName(interopFunction.ReturnType.TypeName), $"{interopFunction.Name}_")
+            yield return MethodDeclaration(ParseTypeName(interopFunction.ReturnType.TypeName), $"{csElement.CppElementName}_")
                 .WithModifiers(
                     TokenList(
                         Token(SyntaxKind.PrivateKeyword),
@@ -72,7 +72,8 @@ namespace SharpGen.Generator
                                         .WithNameEquals(
                                             NameEquals(
                                                 IdentifierName("CallingConvention")))
-                                    })))))));
+                                    })))))))
+                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
         }
 
     }

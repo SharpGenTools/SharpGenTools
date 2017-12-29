@@ -45,7 +45,8 @@ namespace SharpGen.Generator
                         yield return ExpressionStatement(
                             AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                                 IdentifierName(param.Name),
-                                ObjectCreationExpression(ParseTypeName(param.PublicType.QualifiedName))));
+                                ObjectCreationExpression(ParseTypeName(param.PublicType.QualifiedName))
+                                    .WithArgumentList(ArgumentList())));
                         if (param.IsStaticMarshal)
                         {
                             yield return ExpressionStatement(
