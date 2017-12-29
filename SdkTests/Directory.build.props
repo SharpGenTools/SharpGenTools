@@ -7,6 +7,7 @@
         <VsInstallRoot Condition="'$(VSINSTALLDIR)' != ''">$(VSINSTALLDIR)</VsInstallRoot>
         <VsInstallRoot Condition="'$(VsInstallRoot)' == ''">C:\Program Files (x86)\Microsoft Visual Studio\2017\Community</VsInstallRoot>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <SharpGenRoslynCodeGen>true</SharpGenRoslynCodeGen>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="SharpGenTools.Sdk" Version="$(VersionPrefix)-$(VersionSuffix)">

@@ -125,7 +125,7 @@ namespace SharpGen.Generator
                     CastExpression(
                         PredefinedType(
                             Token(SyntaxKind.IntKeyword)),
-                        IdentifierName(param.TempName)));
+                        IdentifierName(param.Name)));
             }
             else if (param.PublicType.Type == typeof(string))
             {

@@ -45,7 +45,8 @@ namespace SharpGen.E2ETests
                 AppType = appType,
                 Config = config,
                 OutputDirectory = testDirectory.FullName,
-                IntermediateOutputPath = testDirectory.FullName
+                IntermediateOutputPath = testDirectory.FullName,
+                UseRoslynCodeGen = true
             };
             codeGenApp.Init();
             codeGenApp.Run();

@@ -23,27 +23,23 @@ namespace SharpGen.Model
 {
     public class InteropManager
     {
-        private List<InteropMethodSignature> _methods;
+        private readonly List<InteropMethodSignature> methods;
 
         public InteropManager()
         {
-            _methods = new List<InteropMethodSignature>();
+            methods = new List<InteropMethodSignature>();
         }
 
-        public List<InteropMethodSignature> Methods
-        {
-            get { return _methods; }
-        }
-
+        public IEnumerable<InteropMethodSignature> Methods => methods;
 
         public InteropMethodSignature Add(InteropMethodSignature method)
         {
-            method.Index = Methods.Count;
-            int indexOf = Methods.IndexOf(method);
+            method.Index = methods.Count;
+            var indexOf = methods.IndexOf(method);
             if (indexOf>=0)
-                return Methods[indexOf];
+                return methods[indexOf];
 
-            Methods.Add(method);
+            methods.Add(method);
             return method;
         }
     }

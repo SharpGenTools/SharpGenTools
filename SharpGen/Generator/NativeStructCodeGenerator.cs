@@ -137,7 +137,11 @@ namespace SharpGen.Generator
                                     MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                         ThisExpression(),
                                         IdentifierName(field.Name)),
-                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))),
+                                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                            IdentifierName("System"),
+                                            IdentifierName("IntPtr")),
+                                        IdentifierName("Zero"))),
                                 ExpressionStatement(InvocationExpression(
                                     ParseExpression("System.Runtime.InteropServices.Marshal.FreeHGlobal"),
                                     ArgumentList(SingletonSeparatedList(
@@ -158,10 +162,9 @@ namespace SharpGen.Generator
                         }
                         else
                         {
-                            return (StatementSyntax)EmptyStatement();
+                            return (StatementSyntax)null;
                         }
-                    }
-                    ))))
+                    }).Where(statement => statement != null))))
             .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)));
 
 
@@ -326,7 +329,7 @@ namespace SharpGen.Generator
                                                 ArgumentList(SingletonSeparatedList(
                                                     Argument(
                                                         MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                            IdentifierName("@ref"),
+                                                            ThisExpression(),
                                                             IdentifierName(field.Name)))))))));
                             }
                             else if (field.PublicType is CsStruct structType && structType.HasMarshalType)
@@ -373,10 +376,10 @@ namespace SharpGen.Generator
                                 return ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                                     MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                         IdentifierName("@ref"),
-                                        IdentifierName($"_{field.Name}")),
+                                        IdentifierName(field.Name)),
                                     MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                         ThisExpression(),
-                                        IdentifierName($"_{field.Name}"))));
+                                        IdentifierName(field.Name))));
                             }
                         }
                     }

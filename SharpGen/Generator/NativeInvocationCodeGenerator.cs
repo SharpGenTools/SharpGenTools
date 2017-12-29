@@ -53,18 +53,18 @@ namespace SharpGen.Generator
         {
             var arguments = new List<ArgumentSyntax>();
 
-            if (method.IsReturnStructLarge)
-            {
-                arguments.Add(Argument(CastExpression(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
-                                        PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
-                                            IdentifierName("__result__")))));
-            }
-
             if (!(method is CsFunction))
             {
                 arguments.Add(Argument(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                             ThisExpression(),
                                             IdentifierName("_nativePointer"))));
+            }
+
+            if (method.IsReturnStructLarge)
+            {
+                arguments.Add(Argument(CastExpression(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
+                                        PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
+                                            IdentifierName("__result__")))));
             }
 
             arguments.AddRange(method.Parameters.Select(param => Generators.Argument.GenerateCode(param)));

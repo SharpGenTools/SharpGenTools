@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
+using System.Linq;
+
 namespace SharpGen.Generator
 {
     class FunctionCodeGenerator : IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax>
@@ -73,6 +75,10 @@ namespace SharpGen.Generator
                                             NameEquals(
                                                 IdentifierName("CallingConvention")))
                                     })))))))
+                .WithParameterList(ParameterList(SeparatedList(
+                    interopFunction.ParameterTypes.Select((param, i) =>
+                        Parameter(Identifier($"param{i}"))
+                            .WithType(ParseTypeName(param.TypeName))))))
                 .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
         }
 

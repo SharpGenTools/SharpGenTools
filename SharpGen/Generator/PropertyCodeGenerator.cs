@@ -23,15 +23,7 @@ namespace SharpGen.Generator
 
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsProperty csElement)
         {
-            var documentation = GenerateDocumentationTrivia(csElement).AddContent(
-                XmlElement(
-                    XmlElementStartTag(XmlName(Identifier("unmanaged"))),
-                        SingletonList<XmlNodeSyntax>(
-                            XmlText(TokenList(
-                                XmlTextLiteral(csElement.CppElementName)))),
-                        XmlElementEndTag(XmlName(Identifier("unmanaged")))
-                    ),
-                    XmlText(XmlTextNewLine("\n", false)));
+            var documentation = GenerateDocumentationTrivia(csElement);
 
             var accessors = new List<AccessorDeclarationSyntax>();
 
