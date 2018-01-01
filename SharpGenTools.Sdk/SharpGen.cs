@@ -46,6 +46,8 @@ namespace SharpGenTools.Sdk
 
         public bool UseRoslynCodeGen { get; set; }
 
+        public string[] Macros { get; set; }
+
         public override bool Execute()
         {
             BindingRedirectResolution.Enable();
@@ -83,6 +85,14 @@ namespace SharpGenTools.Sdk
                 ConsumerBindMappingConfigId = ConsumerBindMappingConfigId,
                 UseRoslynCodeGen = UseRoslynCodeGen
             };
+
+            if (Macros != null)
+            {
+                foreach (var macro in Macros)
+                {
+                    codeGenApp.Macros.Add(macro);
+                } 
+            }
 
             if (!codeGenApp.Init())
             {

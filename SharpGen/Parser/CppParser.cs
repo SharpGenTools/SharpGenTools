@@ -135,8 +135,8 @@ namespace SharpGen.Parser
             // Get All include-directories to add to GccXmlApp
             var prolog = new StringBuilder();
 
-            var includeDirsForConsumers = new SortedSet<IncludeDirRule>();
-            var includesForConsumers = new SortedSet<IncludeRule>();
+            var includeDirsForConsumers = new List<IncludeDirRule>();
+            var includesForConsumers = new List<IncludeRule>();
 
             // Configure gccxml with include directory
             foreach (var configFile in _configRoot.ConfigFilesLoaded)
@@ -356,8 +356,8 @@ namespace SharpGen.Parser
             }
 
             return (new List<string> { prolog.ToString() + Environment.NewLine },
-                includeDirsForConsumers.ToList(),
-                includesForConsumers.Select(include =>
+                includeDirsForConsumers.Distinct().ToList(),
+                includesForConsumers.Distinct().Select(include =>
                 new IncludeRule
                 {
                     File = include.File,
@@ -970,7 +970,7 @@ namespace SharpGen.Parser
             // It will group the overloads together in memory and lay them out in the reverse of their declaration order.
             // Since GCC always lays them out in the order declared, we have to modify the order of the methods to match Visual C++.
             // See http://support.microsoft.com/kb/131104 for more information.
-            for (int i = methods.Count - 1; i >= 0; i--)
+            for (int i = 0; i < methods.Count; i++)
             {
                 var name = methods[i].Name;
 

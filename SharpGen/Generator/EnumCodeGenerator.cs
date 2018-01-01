@@ -29,8 +29,7 @@ namespace SharpGen.Generator
                 )))
                 .AddMembers(csElement.EnumItems.Select(item =>
                 {
-                    var itemDecl = EnumMemberDeclaration(item.Name)
-                        .WithLeadingTrivia(Trivia(GenerateDocumentationTrivia(item)));
+                    var itemDecl = EnumMemberDeclaration(item.Name);
 
                     if (!string.IsNullOrEmpty(item.Value))
                     {
@@ -38,11 +37,14 @@ namespace SharpGen.Generator
                         EqualsValueClause(
                             CheckedExpression(
                                 SyntaxKind.UncheckedExpression,
-                                LiteralExpression(
-                                    SyntaxKind.NumericLiteralExpression,
-                                    Literal(int.Parse(item.Value))))));
+                                CastExpression(
+                                    ParseTypeName(csElement.TypeName),
+                                    LiteralExpression(
+                                        SyntaxKind.NumericLiteralExpression,
+                                        Literal(int.Parse(item.Value)))))));
                     }
-                    return itemDecl;
+                    return itemDecl
+                        .WithLeadingTrivia(Trivia(GenerateDocumentationTrivia(item)));
                 }).ToArray()).WithLeadingTrivia(Trivia(GenerateDocumentationTrivia(csElement)));
 
             if (csElement.IsFlag)

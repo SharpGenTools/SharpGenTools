@@ -74,24 +74,27 @@ namespace SharpGen.Generator
             }
             else
             {
-                if (csElement.IsPersistent)
+                if (csElement.Getter != null)
                 {
+                    if (csElement.IsPersistent)
+                    {
 
-                    accessors.Add(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                       .WithExpressionBody(ArrowExpressionClause(
-                           BinaryExpression(SyntaxKind.CoalesceExpression,
-                            IdentifierName($"{csElement.Name}__"),
-                            AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                        accessors.Add(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                           .WithExpressionBody(ArrowExpressionClause(
+                               BinaryExpression(SyntaxKind.CoalesceExpression,
                                 IdentifierName($"{csElement.Name}__"),
-                                InvocationExpression(ParseExpression(csElement.Getter.Name))))))
-                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
-                }
-                else
-                {
-                    accessors.Add(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                       .WithExpressionBody(ArrowExpressionClause(
-                           InvocationExpression(ParseExpression(csElement.Getter.Name))))
-                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
+                                AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                                    IdentifierName($"{csElement.Name}__"),
+                                    InvocationExpression(ParseExpression(csElement.Getter.Name))))))
+                            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
+                    }
+                    else
+                    {
+                        accessors.Add(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                           .WithExpressionBody(ArrowExpressionClause(
+                               InvocationExpression(ParseExpression(csElement.Getter.Name))))
+                            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
+                    } 
                 }
             }
             
@@ -102,7 +105,7 @@ namespace SharpGen.Generator
 
                 accessors.Add(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
                     .WithExpressionBody(ArrowExpressionClause(
-                        InvocationExpression(ParseExpression(csElement.Getter.Name))
+                        InvocationExpression(ParseExpression(csElement.Setter.Name))
                                 .WithArgumentList(
                                     ArgumentList(
                                         SingletonSeparatedList(

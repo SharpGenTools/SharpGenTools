@@ -167,7 +167,9 @@ namespace SharpGen.Generator
                             Parameter(
                                 Identifier("oldPointer"))
                             .WithType(
-                                IdentifierName("IntPtr")))))
+                                QualifiedName(
+                                    IdentifierName("System"),
+                                    IdentifierName("IntPtr"))))))
                 .WithBody(
                     Block(
                         SingletonList<StatementSyntax>(

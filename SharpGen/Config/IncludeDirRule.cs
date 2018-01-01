@@ -17,6 +17,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System;
 using System.Xml.Serialization;
 
 namespace SharpGen.Config
@@ -24,7 +25,7 @@ namespace SharpGen.Config
     /// <summary>
     /// An Include directive
     /// </summary>
-    public class IncludeDirRule
+    public class IncludeDirRule : IEquatable<IncludeDirRule>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IncludeDirRule"/> class.
@@ -59,6 +60,16 @@ namespace SharpGen.Config
         /// </value>
         [XmlAttribute("override")]
         public bool IsOverride { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            return obj is IncludeDirRule other && Equals(other);
+        }
+
+        public bool Equals(IncludeDirRule other)
+        {
+            return Path == other.Path && IsOverride == other.IsOverride;
+        }
 
         /// <summary>
         /// Returns a <see cref="System.String"/> that represents this instance.

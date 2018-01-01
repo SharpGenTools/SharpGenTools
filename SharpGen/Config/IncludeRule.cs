@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml.Serialization;
@@ -27,7 +28,7 @@ namespace SharpGen.Config
     /// <summary>
     /// An Include directive
     /// </summary>
-    public class IncludeRule
+    public class IncludeRule : IEquatable<IncludeRule>
     {
         public IncludeRule()
         {
@@ -127,6 +128,16 @@ namespace SharpGen.Config
         public override string ToString()
         {
             return string.Format(System.Globalization.CultureInfo.InvariantCulture, "include: {0}", File);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is IncludeRule other && Equals(other);
+        }
+
+        public bool Equals(IncludeRule other)
+        {
+            return File == other.File;
         }
     }
 }

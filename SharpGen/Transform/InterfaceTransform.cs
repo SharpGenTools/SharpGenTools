@@ -352,7 +352,7 @@ namespace SharpGen.Transform
                 // Check Getter
                 if (isGet)
                 {
-                    if ((cSharpMethod.ReturnType?.Name == globalNamespace.GetTypeName("Result") || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
+                    if ((cSharpMethod.ReturnType.PublicType.Name == globalNamespace.GetTypeName("Result") || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
                         parameterList[0].IsOut && !parameterList[0].IsArray)
                     {
                         csProperty.Getter = cSharpMethod;

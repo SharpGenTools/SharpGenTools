@@ -221,7 +221,9 @@ namespace SharpGen.Generator
                                 IdentifierName(csElement.TempName),
                                 CastExpression(
                                     PointerType(
-                                        IdentifierName("IntPtr")),
+                                        QualifiedName(
+                                            IdentifierName("System"),
+                                            IdentifierName("IntPtr"))),
                                     LiteralExpression(
                                         SyntaxKind.NumericLiteralExpression,
                                         Literal(0)))));
