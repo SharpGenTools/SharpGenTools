@@ -104,7 +104,6 @@
     <MakeDir Directories="$(IntermediateOutputPath)/SharpGen" />
     <SharpGen
       CastXmlPath="$(CastXmlPath)"
-      AppType="$(SharpGenAppType)"
       GenerateDocs="$(SharpGenGenerateDoc)"
       GlobalNamespace="$(SharpGenGlobalNamespace)"
       VcToolsPath="$(VCToolsDir)"
@@ -114,7 +113,6 @@
       IncludeAssemblyNameFolder="$(SharpGenIncludeAssemblyNameFolder)"
       OutputDirectory="$(SharpGenOutputDirectory)"
       ConsumerBindMappingConfigId ="$(SharpGenConsumerBindMappingConfigId)"
-      UseRoslynCodeGen="$(SharpGenRoslynCodeGen)"
       Macros="$(SharpGenMacros)"
     />
 

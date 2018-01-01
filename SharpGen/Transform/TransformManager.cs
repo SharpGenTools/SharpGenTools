@@ -29,7 +29,6 @@ using SharpGen.Logging;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
-using SharpGen.TextTemplating;
 using System.Reflection;
 using System.Xml.Serialization;
 

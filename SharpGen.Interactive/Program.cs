@@ -77,7 +77,6 @@ namespace SharpGen.Interactive
                                   {"p|docpath=", "Specify the path to the assembly doc provider [default: null]", opt => app.DocProviderAssemblyPath = opt},
                                   {"v|vctools=", "Specify the path to the Visual C++ Toolset", opt => app.VcToolsPath = opt },
                                   {"od|outputdir=", "Specify the base output directory for the generated code", opt => app.OutputDirectory = opt },
-                                  {"a|apptype=", "Specify what app type to generate code for (i.e. DESKTOP_APP or STORE_APP)", opt => app.AppType = opt },
                                   {"D:", "Define a macro that is used in the config files", m => app.Macros.Add(m) },
                                   {"g|global=", "Specify the namespace with the infrastructure types such as ComObject and FunctionCallback", opt => app.GlobalNamespace = new GlobalNamespaceProvider(opt) },
                                   "",
@@ -102,8 +101,6 @@ namespace SharpGen.Interactive
 
             if (app.ConfigRootPath == null)
                 UsageError("Missing config.xml. A config.xml must be specified");
-            if (app.AppType == null)
-                UsageError("Missing apptype argument. an App type must be specified (for example: -apptype=DESKTOP_APP");
         }
 
         /// <summary>

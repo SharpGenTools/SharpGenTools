@@ -16,19 +16,16 @@ namespace SharpGen.Transform
 
         public AssemblyManager(
             Logger logger,
-            string appType,
             bool includeAssemblyNameFolder,
-            string generatedPath)
+            string rootDirectory)
         {
-            AppType = appType;
             IncludeAssemblyNameFolder = includeAssemblyNameFolder;
-            GeneratedPath = generatedPath;
+            RootDirectory = rootDirectory;
             this.logger = logger;
         }
 
-        public string AppType { get; }
         public bool IncludeAssemblyNameFolder { get; }
-        public string GeneratedPath { get; }
+        public string RootDirectory { get; }
 
         private List<CsAssembly> assemblies = new List<CsAssembly>();
         /// <summary>
@@ -47,8 +44,8 @@ namespace SharpGen.Transform
             var selectedAssembly = Assemblies.FirstOrDefault(assembly => assembly.Name == assemblyName);
             if (selectedAssembly == null)
             {
-                selectedAssembly = new CsAssembly(assemblyName, AppType);
-                selectedAssembly.RootDirectory = IncludeAssemblyNameFolder ? Path.Combine(GeneratedPath, selectedAssembly.Name) : GeneratedPath;
+                selectedAssembly = new CsAssembly(assemblyName);
+                selectedAssembly.RootDirectory = IncludeAssemblyNameFolder ? Path.Combine(RootDirectory, selectedAssembly.Name) : RootDirectory;
                 assemblies.Add(selectedAssembly);
             }
 

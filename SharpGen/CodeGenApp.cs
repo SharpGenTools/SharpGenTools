@@ -73,12 +73,6 @@ namespace SharpGen
         public string VcToolsPath { get; set; }
 
         /// <summary>
-        /// Gets or sets the app configuration.
-        /// </summary>
-        /// <value>The application configuration</value>
-        public string AppType { get; set; }
-
-        /// <summary>
         /// Gets or sets output directory.
         /// </summary>
         /// <remarks>Null is allowed, in which case sharpgen will use default</remarks>
@@ -108,8 +102,6 @@ namespace SharpGen
 
         public GlobalNamespaceProvider GlobalNamespace { get; set; }
 
-        public bool UseRoslynCodeGen { get; set; }
-
         private string _thisAssemblyPath;
         private bool _isAssemblyNew;
         private DateTime _assemblyDatetime;
@@ -126,14 +118,12 @@ namespace SharpGen
         public bool Init()
         {
             _thisAssemblyPath = GetType().GetTypeInfo().Assembly.Location;
-            _assemblyCheckFile = Path.Combine(IntermediateOutputPath, $"SharpGen.{AppType}.check");
+            _assemblyCheckFile = Path.Combine(IntermediateOutputPath, $"SharpGen.check");
             _assemblyDatetime = File.GetLastWriteTime(_thisAssemblyPath);
             _isAssemblyNew = (_assemblyDatetime != File.GetLastWriteTime(_assemblyCheckFile));
             _generatedPath = OutputDirectory ?? Path.GetDirectoryName(Path.GetFullPath(ConfigRootPath));
 
             Logger.Message("Loading config files...");
-            
-            Macros.Add(AppType);
 
             if (Config == null)
             {
@@ -146,7 +136,7 @@ namespace SharpGen
 
             var latestConfigTime = ConfigFile.GetLatestTimestamp(Config.ConfigFilesLoaded);
             
-            _allConfigCheck = Path.Combine(IntermediateOutputPath, Config.Id + "-" + AppType + "-CodeGen.check");
+            _allConfigCheck = Path.Combine(IntermediateOutputPath, Config.Id + "-CodeGen.check");
 
             var isConfigFileChanged = !File.Exists(_allConfigCheck) || latestConfigTime > File.GetLastWriteTime(_allConfigCheck);
 
@@ -212,7 +202,7 @@ namespace SharpGen
                     typeRegistry,
                     docAggregator,
                     new ConstantManager(namingRules, typeRegistry),
-                    new AssemblyManager(Logger, AppType, IncludeAssemblyNameFolder, _generatedPath))
+                    new AssemblyManager(Logger, IncludeAssemblyNameFolder, _generatedPath))
                 {
                     ForceGenerator = _isAssemblyNew
                 };
@@ -264,16 +254,8 @@ namespace SharpGen
 
         private void GenerateCode(DocumentationAggregator docAggregator, IEnumerable<CsAssembly> assemblies)
         {
-            if (UseRoslynCodeGen)
-            {
-                var generator = new RoslynGenerator(Logger, GlobalNamespace, docAggregator);
-                generator.Run(GeneratedCodeFolder, AppType, assemblies);
-            }
-            else
-            {
-                var generator = new T4Generator(Logger, docAggregator, GlobalNamespace, AppType);
-                generator.Run(GeneratedCodeFolder, assemblies);
-            }
+            var generator = new RoslynGenerator(Logger, GlobalNamespace, docAggregator);
+            generator.Run(GeneratedCodeFolder, assemblies);
 
             // Update check files for all assemblies
             var processTime = DateTime.Now;

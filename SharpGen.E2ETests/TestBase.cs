@@ -26,7 +26,7 @@ namespace SharpGen.E2ETests
             testDirectory = GenerateTestDirectory();
         }
 
-        public (bool success, string output) RunWithConfig(Config.ConfigFile config, string appType = "true", [CallerMemberName] string configName = "", bool failTestOnError = true)
+        public (bool success, string output) RunWithConfig(Config.ConfigFile config, [CallerMemberName] string configName = "", bool failTestOnError = true)
         {
             config.Id = configName;
 
@@ -42,11 +42,9 @@ namespace SharpGen.E2ETests
                 GlobalNamespace = new GlobalNamespaceProvider("SharpGen.Runtime"),
                 CastXmlExecutablePath = "../../../../CastXML/bin/castxml.exe",
                 VcToolsPath = Path.Combine(vcInstallDir, $@"Tools\MSVC\{msvcToolsetVer}\"),
-                AppType = appType,
                 Config = config,
                 OutputDirectory = testDirectory.FullName,
                 IntermediateOutputPath = testDirectory.FullName,
-                UseRoslynCodeGen = true
             };
             codeGenApp.Init();
             codeGenApp.Run();
