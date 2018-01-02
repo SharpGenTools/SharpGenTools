@@ -24,7 +24,7 @@ pushd .\SdkTests
         exit 1
     }
 
-    msbuild /p:Configuration=Release /m /v:minimal
+    msbuild /p:Configuration=Release /m /v:n
 
     if ($LastExitCode -ne 0) {
         exit 1
