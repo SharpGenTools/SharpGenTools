@@ -25,9 +25,6 @@ namespace SharpGenTools.Sdk
         public bool GenerateDocs { get; set; }
 
         [Required]
-        public string VcToolsPath { get; set; }
-
-        [Required]
         public string IntermediateOutputPath { get; set; }
 
         public string GeneratedCodeFolder { get; set; }
@@ -71,7 +68,6 @@ namespace SharpGenTools.Sdk
                 Config = config,
                 GlobalNamespace = new GlobalNamespaceProvider(GlobalNamespace),
                 IsGeneratingDoc = GenerateDocs,
-                VcToolsPath = VcToolsPath,
                 IntermediateOutputPath = IntermediateOutputPath,
                 OutputDirectory = OutputDirectory,
                 IncludeAssemblyNameFolder = IncludeAssemblyNameFolder,

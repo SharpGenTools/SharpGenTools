@@ -54,12 +54,10 @@ namespace SharpGen.E2ETests
                 {
                     ComIncludeProlog
                 },
-                IncludeDirs =
+                Sdks =
                 {
-                    new Config.IncludeDirRule(@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\shared"),
-                    new Config.IncludeDirRule(@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\um"),
-                    new Config.IncludeDirRule(@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\ucrt"),
-                    new Config.IncludeDirRule(@"$(VC_TOOLS_PATH)include")
+                    new Config.SdkRule(Config.SdkLib.StdLib, null),
+                    new Config.SdkRule(Config.SdkLib.WindowsSdk, new System.Version(10, 0, 15063, 0))
                 },
                 Includes =
                 {
@@ -104,12 +102,10 @@ namespace SharpGen.E2ETests
                 {
                     ComIncludeProlog
                 },
-                IncludeDirs =
+                Sdks =
                 {
-                    new Config.IncludeDirRule(@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\shared"),
-                    new Config.IncludeDirRule(@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\um"),
-                    new Config.IncludeDirRule(@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\ucrt"),
-                    new Config.IncludeDirRule(@"$(VC_TOOLS_PATH)\include")
+                    new Config.SdkRule(Config.SdkLib.StdLib, null),
+                    new Config.SdkRule(Config.SdkLib.WindowsSdk, new System.Version(10, 0, 15063, 0))
                 },
                 Includes =
                 {

@@ -1,7 +1,7 @@
 ﻿
 using System.Runtime.InteropServices;
 
-namespace SharpGen.E2ETests.VisualStudio
+namespace SharpGen.VisualStudioSetup
 {
   [Guid("42843719-DB4C-46C2-8E7C-64F1816EFD5B")]
   [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

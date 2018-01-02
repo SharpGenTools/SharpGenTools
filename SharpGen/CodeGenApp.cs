@@ -67,12 +67,6 @@ namespace SharpGen
         public string CastXmlExecutablePath { get; set; }
 
         /// <summary>
-        /// Gets or sets the path to the Visual C++ toolset
-        /// </summary>
-        /// <value>The Visual C++ toolset path</value>
-        public string VcToolsPath { get; set; }
-
-        /// <summary>
         /// Gets or sets output directory.
         /// </summary>
         /// <remarks>Null is allowed, in which case sharpgen will use default</remarks>
@@ -127,11 +121,11 @@ namespace SharpGen
 
             if (Config == null)
             {
-                Config = ConfigFile.Load(ConfigRootPath, Macros.ToArray(), Logger, new KeyValue("VC_TOOLS_PATH", VcToolsPath));
+                Config = ConfigFile.Load(ConfigRootPath, Macros.ToArray(), Logger);
             }
             else
             {
-                Config = ConfigFile.Load(Config, Macros.ToArray(), Logger, new KeyValue("VC_TOOLS_PATH", VcToolsPath));
+                Config = ConfigFile.Load(Config, Macros.ToArray(), Logger);
             }
 
             var latestConfigTime = ConfigFile.GetLatestTimestamp(Config.ConfigFilesLoaded);

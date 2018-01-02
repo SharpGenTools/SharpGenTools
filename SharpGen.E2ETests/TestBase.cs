@@ -1,7 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
-using SharpGen.E2ETests.VisualStudio;
 using SharpGen.Logging;
 using System;
 using System.Collections.Generic;
@@ -33,15 +32,10 @@ namespace SharpGen.E2ETests
             var xUnitLogger = new XUnitLogger(outputHelper, failTestOnError);
             var logger = new Logger(xUnitLogger, null);
 
-            var vcInstallDir = Path.Combine(GetVSInstallPath(), "VC");
-
-            var msvcToolsetVer = File.ReadAllText(vcInstallDir + Path.Combine(@"\Auxiliary\Build", "Microsoft.VCToolsVersion.default.txt")).Trim();
-
             var codeGenApp = new CodeGenApp(logger)
             {
                 GlobalNamespace = new GlobalNamespaceProvider("SharpGen.Runtime"),
                 CastXmlExecutablePath = "../../../../CastXML/bin/castxml.exe",
-                VcToolsPath = Path.Combine(vcInstallDir, $@"Tools\MSVC\{msvcToolsetVer}\"),
                 Config = config,
                 OutputDirectory = testDirectory.FullName,
                 IntermediateOutputPath = testDirectory.FullName,
@@ -50,35 +44,7 @@ namespace SharpGen.E2ETests
             codeGenApp.Run();
             return (xUnitLogger.Success, xUnitLogger.ExitReason);
         }
-
-        private static string GetVSInstallPath()
-        {
-            var query = new SetupConfiguration();
-            var enumInstances = query.EnumInstances();
-
-            int fetched;
-            var instances = new ISetupInstance[1];
-            do
-            {
-                enumInstances.Next(1, instances, out fetched);
-                var instance2 = (ISetupInstance2)instances[0];
-                var state = instance2.GetState();
-                if (fetched > 0)
-                {
-                    if ((state & InstanceState.Registered) == InstanceState.Registered)
-                    {
-                        if (instance2.GetPackages().Any(pkg => pkg.GetId() == "Microsoft.VisualStudio.Component.VC.Tools.x86.x64"))
-                        {
-                            return instance2.GetInstallationPath();
-                        }
-                    }
-                }
-            }
-            while (fetched > 0);
-
-            throw new DirectoryNotFoundException("Unable to find compatible Visual Studio installation path.");
-        }
-
+        
         public static void AssertRanSuccessfully(bool success, string output)
         {
             Assert.True(success, output);

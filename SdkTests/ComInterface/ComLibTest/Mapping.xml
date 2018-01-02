@@ -24,10 +24,9 @@
   <namespace>ComLibTest</namespace>
   <assembly>ComLibTest</assembly>
 
-  <include-dir override="false">=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\shared</include-dir>
-  <include-dir override="false">=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\um</include-dir>
-  <include-dir override="false">=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\10.0.15063.0\ucrt</include-dir>
-  <include-dir override="false">$(VC_TOOLS_PATH)\include</include-dir>
+  <sdk name="WindowsSdk" Version="10.0.15063.0" />
+  <sdk name="StdLib" />
+
   <include-dir>$(THIS_CONFIG_PATH)\..\ComLib</include-dir>
   <include file="ComLib.h" attach="true" />
 
