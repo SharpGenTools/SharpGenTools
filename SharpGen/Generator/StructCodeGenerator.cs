@@ -38,7 +38,7 @@ namespace SharpGen.Generator
                     )
                 );
 
-            var innerStructs = csElement.InnerStructs.Select(GenerateCode).Cast<MemberDeclarationSyntax>();
+            var innerStructs = csElement.InnerStructs.SelectMany(GenerateCode);
 
             var constants = csElement.Variables.SelectMany(var => Generators.Constant.GenerateCode(var));
 
@@ -54,7 +54,7 @@ namespace SharpGen.Generator
             yield return (csElement.GenerateAsClass ?
                 (MemberDeclarationSyntax)ClassDeclaration(
                     !csElement.HasMarshalType ? SingletonList(AttributeList(SingletonSeparatedList(structLayoutAttribute))) : default,
-                    TokenList(ParseTokens(csElement.VisibilityName)),
+                    TokenList(ParseTokens(csElement.VisibilityName)).Add(Token(SyntaxKind.PartialKeyword)),
                     Identifier(csElement.Name),
                     default,
                     default,
@@ -64,7 +64,7 @@ namespace SharpGen.Generator
                     :
                 StructDeclaration(
                     !csElement.HasMarshalType ? SingletonList(AttributeList(SingletonSeparatedList(structLayoutAttribute))) : default,
-                    TokenList(ParseTokens(csElement.VisibilityName)),
+                    TokenList(ParseTokens(csElement.VisibilityName)).Add(Token(SyntaxKind.PartialKeyword)),
                     Identifier(csElement.Name),
                     default,
                     default,

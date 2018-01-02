@@ -28,14 +28,14 @@ namespace SharpGen.Generator
 
         public Logger Logger { get; }
 
-        public void Run(string generatedCodeFolder, string appType, IEnumerable<CsAssembly> assemblies)
+        public void Run(string generatedCodeFolder, IEnumerable<CsAssembly> assemblies)
         {
             var trees = new List<SyntaxTree>();
 
             // Iterates on assemblies
             foreach (var csAssembly in assemblies.Where(assembly => assembly.IsToUpdate))
             {
-                var generatedDirectoryForAssembly = Path.Combine(csAssembly.RootDirectory, generatedCodeFolder ?? "Generated", appType);
+                var generatedDirectoryForAssembly = Path.Combine(csAssembly.RootDirectory, generatedCodeFolder ?? "Generated");
                 
                 var directoryToCreate = new HashSet<string>(StringComparer.CurrentCulture);
                 
@@ -68,24 +68,8 @@ namespace SharpGen.Generator
                     CSharpSyntaxTree.Create(
                         CompilationUnit().WithMembers(
                             SingletonList<MemberDeclarationSyntax>(
-                                Generators.LocalInterop.GenerateCode(csAssembly)
-                                    .WithNamespaceKeyword(
-                                        Token(
-                                            TriviaList(
-                                                Trivia(
-                                                    IfDirectiveTrivia(
-                                                        IdentifierName(appType),
-                                                        true,
-                                                        true,
-                                                        true))),
-                                            SyntaxKind.NamespaceKeyword,
-                                            TriviaList()))))
-                            .WithEndOfFileToken(
-                                Token(
-                                    TriviaList(
-                                        Trivia(EndIfDirectiveTrivia(true))),
-                                    SyntaxKind.EndOfFileToken,
-                                    TriviaList()))
+                                Generators.LocalInterop.GenerateCode(csAssembly))
+                            )
                             .NormalizeWhitespace(elasticTrivia: true))
                         .WithFilePath(Path.Combine(generatedDirectoryForAssembly, "LocalInterop.cs")));
                 
@@ -99,19 +83,19 @@ namespace SharpGen.Generator
 
                     trees.Add(
                         CSharpSyntaxTree.Create(
-                            GenerateCompilationUnit(csNamespace.Name, csNamespace.Enums, Generators.Enum, appType))
+                            GenerateCompilationUnit(csNamespace.Name, csNamespace.Enums, Generators.Enum))
                             .WithFilePath(Path.Combine(nameSpaceDirectory, "Enumerations.cs")));
                     trees.Add(
                         CSharpSyntaxTree.Create(
-                            GenerateCompilationUnit(csNamespace.Name, csNamespace.Structs, Generators.Struct, appType))
+                            GenerateCompilationUnit(csNamespace.Name, csNamespace.Structs, Generators.Struct))
                             .WithFilePath(Path.Combine(nameSpaceDirectory, "Structures.cs")));
                     trees.Add(
                         CSharpSyntaxTree.Create(
-                            GenerateCompilationUnit(csNamespace.Name, csNamespace.Classes, Generators.Group, appType))
+                            GenerateCompilationUnit(csNamespace.Name, csNamespace.Classes, Generators.Group))
                             .WithFilePath(Path.Combine(nameSpaceDirectory, "Functions.cs")));
                     trees.Add(
                         CSharpSyntaxTree.Create(
-                            GenerateCompilationUnit(csNamespace.Name, csNamespace.Interfaces, Generators.Interface, appType))
+                            GenerateCompilationUnit(csNamespace.Name, csNamespace.Interfaces, Generators.Interface))
                             .WithFilePath(Path.Combine(nameSpaceDirectory, "Interfaces.cs")));
                 }
             }
@@ -125,31 +109,14 @@ namespace SharpGen.Generator
         private static CompilationUnitSyntax GenerateCompilationUnit<T>(
             string csNamespace,
             IEnumerable<T> elements,
-            IMultiCodeGenerator<T, MemberDeclarationSyntax> generator,
-            string appType)
+            IMultiCodeGenerator<T, MemberDeclarationSyntax> generator)
         {
             return CompilationUnit()
                 .WithMembers(
                     SingletonList<MemberDeclarationSyntax>(
                         NamespaceDeclaration(ParseName(csNamespace))
                             .WithMembers(List(elements.SelectMany(element => generator.GenerateCode(element))))
-                            .WithNamespaceKeyword(
-                            Token(
-                                TriviaList(
-                                    Trivia(
-                                        IfDirectiveTrivia(
-                                            IdentifierName(appType),
-                                            true,
-                                            true,
-                                            true))),
-                                SyntaxKind.NamespaceKeyword,
-                                TriviaList()))))
-                .WithEndOfFileToken(
-                    Token(
-                        TriviaList(
-                            Trivia(EndIfDirectiveTrivia(true))),
-                        SyntaxKind.EndOfFileToken,
-                        TriviaList()))
+                    ))
                 .NormalizeWhitespace(elasticTrivia: true);
         }
     }

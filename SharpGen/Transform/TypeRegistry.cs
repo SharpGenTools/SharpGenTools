@@ -57,7 +57,18 @@ namespace SharpGen.Transform
         public CsTypeBase ImportType(Type type)
         {
             var typeName = type.FullName;
-            var sizeOf = 0;
+
+            if (type == typeof(void)) // Cannot use System.Void in C# generated code.
+            {
+                typeName = "void";
+            }
+
+            if (_mapDefinedCSharpType.TryGetValue(typeName, out CsTypeBase preDefined))
+            {
+                return preDefined;
+            }
+
+                var sizeOf = 0;
             try
             {
 #pragma warning disable 0618
@@ -68,6 +79,7 @@ namespace SharpGen.Transform
             {
                 Logger.Message($"Tried to get the size of type {typeName}, which is not a struct.");
             }
+
             var cSharpType = new CsTypeBase { Name = typeName, Type = type, SizeOf = sizeOf };
             DefineType(cSharpType);
             return cSharpType;

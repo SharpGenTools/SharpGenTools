@@ -14,8 +14,9 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <SharpGenGeneratedCodeFolder Condition="'$(SharpGenGeneratedCodeFolder)' == ''">$(IntermediateOutputPath)/SharpGen</SharpGenGeneratedCodeFolder>
+    <SharpGenGeneratedCodeFolder Condition="'$(SharpGenGeneratedCodeFolder)' == ''">$(IntermediateOutputPath)SharpGen</SharpGenGeneratedCodeFolder>
     <SharpGenConsumerBindMappingConfigId Condition="'$(SharpGenConsumerBindMappingConfigId)' == ''">$(AssemblyName)</SharpGenConsumerBindMappingConfigId>
+    <SharpGenOutputDirectory Condition="'$(SharpGenOutputDirectory)' == ''">$(MSBuildProjectDirectory)</SharpGenOutputDirectory>
     <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' == 'Full'">$(MSBuildThisFileDirectory)/../tools/net46/SharpGenTools.Sdk.dll</SharpGenSdkAssembly>
     <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)/../tools/netstandard1.5/SharpGenTools.Sdk.dll</SharpGenSdkAssembly>
     <GenerateConsumerBindMappingFilePlaceholderProperty>CustomBeforeMicrosoftCommonTargets=$(MSBuildThisFileDirectory)/GenerateConsumerBindMappingFile.targets</GenerateConsumerBindMappingFilePlaceholderProperty>
@@ -76,10 +77,12 @@
   </Target>
   
   <Target
-    Name="CorePrepareSharpGen">
+    Name="CorePrepareSharpGen"
+    Condition="'@(SharpGenMapping)' != ''">
     <ItemGroup>
-      <Compile Remove="$(IntermediateOutputPath)/SharpGen/**/*.cs" />
-      <SharpGenGeneratedSource Include="$(IntermediateOutputPath)/SharpGen/**/*.cs" />
+      <SharpGenGeneratedSource Condition="'$(SharpGenIncludeAssemblyNameFolder)' != 'true'" Include="$(SharpGenOutputDirectory)/$(SharpGenGeneratedCodeFolder)/**/*.cs" />
+      <SharpGenGeneratedSource Condition="'$(SharpGenIncludeAssemblyNameFolder)' == 'true'" Include="$(SharpGenOutputDirectory)/*/$(SharpGenGeneratedCodeFolder)/**/*.cs" />
+      <Compile Remove="$(SharpGenGeneratedSource)" />
     </ItemGroup>
   </Target>
 
@@ -88,6 +91,7 @@
     BeforeTargets="CoreCompile"
     DependsOnTargets="PrepareForBuild;
                       GetMappingsFromProjectReferences;
+                      CorePrepareSharpGen;
                       CoreGenerateSharpGenBindings;
                       GenerateConsumerBindMappingFile"
     />
@@ -100,10 +104,9 @@
     Inputs="@(SharpGenMapping);$(SharpGenSdkAssembly)"
     Outputs="@(SharpGenConsumerBindMappingFile);@(SharpGenGeneratedSource)">
 
-    <MakeDir Directories="$(IntermediateOutputPath)/SharpGen" />
+    <MakeDir Directories="$(IntermediateOutputPath)SharpGen" />
     <SharpGen
       CastXmlPath="$(CastXmlPath)"
-      AppType="$(SharpGenAppType)"
       GenerateDocs="$(SharpGenGenerateDoc)"
       GlobalNamespace="$(SharpGenGlobalNamespace)"
       VcToolsPath="$(VCToolsDir)"
@@ -111,13 +114,13 @@
       IntermediateOutputPath="$(MSBuildProjectDirectory)\$(IntermediateOutputPath)SharpGen"
       GeneratedCodeFolder="$(SharpGenGeneratedCodeFolder)"
       IncludeAssemblyNameFolder="$(SharpGenIncludeAssemblyNameFolder)"
-      OutputDirectory="$(MSBuildProjectDirectory)"
+      OutputDirectory="$(SharpGenOutputDirectory)"
       ConsumerBindMappingConfigId ="$(SharpGenConsumerBindMappingConfigId)"
-      UseRoslynCodeGen="$(SharpGenRoslynCodeGen)"
+      Macros="$(SharpGenMacros)"
     />
 
     <ItemGroup>
-      <Compile Include="$(IntermediateOutputPath)/SharpGen/**/*.cs" />
+      <Compile Include="$(IntermediateOutputPath)SharpGen/**/*.cs" />
     </ItemGroup>
   </Target>
 

@@ -37,12 +37,14 @@ namespace SharpGen.Generator
                                 IdentifierName(param.Name),
                                 MemberBindingExpression(
                                     IdentifierName("NativePointer"))),
-                            MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                IdentifierName("IntPtr"),
+                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                MemberAccessExpression(
+                                    SyntaxKind.SimpleMemberAccessExpression,
+                                    IdentifierName("System"),
+                                    IdentifierName("IntPtr")),
                                 IdentifierName("Zero")))));
             }
-            else if (param.IsOut)
+            if (param.IsOut)
             {
                 if (param.PublicType is CsInterface)
                 {
@@ -96,7 +98,7 @@ namespace SharpGen.Generator
                         : (ExpressionSyntax)IdentifierName(param.TempName);
                 }
             }
-            else if (param.IsRefInValueTypeOptional)
+            if (param.IsRefInValueTypeOptional)
             {
                 return ConditionalExpression(
                     BinaryExpression(
@@ -111,14 +113,15 @@ namespace SharpGen.Generator
                         LiteralExpression(
                             SyntaxKind.NumericLiteralExpression,
                             Literal(0))),
-                    IdentifierName(param.TempName));
+                    PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
+                        IdentifierName(param.TempName)));
             }
-            else if (param.IsRefInValueTypeByValue)
+            if (param.IsRefInValueTypeByValue)
             {
                 return PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
                     IdentifierName(param.HasNativeValueType ? param.TempName : param.Name));
             }
-            else if (!param.IsFixed && param.PublicType is CsEnum && !param.IsArray)
+            if (!param.IsFixed && param.PublicType is CsEnum && !param.IsArray)
             {
                 return CheckedExpression(
                     SyntaxKind.UncheckedExpression,
@@ -127,13 +130,13 @@ namespace SharpGen.Generator
                             Token(SyntaxKind.IntKeyword)),
                         IdentifierName(param.Name)));
             }
-            else if (param.PublicType.Type == typeof(string))
+            if (param.PublicType.Type == typeof(string))
             {
                 return CastExpression(
                     PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
                     IdentifierName(param.TempName));
             }
-            else if (param.PublicType is CsInterface
+            if (param.PublicType is CsInterface
                 && param.Attribute == CsParameterAttribute.In
                 && !param.IsArray)
             {
@@ -148,12 +151,14 @@ namespace SharpGen.Generator
                                 IdentifierName(param.Name),
                                 MemberBindingExpression(
                                     IdentifierName("NativePointer"))),
-                            MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                IdentifierName("IntPtr"),
+                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                MemberAccessExpression(
+                                    SyntaxKind.SimpleMemberAccessExpression,
+                                    IdentifierName("System"),
+                                    IdentifierName("IntPtr")),
                                 IdentifierName("Zero")))));
             }
-            else if (param.IsArray)
+            if (param.IsArray)
             {
                 if (param.HasNativeValueType
                     || param.IsBoolToInt
@@ -162,29 +167,29 @@ namespace SharpGen.Generator
                     return IdentifierName(param.TempName);
                 }
             }
-            else if (param.IsBoolToInt)
+            if (param.IsBoolToInt)
             {
                 return ConditionalExpression(IdentifierName(param.Name),
                     LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(1)),
                     LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)));
             }
-            else if (param.IsFixed && !param.HasNativeValueType)
+            if (param.IsFixed && !param.HasNativeValueType)
             {
                 return IdentifierName(param.TempName);
             }
-            else if (param.PublicType.Type == typeof(IntPtr) && !param.IsArray)
+            if (param.PublicType.Type == typeof(IntPtr) && !param.IsArray)
             {
                 return CastExpression(
                     PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
                     IdentifierName(param.Name));
             }
-            else if (param.HasNativeValueType)
+            if (param.HasNativeValueType)
             {
                 return param.IsIn ?
                     (ExpressionSyntax)IdentifierName(param.TempName)
                     : PrefixUnaryExpression(SyntaxKind.AddressOfExpression, IdentifierName(param.TempName));
             }
-            else if (param.PublicType.QualifiedName == globalNamespace.GetTypeName("PointerSize"))
+            if (param.PublicType.QualifiedName == globalNamespace.GetTypeName("PointerSize"))
             {
                 return CastExpression(
                     PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),

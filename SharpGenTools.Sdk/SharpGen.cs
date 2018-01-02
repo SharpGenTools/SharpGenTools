@@ -19,9 +19,6 @@ namespace SharpGenTools.Sdk
         public string CastXmlPath { get; set; }
 
         [Required]
-        public string AppType { get; set; }
-
-        [Required]
         public string GlobalNamespace { get; set; }
 
         [Required]
@@ -44,7 +41,7 @@ namespace SharpGenTools.Sdk
         [Required]
         public string ConsumerBindMappingConfigId { get; set; }
 
-        public bool UseRoslynCodeGen { get; set; }
+        public string[] Macros { get; set; }
 
         public override bool Execute()
         {
@@ -57,7 +54,7 @@ namespace SharpGenTools.Sdk
                     Id = "SharpGen-MSBuild"
                 };
 
-                RunCodeGen(config, AppType);
+                RunCodeGen(config);
                 return true;
             }
             catch (CodeGenFailedException)
@@ -66,12 +63,11 @@ namespace SharpGenTools.Sdk
             }
         }
 
-        private void RunCodeGen(ConfigFile config, string appType)
+        private void RunCodeGen(ConfigFile config)
         {
             var codeGenApp = new CodeGenApp(new global::SharpGen.Logging.Logger(new MsBuildSharpGenLogger(Log), null))
             {
                 CastXmlExecutablePath = CastXmlPath,
-                AppType = appType,
                 Config = config,
                 GlobalNamespace = new GlobalNamespaceProvider(GlobalNamespace),
                 IsGeneratingDoc = GenerateDocs,
@@ -80,9 +76,16 @@ namespace SharpGenTools.Sdk
                 OutputDirectory = OutputDirectory,
                 IncludeAssemblyNameFolder = IncludeAssemblyNameFolder,
                 GeneratedCodeFolder = GeneratedCodeFolder,
-                ConsumerBindMappingConfigId = ConsumerBindMappingConfigId,
-                UseRoslynCodeGen = UseRoslynCodeGen
+                ConsumerBindMappingConfigId = ConsumerBindMappingConfigId
             };
+
+            if (Macros != null)
+            {
+                foreach (var macro in Macros)
+                {
+                    codeGenApp.Macros.Add(macro);
+                } 
+            }
 
             if (!codeGenApp.Init())
             {

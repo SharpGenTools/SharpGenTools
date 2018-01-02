@@ -173,7 +173,7 @@ namespace SharpGen.Generator
             return MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "__MarshalTo")
                 .WithParameterList(ParameterList(SingletonSeparatedList(
                     Parameter(Identifier("@ref")).WithType(RefType(ParseTypeName("__Native"))))))
-                .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword)))
+                .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)))
                 .WithBody(Block(
                     csStruct.Fields.Select(field =>
                     {
@@ -224,19 +224,13 @@ namespace SharpGen.Generator
                         {
                             if (field.IsFixedArrayOfStruct)
                             {
-                                return GenerateArrayCopyMemory(field, copyFromNative: false);
+                                return GenerateCopyMemory(field, copyFromNative: false);
                             }
                             else
                             {
                                 if (field.MarshalType.QualifiedName == "System.Char")
                                 {
-                                    return GenerateCopyMemory(field, false,
-                                        BinaryExpression(SyntaxKind.MultiplyExpression,
-                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                IdentifierName(field.Name),
-                                                IdentifierName("Length")),
-                                            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(2))
-                                        ));
+                                    return GenerateStringCopyMemory(field);
                                 }
                                 else if (field.PublicType.QualifiedName == "System.String")
                                 {
@@ -296,7 +290,7 @@ namespace SharpGen.Generator
                                 }
                                 else
                                 {
-                                    return GenerateArrayCopyMemory(field, copyFromNative: false);
+                                    return GenerateCopyMemory(field, copyFromNative: false);
                                 }
                             }
                         }
@@ -391,7 +385,7 @@ namespace SharpGen.Generator
             return MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "__MarshalFrom")
                 .WithParameterList(ParameterList(SingletonSeparatedList(
                     Parameter(Identifier("@ref")).WithType(RefType(ParseTypeName("__Native"))))))
-                .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword)))
+                .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)))
                 .WithBody(Block(
                     csStruct.Fields.Select(field =>
                     {
@@ -442,7 +436,7 @@ namespace SharpGen.Generator
                         {
                             if (field.IsFixedArrayOfStruct)
                             {
-                                return GenerateArrayCopyMemory(field, copyFromNative: true);
+                                return GenerateCopyMemory(field, copyFromNative: true);
                             }
                             else
                             {
@@ -508,7 +502,7 @@ namespace SharpGen.Generator
                                 }
                                 else
                                 {
-                                    return GenerateArrayCopyMemory(field, copyFromNative: true);
+                                    return GenerateCopyMemory(field, copyFromNative: true);
                                 }
                             }
                         }
@@ -578,17 +572,8 @@ namespace SharpGen.Generator
                     }
                     )));
         }
-        
-        private StatementSyntax GenerateArrayCopyMemory(CsField field, bool copyFromNative)
-            => GenerateCopyMemory(
-                field,
-                copyFromNative,
-                BinaryExpression(SyntaxKind.MultiplyExpression,
-                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(field.ArrayDimensionValue)),
-                    SizeOfExpression(ParseTypeName(field.MarshalType.QualifiedName))
-                ));
 
-        private StatementSyntax GenerateCopyMemory(CsField field, bool copyFromNative, ExpressionSyntax numBytesExpression)
+        private StatementSyntax GenerateCopyMemory(CsField field, bool copyFromNative)
         {
             return FixedStatement(
                 VariableDeclaration(
@@ -631,9 +616,57 @@ namespace SharpGen.Generator
                             SeparatedList(
                                 new[]
                                 {
-                                                            Argument(CastExpression(ParseTypeName("System.IntPtr"), IdentifierName("__to"))),
-                                                            Argument(CastExpression(ParseTypeName("System.IntPtr"), IdentifierName("__from"))),
-                                                            Argument(numBytesExpression)
+                                    Argument(CastExpression(ParseTypeName("System.IntPtr"), IdentifierName("__to"))),
+                                    Argument(CastExpression(ParseTypeName("System.IntPtr"), IdentifierName("__from"))),
+                                    Argument(BinaryExpression(SyntaxKind.MultiplyExpression,
+                                        LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(field.ArrayDimensionValue)),
+                                        SizeOfExpression(ParseTypeName(field.MarshalType.QualifiedName))
+                                    ))
+                                }
+                            )))));
+        }
+
+        private StatementSyntax GenerateStringCopyMemory(CsField field)
+        {
+            return FixedStatement(
+                VariableDeclaration(
+                    PointerType(PredefinedType(Token(SyntaxKind.CharKeyword))),
+                    SeparatedList(
+                        new[]
+                        {
+                            VariableDeclarator("__psrc")
+                                .WithInitializer(EqualsValueClause(
+                                    MemberAccessExpression(
+                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                ThisExpression(),
+                                                IdentifierName(field.Name)))),
+                            VariableDeclarator("__ptr")
+                                .WithInitializer(EqualsValueClause(
+                                    PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
+                                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                    IdentifierName("@ref"),
+                                    IdentifierName(field.Name)))))
+                        })
+                    ),
+                ExpressionStatement(
+                    InvocationExpression(
+                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                IdentifierName(globalNamespace.Name),
+                                IdentifierName("Utilities")),
+                            IdentifierName("CopyMemory")),
+                        ArgumentList(
+                            SeparatedList(
+                                new[]
+                                {
+                                    Argument(CastExpression(ParseTypeName("System.IntPtr"), IdentifierName("__ptr"))),
+                                    Argument(CastExpression(ParseTypeName("System.IntPtr"), IdentifierName("__psrc"))),
+                                    Argument(BinaryExpression(SyntaxKind.MultiplyExpression,
+                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                                IdentifierName(field.Name),
+                                                IdentifierName("Length")),
+                                            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(2))
+                                        ))
                                 }
                             )))));
         }

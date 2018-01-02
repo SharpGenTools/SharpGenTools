@@ -1,10 +1,8 @@
 ﻿<Project>
   <PropertyGroup>
-    <SharpGenGenerateDoc>false</SharpGenGenerateDoc>
-    <SharpGenGlobalNamespace>SharpGen.Runtime</SharpGenGlobalNamespace>
-    <SharpGenAppType>true</SharpGenAppType>
-    <CastXmlPath>$(MSBuildThisFileDirectory)../tools/CastXML/bin/castxml.exe</CastXmlPath>
-    <PreserveCompilationContext>true</PreserveCompilationContext>
-    <SharpGenIncludeAssemblyNameFolder>false</SharpGenIncludeAssemblyNameFolder>
+    <SharpGenGenerateDoc Condition="'$(SharpGenGenerateDoc)' == ''">false</SharpGenGenerateDoc>
+    <SharpGenGlobalNamespace Condition="'$(SharpGenGlobalNamespace)' == ''">SharpGen.Runtime</SharpGenGlobalNamespace>
+    <CastXmlPath Condition="'$(CastXmlPath)' == ''">$(MSBuildThisFileDirectory)../tools/CastXML/bin/castxml.exe</CastXmlPath>
+    <SharpGenIncludeAssemblyNameFolder Condition="'$(SharpGenIncludeAssemblyNameFolder)' == ''">false</SharpGenIncludeAssemblyNameFolder>
   </PropertyGroup>
 </Project>
