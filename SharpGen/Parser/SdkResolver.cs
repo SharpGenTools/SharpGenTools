@@ -33,7 +33,7 @@ namespace SharpGen.Parser
             }
         }
 
-        private IEnumerable<IncludeDirRule> ResolveStdLib(Version version)
+        private IEnumerable<IncludeDirRule> ResolveStdLib(string version)
         {
             bool onWindows;
 #if NETSTANDARD1_5
@@ -47,21 +47,15 @@ namespace SharpGen.Parser
 
                 if (version == null)
                 {
-                    var msvcToolsetVer
+                    version
                         = File.ReadAllText(vcInstallDir + Path.Combine(@"\Auxiliary\Build", "Microsoft.VCToolsVersion.default.txt")).Trim();
-                    version = Version.Parse(msvcToolsetVer);
                 }
 
                 yield return new IncludeDirRule(Path.Combine(vcInstallDir, $@"Tools\MSVC\{version}\include"));
             }
             else
             {
-                var versionString = version.ToString();
-                if (version.Minor == 0 && version.Revision == 0 && version.Build == 0)
-                {
-                    versionString = version.Major.ToString();
-                }
-                yield return new IncludeDirRule(Path.Combine("/usr", "include", "c++", versionString));
+                yield return new IncludeDirRule(Path.Combine("/usr", "include", "c++", version));
             }
         }
         
@@ -95,11 +89,12 @@ namespace SharpGen.Parser
             return null;
         }
 
-        private IEnumerable<IncludeDirRule> ResolveWindowsSdk(Version version)
+        private IEnumerable<IncludeDirRule> ResolveWindowsSdk(string version)
         {
             yield return new IncludeDirRule($@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\{version}\shared");
             yield return new IncludeDirRule($@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\{version}\um");
             yield return new IncludeDirRule($@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\{version}\ucrt");
+            yield return new IncludeDirRule($@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\{version}\winrt");
         }
     }
 }

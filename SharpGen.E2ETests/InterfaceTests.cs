@@ -57,7 +57,7 @@ namespace SharpGen.E2ETests
                 Sdks =
                 {
                     new Config.SdkRule(Config.SdkLib.StdLib, null),
-                    new Config.SdkRule(Config.SdkLib.WindowsSdk, new System.Version(10, 0, 15063, 0))
+                    new Config.SdkRule(Config.SdkLib.WindowsSdk, "10.0.15063.0")
                 },
                 Includes =
                 {
@@ -105,7 +105,7 @@ namespace SharpGen.E2ETests
                 Sdks =
                 {
                     new Config.SdkRule(Config.SdkLib.StdLib, null),
-                    new Config.SdkRule(Config.SdkLib.WindowsSdk, new System.Version(10, 0, 15063, 0))
+                    new Config.SdkRule(Config.SdkLib.WindowsSdk, "10.0.15063.0")
                 },
                 Includes =
                 {

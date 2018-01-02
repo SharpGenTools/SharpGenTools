@@ -17,7 +17,7 @@ namespace SharpGen.Config
         {
         }
 
-        public SdkRule(SdkLib name, Version version)
+        public SdkRule(SdkLib name, string version)
         {
             Name = name;
             Version = version;
@@ -38,17 +38,9 @@ namespace SharpGen.Config
         }
 
         public bool ShouldSerialize_Name_() => Enum.IsDefined(typeof(SdkLib), Name);
-
-        [XmlIgnore]
-        public Version Version { get; private set; }
+        
 
         [XmlAttribute("version")]
-        public string _Version_
-        {
-            get => Version.ToString();
-            set => Version = Version.Parse(value);
-        }
-
-        public bool ShouldSerialize_Version_() => Version != null;
+        public string Version { get; set; }
     }
 }
