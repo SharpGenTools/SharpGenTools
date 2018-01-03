@@ -237,7 +237,7 @@ namespace SharpGen
             }
         }
 
-        private (DocumentationAggregator doc, CsSolution solution) ExecuteMappings(CppModule group, ConfigFile consumerConfig)
+        private (IDocumentationAggregator doc, CsSolution solution) ExecuteMappings(CppModule group, ConfigFile consumerConfig)
         {
             var typeRegistry = new TypeRegistry(Logger);
             var namingRules = new NamingRulesManager();
@@ -338,7 +338,7 @@ namespace SharpGen
             return cppHeadersUpdated;
         }
 
-        private void GenerateCode(DocumentationAggregator docAggregator, CsSolution solution)
+        private void GenerateCode(IDocumentationAggregator docAggregator, CsSolution solution)
         {
             var generator = new RoslynGenerator(Logger, GlobalNamespace, docAggregator);
             generator.Run(solution, _generatedPath, GeneratedCodeFolder, IncludeAssemblyNameFolder);
