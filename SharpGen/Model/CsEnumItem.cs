@@ -18,13 +18,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Xml.Serialization;
+
 namespace SharpGen.Model
 {
+    [XmlType("Item")]
     public class CsEnumItem : CsBase
     {
         public CsEnumItem()
         {
-            SizeOf = 4;
         }
 
         public CsEnumItem(string name, string value)

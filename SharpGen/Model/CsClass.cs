@@ -23,7 +23,7 @@ using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
-    [XmlType("class")]
+    [XmlType("Group")]
     public class CsClass : CsTypeBase
     {
         public CsClass()
@@ -44,18 +44,6 @@ namespace SharpGen.Model
         public IEnumerable<CsVariable> Variables
         {
             get { return Items.OfType<CsVariable>(); }
-        }
-
-        public List<string> GetFunctionDllNames()
-        {
-            var functionNames = new List<string>();
-
-            foreach (var cSharpFunction in Functions)
-            {
-                if (!functionNames.Contains(cSharpFunction.DllName) && !cSharpFunction.UseDllImport)
-                    functionNames.Add(cSharpFunction.DllName);
-            }
-            return functionNames;
         }
 
         public override string ToString()

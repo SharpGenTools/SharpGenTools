@@ -19,18 +19,23 @@
 // THE SOFTWARE.
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
     /// <summary>
     /// A Namespace container.
     /// </summary>
+    [XmlType("Namespace")]
     public class CsNamespace : CsBase
     {
-        public CsNamespace(CsBase parentContainer, string nameSpace)
+        public CsNamespace()
+        {
+                
+        }
+        public CsNamespace(string nameSpace)
         {
             Name = nameSpace;
-            Parent = parentContainer;
         }
 
         /// <summary>
@@ -45,19 +50,7 @@ namespace SharpGen.Model
                 return Name;
             }
         }
-
-        /// <summary>
-        /// Gets the assembly that contains this namespace.
-        /// </summary>
-        /// <value>The assembly.</value>
-        public CsAssembly Assembly
-        {
-            get
-            {
-                return GetParent<CsAssembly>();
-            }
-        }
-
+        
         /// <summary>
         /// Gets or sets the output directory for generated files for this namespace.
         /// </summary>

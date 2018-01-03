@@ -19,6 +19,7 @@
 // THE SOFTWARE.
 using System;
 using System.Reflection;
+using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
@@ -27,10 +28,21 @@ namespace SharpGen.Model
         /// <summary>
         /// The built-in .NET type that this type instance represents, if one exists.
         /// </summary>
+        [XmlIgnore]
         public Type Type { get; set; }
 
-        public bool IsReference { get; set; }
-
+        public string BuiltinTypeName
+        {
+            get
+            {
+                return Type?.FullName;
+            }
+            set
+            {
+                Type = Type.GetType(value);
+            }
+        }
+        
         public bool IsPointer
         {
             get { return Type == typeof (IntPtr); }
@@ -71,17 +83,5 @@ namespace SharpGen.Model
             // throws an exception?
             return 4;
         }
-
-        private CsAssembly _assembly;
-        public CsAssembly Assembly
-        {
-            get
-            {
-                if (_assembly == null)
-                    _assembly = GetParent<CsAssembly>();
-                return _assembly;
-            }
-        }
-
     }
 }

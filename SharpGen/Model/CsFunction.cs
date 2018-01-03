@@ -20,14 +20,20 @@
 
 using SharpGen.Config;
 using SharpGen.CppModel;
+using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
+    [XmlType("Function")]
     public class CsFunction : CsMethod
     {
+        public CsFunction()
+        {
+
+        }
+
         public CsFunction(CppFunction cppMethod) : base(cppMethod)
         {
-            UseDllImport = true;
         }
 
         protected override int MaxSizeReturnParameter

@@ -21,7 +21,7 @@ using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
-    [XmlType("variable")]
+    [XmlType("Variable")]
     public class CsVariable : CsTypeBase
     {
         public CsVariable()

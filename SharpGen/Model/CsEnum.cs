@@ -24,7 +24,7 @@ using SharpGen.Config;
 
 namespace SharpGen.Model
 {
-    [XmlType("enum")]
+    [XmlType("Enum")]
     public class CsEnum : CsTypeBase
     {
         public CsEnum()

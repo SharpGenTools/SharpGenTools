@@ -30,6 +30,8 @@ using SharpGen.CppModel;
 using SharpGen.Generator;
 using System.Diagnostics;
 using SharpGen.Transform;
+using System.Xml.Serialization;
+using System.Collections.Specialized;
 
 namespace SharpGen.Model
 {
@@ -39,7 +41,7 @@ namespace SharpGen.Model
     [DebuggerDisplay("Name: {Name}")]
     public class CsBase
     {
-        private List<CsBase> _items;
+        private ObservableCollection<CsBase> _items;
         private CppElement _cppElement;
         private string _cppElementName;
 
@@ -48,24 +50,39 @@ namespace SharpGen.Model
         /// </summary>
         public CsBase()
         {
-            _items = new List<CsBase>();
+            _items = new ObservableCollection<CsBase>();
+            _items.CollectionChanged += ItemsChanged;
             Visibility = Visibility.Public;
             IsFullyMapped = true;
             Description = "No documentation.";
             Remarks = "";
         }
 
+        private void ItemsChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems.OfType<CsBase>())
+                {
+                    item.Parent = this;
+                } 
+            }
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems.OfType<CsBase>())
+                {
+                    item.Parent = null;
+                } 
+            }
+        }
+
         /// <summary>
         /// Gets or sets the parent of this container.
         /// </summary>
         /// <value>The parent.</value>
+        [XmlIgnore]
         public CsBase Parent { get; set; }
-
-        protected void ClearItems()
-        {
-            _items = new List<CsBase>();
-        }
-
+        
         /// <summary>
         /// Gets the parent of a specified type. This method goes back
         /// to all parent and returns the first parent of the type T or null if no parent were found.
@@ -74,7 +91,7 @@ namespace SharpGen.Model
         /// <returns>a valid reference to the parent T or null if no parent of this type</returns>
         public T GetParent<T>() where T : CsBase
         {
-            CsBase parent = Parent;
+            var parent = Parent;
             while (parent != null && !(parent is T))
                 parent = parent.Parent;
             return (T) parent;
@@ -84,10 +101,17 @@ namespace SharpGen.Model
         /// Gets items stored in this container.
         /// </summary>
         /// <value>The items.</value>
-        public ReadOnlyCollection<CsBase> Items
+        public ObservableCollection<CsBase> Items
         {
-            get { return _items.AsReadOnly(); }
+            get => _items;
+            set
+            {
+                _items.CollectionChanged -= ItemsChanged;
+                _items = value;
+                _items.CollectionChanged += ItemsChanged;
+            }
         }
+        
 
         /// <summary>
         /// Adds the specified inner container to this container.
@@ -98,7 +122,6 @@ namespace SharpGen.Model
         /// <param name="innerCs">The inner container.</param>
         public void Add(CsBase innerCs)
         {
-            innerCs.Parent = this;
             _items.Add(innerCs);
         }
 
@@ -111,28 +134,21 @@ namespace SharpGen.Model
         /// <param name="innerCs">The inner container.</param>
         public void Remove(CsBase innerCs)
         {
-            innerCs.Parent = null;
             _items.Remove(innerCs);
-        }
-
-        /// <summary>
-        /// Sorts all elements inside this instance
-        /// </summary>
-        public void Sort()
-        {
-            _items.Sort((x,  y) => x.Name.CompareTo(y.Name));
         }
 
         /// <summary>
         /// Gets or sets the name of this element.
         /// </summary>
         /// <value>The name.</value>
+        [XmlAttribute("name")]
         public string Name { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="Visibility"/> of this element. Default is public.
         /// </summary>
         /// <value>The visibility.</value>
+        [XmlAttribute("visibility")]
         public Visibility Visibility { get; set; }
 
         /// <summary>
@@ -187,12 +203,14 @@ namespace SharpGen.Model
         /// <value>
         /// 	<c>true</c> if this instance is fully mapped; otherwise, <c>false</c>.
         /// </value>
+        [XmlIgnore]
         public bool IsFullyMapped { get; set; }
 
         /// <summary>
         /// Gets the full qualified name of this type.
         /// </summary>
-        /// <value>The full name.</value>
+        /// <value>The full name.</value
+        [XmlIgnore]
         public virtual string QualifiedName
         {
             get
@@ -207,7 +225,8 @@ namespace SharpGen.Model
         /// Gets or sets the C++ element associated to this container.
         /// </summary>
         /// <value>The CPP element.</value>
-        public CppElement CppElement
+        [XmlIgnore]
+        public virtual CppElement CppElement
         {
             get { return _cppElement; }
             set
@@ -228,6 +247,7 @@ namespace SharpGen.Model
         /// Gets the name of the C++ element.
         /// </summary>
         /// <value>The name of the C++ element. "None" if no C++ element attached to this container.</value>
+        [XmlAttribute("cppElement")]
         public string CppElementName
         {
             get
@@ -245,11 +265,13 @@ namespace SharpGen.Model
         /// Gets or sets the sizeof this element.
         /// </summary>
         /// <value>The size of.</value>
+        [XmlAttribute("size")]
         public int SizeOf { get; set; }
 
         /// <summary>
         ///   Packing alignment for this structure (Default is 0 => Platform default)
         /// </summary>
+        [XmlAttribute("align")]
         public int Align { get; set; }
 
         /// <summary>
@@ -258,6 +280,7 @@ namespace SharpGen.Model
         /// <value>
         /// The id.
         /// </value>
+        [XmlAttribute("docId")]
         public string DocId { get; set; }
 
         /// <summary>
@@ -271,9 +294,7 @@ namespace SharpGen.Model
         /// </summary>
         /// <value>The remarks.</value>
         public string Remarks { get; set; }
-
-        public bool HasPersistent { get; set; }
-
+        
         public virtual void FillDocItems(IList<string> docItems, IDocumentationAggregator manager) {}
         
         public virtual string DocUnmanagedName

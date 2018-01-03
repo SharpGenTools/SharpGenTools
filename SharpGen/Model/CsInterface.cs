@@ -25,7 +25,7 @@ using SharpGen.CppModel;
 
 namespace SharpGen.Model
 {
-    [XmlType("interface")]
+    [XmlType("Interface")]
     public class CsInterface : CsTypeBase
     {
         public CsInterface() : this(null)
@@ -37,7 +37,6 @@ namespace SharpGen.Model
             CppElement = cppInterface;
             if (cppInterface != null)
                 Guid = cppInterface.Guid;
-            NativeImplem = this;
         }
 
         public IEnumerable<CsMethod> Methods
@@ -76,14 +75,14 @@ namespace SharpGen.Model
         /// </summary>
         public CsTypeBase IBase { get; set; }
 
-        public CsInterface NativeImplem { get; set; }
+        public CsInterface NativeImplementation { get; set; }
 
         public string Guid { get; set; }
 
         /// <summary>
         ///   Only valid for inner interface. Specify the name of the property in the outer interface to access to the inner interface
         /// </summary>
-        public string PropertyAccesName { get; set; }
+        public string PropertyAccessName { get; set; }
 
         /// <summary>
         ///   True if this interface is used as a callback to a C# object

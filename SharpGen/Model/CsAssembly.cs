@@ -25,15 +25,23 @@ using System.Linq;
 using System.Xml;
 using SharpGen.Logging;
 using SharpGen.Config;
+using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
     /// <summary>
     /// An assembly container for namespaces.
     /// </summary>
+    [XmlType("Assembly")]
     public class CsAssembly : CsBase
     {
         private List<ConfigFile> _configFilesLinked;
+
+        public CsAssembly()
+        {
+            Interop = new InteropManager();
+            _configFilesLinked = new List<ConfigFile>();
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CsAssembly"/> class.
@@ -41,10 +49,9 @@ namespace SharpGen.Model
         /// <param name="assemblyName">Name of the assembly.</param>
         /// <param name="appType">The application type this assembly is generated for. (Used for the check file)</param>
         public CsAssembly(string assemblyName)
+            :this()
         {
             Name = assemblyName;
-            Interop = new InteropManager();
-            _configFilesLinked = new List<ConfigFile>();
         }
 
         /// <summary>
@@ -96,10 +103,6 @@ namespace SharpGen.Model
         /// Gets or sets the interop associated with this AssemblyContainer.
         /// </summary>
         /// <value>The interop.</value>
-        public InteropManager Interop
-        {
-            get;
-            private set;
-        }
+        public InteropManager Interop { get; }
     }
 }

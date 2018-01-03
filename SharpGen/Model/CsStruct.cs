@@ -30,7 +30,7 @@ namespace SharpGen.Model
     /// <summary>
     ///   A structElement that maps to a native struct
     /// </summary>
-    [XmlType("struct")]
+    [XmlType("Struct")]
     public class CsStruct : CsTypeBase
     {
         public CsStruct()

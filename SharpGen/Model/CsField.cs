@@ -18,12 +18,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Xml.Serialization;
+
 namespace SharpGen.Model
 {
     /// <summary>
     ///   Struct field
     /// </summary>
-    public class CsField : CsFieldBase
+    [XmlType("Field")]
+    public class CsField : CsMarshalBase
     {
         public int Offset { get; set; }
 
@@ -32,16 +35,6 @@ namespace SharpGen.Model
         public int BitMask { get; set; }
 
         public int BitOffset { get; set; }
-
-        public override string DocUnmanagedName
-        {
-            get { return CppElement != null ? CppElement.ToString() : "???"; }
-        }
-
-        public override string DocUnmanagedShortName
-        {
-            get { return CppElement != null ? CppElement.ToShortString() : "???"; }
-        }
 
         public bool IsFixedArrayOfStruct
         {

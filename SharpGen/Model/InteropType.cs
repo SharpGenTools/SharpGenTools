@@ -19,24 +19,18 @@
 // THE SOFTWARE.
 using System;
 using System.Reflection;
+using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
     /// <summary>
     /// Type used for template
     /// </summary>
+    [XmlType("InteropType")]
     public class InteropType
     {
-        private Type _type;
-        private string _typeName;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="InteropType"/> class.
-        /// </summary>
-        /// <param name="type">The type.</param>
-        public InteropType(Type type)
+        public InteropType()
         {
-            _type = type;
         }
 
         /// <summary>
@@ -45,16 +39,7 @@ namespace SharpGen.Model
         /// <param name="typeName">Name of the type.</param>
         public InteropType(string typeName)
         {
-            _typeName = typeName;
-        }
-
-        /// <summary>
-        /// Gets the type.
-        /// </summary>
-        /// <value>The type.</value>
-        public Type Type
-        {
-            get { return _type; }
+            TypeName = typeName;
         }
 
         /// <summary>
@@ -64,7 +49,7 @@ namespace SharpGen.Model
         /// <returns>The result of the conversion.</returns>
         public static implicit operator InteropType(Type input)
         {
-            return new InteropType(input);
+            return new InteropType(TransformTypeName(input));
         }
 
         /// <summary>
@@ -81,90 +66,27 @@ namespace SharpGen.Model
         /// Gets the name of the type.
         /// </summary>
         /// <value>The name of the type.</value>
-        public string TypeName
-        {
-            get
-            {
-                Type type = Type;
+        [XmlAttribute("name")]
+        public string TypeName { get; set; }
 
-                if (type != null)
-                {
-                    if (type == typeof(int))
-                        return "int";
-                    if (type == typeof(short))
-                        return "short";
-                    if (type == typeof(void*))
-                        return "void*";
-                    if (type == typeof(void))
-                        return "void";
-                    if (type == typeof(float))
-                        return "float";
-                    if (type == typeof(double))
-                        return "double";
-                    if (type == typeof(long))
-                        return "long";
-
-                    return type.FullName;
-                }
-                return _typeName;
-            }
-        }
-
-        /// <summary>
-        /// Gets the name of the param type of.
-        /// </summary>
-        /// <value>The name of the param type of.</value>
-        public string ParamTypeOfName
+        private static string TransformTypeName(Type type)
         {
-            get
-            {
-                return "typeof(" + TypeName + ")";
-            }
-        }
+            if (type == typeof(int))
+                return "int";
+            if (type == typeof(short))
+                return "short";
+            if (type == typeof(void*))
+                return "void*";
+            if (type == typeof(void))
+                return "void";
+            if (type == typeof(float))
+                return "float";
+            if (type == typeof(double))
+                return "double";
+            if (type == typeof(long))
+                return "long";
 
-        /// <summary>
-        /// Gets a value indicating whether this instance is primitive.
-        /// </summary>
-        /// <value>
-        /// 	<c>true</c> if this instance is primitive; otherwise, <c>false</c>.
-        /// </value>
-        public bool IsPrimitive
-        {
-            get
-            {
-                if (Type != null)
-                    return Type.GetTypeInfo().IsPrimitive;
-                return false;
-            }
-        }
-        
-        public bool IsPointer
-        {
-            get
-            {
-                if (Type != null)
-                {
-                    return Type.IsPointer;
-                }
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Gets a value indicating whether this instance is value type.
-        /// </summary>
-        /// <value>
-        /// 	<c>true</c> if this instance is value type; otherwise, <c>false</c>.
-        /// </value>
-        public bool IsValueType
-        {
-            get
-            {
-                if (Type != null)
-                    return Type.GetTypeInfo().IsValueType;
-                // If typename != null is necessary a ValueType
-                return true;
-            }
+            return type.FullName;
         }
 
         /// <summary>
@@ -176,44 +98,10 @@ namespace SharpGen.Model
         /// </returns>
         public override bool Equals(object obj)
         {
-            InteropType against = obj as InteropType;
+            var against = obj as InteropType;
             if (against == null)
                 return false;
-            return Type == against.Type && _typeName == against._typeName;
-        }
-
-        /// <summary>
-        /// Implements the operator ==.
-        /// </summary>
-        /// <param name="a">A.</param>
-        /// <param name="b">The b.</param>
-        /// <returns>The result of the operator.</returns>
-        public static bool operator ==(InteropType a, Type b)
-        {
-            // If both are null, or both are same instance, return true.
-            if (System.Object.ReferenceEquals(a, b))
-            {
-                return true;
-            }
-
-            // If one is null, but not both, return false.
-            if (((object)a == null) || ((object)b == null))
-            {
-                return false;
-            }
-
-            return a.Type == b;
-        }
-
-        /// <summary>
-        /// Implements the operator !=.
-        /// </summary>
-        /// <param name="a">A.</param>
-        /// <param name="b">The b.</param>
-        /// <returns>The result of the operator.</returns>
-        public static bool operator !=(InteropType a, Type b)
-        {
-            return !(a == b);
+            return TypeName == against.TypeName;
         }
 
         /// <summary>
@@ -258,7 +146,7 @@ namespace SharpGen.Model
         /// </returns>
         public override int GetHashCode()
         {
-            return _type.GetHashCode();
+            return TypeName.GetHashCode();
         }
     }
 }

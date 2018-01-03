@@ -20,10 +20,12 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Xml.Serialization;
 using SharpGen.Generator;
 
 namespace SharpGen.Model
 {
+    [XmlType("InteropSignature")]
     public class InteropMethodSignature : IEquatable<InteropMethodSignature>
     {
         public InteropMethodSignature()
@@ -33,7 +35,7 @@ namespace SharpGen.Model
 
         public int Index { get; set; }
         public InteropType ReturnType { get; set; }
-        public List<InteropType> ParameterTypes { get; set; }
+        public List<InteropType> ParameterTypes { get; }
         public bool IsLocal { get; set; }
         public bool IsFunction { get; set; }
 
