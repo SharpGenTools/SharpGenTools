@@ -145,7 +145,7 @@ namespace SharpGen.Parser
             {
                 foreach (var sdk in configFile.Sdks)
                 {
-                    _gccxml.IncludeDirectoryList.AddRange(SdkResolver.ResolveIncludeDirsForSdk(sdk));
+                    configFile.IncludeDirs.AddRange(SdkResolver.ResolveIncludeDirsForSdk(sdk));
                 }
 
                 // Add all include directories
