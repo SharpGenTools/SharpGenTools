@@ -59,18 +59,7 @@ namespace SharpGen.Config
         /// <value>The dynamic variables.</value>
         [XmlIgnore]
         public Dictionary<string, string> DynamicVariables { get; private set; }
-
-        /// <summary>
-        /// Adds a dynamic variable. Remove any previous variable with the same key.
-        /// </summary>
-        /// <param name="key">The key.</param>
-        /// <param name="value">The value.</param>
-        public void AddDynamicVariable(string key, string value)
-        {
-            DynamicVariables.Remove(key);
-            DynamicVariables.Add(key, value);
-        }
-
+        
         /// <summary>
         /// Gets or sets the parent of this mapping file.
         /// </summary>

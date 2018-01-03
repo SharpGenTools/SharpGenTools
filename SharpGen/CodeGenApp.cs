@@ -29,6 +29,11 @@ using SharpGen.Parser;
 using System.Xml.Serialization;
 using SharpGen.Model;
 using SharpGen.Transform;
+using SharpGen.CppModel;
+using SharpGen.Doc;
+#if NETSTANDARD1_5
+using System.Runtime.Loader;
+#endif
 
 namespace SharpGen
 {
@@ -168,27 +173,72 @@ namespace SharpGen
                     Id = ConsumerBindMappingConfigId
                 };
 
+                var (filesWithIncludes, filesWithExtensions) = CppHeaderGenerator.GetFilesWithIncludesAndExtensionHeaders(Config);
+
+                var configsWithIncludes = new HashSet<ConfigFile>();
+
+                foreach (var config in Config.ConfigFilesLoaded)
+                {
+                    if (filesWithIncludes.Contains(config.Id))
+                    {
+                        configsWithIncludes.Add(config);
+                    }
+                }
+
+                var headerGenerator = new CppHeaderGenerator(Logger, _isAssemblyNew, IntermediateOutputPath);
+
+                var (cppHeadersUpdated, cppConsumerConfig) = headerGenerator.GenerateCppHeaders(Config, configsWithIncludes, filesWithExtensions);
+
+                consumerConfig.IncludeProlog.AddRange(cppConsumerConfig.IncludeProlog);
+                consumerConfig.IncludeDirs.AddRange(cppConsumerConfig.IncludeDirs);
+                consumerConfig.Includes.AddRange(cppConsumerConfig.Includes);
+
+                var castXml = new CastXml(Logger, CastXmlExecutablePath)
+                {
+                    OutputPath = IntermediateOutputPath,
+                };
+
+                castXml.Configure(Config);
+
                 // Run the parser
-                var parser = new Parser.CppParser(GlobalNamespace, Logger)
+                var parser = new CppParser(Logger, castXml)
                 {
                     IsGeneratingDoc = IsGeneratingDoc,
                     DocProviderAssembly = DocProviderAssemblyPath,
-                    ForceParsing = _isAssemblyNew,
-                    CastXmlExecutablePath = CastXmlExecutablePath,
                     OutputPath = IntermediateOutputPath
                 };
 
-                // Init the parser
-                (consumerConfig.IncludeProlog, consumerConfig.IncludeDirs, consumerConfig.Includes) = parser.Init(Config);
+                var group = Config.CreateSkeletonModule();
+
+                if (cppHeadersUpdated)
+                {
+                    Logger.Progress(10, "Generating C++ extensions from macros");
+
+                    var cppExtensionHeaderGenerator = new CppExtensionHeaderGenerator(new MacroManager(castXml), group);
+
+                    group = cppExtensionHeaderGenerator.GenerateExtensionHeaders(Config, IntermediateOutputPath, filesWithExtensions);
+                }
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Initializing parser failed");
 
+                parser.Initialize(Config, filesWithExtensions);
+
                 // Run the parser
-                var group = parser.Run();
+                group = parser.Run(group, cppHeadersUpdated);
+
+                if (IsGeneratingDoc)
+                {
+                    ApplyDocumentation(group);
+                }
+
+                // Save back the C++ parsed includes
+                group.Write(Path.Combine(IntermediateOutputPath, parser.GroupFileName));
 
                 if (Logger.HasErrors)
                     Logger.Fatal("C++ compiler failed to parse header files");
+                
+                Config.ExpandDynamicVariables(Logger, group);
 
                 var typeRegistry = new TypeRegistry(Logger);
                 var namingRules = new NamingRulesManager();
@@ -281,6 +331,45 @@ namespace SharpGen
                 var serializer = new XmlSerializer(typeof(ConfigFile));
                 serializer.Serialize(fileWriter, consumerConfig);
             }
+        }
+
+        /// <summary>
+        /// Apply documentation from an external provider. This is optional.
+        /// </summary>
+        private CppModule ApplyDocumentation(CppModule group)
+        {
+            // Use default MSDN doc provider
+            IDocProvider docProvider = new MsdnProvider(Logger);
+
+            // Try to load doc provider from an external assembly
+            if (DocProviderAssemblyPath != null)
+            {
+                try
+                {
+#if NETSTANDARD1_5
+                    var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(DocProviderAssemblyPath);
+#else
+                    var assembly = Assembly.LoadFrom(DocProviderAssemblyPath);
+#endif
+
+                    foreach (var type in assembly.GetTypes())
+                    {
+                        if (typeof(IDocProvider).GetTypeInfo().IsAssignableFrom(type))
+                        {
+                            docProvider = (IDocProvider)Activator.CreateInstance(type);
+                            break;
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    Logger.Warning("Warning, Unable to locate/load DocProvider Assembly.");
+                    Logger.Warning("Warning, DocProvider was not found from assembly [{0}]", DocProviderAssemblyPath);
+                }
+            }
+
+            Logger.Progress(20, "Applying C++ documentation");
+            return docProvider.ApplyDocumentation(group);
         }
     }
 }

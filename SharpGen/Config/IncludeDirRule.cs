@@ -71,6 +71,11 @@ namespace SharpGen.Config
             return Path == other.Path && IsOverride == other.IsOverride;
         }
 
+        public override int GetHashCode()
+        {
+            return Path.GetHashCode();
+        }
+
         /// <summary>
         /// Returns a <see cref="System.String"/> that represents this instance.
         /// </summary>

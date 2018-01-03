@@ -17,6 +17,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using SharpGen.Config;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -60,9 +61,7 @@ namespace SharpGen.CppModel
         /// <returns></returns>
         public CppInclude FindInclude(string includeName)
         {
-            return (from cppElement in Iterate<CppInclude>()
-                    where cppElement.Name == includeName
-                    select cppElement).FirstOrDefault();
+            return Includes.FirstOrDefault(include => include.Name == includeName);
         }
 
         /// <summary>
@@ -124,6 +123,6 @@ namespace SharpGen.CppModel
                 ns.Add("", NS);
                 ds.Serialize(w, this, ns);
             }
-        }    
+        }
     }
 }
