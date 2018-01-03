@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SharpGen.E2ETests.VisualStudio
+namespace SharpGen.VisualStudioSetup
 {
   [Flags]
   public enum InstanceState : uint

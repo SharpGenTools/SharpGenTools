@@ -79,6 +79,7 @@ namespace SharpGen.Parser
             ForceParsing = false;
             this.globalNamespace = globalNamespace;
             Logger = logger;
+            SdkResolver = new SdkResolver(logger);
         }
 
         /// <summary>
@@ -110,6 +111,7 @@ namespace SharpGen.Parser
         public string OutputPath { get; set; }
 
         public Logger Logger { get; }
+        public SdkResolver SdkResolver { get; }
 
         /// <summary>
         /// Initialize this Parser from a root ConfigFile.
@@ -141,6 +143,11 @@ namespace SharpGen.Parser
             // Configure gccxml with include directory
             foreach (var configFile in _configRoot.ConfigFilesLoaded)
             {
+                foreach (var sdk in configFile.Sdks)
+                {
+                    configFile.IncludeDirs.AddRange(SdkResolver.ResolveIncludeDirsForSdk(sdk));
+                }
+
                 // Add all include directories
                 foreach (var includeDir in configFile.IncludeDirs)
                     _gccxml.IncludeDirectoryList.Add(includeDir);

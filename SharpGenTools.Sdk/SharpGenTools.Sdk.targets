@@ -1,19 +1,5 @@
 ﻿<Project>
   <PropertyGroup>
-    <VsInstallRoot Condition="'$(VsInstallRoot)' == ''">$(VSINSTALLDIR)</VsInstallRoot>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(VsInstallRoot)' != ''">
-    <VCInstallDir>$(VsInstallRoot)\VC\</VCInstallDir>
-  </PropertyGroup>
-  <PropertyGroup>
-    <VCToolsVersionProps Condition="'$(VCToolsVersionProps)' == ''">$(VCInstallDir)Auxiliary\Build\Microsoft.VCToolsVersion.default.props</VCToolsVersionProps>
-  </PropertyGroup>
-  <Import Project="$(VCToolsVersionProps)" Condition="Exists('$(VCToolsVersionProps)')" />
-  <PropertyGroup>
-    <VCToolsDir Condition="'$(VCToolsDir)' == '' and '$(VCToolsVersion)' != ''">$(VCInstallDir)Tools\MSVC\$(VCToolsVersion)\</VCToolsDir>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <SharpGenGeneratedCodeFolder Condition="'$(SharpGenGeneratedCodeFolder)' == ''">$(IntermediateOutputPath)SharpGen</SharpGenGeneratedCodeFolder>
     <SharpGenConsumerBindMappingConfigId Condition="'$(SharpGenConsumerBindMappingConfigId)' == ''">$(AssemblyName)</SharpGenConsumerBindMappingConfigId>
     <SharpGenOutputDirectory Condition="'$(SharpGenOutputDirectory)' == ''">$(MSBuildProjectDirectory)</SharpGenOutputDirectory>
@@ -109,7 +95,6 @@
       CastXmlPath="$(CastXmlPath)"
       GenerateDocs="$(SharpGenGenerateDoc)"
       GlobalNamespace="$(SharpGenGlobalNamespace)"
-      VcToolsPath="$(VCToolsDir)"
       MappingFiles="@(SharpGenMapping)"
       IntermediateOutputPath="$(MSBuildProjectDirectory)\$(IntermediateOutputPath)SharpGen"
       GeneratedCodeFolder="$(SharpGenGeneratedCodeFolder)"

@@ -1,7 +1,8 @@
 ﻿using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
+using FILETIME = System.Runtime.InteropServices.ComTypes.FILETIME;
 
-namespace SharpGen.E2ETests.VisualStudio
+namespace SharpGen.VisualStudioSetup
 {
   [Guid("89143C9A-05AF-49B0-B717-72E218A2185C")]
   [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
