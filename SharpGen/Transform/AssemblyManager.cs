@@ -51,7 +51,7 @@ namespace SharpGen.Transform
             var selectedCsNamespace = selectedAssembly.Namespaces.FirstOrDefault(nameSpaceObject => nameSpaceObject.Name == namespaceName);
             if (selectedCsNamespace == null)
             {
-                selectedCsNamespace = new CsNamespace(selectedAssembly, namespaceName);
+                selectedCsNamespace = new CsNamespace(namespaceName);
                 selectedAssembly.Add(selectedCsNamespace);
             }
             return selectedCsNamespace;

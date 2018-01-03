@@ -13,7 +13,7 @@ namespace SharpGen.Generator
 {
     class PropertyCodeGenerator : MemberCodeGeneratorBase<CsProperty>
     {
-        public PropertyCodeGenerator(IGeneratorRegistry generators, IDocumentationAggregator documentation)
+        public PropertyCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation)
             :base(documentation)
         {
             Generators = generators;

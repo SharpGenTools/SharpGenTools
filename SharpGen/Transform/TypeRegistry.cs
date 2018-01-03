@@ -103,11 +103,7 @@ namespace SharpGen.Transform
 
                     // Remove old type from namespace if any
                     var oldType = FindBoundType(tag.Replace);
-                    if (oldType != null)
-                    {
-                        if (oldType.Parent != null)
-                            oldType.Parent.Remove(oldType);
-                    }
+                    oldType?.Parent?.Remove(oldType);
 
                     _mapCppNameToCSharpType.Remove(tag.Replace);
 

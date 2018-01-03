@@ -13,13 +13,13 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SharpGen.Generator
 {
-    class RoslynGenerator
+    public class RoslynGenerator
     {
         private readonly GlobalNamespaceProvider globalNamespace;
 
         public IGeneratorRegistry Generators { get; }
 
-        public RoslynGenerator(Logger logger, GlobalNamespaceProvider globalNamespace, IDocumentationAggregator documentation)
+        public RoslynGenerator(Logger logger, GlobalNamespaceProvider globalNamespace, IDocumentationLinker documentation)
         {
             Logger = logger;
             this.globalNamespace = globalNamespace;
@@ -28,7 +28,7 @@ namespace SharpGen.Generator
 
         public Logger Logger { get; }
 
-        public IDictionary<string, IList<string>> GetFilePathsForGeneratedFiles(CsSolution solution, string rootDirectory, string generatedCodeFolder, bool includeAssemblyNameFolder)
+        public static IDictionary<string, IList<string>> GetFilePathsForGeneratedFiles(CsSolution solution, string rootDirectory, string generatedCodeFolder, bool includeAssemblyNameFolder)
         {
             var results = new Dictionary<string, IList<string>>();
             foreach (var assembly in solution.Assemblies)
@@ -94,25 +94,25 @@ namespace SharpGen.Generator
 
                 foreach (var csNamespace in csAssembly.Namespaces)
                 {
-                    string nameSpaceDirectory = GetNamespaceDirectory(generatedDirectoryForAssembly, csNamespace);
+                    var nameSpaceDirectory = GetNamespaceDirectory(generatedDirectoryForAssembly, csNamespace);
                     if (!Directory.Exists(nameSpaceDirectory))
                         Directory.CreateDirectory(nameSpaceDirectory);
 
                     trees.Add(
                         CSharpSyntaxTree.Create(
-                            GenerateCompilationUnit(csNamespace.Name, csNamespace.Enums, Generators.Enum))
+                            GenerateCompilationUnit(csNamespace.Name, csNamespace.Enums.OrderBy(element => element.Name), Generators.Enum))
                             .WithFilePath(Path.Combine(nameSpaceDirectory, "Enumerations.cs")));
                     trees.Add(
                         CSharpSyntaxTree.Create(
-                            GenerateCompilationUnit(csNamespace.Name, csNamespace.Structs, Generators.Struct))
+                            GenerateCompilationUnit(csNamespace.Name, csNamespace.Structs.OrderBy(element => element.Name), Generators.Struct))
                             .WithFilePath(Path.Combine(nameSpaceDirectory, "Structures.cs")));
                     trees.Add(
                         CSharpSyntaxTree.Create(
-                            GenerateCompilationUnit(csNamespace.Name, csNamespace.Classes, Generators.Group))
+                            GenerateCompilationUnit(csNamespace.Name, csNamespace.Classes.OrderBy(element => element.Name), Generators.Group))
                             .WithFilePath(Path.Combine(nameSpaceDirectory, "Functions.cs")));
                     trees.Add(
                         CSharpSyntaxTree.Create(
-                            GenerateCompilationUnit(csNamespace.Name, csNamespace.Interfaces, Generators.Interface))
+                            GenerateCompilationUnit(csNamespace.Name, csNamespace.Interfaces.OrderBy(element => element.Name), Generators.Interface))
                             .WithFilePath(Path.Combine(nameSpaceDirectory, "Interfaces.cs")));
                 }
             }

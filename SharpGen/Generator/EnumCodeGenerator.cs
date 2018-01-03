@@ -13,7 +13,7 @@ namespace SharpGen.Generator
 {
     class EnumCodeGenerator : MemberCodeGeneratorBase<CsEnum>
     {
-        public EnumCodeGenerator(IDocumentationAggregator documentation) : base(documentation)
+        public EnumCodeGenerator(IDocumentationLinker documentation) : base(documentation)
         {
         }
 

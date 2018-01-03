@@ -10,11 +10,11 @@ namespace SharpGen.E2ETests
         }
 
         [Fact]
-        public void EmptyConfigFails()
+        public void EmptyConfigSucceeds()
         {
             var testDirectory = GenerateTestDirectory();
             var config = new Config.ConfigFile { };
-            Assert.False(RunWithConfig(config, failTestOnError: false).success);
+            Assert.True(RunWithConfig(config, failTestOnError: false).success);
         }
     }
 }

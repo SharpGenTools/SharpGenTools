@@ -7,31 +7,29 @@ using System.Text;
 
 namespace SharpGen.Parser
 {
-    class CppExtensionHeaderGenerator
+    public class CppExtensionHeaderGenerator
     {
         internal const string EndTagCustomEnumItem = "__sharpgen_enumitem__";
         internal const string EndTagCustomVariable = "__sharpgen_var__";
         private readonly Dictionary<string, string> _variableMacrosDefined = new Dictionary<string, string>();
-
-        private readonly CppModule module;
-
-        public CppExtensionHeaderGenerator(MacroManager macroManager, CppModule module)
+        
+        public CppExtensionHeaderGenerator(MacroManager macroManager)
         {
             MacroManager = macroManager;
-            this.module = module;
         }
 
         public MacroManager MacroManager { get; }
 
-        public CppModule GenerateExtensionHeaders(ConfigFile configRoot, string outputPath, HashSet<string> filesWithExtensions)
+        public CppModule GenerateExtensionHeaders(ConfigFile configRoot, string outputPath, HashSet<string> filesWithExtensions, HashSet<ConfigFile> updatedConfigs)
         {
+            var module = configRoot.CreateSkeletonModule();
             MacroManager.Parse(Path.Combine(outputPath, $"{configRoot.Id}.h"), module);
 
             // Dump includes
             foreach (var configFile in configRoot.ConfigFilesLoaded)
             {
                 // Dump Create from macros
-                if (filesWithExtensions.Contains(configFile.Id) && configFile.IsConfigUpdated)
+                if (filesWithExtensions.Contains(configFile.Id) && updatedConfigs.Contains(configFile))
                 {
                     using (var extension = File.OpenWrite(Path.Combine(outputPath, configFile.ExtensionFileName)))
                     using (var extensionWriter = new StreamWriter(extension))
@@ -39,9 +37,9 @@ namespace SharpGen.Parser
                         foreach (var typeBaseRule in configFile.Extension)
                         {
                             if (typeBaseRule.GeneratesExtensionHeader())
-                                extensionWriter.Write(CreateCppFromMacro(typeBaseRule));
-                            else if (typeBaseRule is ContextRule)
-                                HandleContextRule(configFile, (ContextRule)typeBaseRule);
+                                extensionWriter.Write(CreateCppFromMacro(module, typeBaseRule));
+                            else if (typeBaseRule is ContextRule context)
+                                HandleContextRule(configFile, module, context);
                         }
                     }
                 }
@@ -56,7 +54,7 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="file">The file.</param>
         /// <param name="contextRule">The context rule.</param>
-        private void HandleContextRule(ConfigFile file, ContextRule contextRule)
+        private void HandleContextRule(ConfigFile file, CppModule module, ContextRule contextRule)
         {
             if (contextRule is ClearContextRule)
                 module.ClearContextFind();
@@ -81,16 +79,16 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="rule">The macro rule.</param>
         /// <returns>A C++ declaration string</returns>
-        private string CreateCppFromMacro(ConfigBaseRule rule)
+        private string CreateCppFromMacro(CppModule module, ConfigBaseRule rule)
         {
             if (rule is CreateCppExtensionRule)
             {
-                return CreateEnumFromMacro((CreateCppExtensionRule)rule);
+                return CreateEnumFromMacro(module, (CreateCppExtensionRule)rule);
             }
 
             if (rule is ConstantRule)
             {
-                return CreateVariableFromMacro((ConstantRule)rule);
+                return CreateVariableFromMacro(module, (ConstantRule)rule);
             }
             return "";
         }
@@ -100,7 +98,7 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="createCpp">The macro rule.</param>
         /// <returns>A C++ enum declaration string</returns>
-        private string CreateEnumFromMacro(CreateCppExtensionRule createCpp)
+        private string CreateEnumFromMacro(CppModule module, CreateCppExtensionRule createCpp)
         {
             var cppEnumText = new StringBuilder();
 
@@ -128,7 +126,7 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="cstRule">The macro rule.</param>
         /// <returns>A C++ variable declaration string</returns>
-        private string CreateVariableFromMacro(ConstantRule cstRule)
+        private string CreateVariableFromMacro(CppModule module, ConstantRule cstRule)
         {
             var builder = new StringBuilder();
 

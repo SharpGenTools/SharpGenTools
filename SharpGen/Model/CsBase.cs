@@ -295,7 +295,7 @@ namespace SharpGen.Model
         /// <value>The remarks.</value>
         public string Remarks { get; set; }
         
-        public virtual void FillDocItems(IList<string> docItems, IDocumentationAggregator manager) {}
+        public virtual void FillDocItems(IList<string> docItems, IDocumentationLinker manager) {}
         
         public virtual string DocUnmanagedName
         {

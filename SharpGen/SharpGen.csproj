@@ -3,7 +3,6 @@
     <OutputType>Library</OutputType>
     <TargetFrameworks>netstandard1.5;net46</TargetFrameworks>
     <Description>Library for generating efficient C# code from C++ and COM headers.</Description>
-    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="**/*.tt" />
@@ -22,8 +21,5 @@
     <PackageReference Include="System.ServiceModel.Security" Version="4.3.0" />
     <PackageReference Include="System.ValueTuple" Version="4.3.1" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Transform\" />
   </ItemGroup>
 </Project>

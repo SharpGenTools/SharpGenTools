@@ -72,7 +72,7 @@ namespace SharpGen.Parser
 
         public Logger Logger { get; }
         
-        public void Initialize(ConfigFile configRoot, HashSet<string> filesWithExtensionHeaders)
+        public void Initialize(ConfigFile configRoot)
         {
             _configRoot = configRoot ?? throw new ArgumentNullException(nameof(configRoot));
             
@@ -128,7 +128,7 @@ namespace SharpGen.Parser
                 }
 
                 // Register extension headers
-                if (filesWithExtensionHeaders.Contains(configFile.Id))
+                if (configFile.Extension.Any(rule => rule.GeneratesExtensionHeader()))
                 {
                     _includeToProcess.Add(configFile.ExtensionId);
                     if (!_includeIsAttached.ContainsKey(configFile.ExtensionId))
@@ -147,15 +147,6 @@ namespace SharpGen.Parser
         }
 
         /// <summary>
-        /// Gets the name of the C++ parsed XML file.
-        /// </summary>
-        /// <value>The name of the C++ parsed XML file.</value>
-        public string GroupFileName
-        {
-            get { return _configRoot.Id + "-out.xml"; }
-        }
-
-        /// <summary>
         /// Gets or sets the GccXml doc.
         /// </summary>
         /// <value>The GccXml doc.</value>
@@ -165,53 +156,43 @@ namespace SharpGen.Parser
         /// Runs this instance.
         /// </summary>
         /// <returns></returns>
-        public CppModule Run(CppModule groupSkeleton, bool cppHeadersUpdated)
+        public CppModule Run(CppModule groupSkeleton)
         {
             _group = groupSkeleton;
+            Logger.Message("Config files changed.");
 
-            // If config is updated, we need to run the
-            if (cppHeadersUpdated)
-            {
-                Logger.Message("Config files changed.");
-
-                const string progressMessage = "Parsing C++ headers starts, please wait...";
+            const string progressMessage = "Parsing C++ headers starts, please wait...";
                 
-                StreamReader xmlReader = null;
-                try
-                {
-
-                    Logger.Progress(15, progressMessage);
-
-                    var configRootHeader = Path.Combine(OutputPath, _configRoot.Id + ".h");
-
-                    xmlReader = _gccxml.Process(configRootHeader);
-                    if (xmlReader != null)
-                    {
-                        Parse(xmlReader);
-                    }
-
-                    Logger.Progress(30, progressMessage);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error("Unexpected error", ex);
-                }
-                finally
-                {
-                   xmlReader?.Dispose();
-
-                    // Write back GCCXML document on the disk
-                    using (var stream = File.OpenWrite(Path.Combine(OutputPath, GccXmlFileName)))
-                    {
-                        GccXmlDoc?.Save(stream);
-                    }
-                    Logger.Message("Parsing headers is finished.");
-                }
-            }
-            else
+            StreamReader xmlReader = null;
+            try
             {
-                Logger.Progress(10, "Config files unchanged. Read previous C++ parsing...");
-                _group = CppModule.Read(Path.Combine(OutputPath, GroupFileName));
+
+                Logger.Progress(15, progressMessage);
+
+                var configRootHeader = Path.Combine(OutputPath, _configRoot.Id + ".h");
+
+                xmlReader = _gccxml.Process(configRootHeader);
+                if (xmlReader != null)
+                {
+                    Parse(xmlReader);
+                }
+
+                Logger.Progress(30, progressMessage);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Unexpected error", ex);
+            }
+            finally
+            {
+                xmlReader?.Dispose();
+
+                // Write back GCCXML document on the disk
+                using (var stream = File.OpenWrite(Path.Combine(OutputPath, GccXmlFileName)))
+                {
+                    GccXmlDoc?.Save(stream);
+                }
+                Logger.Message("Parsing headers is finished.");
             }
 
 

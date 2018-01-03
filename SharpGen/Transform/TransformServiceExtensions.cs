@@ -1,28 +1,19 @@
-﻿using System;
+﻿using SharpGen.Model;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using SharpGen.Model;
 
 namespace SharpGen.Transform
 {
-    class DocumentationAggregator : IDocumentationAggregator
+    public static class TransformServiceExtensions
     {
-        private readonly TypeRegistry typeRegistry;
         private static readonly Regex RegexLinkStart = new Regex(@"^\s*\{\{.*?}}\s*(.*)", RegexOptions.Compiled);
         private static readonly Regex RegexLink = new Regex(@"\{\{(.*?)}}", RegexOptions.Compiled);
         private static readonly Regex RegexSpaceBegin = new Regex(@"^\s*(.*)", RegexOptions.Compiled);
-
-        private readonly Dictionary<string, string> _docToCSharp = new Dictionary<string, string>();
-
-        public DocumentationAggregator(TypeRegistry typeRegistry)
-        {
-            this.typeRegistry = typeRegistry;
-        }
-
-        public IEnumerable<string> GetDocItems(CsBase element)
+        
+        public static IEnumerable<string> GetDocItems(this IDocumentationLinker aggregator, CsBase element)
         {
             var docItems = new List<string>();
 
@@ -31,19 +22,19 @@ namespace SharpGen.Transform
 
             description = RegexSpaceBegin.Replace(description, "$1");
 
-            description = RegexLink.Replace(description, RegexReplaceCReference);
+            description = RegexLink.Replace(description, aggregator.ReplaceCRefReferences);
             // evaluator => "<see cref=\"$1\"/>"
 
             docItems.Add("<summary>");
             docItems.AddRange(description.Split('\n'));
             docItems.Add("</summary>");
 
-            element.FillDocItems(docItems, this);
+            element.FillDocItems(docItems, aggregator);
 
             if (!string.IsNullOrEmpty(remarks))
             {
                 remarks = RegexSpaceBegin.Replace(remarks, "$1");
-                remarks = RegexLink.Replace(remarks, RegexReplaceCReference);
+                remarks = RegexLink.Replace(remarks, aggregator.ReplaceCRefReferences);
 
                 docItems.Add("<remarks>");
                 docItems.AddRange(remarks.Split('\n'));
@@ -62,12 +53,8 @@ namespace SharpGen.Transform
 
             return docItems;
         }
-
-        /// <summary>
-        /// Gets the description as a single line of documentation.
-        /// </summary>
-        /// <value>The single doc.</value>
-        public string GetSingleDoc(CsBase element)
+        
+        public static string GetSingleDoc(this IDocumentationLinker aggregator, CsBase element)
         {
             var description = element.Description;
 
@@ -76,13 +63,13 @@ namespace SharpGen.Transform
 
             description = RegexSpaceBegin.Replace(description, "$1");
 
-            description = RegexLink.Replace(description, RegexReplaceCReference);
+            description = RegexLink.Replace(description, aggregator.ReplaceCRefReferences);
 
             var docItems = new StringBuilder();
 
             foreach (var line in description.Split('\n'))
             {
-                docItems.Append(line); 
+                docItems.Append(line);
             }
 
             return docItems.ToString();
@@ -92,18 +79,18 @@ namespace SharpGen.Transform
         private static readonly Regex regexWithMethodW = new Regex("([^W])::");
         private static readonly Regex regexWithTypeW = new Regex("([^W])$");
 
-        private string RegexReplaceCReference(Match match)
+        public static string ReplaceCRefReferences(this IDocumentationLinker linker, Match match)
         {
             var matchName = match.Groups[1].Value;
-            var csName = FindDocName(matchName);
+            var csName = linker.FindDocName(matchName);
 
             // Tries to match with W::
             if (csName == null && regexWithMethodW.Match(matchName).Success)
-                csName = FindDocName(regexWithMethodW.Replace(matchName, "$1W::"));
+                csName = linker.FindDocName(regexWithMethodW.Replace(matchName, "$1W::"));
 
             // Or with W
             if (csName == null && regexWithTypeW.Match(matchName).Success)
-                csName = FindDocName(regexWithTypeW.Replace(matchName, "$1W"));
+                csName = linker.FindDocName(regexWithTypeW.Replace(matchName, "$1W"));
 
             if (csName == null)
                 return matchName;
@@ -111,25 +98,6 @@ namespace SharpGen.Transform
             if (csName.StartsWith("<"))
                 return csName;
             return string.Format(CultureInfo.InvariantCulture, "<see cref=\"{0}\"/>", csName);
-        }
-
-        public void AddDocLink(string cppName, string cSharpName)
-        {
-            if (!_docToCSharp.ContainsKey(cppName))
-                _docToCSharp.Add(cppName, cSharpName);
-        }
-
-        /// <summary>
-        ///   Finds the C# full name from a C++ name.
-        /// </summary>
-        /// <param name = "cppName">Name of a c++ type</param>
-        /// <returns>Name of the C# type</returns>
-        public string FindDocName(string cppName)
-        {
-            if (_docToCSharp.TryGetValue(cppName, out string cSharpName))
-                return cSharpName;
-
-            return typeRegistry.FindBoundType(cppName)?.QualifiedName;
         }
     }
 }

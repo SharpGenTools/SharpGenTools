@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SharpGen.Doc
 {
-    static class DocProviderExtensions
+    public static class DocProviderExtensions
     {
         public static CppModule ApplyDocumentation(this IDocProvider docProvider, CppModule module)
         {

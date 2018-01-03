@@ -209,7 +209,7 @@ namespace SharpGen.Transform
                             innerCsInterface = new CsInterface(cppInterface)
                             {
                                 Name = innerInterfaceName,
-                                PropertyAccesName = keyValuePair.Value.PropertyAccessName,
+                                PropertyAccessName = keyValuePair.Value.PropertyAccessName,
                                 Base = parentCsInterface ?? DefaultInterfaceCppObject
                             };
 
@@ -259,11 +259,11 @@ namespace SharpGen.Transform
                 {
                     var parentInterface = interfaceType.Base as CsInterface;
                     if (parentInterface.IsDualCallback)
-                        nativeCallback.Base = parentInterface.NativeImplem;
+                        nativeCallback.Base = parentInterface.GetNativeImplementationOrThis();
                 }
 
                 nativeCallback.IBase = interfaceType;
-                interfaceType.NativeImplem = nativeCallback;
+                interfaceType.NativeImplementation = nativeCallback;
 
                 foreach (var innerElement in interfaceType.Items)
                 {
@@ -293,7 +293,7 @@ namespace SharpGen.Transform
                 // If interface is a callback and parent is ComObject, then remove it
                 if (interfaceType.Base is CsInterface parentInterface && parentInterface.IsDualCallback)
                 {
-                    interfaceType.Base = parentInterface.NativeImplem;
+                    interfaceType.Base = parentInterface.GetNativeImplementationOrThis();
                 }
                 else
                 {
@@ -329,9 +329,9 @@ namespace SharpGen.Transform
                 if (!(isGet || isSet))
                     continue;
                 string propertyName = isIs ? cSharpMethod.Name : cSharpMethod.Name.Substring("Get".Length);
-
-                int parameterCount = cSharpMethod.ParameterCount;
+                
                 var parameterList = cSharpMethod.Parameters;
+                int parameterCount = cSharpMethod.Parameters.Count;
 
                 bool isPropertyToAdd = false;
 
@@ -453,8 +453,6 @@ namespace SharpGen.Transform
                 {
                     property.Getter.Visibility = Visibility.Internal;
                     property.IsPersistent = property.Getter.IsPersistent;
-                    if (property.IsPersistent)
-                        parent.HasPersistent = true;
                 }
 
                 if (property.Setter != null)

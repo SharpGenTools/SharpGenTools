@@ -156,15 +156,6 @@ namespace SharpGen.Config
         public List<ConfigBaseRule> Mappings { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this config was updated.
-        /// </summary>
-        /// <value>
-        /// 	<c>true</c> if this config was updated; otherwise, <c>false</c>.
-        /// </value>
-        [XmlIgnore]
-        public bool IsConfigUpdated { get; set; }
-
-        /// <summary>
         /// Returns all depend config files
         /// </summary>
         /// <returns></returns>

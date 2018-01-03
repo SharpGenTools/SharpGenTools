@@ -187,26 +187,42 @@ namespace SharpGen
 
                 var cppHeadersUpdated = GenerateHeaders(filesWithExtensions, configsWithIncludes, consumerConfig);
 
-                var castXml = new CastXml(Logger, CastXmlExecutablePath)
+                if (Logger.HasErrors)
                 {
-                    OutputPath = IntermediateOutputPath,
-                };
-
-                castXml.Configure(Config);
-
-                var group = Config.CreateSkeletonModule();
-
-                if (cppHeadersUpdated)
-                {
-                    group = GenerateExtensionHeaders(filesWithExtensions, castXml, group);
+                    Logger.Fatal("Failed to generate C++ headers.");
                 }
 
-                string groupFileName;
-                (group, groupFileName) = ParseCpp(filesWithExtensions, cppHeadersUpdated, castXml, group);
+                CppModule group;
+                var groupFileName = $"{Config.Id}-out.xml";
 
-                if (IsGeneratingDoc)
+                if (cppHeadersUpdated.Count != 0)
                 {
-                    ApplyDocumentation(group);
+                    var castXml = new CastXml(Logger, CastXmlExecutablePath)
+                    {
+                        OutputPath = IntermediateOutputPath,
+                    };
+
+                    castXml.Configure(Config);
+
+                    group = GenerateExtensionHeaders(filesWithExtensions, cppHeadersUpdated, castXml);
+                    group = ParseCpp(castXml, group);
+
+                    if (IsGeneratingDoc)
+                    {
+                        ApplyDocumentation(group);
+                    }
+                }
+                else
+                {
+                    Logger.Progress(10, "Config files unchanged. Read previous C++ parsing...");
+                    if (File.Exists(Path.Combine(IntermediateOutputPath, groupFileName)))
+                    {
+                        group = CppModule.Read(Path.Combine(IntermediateOutputPath, groupFileName)); 
+                    }
+                    else
+                    {
+                        group = new CppModule();
+                    }
                 }
 
                 // Save back the C++ parsed includes
@@ -216,12 +232,16 @@ namespace SharpGen
                 
                 var (docAggregator, solution) = ExecuteMappings(group, consumerConfig);
 
+                solution.Write(Path.Combine(IntermediateOutputPath, "Solution.xml"));
+
+                solution = CsSolution.Read(Path.Combine(IntermediateOutputPath, "Solution.xml"));
+
+                GenerateConfigForConsumers(consumerConfig);
+
                 GenerateCode(docAggregator, solution);
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Code generation failed");
-
-                GenerateConfigForConsumers(consumerConfig);
 
                 // Update Checkfile for assembly
                 File.WriteAllText(_assemblyCheckFile, "");
@@ -237,7 +257,7 @@ namespace SharpGen
             }
         }
 
-        private (IDocumentationAggregator doc, CsSolution solution) ExecuteMappings(CppModule group, ConfigFile consumerConfig)
+        private (IDocumentationLinker doc, CsSolution solution) ExecuteMappings(CppModule group, ConfigFile consumerConfig)
         {
             var typeRegistry = new TypeRegistry(Logger);
             var namingRules = new NamingRulesManager();
@@ -285,7 +305,7 @@ namespace SharpGen
             }
         }
 
-        private (CppModule Module, string FileName) ParseCpp(HashSet<string> filesWithExtensions, bool cppHeadersUpdated, CastXml castXml, CppModule group)
+        private CppModule ParseCpp(CastXml castXml, CppModule group)
         {
 
             // Run the parser
@@ -293,13 +313,13 @@ namespace SharpGen
             {
                 OutputPath = IntermediateOutputPath
             };
-            parser.Initialize(Config, filesWithExtensions);
+            parser.Initialize(Config);
 
             if (Logger.HasErrors)
                 Logger.Fatal("Initializing parser failed");
 
             // Run the parser
-            group = parser.Run(group, cppHeadersUpdated);
+            group = parser.Run(group);
 
             if (Logger.HasErrors)
             {
@@ -313,20 +333,20 @@ namespace SharpGen
             // Print statistics
             parser.PrintStatistics();
 
-            return (group, parser.GroupFileName);
-        }
-
-        private CppModule GenerateExtensionHeaders(HashSet<string> filesWithExtensions, CastXml castXml, CppModule group)
-        {
-            Logger.Progress(10, "Generating C++ extensions from macros");
-
-            var cppExtensionHeaderGenerator = new CppExtensionHeaderGenerator(new MacroManager(castXml), group);
-
-            group = cppExtensionHeaderGenerator.GenerateExtensionHeaders(Config, IntermediateOutputPath, filesWithExtensions);
             return group;
         }
 
-        private bool GenerateHeaders(HashSet<string> filesWithExtensions, HashSet<ConfigFile> configsWithIncludes, ConfigFile consumerConfig)
+        private CppModule GenerateExtensionHeaders(HashSet<string> filesWithExtensions, HashSet<ConfigFile> updatedConfigs, CastXml castXml)
+        {
+            Logger.Progress(10, "Generating C++ extensions from macros");
+
+            var cppExtensionHeaderGenerator = new CppExtensionHeaderGenerator(new MacroManager(castXml));
+
+            var group = cppExtensionHeaderGenerator.GenerateExtensionHeaders(Config, IntermediateOutputPath, filesWithExtensions, updatedConfigs);
+            return group;
+        }
+
+        private HashSet<ConfigFile> GenerateHeaders(HashSet<string> filesWithExtensions, HashSet<ConfigFile> configsWithIncludes, ConfigFile consumerConfig)
         {
             var headerGenerator = new CppHeaderGenerator(Logger, _isAssemblyNew, IntermediateOutputPath);
 
@@ -338,7 +358,7 @@ namespace SharpGen
             return cppHeadersUpdated;
         }
 
-        private void GenerateCode(IDocumentationAggregator docAggregator, CsSolution solution)
+        private void GenerateCode(IDocumentationLinker docAggregator, CsSolution solution)
         {
             var generator = new RoslynGenerator(Logger, GlobalNamespace, docAggregator);
             generator.Run(solution, _generatedPath, GeneratedCodeFolder, IncludeAssemblyNameFolder);

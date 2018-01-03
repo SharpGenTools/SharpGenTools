@@ -9,7 +9,7 @@ using System.Text;
 
 namespace SharpGen.Parser
 {
-    class CppHeaderGenerator
+    public class CppHeaderGenerator
     {
         private const string Version = "1.1";
 
@@ -24,10 +24,10 @@ namespace SharpGen.Parser
             OutputPath = outputPath;
         }
 
-        public (bool anyConfigUpdated, ConfigFile consumerConfig)
+        public (HashSet<ConfigFile> updatedConfigs, ConfigFile consumerConfig)
             GenerateCppHeaders(ConfigFile configRoot, HashSet<ConfigFile> filesWithIncludes, HashSet<string> filesWithExtensionHeaders)
         {
-            var anyConfigsUpdated = ForceParsing;
+            var updatedConfigs = new HashSet<ConfigFile>();
             
             var includeDirsForConsumers = new HashSet<IncludeDirRule>();
             var includesForConsumers = new HashSet<IncludeRule>();
@@ -89,7 +89,7 @@ namespace SharpGen.Parser
                         }
                         outputConfig.WriteLine("#include \"{0}\"", configFile.ExtensionFileName);
 
-                        // Create Extension file name if it doesn't exist);
+                        // Create Extension file name if it doesn't exist
                         if (!File.Exists(Path.Combine(OutputPath, configFile.ExtensionFileName)))
                             File.WriteAllText(Path.Combine(OutputPath, configFile.ExtensionFileName), "");
                     }
@@ -100,20 +100,20 @@ namespace SharpGen.Parser
 
                     // Test if Last config file was generated. If not, then we need to generate it
                     // If it exists, then we need to test if it is the same than previous run
-                    configFile.IsConfigUpdated = ForceParsing;
+                    var isConfigUpdated = ForceParsing;
 
                     if (File.Exists(fileName) && !ForceParsing)
-                        configFile.IsConfigUpdated = outputConfigStr != File.ReadAllText(fileName);
+                        isConfigUpdated = outputConfigStr != File.ReadAllText(fileName);
                     else
-                        configFile.IsConfigUpdated = true;
+                        isConfigUpdated = true;
 
                     // Small optim: just write the header file when the file is updated or new
-                    if (configFile.IsConfigUpdated)
+                    if (isConfigUpdated)
                     {
                         if (!ForceParsing)
                             Logger.Message("Config file changed for C++ headers [{0}]/[{1}]", configFile.Id, configFile.FilePath);
 
-                        anyConfigsUpdated = true;
+                        updatedConfigs.Add(configFile);
 
                         if (File.Exists(fileName))
                         {
@@ -146,7 +146,7 @@ namespace SharpGen.Parser
                     }).ToList()
             };
 
-            return (anyConfigsUpdated, consumerConfig);
+            return (updatedConfigs, consumerConfig);
         }
 
         public static (HashSet<string> filesWithIncludes, HashSet<string> filesWithExtensionHeaders)

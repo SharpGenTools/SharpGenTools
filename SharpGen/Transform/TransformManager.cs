@@ -41,7 +41,7 @@ namespace SharpGen.Transform
     {
         private readonly List<string> _includesToProcess = new List<string>();
 
-        private readonly IDocumentationAggregator docAggregator;
+        private readonly IDocumentationLinker docAggregator;
         private readonly TypeRegistry typeRegistry;
         private readonly NamespaceRegistry namespaceRegistry;
         private readonly MarshalledElementFactory marshalledElementFactory;
@@ -57,7 +57,7 @@ namespace SharpGen.Transform
             NamingRulesManager namingRules,
             Logger logger,
             TypeRegistry typeRegistry,
-            IDocumentationAggregator docAggregator,
+            IDocumentationLinker docAggregator,
             ConstantManager constantManager,
             AssemblyManager assemblyManager)
         {
@@ -553,9 +553,6 @@ namespace SharpGen.Transform
             {
                 foreach (var ns in cSharpAssembly.Namespaces)
                 {
-                    // Sort items in this namespace
-                    ns.Sort();
-
                     foreach (var cSharpFunctionGroup in ns.Classes)
                         constantManager.AttachConstants(cSharpFunctionGroup);
                 }
@@ -728,7 +725,7 @@ namespace SharpGen.Transform
                             {
                                 stats["enumitems"]++;
                             }
-                            else if (subitem is CsFieldBase)
+                            else if (subitem is CsField)
                             {
                                 stats["fields"]++;
                             }

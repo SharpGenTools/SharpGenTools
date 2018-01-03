@@ -12,7 +12,7 @@ using MTPS;
 
 namespace SharpGen.Doc
 {
-    internal class MsdnProvider : IDocProvider
+    public class MsdnProvider : IDocProvider
     {
         private static Regex stripSpace = new Regex(@"[\r\n]+\s+", RegexOptions.Multiline);
         private static Regex beginWithSpace = new Regex(@"^\s+");

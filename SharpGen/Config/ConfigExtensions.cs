@@ -7,7 +7,7 @@ using System.Text;
 
 namespace SharpGen.Config
 {
-    static class ConfigExtensions
+    public static class ConfigExtensions
     {
         public static CppModule CreateSkeletonModule(this ConfigFile config)
         {

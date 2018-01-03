@@ -92,7 +92,7 @@ namespace SharpGen.Model
             }
         }
 
-        public override void FillDocItems(IList<string> docItems, IDocumentationAggregator manager)
+        public override void FillDocItems(IList<string> docItems, IDocumentationLinker manager)
         {
             foreach (var param in PublicParameters)
                 docItems.Add("<param name=\"" + param.Name + "\">" + manager.GetSingleDoc(param) + "</param>");
@@ -241,7 +241,7 @@ namespace SharpGen.Model
         /// <summary>
         /// Returns the documentation for the return type
         /// </summary>
-        public string GetReturnTypeDoc(IDocumentationAggregator manager)
+        public string GetReturnTypeDoc(IDocumentationLinker manager)
         {
             foreach (var param in Parameters)
             {
