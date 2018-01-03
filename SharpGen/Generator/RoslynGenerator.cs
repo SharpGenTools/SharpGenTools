@@ -28,6 +28,26 @@ namespace SharpGen.Generator
 
         public Logger Logger { get; }
 
+        public IDictionary<string, IList<string>> GetFilePathsForGeneratedFiles(CsSolution solution, string rootDirectory, string generatedCodeFolder, bool includeAssemblyNameFolder)
+        {
+            var results = new Dictionary<string, IList<string>>();
+            foreach (var assembly in solution.Assemblies)
+            {
+                var directory = GetAssemblyDirectory(assembly, rootDirectory, generatedCodeFolder, includeAssemblyNameFolder);
+                results.Add(assembly.Name, new List<string> { Path.Combine(directory, "LocalInterop.cs")});
+                foreach (var nameSpace in assembly.Namespaces)
+                {
+                    var namespaceDirectory = GetNamespaceDirectory(directory, nameSpace);
+                    results[assembly.Name].Add(Path.Combine(namespaceDirectory, "Enumerations.cs"));
+                    results[assembly.Name].Add(Path.Combine(namespaceDirectory, "Structures.cs"));
+                    results[assembly.Name].Add(Path.Combine(namespaceDirectory, "Interfaces.cs"));
+                    results[assembly.Name].Add(Path.Combine(namespaceDirectory, "Functions.cs"));
+                }
+            }
+
+            return results;
+        }
+
         public void Run(CsSolution solution, string rootDirectory, string generatedCodeFolder, bool includeAssemblyNameFolder)
         {
             var trees = new List<SyntaxTree>();
@@ -35,12 +55,9 @@ namespace SharpGen.Generator
             // Iterates on assemblies
             foreach (var csAssembly in solution.Assemblies.Where(assembly => assembly.NeedsToBeUpdated))
             {
-                var assemblyRootDirectory = includeAssemblyNameFolder ? Path.Combine(rootDirectory, csAssembly.Name) : rootDirectory;
-
-                var generatedDirectoryForAssembly = Path.Combine(assemblyRootDirectory, generatedCodeFolder ?? "Generated");
-                
+                string generatedDirectoryForAssembly = GetAssemblyDirectory(csAssembly, rootDirectory, generatedCodeFolder, includeAssemblyNameFolder);
                 var directoryToCreate = new HashSet<string>(StringComparer.CurrentCulture);
-                
+
                 // Remove the generated directory before creating it
                 if (!directoryToCreate.Contains(generatedDirectoryForAssembly))
                 {
@@ -74,12 +91,10 @@ namespace SharpGen.Generator
                             )
                             .NormalizeWhitespace(elasticTrivia: true))
                         .WithFilePath(Path.Combine(generatedDirectoryForAssembly, "LocalInterop.cs")));
-                
+
                 foreach (var csNamespace in csAssembly.Namespaces)
                 {
-                    var subDirectory = csNamespace.OutputDirectory ?? ".";
-
-                    var nameSpaceDirectory = Path.Combine(generatedDirectoryForAssembly, subDirectory);
+                    string nameSpaceDirectory = GetNamespaceDirectory(generatedDirectoryForAssembly, csNamespace);
                     if (!Directory.Exists(nameSpaceDirectory))
                         Directory.CreateDirectory(nameSpaceDirectory);
 
@@ -106,6 +121,22 @@ namespace SharpGen.Generator
             {
                 File.WriteAllText(tree.FilePath, tree.GetCompilationUnitRoot().ToFullString());
             }
+        }
+
+        private static string GetNamespaceDirectory(string generatedDirectoryForAssembly, CsNamespace csNamespace)
+        {
+            var subDirectory = csNamespace.OutputDirectory ?? ".";
+
+            var nameSpaceDirectory = Path.Combine(generatedDirectoryForAssembly, subDirectory);
+            return nameSpaceDirectory;
+        }
+
+        private static string GetAssemblyDirectory(CsAssembly csAssembly, string rootDirectory, string generatedCodeFolder, bool includeAssemblyNameFolder)
+        {
+            var assemblyRootDirectory = includeAssemblyNameFolder ? Path.Combine(rootDirectory, csAssembly.Name) : rootDirectory;
+
+            var generatedDirectoryForAssembly = Path.Combine(assemblyRootDirectory, generatedCodeFolder ?? "Generated");
+            return generatedDirectoryForAssembly;
         }
 
         private static CompilationUnitSyntax GenerateCompilationUnit<T>(
