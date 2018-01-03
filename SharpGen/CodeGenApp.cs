@@ -251,7 +251,7 @@ namespace SharpGen
                 typeRegistry,
                 docAggregator,
                 new ConstantManager(namingRules, typeRegistry),
-                new AssemblyManager(Logger, IncludeAssemblyNameFolder, _generatedPath))
+                new AssemblyManager())
             {
                 ForceGenerator = _isAssemblyNew
             };
@@ -301,7 +301,7 @@ namespace SharpGen
             // Run the parser
             group = parser.Run(group, cppHeadersUpdated);
 
-            if (!Logger.HasErrors)
+            if (Logger.HasErrors)
             {
                 Logger.Fatal("Parsing C++ failed.");
             }
@@ -341,7 +341,7 @@ namespace SharpGen
         private void GenerateCode(DocumentationAggregator docAggregator, CsSolution solution)
         {
             var generator = new RoslynGenerator(Logger, GlobalNamespace, docAggregator);
-            generator.Run(GeneratedCodeFolder, solution);
+            generator.Run(solution, _generatedPath, GeneratedCodeFolder, IncludeAssemblyNameFolder);
 
             // Update check files for all assemblies
             var processTime = DateTime.Now;

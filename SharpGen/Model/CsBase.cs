@@ -286,26 +286,6 @@ namespace SharpGen.Model
             get { return CppElementName; }
         }
 
-        internal string DocIncludeDirective
-        {
-            get
-            {
-                var subDir = GetParent<CsNamespace>().OutputDirectory;
-                string relativePath = string.IsNullOrEmpty(subDir) ? "." : "..";
-                return "<include file='" + relativePath + "\\..\\..\\" + CsAssembly.CodeCommentsPath + "' path=\"" + CodeCommentsXPath + "/*\"/>";
-            }
-        }
-
-        public bool IsCodeCommentsExternal
-        {
-            get { return GetParent<CsAssembly>().CodeComments.SelectSingleNode(CodeCommentsXPath) != null; }
-        }
-
-        private string CodeCommentsXPath
-        {
-            get { return "/comments/comment[@id='" + ((CppElement != null) ? CppElement.FullName : QualifiedName) + "']"; }
-        }
-
         /// <summary>
         /// Updates this element from a tag.
         /// </summary>

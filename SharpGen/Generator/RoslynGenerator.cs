@@ -28,14 +28,16 @@ namespace SharpGen.Generator
 
         public Logger Logger { get; }
 
-        public void Run(string generatedCodeFolder, CsSolution solution)
+        public void Run(CsSolution solution, string rootDirectory, string generatedCodeFolder, bool includeAssemblyNameFolder)
         {
             var trees = new List<SyntaxTree>();
 
             // Iterates on assemblies
             foreach (var csAssembly in solution.Assemblies.Where(assembly => assembly.NeedsToBeUpdated))
             {
-                var generatedDirectoryForAssembly = Path.Combine(csAssembly.RootDirectory, generatedCodeFolder ?? "Generated");
+                var assemblyRootDirectory = includeAssemblyNameFolder ? Path.Combine(rootDirectory, csAssembly.Name) : rootDirectory;
+
+                var generatedDirectoryForAssembly = Path.Combine(assemblyRootDirectory, generatedCodeFolder ?? "Generated");
                 
                 var directoryToCreate = new HashSet<string>(StringComparer.CurrentCulture);
                 

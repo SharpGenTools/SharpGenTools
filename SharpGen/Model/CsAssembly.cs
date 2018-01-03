@@ -33,7 +33,6 @@ namespace SharpGen.Model
     /// </summary>
     public class CsAssembly : CsBase
     {
-        private XmlDocument _codeComments;
         private List<ConfigFile> _configFilesLinked;
 
         /// <summary>
@@ -49,24 +48,13 @@ namespace SharpGen.Model
         }
 
         /// <summary>
-        /// Gets or sets the root directory of this assembly project.
-        /// </summary>
-        /// <value>The root directory.</value>
-        public string RootDirectory { get; set; }
-
-        /// <summary>
         /// Gets or sets a value indicating whether this instance is to update.
         /// </summary>
         /// <value>
         /// 	<c>true</c> if this instance is to update; otherwise, <c>false</c>.
         /// </value>
         public bool NeedsToBeUpdated { get; set; }
-
-        /// <summary>
-        /// Path to the CodeComments file
-        /// </summary>
-        public const string CodeCommentsPath = @"Documentation\CodeComments.xml";
-
+        
         /// <summary>
         /// Gets config files linked to this assembly
         /// </summary>
@@ -93,35 +81,6 @@ namespace SharpGen.Model
         public string CheckFileName
         {
             get { return QualifiedName + ".check"; }
-        }
-
-        /// <summary>
-        /// Gets the CodeComments XML document associated with this assembly.
-        /// </summary>
-        /// <value>The code comments.</value>
-        public XmlDocument CodeComments
-        {
-            get
-            {
-                if (_codeComments == null)
-                {
-                    _codeComments = new XmlDocument();
-                    string codeCommentsFullPath = Path.Combine(RootDirectory, CodeCommentsPath);
-
-                    try
-                    {
-                        using (var commentsFile = File.OpenRead(codeCommentsFullPath))
-                        {
-                            _codeComments.Load(commentsFile); 
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        // Failed to lode comments. Just swallow the exception.
-                    }
-                }
-                return _codeComments;
-            }
         }
 
         /// <summary>

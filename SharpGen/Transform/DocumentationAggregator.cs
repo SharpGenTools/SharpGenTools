@@ -26,35 +26,30 @@ namespace SharpGen.Transform
         {
             var docItems = new List<string>();
 
-            // If doc comments are already stored in an external file, than don't emit them
-            if (!element.IsCodeCommentsExternal)
+            var description = element.Description;
+            var remarks = element.Remarks;
+
+            description = RegexSpaceBegin.Replace(description, "$1");
+
+            description = RegexLink.Replace(description, RegexReplaceCReference);
+            // evaluator => "<see cref=\"$1\"/>"
+
+            docItems.Add("<summary>");
+            docItems.AddRange(description.Split('\n'));
+            docItems.Add("</summary>");
+
+            element.FillDocItems(docItems, this);
+
+            if (!string.IsNullOrEmpty(remarks))
             {
-                var description = element.Description;
-                var remarks = element.Remarks;
+                remarks = RegexSpaceBegin.Replace(remarks, "$1");
+                remarks = RegexLink.Replace(remarks, RegexReplaceCReference);
 
-                description = RegexSpaceBegin.Replace(description, "$1");
-
-                description = RegexLink.Replace(description, RegexReplaceCReference);
-                // evaluator => "<see cref=\"$1\"/>");
-                
-                docItems.Add("<summary>");
-                docItems.AddRange(description.Split('\n'));
-                docItems.Add("</summary>");
-
-                element.FillDocItems(docItems, this);
-
-                if (!string.IsNullOrEmpty(remarks))
-                {
-                    remarks = RegexSpaceBegin.Replace(remarks, "$1");
-                    remarks = RegexLink.Replace(remarks, RegexReplaceCReference);
-
-                    docItems.Add("<remarks>");
-                    docItems.AddRange(remarks.Split('\n'));
-                    docItems.Add("</remarks>");
-                }
+                docItems.Add("<remarks>");
+                docItems.AddRange(remarks.Split('\n'));
+                docItems.Add("</remarks>");
             }
 
-            docItems.Add(element.DocIncludeDirective);
             if (element.CppElement != null)
             {
                 if (element.DocId != null)
