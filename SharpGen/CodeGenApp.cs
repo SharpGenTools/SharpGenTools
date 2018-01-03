@@ -173,7 +173,7 @@ namespace SharpGen
                     Id = ConsumerBindMappingConfigId
                 };
 
-                var (filesWithIncludes, filesWithExtensions) = CppHeaderGenerator.GetFilesWithIncludesAndExtensionHeaders(Config);
+                var (filesWithIncludes, filesWithExtensions) = Config.GetFilesWithIncludesAndExtensionHeaders();
 
                 var configsWithIncludes = new HashSet<ConfigFile>();
 
@@ -185,13 +185,7 @@ namespace SharpGen
                     }
                 }
 
-                var headerGenerator = new CppHeaderGenerator(Logger, _isAssemblyNew, IntermediateOutputPath);
-
-                var (cppHeadersUpdated, cppConsumerConfig) = headerGenerator.GenerateCppHeaders(Config, configsWithIncludes, filesWithExtensions);
-
-                consumerConfig.IncludeProlog.AddRange(cppConsumerConfig.IncludeProlog);
-                consumerConfig.IncludeDirs.AddRange(cppConsumerConfig.IncludeDirs);
-                consumerConfig.Includes.AddRange(cppConsumerConfig.Includes);
+                var cppHeadersUpdated = GenerateHeaders(filesWithExtensions, configsWithIncludes, consumerConfig);
 
                 var castXml = new CastXml(Logger, CastXmlExecutablePath)
                 {
@@ -200,32 +194,15 @@ namespace SharpGen
 
                 castXml.Configure(Config);
 
-                // Run the parser
-                var parser = new CppParser(Logger, castXml)
-                {
-                    IsGeneratingDoc = IsGeneratingDoc,
-                    DocProviderAssembly = DocProviderAssemblyPath,
-                    OutputPath = IntermediateOutputPath
-                };
-
                 var group = Config.CreateSkeletonModule();
 
                 if (cppHeadersUpdated)
                 {
-                    Logger.Progress(10, "Generating C++ extensions from macros");
-
-                    var cppExtensionHeaderGenerator = new CppExtensionHeaderGenerator(new MacroManager(castXml), group);
-
-                    group = cppExtensionHeaderGenerator.GenerateExtensionHeaders(Config, IntermediateOutputPath, filesWithExtensions);
+                    group = GenerateExtensionHeaders(filesWithExtensions, castXml, group);
                 }
 
-                if (Logger.HasErrors)
-                    Logger.Fatal("Initializing parser failed");
-
-                parser.Initialize(Config, filesWithExtensions);
-
-                // Run the parser
-                group = parser.Run(group, cppHeadersUpdated);
+                string groupFileName;
+                (group, groupFileName) = ParseCpp(filesWithExtensions, cppHeadersUpdated, castXml, group);
 
                 if (IsGeneratingDoc)
                 {
@@ -233,58 +210,16 @@ namespace SharpGen
                 }
 
                 // Save back the C++ parsed includes
-                group.Write(Path.Combine(IntermediateOutputPath, parser.GroupFileName));
+                group.Write(Path.Combine(IntermediateOutputPath, groupFileName));
 
-                if (Logger.HasErrors)
-                    Logger.Fatal("C++ compiler failed to parse header files");
-                
                 Config.ExpandDynamicVariables(Logger, group);
+                
+                var (docAggregator, solution) = ExecuteMappings(group, consumerConfig);
 
-                var typeRegistry = new TypeRegistry(Logger);
-                var namingRules = new NamingRulesManager();
-                var docAggregator = new DocumentationAggregator(typeRegistry);
-
-                // Run the main mapping process
-                var transformer = new TransformManager(
-                    GlobalNamespace,
-                    namingRules,
-                    Logger,
-                    typeRegistry,
-                    docAggregator,
-                    new ConstantManager(namingRules, typeRegistry),
-                    new AssemblyManager(Logger, IncludeAssemblyNameFolder, _generatedPath))
-                {
-                    ForceGenerator = _isAssemblyNew
-                };
-
-                var (assemblies, defines) = transformer.Transform(group, Config, IntermediateOutputPath);
-
-                consumerConfig.Extension = new List<ConfigBaseRule>(defines);
-
-                if (Logger.HasErrors)
-                    Logger.Fatal("Executing mapping rules failed");
-
-                GenerateCode(docAggregator, assemblies);
+                GenerateCode(docAggregator, solution);
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Code generation failed");
-
-
-                // Print statistics
-                parser.PrintStatistics();
-                transformer.PrintStatistics();
-
-                // Output all elements
-                using (var renameLog = File.Open(Path.Combine(IntermediateOutputPath, "SharpGen_rename.log"), FileMode.OpenOrCreate, FileAccess.Write))
-                using (var fileWriter = new StreamWriter(renameLog))
-                {
-                    transformer.NamingRules.DumpRenames(fileWriter);
-                }
-
-                var (bindings, generatedDefines) = transformer.GenerateTypeBindingsForConsumers();
-
-                consumerConfig.Bindings.AddRange(bindings);
-                consumerConfig.Extension.AddRange(generatedDefines);
 
                 GenerateConfigForConsumers(consumerConfig);
 
@@ -302,14 +237,115 @@ namespace SharpGen
             }
         }
 
-        private void GenerateCode(DocumentationAggregator docAggregator, IEnumerable<CsAssembly> assemblies)
+        private (DocumentationAggregator doc, CsSolution solution) ExecuteMappings(CppModule group, ConfigFile consumerConfig)
+        {
+            var typeRegistry = new TypeRegistry(Logger);
+            var namingRules = new NamingRulesManager();
+            var docAggregator = new DocumentationAggregator(typeRegistry);
+
+            // Run the main mapping process
+            var transformer = new TransformManager(
+                GlobalNamespace,
+                namingRules,
+                Logger,
+                typeRegistry,
+                docAggregator,
+                new ConstantManager(namingRules, typeRegistry),
+                new AssemblyManager(Logger, IncludeAssemblyNameFolder, _generatedPath))
+            {
+                ForceGenerator = _isAssemblyNew
+            };
+
+            var (solution, defines) = transformer.Transform(group, Config, IntermediateOutputPath);
+
+            consumerConfig.Extension = new List<ConfigBaseRule>(defines);
+
+            var (bindings, generatedDefines) = transformer.GenerateTypeBindingsForConsumers();
+
+            consumerConfig.Bindings.AddRange(bindings);
+            consumerConfig.Extension.AddRange(generatedDefines);
+
+
+            if (Logger.HasErrors)
+                Logger.Fatal("Executing mapping rules failed");
+
+            transformer.PrintStatistics();
+
+            DumpRenames(transformer);
+
+            return (docAggregator, solution);
+        }
+
+        private void DumpRenames(TransformManager transformer)
+        {
+            using (var renameLog = File.Open(Path.Combine(IntermediateOutputPath, "SharpGen_rename.log"), FileMode.OpenOrCreate, FileAccess.Write))
+            using (var fileWriter = new StreamWriter(renameLog))
+            {
+                transformer.NamingRules.DumpRenames(fileWriter);
+            }
+        }
+
+        private (CppModule Module, string FileName) ParseCpp(HashSet<string> filesWithExtensions, bool cppHeadersUpdated, CastXml castXml, CppModule group)
+        {
+
+            // Run the parser
+            var parser = new CppParser(Logger, castXml)
+            {
+                OutputPath = IntermediateOutputPath
+            };
+            parser.Initialize(Config, filesWithExtensions);
+
+            if (Logger.HasErrors)
+                Logger.Fatal("Initializing parser failed");
+
+            // Run the parser
+            group = parser.Run(group, cppHeadersUpdated);
+
+            if (!Logger.HasErrors)
+            {
+                Logger.Fatal("Parsing C++ failed.");
+            }
+            else
+            {
+                Logger.Message("Parsing C++ finished");
+            }
+
+            // Print statistics
+            parser.PrintStatistics();
+
+            return (group, parser.GroupFileName);
+        }
+
+        private CppModule GenerateExtensionHeaders(HashSet<string> filesWithExtensions, CastXml castXml, CppModule group)
+        {
+            Logger.Progress(10, "Generating C++ extensions from macros");
+
+            var cppExtensionHeaderGenerator = new CppExtensionHeaderGenerator(new MacroManager(castXml), group);
+
+            group = cppExtensionHeaderGenerator.GenerateExtensionHeaders(Config, IntermediateOutputPath, filesWithExtensions);
+            return group;
+        }
+
+        private bool GenerateHeaders(HashSet<string> filesWithExtensions, HashSet<ConfigFile> configsWithIncludes, ConfigFile consumerConfig)
+        {
+            var headerGenerator = new CppHeaderGenerator(Logger, _isAssemblyNew, IntermediateOutputPath);
+
+            var (cppHeadersUpdated, cppConsumerConfig) = headerGenerator.GenerateCppHeaders(Config, configsWithIncludes, filesWithExtensions);
+
+            consumerConfig.IncludeProlog.AddRange(cppConsumerConfig.IncludeProlog);
+            consumerConfig.IncludeDirs.AddRange(cppConsumerConfig.IncludeDirs);
+            consumerConfig.Includes.AddRange(cppConsumerConfig.Includes);
+            return cppHeadersUpdated;
+        }
+
+        private void GenerateCode(DocumentationAggregator docAggregator, CsSolution solution)
         {
             var generator = new RoslynGenerator(Logger, GlobalNamespace, docAggregator);
-            generator.Run(GeneratedCodeFolder, assemblies);
+            generator.Run(GeneratedCodeFolder, solution);
 
             // Update check files for all assemblies
             var processTime = DateTime.Now;
-            foreach (CsAssembly assembly in assemblies)
+            foreach (CsAssembly assembly in solution.Assemblies)
             {
                 File.WriteAllText(Path.Combine(IntermediateOutputPath, assembly.CheckFileName), "");
                 File.SetLastWriteTime(Path.Combine(IntermediateOutputPath, assembly.CheckFileName), processTime);

@@ -38,7 +38,7 @@ namespace SharpGen.Parser
                     {
                         foreach (var typeBaseRule in configFile.Extension)
                         {
-                            if (RuleGeneratesExtensionHeader(typeBaseRule))
+                            if (typeBaseRule.GeneratesExtensionHeader())
                                 extensionWriter.Write(CreateCppFromMacro(typeBaseRule));
                             else if (typeBaseRule is ContextRule)
                                 HandleContextRule(configFile, (ContextRule)typeBaseRule);
@@ -48,18 +48,6 @@ namespace SharpGen.Parser
             }
 
             return module;
-        }
-
-
-        /// <summary>
-        /// Checks if this rule is creating headers extension.
-        /// </summary>
-        /// <param name="rule">The rule to check.</param>
-        /// <returns>true if the rule is creating an header extension.</returns>
-        private static bool RuleGeneratesExtensionHeader(ConfigBaseRule rule)
-        {
-            return (rule is CreateCppExtensionRule createCpp && !string.IsNullOrEmpty(createCpp.Macro))
-                || (rule is ConstantRule constant && !string.IsNullOrEmpty(constant.Macro));
         }
 
 

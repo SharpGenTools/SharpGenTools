@@ -84,7 +84,7 @@ namespace SharpGen.Parser
                     {
                         foreach (var typeBaseRule in configFile.Extension)
                         {
-                            if (RuleGeneratesExtensionHeader(typeBaseRule))
+                            if (typeBaseRule.GeneratesExtensionHeader())
                                 outputConfig.WriteLine("// {0}", typeBaseRule);
                         }
                         outputConfig.WriteLine("#include \"{0}\"", configFile.ExtensionFileName);
@@ -149,18 +149,6 @@ namespace SharpGen.Parser
             return (anyConfigsUpdated, consumerConfig);
         }
 
-
-        /// <summary>
-        /// Checks if this rule is creating headers extension.
-        /// </summary>
-        /// <param name="rule">The rule to check.</param>
-        /// <returns>true if the rule is creating an header extension.</returns>
-        private static bool RuleGeneratesExtensionHeader(ConfigBaseRule rule)
-        {
-            return (rule is CreateCppExtensionRule createCpp && !string.IsNullOrEmpty(createCpp.Macro))
-                || (rule is ConstantRule constant && !string.IsNullOrEmpty(constant.Macro));
-        }
-
         public static (HashSet<string> filesWithIncludes, HashSet<string> filesWithExtensionHeaders)
             GetFilesWithIncludesAndExtensionHeaders(ConfigFile configRoot)
         {
@@ -183,7 +171,7 @@ namespace SharpGen.Parser
                 if (configFile.References.Count > 0)
                     includesAnyFiles = true;
 
-                if (configFile.Extension.Any(rule => RuleGeneratesExtensionHeader(rule)))
+                if (configFile.Extension.Any(rule => rule.GeneratesExtensionHeader()))
                 {
                     filesWithExtensionHeaders.Add(configFile.Id);
                     includesAnyFiles = true;

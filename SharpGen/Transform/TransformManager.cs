@@ -221,23 +221,23 @@ namespace SharpGen.Transform
             if (checkFilesPath != null && File.Exists(Path.Combine(checkFilesPath, assembly.CheckFileName)))
             {
                 if (maxUpdateTime > File.GetLastWriteTime(Path.Combine(checkFilesPath, assembly.CheckFileName)))
-                    assembly.IsToUpdate = true;
+                    assembly.NeedsToBeUpdated = true;
             }
             else
             {
-                assembly.IsToUpdate = true;
+                assembly.NeedsToBeUpdated = true;
             }
 
             // Force generate
             if (ForceGenerator)
-                assembly.IsToUpdate = true;
+                assembly.NeedsToBeUpdated = true;
 
-            if (assembly.IsToUpdate)
+            if (assembly.NeedsToBeUpdated)
             {
                 foreach (var linkedConfigFile in assembly.ConfigFilesLinked)
                     linkedConfigFile.IsMappingToProcess = true;
             }
-            string updateForMessage = (assembly.IsToUpdate) ? "Config changed. Need to update from" : "Config unchanged. No need to update from";
+            string updateForMessage = (assembly.NeedsToBeUpdated) ? "Config changed. Need to update from" : "Config unchanged. No need to update from";
 
             Logger.Message("Process assembly [{0}] => {1} dependencies: [{2}]", assembly.QualifiedName, updateForMessage,
                            string.Join(",", assembly.ConfigFilesLinked));
@@ -526,7 +526,7 @@ namespace SharpGen.Transform
         /// <param name="cppModule">The C++ module to parse.</param>
         /// <param name="configFile">The config file to use to transform the C++ module into C# assemblies.</param>
         /// <param name="checkFilesPath">The path for the check files.</param>
-        public (IEnumerable<CsAssembly> assemblies, IEnumerable<DefineExtensionRule> consumerExtensions) Transform(CppModule cppModule, ConfigFile configFile, string checkFilesPath)
+        public (CsSolution solution, IEnumerable<DefineExtensionRule> consumerExtensions) Transform(CppModule cppModule, ConfigFile configFile, string checkFilesPath)
         {
             var consumerDefines = Init(cppModule, configFile, checkFilesPath);
             var selectedCSharpType = new List<CsBase>();
@@ -547,7 +547,10 @@ namespace SharpGen.Transform
             Logger.Progress(80, "Transforming functions...");
             ProcessTransform(FunctionTransform, selectedCSharpType.OfType<CsFunction>());
 
+            var solution = new CsSolution();
+
             foreach (CsAssembly cSharpAssembly in assemblyManager.Assemblies)
+            {
                 foreach (var ns in cSharpAssembly.Namespaces)
                 {
                     // Sort items in this namespace
@@ -556,8 +559,10 @@ namespace SharpGen.Transform
                     foreach (var cSharpFunctionGroup in ns.Classes)
                         constantManager.AttachConstants(cSharpFunctionGroup);
                 }
+                solution.Add(cSharpAssembly);
+            }
 
-            return (assemblyManager.Assemblies, consumerDefines);
+            return (solution, consumerDefines);
         }
 
         /// <summary>

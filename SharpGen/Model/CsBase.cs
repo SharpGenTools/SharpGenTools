@@ -90,16 +90,6 @@ namespace SharpGen.Model
         }
 
         /// <summary>
-        /// Gets the variables stored in this container.
-        /// TODO: move this method in another inherited class.
-        /// </summary>
-        /// <value>The variables.</value>
-        public IEnumerable<CsVariable> Variables
-        {
-            get { return Items.OfType<CsVariable>(); }
-        }
-
-        /// <summary>
         /// Adds the specified inner container to this container.
         /// </summary>
         /// <remarks>
@@ -130,7 +120,7 @@ namespace SharpGen.Model
         /// </summary>
         public void Sort()
         {
-            _items.Sort(delegate(CsBase x, CsBase y) { return x.Name.CompareTo(y.Name); });
+            _items.Sort((x,  y) => x.Name.CompareTo(y.Name));
         }
 
         /// <summary>
@@ -228,9 +218,7 @@ namespace SharpGen.Model
                     DocId = string.IsNullOrEmpty(CppElement.Id) ? DocId : CppElement.Id;
                     Description = string.IsNullOrEmpty(CppElement.Description) ? Description : CppElement.Description;
                     Remarks = string.IsNullOrEmpty(CppElement.Remarks) ? Remarks : CppElement.Remarks;
-
-                    // Update this container with tag
-                    //if (_cppElement.Tag != null)
+                    
                     UpdateFromTag(_cppElement.GetTagOrDefault<MappingRule>());
                 }
             }

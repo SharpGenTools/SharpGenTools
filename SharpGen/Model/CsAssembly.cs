@@ -46,7 +46,6 @@ namespace SharpGen.Model
             Name = assemblyName;
             Interop = new InteropManager();
             _configFilesLinked = new List<ConfigFile>();
-            IsToUpdate = false;
         }
 
         /// <summary>
@@ -61,7 +60,7 @@ namespace SharpGen.Model
         /// <value>
         /// 	<c>true</c> if this instance is to update; otherwise, <c>false</c>.
         /// </value>
-        public bool IsToUpdate { get; set; }
+        public bool NeedsToBeUpdated { get; set; }
 
         /// <summary>
         /// Path to the CodeComments file

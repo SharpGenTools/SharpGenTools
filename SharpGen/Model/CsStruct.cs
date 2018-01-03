@@ -66,6 +66,15 @@ namespace SharpGen.Model
         }
 
         /// <summary>
+        /// Gets the variables stored in this container.
+        /// </summary>
+        /// <value>The variables.</value>
+        public IEnumerable<CsVariable> Variables
+        {
+            get { return Items.OfType<CsVariable>(); }
+        }
+
+        /// <summary>
         ///   True if this structure is using an explicit layout else it's a sequential structure
         /// </summary>
         public bool ExplicitLayout { get; set; }

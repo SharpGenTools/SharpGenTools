@@ -50,6 +50,15 @@ namespace SharpGen.Model
             get { return Items.OfType<CsProperty>(); }
         }
 
+        /// <summary>
+        /// Gets the variables stored in this container.
+        /// </summary>
+        /// <value>The variables.</value>
+        public IEnumerable<CsVariable> Variables
+        {
+            get { return Items.OfType<CsVariable>(); }
+        }
+
         protected override void UpdateFromTag(MappingRule tag)
         {
             base.UpdateFromTag(tag);

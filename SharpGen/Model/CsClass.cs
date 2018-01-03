@@ -37,6 +37,15 @@ namespace SharpGen.Model
             get { return Items.OfType<CsFunction>(); }
         }
 
+        /// <summary>
+        /// Gets the variables stored in this container.
+        /// </summary>
+        /// <value>The variables.</value>
+        public IEnumerable<CsVariable> Variables
+        {
+            get { return Items.OfType<CsVariable>(); }
+        }
+
         public List<string> GetFunctionDllNames()
         {
             var functionNames = new List<string>();

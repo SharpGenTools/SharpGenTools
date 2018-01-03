@@ -68,20 +68,6 @@ namespace SharpGen.Parser
             _gccxml = castXml;
         }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether this instance is generating doc.
-        /// </summary>
-        /// <value>
-        /// 	<c>true</c> if this instance is generating doc; otherwise, <c>false</c>.
-        /// </value>
-        public bool IsGeneratingDoc { get; set; }
-
-        /// <summary>
-        /// Gets or sets the doc provider assembly.
-        /// </summary>
-        /// <value>The doc provider assembly.</value>
-        public string DocProviderAssembly { get; set; }
-
         public string OutputPath { get; set; }
 
         public Logger Logger { get; }
@@ -149,17 +135,6 @@ namespace SharpGen.Parser
                         _includeIsAttached.Add(configFile.ExtensionId, true);
                 }
             }
-        }
-
-        /// <summary>
-        /// Checks if this rule is creating headers extension.
-        /// </summary>
-        /// <param name="rule">The rule to check.</param>
-        /// <returns>true if the rule is creating an header extension.</returns>
-        private static bool RuleGeneratesExtensionHeader(ConfigBaseRule rule)
-        {
-            return (rule is CreateCppExtensionRule createCpp && !string.IsNullOrEmpty(createCpp.Macro))
-                || (rule is ConstantRule constant && !string.IsNullOrEmpty(constant.Macro));
         }
 
         /// <summary>
