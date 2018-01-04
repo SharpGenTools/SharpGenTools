@@ -42,6 +42,11 @@ namespace SharpGen.Transform
             if (!_mapDefinedCSharpType.TryGetValue(typeName, out CsTypeBase cSharpType))
             {
                 var type = Type.GetType(typeName);
+
+                if (typeName == "void")
+                {
+                    return ImportType(typeof(void));
+                }
                 if (type == null)
                 {
                     Logger.Warning("Type [{0}] is not defined", typeName);
