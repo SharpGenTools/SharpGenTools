@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 
-namespace SharpGen.E2ETests.VisualStudio
+namespace SharpGen.VisualStudioSetup
 {
     [Guid("E73559CD-7003-4022-B134-27DC650B280F")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

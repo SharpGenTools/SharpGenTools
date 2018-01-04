@@ -10,7 +10,7 @@ using Logger = SharpGen.Logging.Logger;
 
 namespace SharpGenTools.Sdk.Tasks
 {
-    public class GenerateExtensionHeaders : SharpGenTaskBase
+    public class GenerateExtensionHeaders : SharpGenCppTaskBase
     {
         [Required]
         public ITaskItem[] ExtensionHeaders { get; set; }

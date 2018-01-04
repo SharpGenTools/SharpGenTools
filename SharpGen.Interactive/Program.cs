@@ -75,7 +75,6 @@ namespace SharpGen.Interactive
                                   {"c|castxml=", "Specify the path to castxml.exe", opt => app.CastXmlExecutablePath = opt},
                                   {"d|doc", "Specify to generate the documentation [default: false]", opt => app.IsGeneratingDoc = true},
                                   {"p|docpath=", "Specify the path to the assembly doc provider [default: null]", opt => app.DocProviderAssemblyPath = opt},
-                                  {"v|vctools=", "Specify the path to the Visual C++ Toolset", opt => app.VcToolsPath = opt },
                                   {"od|outputdir=", "Specify the base output directory for the generated code", opt => app.OutputDirectory = opt },
                                   {"D:", "Define a macro that is used in the config files", m => app.Macros.Add(m) },
                                   {"g|global=", "Specify the namespace with the infrastructure types such as ComObject and FunctionCallback", opt => app.GlobalNamespace = new GlobalNamespaceProvider(opt) },

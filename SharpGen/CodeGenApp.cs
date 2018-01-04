@@ -72,12 +72,6 @@ namespace SharpGen
         public string CastXmlExecutablePath { get; set; }
 
         /// <summary>
-        /// Gets or sets the path to the Visual C++ toolset
-        /// </summary>
-        /// <value>The Visual C++ toolset path</value>
-        public string VcToolsPath { get; set; }
-
-        /// <summary>
         /// Gets or sets output directory.
         /// </summary>
         /// <remarks>Null is allowed, in which case sharpgen will use default</remarks>
@@ -132,11 +126,11 @@ namespace SharpGen
 
             if (Config == null)
             {
-                Config = ConfigFile.Load(ConfigRootPath, Macros.ToArray(), Logger, new KeyValue("VC_TOOLS_PATH", VcToolsPath));
+                Config = ConfigFile.Load(ConfigRootPath, Macros.ToArray(), Logger);
             }
             else
             {
-                Config = ConfigFile.Load(Config, Macros.ToArray(), Logger, new KeyValue("VC_TOOLS_PATH", VcToolsPath));
+                Config = ConfigFile.Load(Config, Macros.ToArray(), Logger);
             }
 
             var latestConfigTime = ConfigFile.GetLatestTimestamp(Config.ConfigFilesLoaded);
@@ -182,6 +176,16 @@ namespace SharpGen
                     if (filesWithIncludes.Contains(config.Id))
                     {
                         configsWithIncludes.Add(config);
+                    }
+                }
+
+                var sdkResolver = new SdkResolver(Logger);
+
+                foreach (var config in Config.ConfigFilesLoaded)
+                {
+                    foreach (var sdk in config.Sdks)
+                    {
+                        config.IncludeDirs.AddRange(sdkResolver.ResolveIncludeDirsForSdk(sdk));
                     }
                 }
 
@@ -261,7 +265,7 @@ namespace SharpGen
         {
             var typeRegistry = new TypeRegistry(Logger);
             var namingRules = new NamingRulesManager();
-            var docAggregator = new DocumentationAggregator(typeRegistry);
+            var docAggregator = new DocumentationLinker(typeRegistry);
 
             // Run the main mapping process
             var transformer = new TransformManager(

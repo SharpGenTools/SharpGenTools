@@ -45,6 +45,7 @@ namespace SharpGen.Config
             Files = new List<string>();
             References = new List<ConfigFile>();
             IncludeProlog = new List<string>();
+            Sdks = new List<SdkRule>();
             IncludeDirs = new List<IncludeDirRule>();
             Variables = new List<KeyValue>();
             Naming = new List<NamingRule>();
@@ -109,6 +110,9 @@ namespace SharpGen.Config
 
         [XmlIgnore]
         public List<ConfigFile> References { get; set; }
+
+        [XmlElement("sdk")]
+        public List<SdkRule> Sdks { get; set; }
 
         [XmlElement("include-dir")]
         public List<IncludeDirRule> IncludeDirs { get; set; }

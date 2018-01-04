@@ -7,11 +7,10 @@ using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using SharpGen.Config;
 using SharpGen.Parser;
-using Logger = SharpGen.Logging.Logger;
 
 namespace SharpGenTools.Sdk.Tasks
 {
-    public class GenerateHeaders : SharpGenTaskBase
+    public class GenerateHeaders : SharpGenCppTaskBase
     {
         [Required]
         public ITaskItem[] HeaderFiles { get; set; }

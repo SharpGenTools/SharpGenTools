@@ -3,7 +3,8 @@
   <namespace>StructLibTest</namespace>
   <assembly>StructLibTest</assembly>
 
-  <include-dir override="false">$(VC_TOOLS_PATH)\include</include-dir>
+  <sdk name="StdLib" />
+  
   <include-dir>$(THIS_CONFIG_PATH)\..\StructLib</include-dir>
   <include file="StructLib.h">
     <attach>SimpleStruct</attach>
