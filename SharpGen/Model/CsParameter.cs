@@ -24,10 +24,11 @@ using SharpGen.Config;
 using SharpGen.CppModel;
 using System.Reflection;
 using System.Xml.Serialization;
+using System.Runtime.Serialization;
 
 namespace SharpGen.Model
 {
-    [XmlType("Parameter")]
+    [DataContract(Name = "Parameter")]
     public class CsParameter : CsMarshalBase
     {
         public CsParameter()
@@ -43,15 +44,20 @@ namespace SharpGen.Model
                 NativeParamAttribute = ((CppParameter)value).Attribute;
             }
         }
-
+        
+        [DataMember]
         public CsParameterAttribute Attribute { get; set; }
 
+        [DataMember]
         public bool HasParams { get; set; }
 
+        [DataMember]
         public bool IsOptional { get; set; }
 
+        [DataMember]
         public bool IsUsedAsReturnType { get; set; }
 
+        [DataMember]
         public bool IsFast { get; set; }
 
         public bool IsFastOut
@@ -59,6 +65,7 @@ namespace SharpGen.Model
             get { return IsFast && IsOut; }
         }
 
+        [DataMember]
         public string DefaultValue { get; set; }
 
         private const int SizeOfLimit = 16;

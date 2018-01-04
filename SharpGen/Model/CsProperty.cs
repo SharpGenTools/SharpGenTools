@@ -18,11 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
-    [XmlType("Property")]
+    [DataContract(Name = "Property")]
     public class CsProperty : CsMarshalBase
     {
         public CsProperty()
@@ -34,12 +35,16 @@ namespace SharpGen.Model
             Name = name;
         }
 
+        [DataMember]
         public CsMethod Getter { get; set; }
 
+        [DataMember]
         public CsMethod Setter { get; set; }
 
+        [DataMember]
         public bool IsPropertyParam { get; set; }
 
+        [DataMember]
         public bool IsPersistent { get; set; }
 
         public override string DocUnmanagedName

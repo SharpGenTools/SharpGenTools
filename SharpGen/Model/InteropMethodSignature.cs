@@ -25,7 +25,6 @@ using SharpGen.Generator;
 
 namespace SharpGen.Model
 {
-    [XmlType("InteropSignature")]
     public class InteropMethodSignature : IEquatable<InteropMethodSignature>
     {
         public InteropMethodSignature()

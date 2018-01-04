@@ -20,11 +20,12 @@
 
 using SharpGen.Config;
 using SharpGen.CppModel;
+using System.Runtime.Serialization;
 using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
-    [XmlType("Function")]
+    [DataContract(Name = "Function")]
     public class CsFunction : CsMethod
     {
         public CsFunction()
@@ -48,7 +49,8 @@ namespace SharpGen.Model
         {
             base.UpdateFromTag(tag);
         }
-
+        
+        [DataMember]
         public string DllName { get; set; }
     }
 }

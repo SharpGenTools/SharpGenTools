@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Runtime.Serialization;
 using System.Xml.Serialization;
 
 namespace SharpGen.Model
@@ -25,15 +26,19 @@ namespace SharpGen.Model
     /// <summary>
     ///   Struct field
     /// </summary>
-    [XmlType("Field")]
+    [DataContract(Name = "Field")]
     public class CsField : CsMarshalBase
     {
+        [DataMember]
         public int Offset { get; set; }
 
+        [DataMember]
         public bool IsBitField { get; set; }
 
+        [DataMember]
         public int BitMask { get; set; }
 
+        [DataMember]
         public int BitOffset { get; set; }
 
         public bool IsFixedArrayOfStruct

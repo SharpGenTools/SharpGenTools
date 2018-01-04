@@ -19,11 +19,12 @@
 // THE SOFTWARE.
 
 using SharpGen.CppModel;
+using System.Runtime.Serialization;
 using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
-    [XmlType("InterfaceArray")]
+    [DataContract(Name = "InterfaceArray")]
     public class CsComArray : CsInterface
     {
         public CsComArray()
@@ -33,20 +34,22 @@ namespace SharpGen.Model
         public CsComArray(CsInterface element, string comArrayTypeName) : base((CppInterface)element.CppElement)
         {
             BaseElement = element;
-            ComArrayTypeName = comArrayTypeName;
+            InterfaceArrayTypeName = comArrayTypeName;
         }
 
         public override string QualifiedName
         {
             get
             {
-                return $"{ComArrayTypeName}<{BaseElement.QualifiedName}>";
+                return $"{InterfaceArrayTypeName}<{BaseElement.QualifiedName}>";
             }
         }
 
+        [DataMember]
         public CsInterface BaseElement { get;set; }
 
-        public string ComArrayTypeName { get; set; }
+        [DataMember]
+        public string InterfaceArrayTypeName { get; set; }
     }
 }
 

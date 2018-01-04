@@ -18,11 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Runtime.Serialization;
 using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
-    [XmlType("Item")]
+    [DataContract(Name = "Enum-Item")]
     public class CsEnumItem : CsBase
     {
         public CsEnumItem()
@@ -35,6 +36,7 @@ namespace SharpGen.Model
             Value = value;
         }
 
+        [DataMember]
         public string Value { get; set; }
     }
 }

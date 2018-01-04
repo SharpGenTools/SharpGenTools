@@ -19,11 +19,12 @@
 // THE SOFTWARE.
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
-    [XmlType("Group")]
+    [DataContract(Name = "Group")]
     public class CsClass : CsTypeBase
     {
         public CsClass()

@@ -19,18 +19,20 @@
 // THE SOFTWARE.
 using System;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
+    [DataContract]
     public class CsTypeBase : CsBase
     {
         /// <summary>
         /// The built-in .NET type that this type instance represents, if one exists.
         /// </summary>
-        [XmlIgnore]
         public Type Type { get; set; }
 
+        [DataMember]
         public string BuiltinTypeName
         {
             get
@@ -39,7 +41,10 @@ namespace SharpGen.Model
             }
             set
             {
-                Type = Type.GetType(value);
+                if (value != null)
+                {
+                    Type = Type.GetType(value); 
+                }
             }
         }
         

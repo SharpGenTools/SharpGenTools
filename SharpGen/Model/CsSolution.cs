@@ -2,17 +2,16 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
-    [XmlRoot("Solution")]
+    [DataContract(Name = "Solution")]
     public class CsSolution : CsBase
     {
-        private const string NS = "urn:SharpGen.CSharp";
-
         public IEnumerable<CsAssembly> Assemblies => Items.OfType<CsAssembly>();
 
         /// <summary>
@@ -35,15 +34,44 @@ namespace SharpGen.Model
         /// <returns>A C++ module</returns>
         public static CsSolution Read(Stream input)
         {
-            XmlSerializer ds = GetXmlSerializer();
+            var ds = GetSerializer();
 
             CsSolution solution = null;
             using (XmlReader w = XmlReader.Create(input))
             {
-                solution = ds.Deserialize(w) as CsSolution;
+                solution = ds.ReadObject(w) as CsSolution;
             }
 
             return solution;
+        }
+
+        private static DataContractSerializer GetSerializer()
+        {
+            var knownTypes = new[]
+            {
+                        typeof(CsAssembly),
+                        typeof(CsNamespace),
+                        typeof(CsInterface),
+                        typeof(CsClass),
+                        typeof(CsStruct),
+                        typeof(CsComArray),
+                        typeof(CsEnum),
+                        typeof(CsEnumItem),
+                        typeof(CsFunction),
+                        typeof(CsMethod),
+                        typeof(CsField),
+                        typeof(CsParameter),
+                        typeof(CsProperty),
+                        typeof(CsVariable),
+                        typeof(CsTypeBase),
+                        typeof(CsMarshalBase)
+            };
+
+            return new DataContractSerializer(typeof(CsSolution), new DataContractSerializerSettings
+            {
+                KnownTypes = knownTypes,
+                PreserveObjectReferences = true
+            });
         }
 
         private static XmlSerializer GetXmlSerializer()
@@ -88,14 +116,12 @@ namespace SharpGen.Model
         /// <param name="output">The output.</param>
         public void Write(Stream output)
         {
-            var ds = GetXmlSerializer();
+            var ds = GetSerializer();
 
             var settings = new XmlWriterSettings { Indent = true };
             using (XmlWriter w = XmlWriter.Create(output, settings))
             {
-                var ns = new XmlSerializerNamespaces();
-                ns.Add("", NS);
-                ds.Serialize(w, this, ns);
+                ds.WriteObject(w, this);
             }
         }
     }

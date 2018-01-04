@@ -26,13 +26,14 @@ using System.Xml;
 using SharpGen.Logging;
 using SharpGen.Config;
 using System.Xml.Serialization;
+using System.Runtime.Serialization;
 
 namespace SharpGen.Model
 {
     /// <summary>
     /// An assembly container for namespaces.
     /// </summary>
-    [XmlType("Assembly")]
+    [DataContract(Name = "Assembly")]
     public class CsAssembly : CsBase
     {
         private List<ConfigFile> _configFilesLinked;
@@ -60,6 +61,7 @@ namespace SharpGen.Model
         /// <value>
         /// 	<c>true</c> if this instance is to update; otherwise, <c>false</c>.
         /// </value>
+        [DataMember]
         public bool NeedsToBeUpdated { get; set; }
         
         /// <summary>
@@ -103,6 +105,7 @@ namespace SharpGen.Model
         /// Gets or sets the interop associated with this AssemblyContainer.
         /// </summary>
         /// <value>The interop.</value>
-        public InteropManager Interop { get; }
+        [DataMember]
+        public InteropManager Interop { get; set; }
     }
 }

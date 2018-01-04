@@ -32,6 +32,7 @@ using System.Diagnostics;
 using SharpGen.Transform;
 using System.Xml.Serialization;
 using System.Collections.Specialized;
+using System.Runtime.Serialization;
 
 namespace SharpGen.Model
 {
@@ -39,6 +40,7 @@ namespace SharpGen.Model
     /// Root class for all model elements.
     /// </summary>
     [DebuggerDisplay("Name: {Name}")]
+    [DataContract]
     public class CsBase
     {
         private ObservableCollection<CsBase> _items;
@@ -50,8 +52,6 @@ namespace SharpGen.Model
         /// </summary>
         public CsBase()
         {
-            _items = new ObservableCollection<CsBase>();
-            _items.CollectionChanged += ItemsChanged;
             Visibility = Visibility.Public;
             IsFullyMapped = true;
             Description = "No documentation.";
@@ -80,7 +80,7 @@ namespace SharpGen.Model
         /// Gets or sets the parent of this container.
         /// </summary>
         /// <value>The parent.</value>
-        [XmlIgnore]
+        [DataMember]
         public CsBase Parent { get; set; }
         
         /// <summary>
@@ -101,15 +101,24 @@ namespace SharpGen.Model
         /// Gets items stored in this container.
         /// </summary>
         /// <value>The items.</value>
+        [DataMember]
         public ObservableCollection<CsBase> Items
         {
-            get => _items;
-            set
+            get
             {
-                _items.CollectionChanged -= ItemsChanged;
-                _items = value;
-                _items.CollectionChanged += ItemsChanged;
+                if (_items == null)
+                {
+                    _items = new ObservableCollection<CsBase>();
+                    _items.CollectionChanged += ItemsChanged;
+                }
+                return _items;
             }
+        }
+
+        protected void ResetItems()
+        {
+            _items = new ObservableCollection<CsBase>();
+            _items.CollectionChanged += ItemsChanged;
         }
         
 
@@ -122,7 +131,7 @@ namespace SharpGen.Model
         /// <param name="innerCs">The inner container.</param>
         public void Add(CsBase innerCs)
         {
-            _items.Add(innerCs);
+            Items.Add(innerCs);
         }
 
         /// <summary>
@@ -134,21 +143,21 @@ namespace SharpGen.Model
         /// <param name="innerCs">The inner container.</param>
         public void Remove(CsBase innerCs)
         {
-            _items.Remove(innerCs);
+            Items.Remove(innerCs);
         }
 
         /// <summary>
         /// Gets or sets the name of this element.
         /// </summary>
         /// <value>The name.</value>
-        [XmlAttribute("name")]
+        [DataMember]
         public string Name { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="Visibility"/> of this element. Default is public.
         /// </summary>
         /// <value>The visibility.</value>
-        [XmlAttribute("visibility")]
+        [DataMember]
         public Visibility Visibility { get; set; }
 
         /// <summary>
@@ -203,14 +212,12 @@ namespace SharpGen.Model
         /// <value>
         /// 	<c>true</c> if this instance is fully mapped; otherwise, <c>false</c>.
         /// </value>
-        [XmlIgnore]
         public bool IsFullyMapped { get; set; }
 
         /// <summary>
         /// Gets the full qualified name of this type.
         /// </summary>
-        /// <value>The full name.</value
-        [XmlIgnore]
+        /// <value>The full name.</value>
         public virtual string QualifiedName
         {
             get
@@ -225,7 +232,6 @@ namespace SharpGen.Model
         /// Gets or sets the C++ element associated to this container.
         /// </summary>
         /// <value>The CPP element.</value>
-        [XmlIgnore]
         public virtual CppElement CppElement
         {
             get { return _cppElement; }
@@ -247,7 +253,7 @@ namespace SharpGen.Model
         /// Gets the name of the C++ element.
         /// </summary>
         /// <value>The name of the C++ element. "None" if no C++ element attached to this container.</value>
-        [XmlAttribute("cppElement")]
+        [DataMember(Name = "CppElement")]
         public string CppElementName
         {
             get
@@ -265,13 +271,13 @@ namespace SharpGen.Model
         /// Gets or sets the sizeof this element.
         /// </summary>
         /// <value>The size of.</value>
-        [XmlAttribute("size")]
+        [DataMember(Name = "Size")]
         public int SizeOf { get; set; }
 
         /// <summary>
         ///   Packing alignment for this structure (Default is 0 => Platform default)
         /// </summary>
-        [XmlAttribute("align")]
+        [DataMember]
         public int Align { get; set; }
 
         /// <summary>
@@ -280,19 +286,21 @@ namespace SharpGen.Model
         /// <value>
         /// The id.
         /// </value>
-        [XmlAttribute("docId")]
+        [DataMember]
         public string DocId { get; set; }
 
         /// <summary>
         /// Gets or sets the description documentation.
         /// </summary>
         /// <value>The description.</value>
+        [DataMember]
         public string Description { get; set; }
 
         /// <summary>
         /// Gets or sets the remarks documentation.
         /// </summary>
         /// <value>The remarks.</value>
+        [DataMember]
         public string Remarks { get; set; }
         
         public virtual void FillDocItems(IList<string> docItems, IDocumentationLinker manager) {}

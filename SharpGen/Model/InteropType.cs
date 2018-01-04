@@ -26,7 +26,6 @@ namespace SharpGen.Model
     /// <summary>
     /// Type used for template
     /// </summary>
-    [XmlType("InteropType")]
     public class InteropType
     {
         public InteropType()
@@ -66,7 +65,6 @@ namespace SharpGen.Model
         /// Gets the name of the type.
         /// </summary>
         /// <value>The name of the type.</value>
-        [XmlAttribute("name")]
         public string TypeName { get; set; }
 
         private static string TransformTypeName(Type type)

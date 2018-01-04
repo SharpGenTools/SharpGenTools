@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Xml.Serialization;
 using SharpGen.Config;
 using SharpGen.CppModel;
@@ -29,7 +30,7 @@ using SharpGen.Transform;
 
 namespace SharpGen.Model
 {
-    [XmlType("Method")]
+    [DataContract]
     public class CsMethod : CsBase
     {
         public override CppElement CppElement
@@ -73,8 +74,10 @@ namespace SharpGen.Model
             }
         }
 
+        [DataMember]
         public bool Hidden { get; set; }
 
+        [DataMember]
         public string CallingConvention { get; set; }
 
         private static string GetCallingConvention(CppMethod method)
@@ -140,20 +143,27 @@ namespace SharpGen.Model
                 RequestRawPtr = tag.RawPtr.Value;
         }
 
+        [DataMember]
         public bool AllowProperty { get; set; }
 
+        [DataMember]
         public bool CustomVtbl { get; set; }
 
+        [DataMember]
         public bool IsPersistent { get; set; }
 
+        [DataMember]
         public bool RequestRawPtr { get; set; }
 
+        [DataMember]
         public int Offset { get; set; }
 
+        [DataMember]
         public InteropMethodSignature Interop { get; set; }
 
         private string _cppSignature;
 
+        [DataMember]
         public string CppSignature
         {
             get
@@ -168,6 +178,7 @@ namespace SharpGen.Model
             get { return CppSignature; }
         }
 
+        [DataMember]
         public string ShortName { get; set; }
 
         public override string DocUnmanagedShortName
@@ -175,12 +186,16 @@ namespace SharpGen.Model
             get => ShortName;
         }
 
+        [DataMember]
         public bool CheckReturnType { get; set; }
 
+        [DataMember]
         public bool ForceReturnType { get; set; }
 
+        [DataMember]
         public bool HideReturnType { get; set; }
 
+        [DataMember]
         public bool AlwaysReturnHResult { get; set; }
 
         public bool HasReturnType
@@ -202,6 +217,7 @@ namespace SharpGen.Model
             }
         }
 
+        [DataMember]
         public CsMarshalBase ReturnType { get; set; }
 
 
@@ -275,7 +291,7 @@ namespace SharpGen.Model
 
             // Clear cached parameters
             method._parameters = null;
-            method.Items = new ObservableCollection<CsBase>();
+            method.ResetItems();
             foreach (var parameter in Parameters)
                 method.Add((CsParameter) parameter.Clone());
             method.Parent = null;

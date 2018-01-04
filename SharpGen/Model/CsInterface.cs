@@ -19,13 +19,14 @@
 // THE SOFTWARE.
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Xml.Serialization;
 using SharpGen.Config;
 using SharpGen.CppModel;
 
 namespace SharpGen.Model
 {
-    [XmlType("Interface")]
+    [DataContract(Name = "Interface")]
     public class CsInterface : CsTypeBase
     {
         public CsInterface() : this(null)
@@ -68,30 +69,37 @@ namespace SharpGen.Model
         /// <summary>
         /// Class Parent inheritance
         /// </summary>
+        [DataMember]
         public CsTypeBase Base { get; set; }
 
         /// <summary>
         /// Interface Parent inheritance
         /// </summary>
+        [DataMember]
         public CsTypeBase IBase { get; set; }
 
+        [DataMember]
         public CsInterface NativeImplementation { get; set; }
 
+        [DataMember]
         public string Guid { get; set; }
 
         /// <summary>
         ///   Only valid for inner interface. Specify the name of the property in the outer interface to access to the inner interface
         /// </summary>
+        [DataMember]
         public string PropertyAccessName { get; set; }
 
         /// <summary>
         ///   True if this interface is used as a callback to a C# object
         /// </summary>
+        [DataMember]
         public bool IsCallback { get; set; }
 
         /// <summary>
         ///   True if this interface is used as a dual-callback to a C# object
         /// </summary>
+        [DataMember]
         public bool IsDualCallback { get; set; }
 
         /// <summary>
