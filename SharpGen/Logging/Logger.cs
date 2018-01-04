@@ -30,8 +30,6 @@ namespace SharpGen.Logging
     /// </summary>
     public class Logger
     {
-        private readonly string DefaultFilePathError = Path.GetFileNameWithoutExtension(typeof(Logger).GetTypeInfo().Assembly.Location);
-
         private int _errorCount;
         private readonly List<string> ContextStack = new List<string>();
         private readonly Stack<LogLocation> FileLocationStack = new Stack<LogLocation>();
@@ -41,7 +39,6 @@ namespace SharpGen.Logging
         /// </summary>
         public Logger(ILogger output, IProgressReport progress)
         {
-            PushLocation(DefaultFilePathError);
             LoggerOutput = output;
             ProgressReport = progress;
         }

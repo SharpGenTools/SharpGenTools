@@ -26,6 +26,7 @@ namespace SharpGen.Parser
                 case SdkLib.StdLib:
                     return ResolveStdLib(sdkRule.Version);
                 case SdkLib.WindowsSdk:
+                    Logger.Message($"Resolving Windows SDK: version {sdkRule.Version}");
                     return ResolveWindowsSdk(sdkRule.Version);
                 default:
                     Logger.Error("Unknown SDK specified in an SDK rule.");

@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using SharpGen.Logging;
 
@@ -29,10 +30,10 @@ namespace SharpGenTools.Sdk
             switch (logLevel)
             {
                 case LogLevel.Info:
-                    log.LogMessage(context, null, null, logLocation.File, logLocation.Line, logLocation.Column, 0, 0, Microsoft.Build.Framework.MessageImportance.Normal, message, parameters);
+                    log.LogMessage(context, null, null, logLocation?.File, logLocation?.Line ?? 0, logLocation?.Column ?? 0, 0, 0, MessageImportance.Normal, message, parameters);
                     break;
                 case LogLevel.Warning:
-                    log.LogWarning(context, null, null, logLocation.File, logLocation.Line, logLocation.Column, 0, 0, message, parameters);
+                    log.LogWarning(context, null, null, logLocation?.File, logLocation?.Line ?? 0, logLocation?.Column ?? 0, 0, 0, message, parameters);
                     if (exception != null)
                     {
                         log.LogWarningFromException(exception);
@@ -40,7 +41,7 @@ namespace SharpGenTools.Sdk
                     break;
                 case LogLevel.Error:
                 case LogLevel.Fatal:
-                    log.LogError(context, null, null, logLocation.File, logLocation.Line, logLocation.Column, 0, 0, message, parameters);
+                    log.LogError(context, null, null, logLocation?.File, logLocation?.Line ?? 0, logLocation?.Column ?? 0, 0, 0, message, parameters);
                     if (exception != null)
                     {
                         log.LogErrorFromException(exception, true, true, null);

@@ -202,7 +202,7 @@ namespace SharpGen.Parser
                             arguments = builder.ToString();
 
                             startInfo.Arguments = arguments + " " + headerFile;
-                            Logger.Message(startInfo.Arguments);
+                            Logger.Message($"Preprocessor arguments: {startInfo.Arguments}");
                             currentProcess.StartInfo = startInfo;
                             currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
                             currentProcess.OutputDataReceived += handler;
@@ -296,6 +296,7 @@ namespace SharpGen.Parser
 
                 }
                 path = Path.Combine(subKey.GetValue(subKeyStr).ToString(), subPath);
+                Logger.Message($"Resolved registry path {directory.Path} to {path}");
             }
             catch (Exception)
             {
@@ -335,16 +336,20 @@ namespace SharpGen.Parser
 
                     // Delete any previously generated xml file
                     File.Delete(xmlFile);
-
-                    string arguments = GetCastXmlArgs();
-                    arguments += " -o " + xmlFile;
+                    
+                    var builder = new System.Text.StringBuilder();
+                    builder.Append(GetCastXmlArgs());
+                    builder.Append(" -o ");
+                    builder.Append(xmlFile);
 
                     foreach (var directory in GetIncludePaths())
-                        arguments += " " + directory;
+                        builder.Append(" " + directory);
+
+                    var arguments = builder.ToString();
 
                     startInfo.Arguments = arguments + " " + headerFile;
 
-                    Logger.Message(startInfo.Arguments);
+                    Logger.Message($"Processor arguments: {startInfo.Arguments}");
                     currentProcess.StartInfo = startInfo;
                     currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
                     currentProcess.OutputDataReceived += ProcessOutputFromHeaderFile;
