@@ -8,7 +8,7 @@ using SharpGen.Parser;
 
 namespace SharpGenTools.Sdk.Tasks
 {
-    class ParseCPlusPlus : SharpGenCppTaskBase
+    public class ParseCPlusPlus : SharpGenCppTaskBase
     {
         [Required]
         public string CastXmlExecutablePath { get; set; }

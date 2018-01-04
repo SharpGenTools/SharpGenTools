@@ -38,7 +38,7 @@ namespace SharpGenTools.Sdk.Tasks
             var updatedConfigs = new HashSet<ConfigFile>();
             foreach (var cfg in config.ConfigFilesLoaded)
             {
-                if (UpdatedConfigs.Any(updated => updated.ItemSpec == cfg.Id))
+                if (UpdatedConfigs.Any(updated => updated.GetMetadata("Id") == cfg.Id))
                 {
                     updatedConfigs.Add(cfg);
                 }
@@ -57,7 +57,7 @@ namespace SharpGenTools.Sdk.Tasks
 
             module.Write(PartialCppModuleCache.ItemSpec);
 
-            return true;
+            return !SharpGenLogger.HasErrors;
         }
     }
 }

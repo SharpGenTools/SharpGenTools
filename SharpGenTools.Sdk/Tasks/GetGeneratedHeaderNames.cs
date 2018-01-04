@@ -3,6 +3,7 @@ using Microsoft.Build.Utilities;
 using SharpGen.Config;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -10,6 +11,9 @@ namespace SharpGenTools.Sdk.Tasks
 {
     public class GetGeneratedHeaderNames : SharpGenTaskBase
     {
+        [Required]
+        public string OutputPath { get; set; }
+
         [Output]
         public ITaskItem[] Headers { get; set; }
 
@@ -25,16 +29,16 @@ namespace SharpGenTools.Sdk.Tasks
             return true;
         }
 
-        private static TaskItem CreateExtensionHeaderItem(string cfg)
+        private TaskItem CreateExtensionHeaderItem(string cfg)
         {
-            var item = new TaskItem($"{cfg}-ext.h");
+            var item = new TaskItem(Path.Combine(OutputPath, $"{cfg}-ext.h"));
             item.SetMetadata("ConfigId", cfg);
             return item;
         }
 
-        private static TaskItem CreateHeaderItem(string cfg)
+        private TaskItem CreateHeaderItem(string cfg)
         {
-            var item = new TaskItem($"{cfg}.h");
+            var item = new TaskItem(Path.Combine(OutputPath, $"{cfg}.h"));
             item.SetMetadata("ConfigId", cfg);
             return item;
         }

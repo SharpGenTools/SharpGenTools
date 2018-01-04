@@ -61,15 +61,17 @@ namespace SharpGenTools.Sdk.Tasks
 
             foreach (var cfg in configsWithHeaders)
             {
-                if (updatedConfigs.Contains(cfg))
+                if (updatedConfigs.Contains(cfg) && cfg.AbsoluteFilePath != null)
                 {
-                    updatedConfigFiles.Add(new TaskItem(cfg.Id));
+                    var item = new TaskItem(cfg.AbsoluteFilePath);
+                    item.SetMetadata("Id", cfg.Id);
+                    updatedConfigFiles.Add(item);
                 }
             }
 
             UpdatedConfigs = updatedConfigFiles.ToArray();
 
-            return true;
+            return !SharpGenLogger.HasErrors;
         }
     }
 }

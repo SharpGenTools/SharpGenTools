@@ -10,7 +10,7 @@ using SharpGen.Transform;
 
 namespace SharpGenTools.Sdk.Tasks
 {
-    class TransformCppToCSharp : SharpGenTaskBase
+    public class TransformCppToCSharp : SharpGenTaskBase
     {
         [Required]
         public string ConsumerBindMappingConfigId { get; set; }
@@ -57,7 +57,7 @@ namespace SharpGenTools.Sdk.Tasks
                 ForceGenerator = ForceGenerator
             };
 
-            var (solution, defines) = transformer.Transform(group, config, OutputPath);
+            var (solution, defines) = transformer.Transform(group, config, null);
 
             solution.Write(CSharpModel.ItemSpec);
 

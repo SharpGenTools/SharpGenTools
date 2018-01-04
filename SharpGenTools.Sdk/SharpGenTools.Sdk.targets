@@ -1,15 +1,32 @@
 ﻿<Project>
   <PropertyGroup>
-    <SharpGenGeneratedCodeFolder Condition="'$(SharpGenGeneratedCodeFolder)' == ''">$(IntermediateOutputPath)SharpGen</SharpGenGeneratedCodeFolder>
+    <SharpGenIntermediateDir>$(IntermediateOutputPath)SharpGen/</SharpGenIntermediateDir>
+    <SharpGenGeneratedCodeFolder Condition="'$(SharpGenGeneratedCodeFolder)' == ''">$(SharpGenIntermediateDir)Generated</SharpGenGeneratedCodeFolder>
     <SharpGenConsumerBindMappingConfigId Condition="'$(SharpGenConsumerBindMappingConfigId)' == ''">$(AssemblyName)</SharpGenConsumerBindMappingConfigId>
     <SharpGenOutputDirectory Condition="'$(SharpGenOutputDirectory)' == ''">$(MSBuildProjectDirectory)</SharpGenOutputDirectory>
-    <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' == 'Full'">$(MSBuildThisFileDirectory)/../tools/net46/SharpGenTools.Sdk.dll</SharpGenSdkAssembly>
-    <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)/../tools/netstandard1.5/SharpGenTools.Sdk.dll</SharpGenSdkAssembly>
     <GenerateConsumerBindMappingFilePlaceholderProperty>CustomBeforeMicrosoftCommonTargets=$(MSBuildThisFileDirectory)/GenerateConsumerBindMappingFile.targets</GenerateConsumerBindMappingFilePlaceholderProperty>
   </PropertyGroup>
 
-  <UsingTask AssemblyFile="$(SharpGenSdkAssembly)" TaskName="SharpPatch" />
-  <UsingTask AssemblyFile="$(SharpGenSdkAssembly)" TaskName="SharpGen" />
+  <ItemGroup>
+    <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' == 'Full'" Include="$(MSBuildThisFileDirectory)/../tools/net46/SharpGenTools.Sdk.dll" />
+    <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'" Include="$(MSBuildThisFileDirectory)/../tools/netstandard1.5/SharpGenTools.Sdk.dll" />
+    <SharpGenSdkCheckFile Include="$(SharpGenIntermediateDir)Sdk.checkfile" />
+    <CppConsumerConfig Include="$(SharpGenIntermediateDir)CppConsumerConfig.xml" />
+    <PartialCppModule Include="$(SharpGenIntermediateDir)PartialCppModule.xml" />
+    <ParsedCppModule Include="$(SharpGenIntermediateDir)ParsedCpp.xml" />
+    <FullCppModule Condition="'$(SharpGenGenerateDoc)' != 'true'" Include="@(ParsedCppModule)" />
+    <FullCppModule Condition="'$(SharpGenGenerateDoc)' == 'true'" Include="$(SharpGenIndermediateDir)CppModel.xml" />
+  </ItemGroup>
+
+  <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="SharpPatch" />
+  <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="GetGeneratedHeaderNames" />
+  <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="GenerateHeaders" />
+  <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="GenerateExtensionHeaders" />
+  <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="ParseCPlusPlus" />
+  <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="DocumentCppModule" />
+  <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="TransformCppToCSharp" />
+  <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="GenerateCSharp" />
+  <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="GetGeneratedCSharpFiles" />
 
   <Target Name="GetMappingsFromProjectReferences">
     <MSBuild
@@ -61,57 +78,179 @@
       Overwrite="true"
      />
   </Target>
-  
-  <Target
-    Name="CorePrepareSharpGen"
-    Condition="'@(SharpGenMapping)' != ''">
-    <ItemGroup>
-      <SharpGenGeneratedSource Condition="'$(SharpGenIncludeAssemblyNameFolder)' != 'true'" Include="$(SharpGenOutputDirectory)/$(SharpGenGeneratedCodeFolder)/**/*.cs" />
-      <SharpGenGeneratedSource Condition="'$(SharpGenIncludeAssemblyNameFolder)' == 'true'" Include="$(SharpGenOutputDirectory)/*/$(SharpGenGeneratedCodeFolder)/**/*.cs" />
-      <Compile Remove="$(SharpGenGeneratedSource)" />
-    </ItemGroup>
-  </Target>
 
   <Target
     Name="GenerateSharpGenBindings"
     BeforeTargets="CoreCompile"
     DependsOnTargets="PrepareForBuild;
+                      CreateIntermediateDir;
+                      CheckIfPackageNew;
                       GetMappingsFromProjectReferences;
-                      CorePrepareSharpGen;
-                      CoreGenerateSharpGenBindings;
+                      GenerateCSharp;
+                      AddGeneratedCSharpFilesToCompilation;
+                      UpdateSdkAssemblyCheckFile;
                       GenerateConsumerBindMappingFile"
     />
 
-  <Target
-    Name="CoreGenerateSharpGenBindings" 
-    BeforeTargets="CoreCompile"
-    DependsOnTargets="PrepareForBuild;CorePrepareSharpGen"
-    Condition="'@(SharpGenMapping)' != ''"
-    Inputs="@(SharpGenMapping);$(SharpGenSdkAssembly)"
-    Outputs="@(SharpGenConsumerBindMappingFile);@(SharpGenGeneratedSource)">
+  <Target Name="CheckIfPackageNew"
+          Inputs="@(SharpGenSdkAssembly)"
+          Outputs="@(SharpGenSdkCheckFile)">
+    <CreateProperty Value="true">
+      <Output TaskParameter="ValueSetByTask"  PropertyName="NewSdkAssembly" />
+    </CreateProperty>
+  </Target>
 
-    <MakeDir Directories="$(IntermediateOutputPath)SharpGen" />
-    <SharpGen
-      CastXmlPath="$(CastXmlPath)"
-      GenerateDocs="$(SharpGenGenerateDoc)"
+  <Target Name="CreateIntermediateDir">
+    <MakeDir Directories="$(SharpGenIntermediateDir)" />
+  </Target>
+
+  <Target
+    Name="PrepareCppGeneration">
+    <GetGeneratedHeaderNames
+      ConfigFiles="@(SharpGenMapping)"
+      Macros="$(SharpGenMacros)"
+      OutputPath="$(SharpGenIntermediateDir)">
+      <Output TaskParameter="Headers" ItemName="Headers" />
+      <Output TaskParameter="ExtensionHeaders" ItemName="ExtensionHeaders" />
+    </GetGeneratedHeaderNames>
+  </Target>
+
+  <Target
+    Name="GenerateHeaders"
+    DependsOnTargets="PrepareCppGeneration"
+    Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping)"
+    Outputs="@(Headers);@(CppConsumerConfig)">
+    <GenerateHeaders
+      ConfigFiles="@(SharpGenMapping)"
+      Macros="$(SharpGenMacros)"
+      HeaderFiles="@(Headers)"
+      ExtensionHeaders="@(ExtensionHeaders)"
+      CppConsumerConfigCache="@(CppConsumerConfig)"
+      OutputPath="$(SharpGenIntermediateDir)"
+      ForceParsing="$(NewSdkAssembly)">
+      <Output TaskParameter="UpdatedConfigs" ItemName="UpdatedConfigs" />
+    </GenerateHeaders>
+  </Target>
+  
+  <Target
+    Name="GenerateExtensionHeaders"
+    DependsOnTargets="PrepareCppGeneration;GenerateHeaders"
+    Inputs="@(SharpGenSdkAssembly);@(UpdatedConfigs);@(Headers)"
+    Outputs="@(ExtensionHeaders);@(PartialCppModule)">
+    <GenerateExtensionHeaders
+      ConfigFiles="@(SharpGenMapping)"
+      Macros="$(SharpGenMacros)"
+      ExtensionHeaders="@(ExtensionHeaders)"
+      CastXmlExecutablePath="$(CastXmlPath)"
+      OutputPath="$(MSBuildProjectDirectory)/$(SharpGenIntermediateDir)"
+      PartialCppModuleCache="@(PartialCppModule)"
+      UpdatedConfigs="@(UpdatedConfigs)"
+    />
+  </Target>
+
+  <Target
+    Name="ParseCPlusPlus"
+    DependsOnTargets="GenerateHeaders;GenerateExtensionHeaders"
+    Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping);@(PartialCppModule)"
+    Outputs="@(ParsedCppModule)">
+    <ParseCPlusPlus
+      ConfigFiles="@(SharpGenMapping)"
+      Macros="$(SharpGenMacros)"
+      CastXmlExecutablePath="$(CastXmlPath)"
+      OutputPath="$(MSBuildProjectDirectory)/$(SharpGenIntermediateDir)"
+      PartialCppModuleCache="@(PartialCppModule)"
+      ParsedCppModule="@(ParsedCppModule)"
+    />
+  </Target>
+
+  <Target Name="GenerateDocumentation"
+          DependsOnTargets="ParseCPlusPlus"
+          Condition="'$(SharpGenGenerateDoc)' == 'true'"
+          Inputs="@(ParsedCppModule)"
+          Outputs="@(FullCppModule)">
+    <DocumentCppModule
+      ParsedCppModule="@(ParsedCppModule)"
+      DocumentedCppModule="@(FullCppModule)"
+    />
+  </Target>
+
+  <ItemGroup>
+    <CSharpModel Include="$(SharpGenIntermediateDir)CSharpModel.xml" />
+    <DocLinksCache Include="$(SharpGenIntermediateDir)DocLinks.csv" />
+  </ItemGroup>
+  
+  <Target
+    Name="MapCppToCSharp"
+    DependsOnTargets="ParseCPlusPlus;GenerateDocumentation"
+    Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping);@(FullCppModule);@(CppConsumerConfig)"
+    Outputs="@(CSharpModel);@(DocLinksCache);@(SharpGenConsumerBindMapping)">
+    <TransformCppToCSharp
+      ConfigFiles="@(SharpGenMapping)"
+      Macros="$(SharpGenMacros)"
+      ConsumerBindMappingConfigId="$(SharpGenConsumerBindMappingConfigId)"
+      FullCppModule="@(FullCppModule)"
+      CppConsumerConfigCache="@(CppConsumerConfig)"
+      OutputPath="$(SharpGenIntermediateDir)"
+      ForceGenerator="$(NewSdkAssembly)"
       GlobalNamespace="$(SharpGenGlobalNamespace)"
-      MappingFiles="@(SharpGenMapping)"
-      IntermediateOutputPath="$(MSBuildProjectDirectory)\$(IntermediateOutputPath)SharpGen"
+      CSharpModel="@(CSharpModel)"
+      DocLinksCache="@(DocLinksCache)"
+    />
+  </Target>
+
+  <Target
+    Name="GetGeneratedCSharpFiles"
+    DependsOnTargets="MapCppToCSharp">
+    <GetGeneratedCSharpFiles
+      Model="@(CSharpModel)"
+      OutputDirectory="$(SharpGenOutputDirectory)"
+      GeneratedCodeFolder="$(SharpGenGeneratedCodeFolder)"
+      IncludeAssemblyNameFolder="$(SharpGenIncludeAssemblyNameFolder)">
+      <Output TaskParameter="GeneratedFiles" ItemName="GeneratedCSharpFiles" />
+    </GetGeneratedCSharpFiles>
+  </Target>
+
+  <Target
+    Name="GenerateCSharp"
+    DependsOnTargets="GetGeneratedCSharpFiles;RemoveGeneratedCSharpFiles"
+    Inputs="@(SharpGenSdkAssembly);@(CSharpModel);@(DocLinksCache)"
+    Outputs="@(GeneratedCSharpFiles)">
+    <GenerateCSharp
+      Model="@(CSharpModel)"
+      OutputDirectory="$(SharpGenOutputDirectory)"
       GeneratedCodeFolder="$(SharpGenGeneratedCodeFolder)"
       IncludeAssemblyNameFolder="$(SharpGenIncludeAssemblyNameFolder)"
-      OutputDirectory="$(SharpGenOutputDirectory)"
-      ConsumerBindMappingConfigId ="$(SharpGenConsumerBindMappingConfigId)"
-      Macros="$(SharpGenMacros)"
+      GlobalNamespace="$(SharpGenGlobalNamespace)"
+      DocLinkCache="@(DocLinksCache)"
     />
+  </Target>
 
+  <Target
+    Name="RemoveGeneratedCSharpFiles"
+    DependsOnTargets="GetGeneratedCSharpFiles">
     <ItemGroup>
-      <Compile Include="$(IntermediateOutputPath)SharpGen/**/*.cs" />
+      <Compile Remove="@(GeneratedCSharpFiles)" />
     </ItemGroup>
   </Target>
 
   <Target
+    Name="AddGeneratedCSharpFilesToCompilation"
+    DependsOnTargets="RemoveGeneratedCSharpFiles;GenerateCSharp"
+    BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <Compile Include="@(GeneratedCSharpFiles)" Condition="'%(GeneratedCSharpFiles.Assembly)' == '$(AssemblyName)'" />
+    </ItemGroup>
+  </Target>
+
+  <Target
+    Name="UpdateSdkAssemblyCheckFile"
+    DependsOnTargets="GenerateCSharp">
+    <WriteLinesToFile File="@(SharpGenSdkCheckFile)" Lines="@(SharpGenSdkAssembly)" Overwrite="True" />
+  </Target>
+
+  <Target
     Name="GenerateConsumerBindMappingFile"
-    DependsOnTargets="CoreGenerateSharpGenBindings"
+    DependsOnTargets="MapCppToCSharp"
     Outputs="@(SharpGenConsumerBindMappingFile)"
   />
   
