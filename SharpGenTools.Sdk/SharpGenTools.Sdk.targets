@@ -135,7 +135,7 @@
   <Target
     Name="GenerateExtensionHeaders"
     DependsOnTargets="PrepareCppGeneration;GenerateHeaders"
-    Inputs="@(SharpGenSdkAssembly);@(UpdatedConfigs);@(Headers)"
+    Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping);@(Headers)"
     Outputs="@(ExtensionHeaders);@(PartialCppModule)">
     <GenerateExtensionHeaders
       ConfigFiles="@(SharpGenMapping)"
