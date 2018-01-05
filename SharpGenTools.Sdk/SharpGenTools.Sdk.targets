@@ -254,8 +254,10 @@
     Outputs="@(SharpGenConsumerBindMappingFile)"
   />
   
-  <Target Name="CleanSharpGenBindings" BeforeTargets="Clean">
-    <RemoveDir Directories="$(BaseIntermediateOutputPath)/**/SharpGen" />
+  <Target Name="CleanSharpGen" BeforeTargets="CoreClean">
+    <ItemGroup>
+      <Clean Include="$(SharpGenIntermediateDir)*" />
+    </ItemGroup>
   </Target>
   
   <Target
