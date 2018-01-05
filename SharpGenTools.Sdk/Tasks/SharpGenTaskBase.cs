@@ -30,9 +30,17 @@ namespace SharpGenTools.Sdk.Tasks
                 Id = "SharpGen-MSBuild"
             };
 
-            config = LoadConfig(config);
+            try
+            {
+                config = LoadConfig(config);
 
-            return Execute(config);
+                return Execute(config);
+            }
+            catch (CodeGenFailedException ex)
+            {
+                Log.LogError(ex.Message);
+                return false;
+            }
         }
 
         protected virtual ConfigFile LoadConfig(ConfigFile config)

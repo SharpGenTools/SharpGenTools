@@ -31,7 +31,7 @@ namespace SharpGen.Parser
                 // Dump Create from macros
                 if (filesWithExtensions.Contains(configFile.Id) && updatedConfigs.Contains(configFile))
                 {
-                    using (var extension = File.OpenWrite(Path.Combine(outputPath, configFile.ExtensionFileName)))
+                    using (var extension = File.Open(Path.Combine(outputPath, configFile.ExtensionFileName), FileMode.Create))
                     using (var extensionWriter = new StreamWriter(extension))
                     {
                         foreach (var typeBaseRule in configFile.Extension)

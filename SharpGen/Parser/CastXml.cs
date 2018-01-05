@@ -198,11 +198,13 @@ namespace SharpGen.Parser
                             builder.Append(arguments);
 
                             foreach (var directory in GetIncludePaths())
+                            {
                                 builder.Append(" ").Append(directory);
+                            }
                             arguments = builder.ToString();
 
                             startInfo.Arguments = arguments + " " + headerFile;
-                            Logger.Message($"Preprocessor arguments: {startInfo.Arguments}");
+                            Logger.Message($"Preprocessor arguments: {builder}");
                             currentProcess.StartInfo = startInfo;
                             currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
                             currentProcess.OutputDataReceived += handler;
@@ -343,13 +345,15 @@ namespace SharpGen.Parser
                     builder.Append(xmlFile);
 
                     foreach (var directory in GetIncludePaths())
-                        builder.Append(" " + directory);
+                    {
+                        builder.Append(" ").Append(directory);
+                    }
 
                     var arguments = builder.ToString();
 
                     startInfo.Arguments = arguments + " " + headerFile;
 
-                    Logger.Message($"Processor arguments: {startInfo.Arguments}");
+                    Logger.Message($"Processor arguments: {builder}");
                     currentProcess.StartInfo = startInfo;
                     currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
                     currentProcess.OutputDataReceived += ProcessOutputFromHeaderFile;

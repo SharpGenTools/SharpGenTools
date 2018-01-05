@@ -12,11 +12,18 @@ namespace SharpGenTools.Sdk.Tasks
         {
             config = base.LoadConfig(config);
             var sdkResolver = new SdkResolver(SharpGenLogger);
+            Log.LogMessage("Resolving SDKs...");
             foreach (var cfg in config.ConfigFilesLoaded)
             {
-                foreach (var sdk in config.Sdks)
+                Log.LogMessage($"Resolving SDK for Config {cfg}");
+                foreach (var sdk in cfg.Sdks)
                 {
-                    cfg.IncludeDirs.AddRange(sdkResolver.ResolveIncludeDirsForSdk(sdk));
+                    Log.LogMessage($"Resolving {sdk.Name}: Version {sdk.Version}");
+                    foreach (var directory in sdkResolver.ResolveIncludeDirsForSdk(sdk))
+                    {
+                        Log.LogMessage($"Resolved include directory {directory}");
+                        cfg.IncludeDirs.Add(directory); 
+                    }
                 }
             }
             return config;

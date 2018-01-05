@@ -55,6 +55,11 @@ namespace SharpGenTools.Sdk.Tasks
 
             var module = cppExtensionGenerator.GenerateExtensionHeaders(config, OutputPath, configsWithExtensions, updatedConfigs);
 
+            if (SharpGenLogger.HasErrors)
+            {
+                return false;
+            }
+
             module.Write(PartialCppModuleCache.ItemSpec);
 
             return !SharpGenLogger.HasErrors;
