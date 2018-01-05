@@ -207,9 +207,6 @@ namespace SharpGen.Parser
                 IncludeMacroCounts[cppInclude.Name] = count;
             }
 
-            // Expand all variables with all dynamic variables
-            _configRoot.ExpandVariables(true, Logger);
-
             return _group;
         }
         
