@@ -18,13 +18,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Runtime.Serialization;
+using System.Xml.Serialization;
+
 namespace SharpGen.Model
 {
+    [DataContract(Name = "Enum-Item")]
     public class CsEnumItem : CsBase
     {
         public CsEnumItem()
         {
-            SizeOf = 4;
         }
 
         public CsEnumItem(string name, string value)
@@ -33,6 +36,7 @@ namespace SharpGen.Model
             Value = value;
         }
 
+        [DataMember]
         public string Value { get; set; }
     }
 }

@@ -14,7 +14,7 @@ namespace SharpGen.Generator
     {
         private readonly bool explicitLayout;
 
-        public FieldCodeGenerator(IDocumentationAggregator documentation, bool explicitLayout)
+        public FieldCodeGenerator(IDocumentationLinker documentation, bool explicitLayout)
             :base(documentation)
         {
             this.explicitLayout = explicitLayout;

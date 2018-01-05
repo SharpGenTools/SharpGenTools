@@ -50,7 +50,7 @@ namespace SharpGen.Parser
         /// Parses the specified C++ header file and fills the <see cref="CppModule"/> with defined macros.
         /// </summary>
         /// <param name="file">The C++ header file to parse.</param>
-        /// <param name="group">The CppIncludse object to fill with macro definitions.</param>
+        /// <param name="group">The CppModule object to fill with macro definitions.</param>
         public void Parse(string file, CppModule group)
         {
             _gccxml.Preprocess(file, ParseLine);

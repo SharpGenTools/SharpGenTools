@@ -110,7 +110,7 @@ namespace SharpGen.Parser
         /// Gets or sets the executable path of gccxml.exe.
         /// </summary>
         /// <value>The executable path.</value>
-        public string ExecutablePath {get;set;}
+        public string ExecutablePath { get; }
 
         public string OutputPath { get; set; }
 
@@ -118,23 +118,41 @@ namespace SharpGen.Parser
         /// Gets or sets the include directory list.
         /// </summary>
         /// <value>The include directory list.</value>
-        public List<IncludeDirRule> IncludeDirectoryList { get; private set; }
+        private List<IncludeDirRule> IncludeDirectoryList { get; } = new List<IncludeDirRule>();
 
         public Logger Logger { get; }
 
         /// <summary>
         /// List of error filters regexp.
         /// </summary>
-        private readonly List<Regex> _filterErrors;
+        private List<Regex> FilterErrors { get; } = new List<Regex>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CastXml"/> class.
         /// </summary>
-        public CastXml(Logger logger)
+        public CastXml(Logger logger, string executablePath)
         {
-            IncludeDirectoryList = new List<IncludeDirRule>();
-            _filterErrors = new List<Regex>();
             Logger = logger;
+            ExecutablePath = executablePath;
+        }
+
+        public void Configure(ConfigFile config)
+        {
+            // Configure gccxml with include directory
+            foreach (var configFile in config.ConfigFilesLoaded)
+            {
+                // Add all include directories
+                foreach (var includeDir in configFile.IncludeDirs)
+                    IncludeDirectoryList.Add(includeDir);
+
+                foreach (var includeRule in configFile.Includes)
+                {
+                    foreach (var filterError in includeRule.FilterErrors)
+                    {
+                        AddFilterError(includeRule.File.ToLower(), filterError);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -142,10 +160,10 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="file">The headerFile.</param>
         /// <param name="regexpError">a regexp that filters a particular gccxml error message.</param>
-        public void AddFilterError(string file, string regexpError)
+        private void AddFilterError(string file, string regexpError)
         {
-            string fullRegexpError = @"[\\/]" + Regex.Escape(file) + ":.*" + regexpError;
-            _filterErrors.Add(new Regex(fullRegexpError));
+            var fullRegexpError = @"[\\/]" + Regex.Escape(file) + ":.*" + regexpError;
+            FilterErrors.Add(new Regex(fullRegexpError));
         }
 
         /// <summary>
@@ -180,11 +198,13 @@ namespace SharpGen.Parser
                             builder.Append(arguments);
 
                             foreach (var directory in GetIncludePaths())
+                            {
                                 builder.Append(" ").Append(directory);
+                            }
                             arguments = builder.ToString();
 
                             startInfo.Arguments = arguments + " " + headerFile;
-                            Logger.Message(startInfo.Arguments);
+                            Logger.Message($"Preprocessor arguments: {builder}");
                             currentProcess.StartInfo = startInfo;
                             currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
                             currentProcess.OutputDataReceived += handler;
@@ -278,6 +298,7 @@ namespace SharpGen.Parser
 
                 }
                 path = Path.Combine(subKey.GetValue(subKeyStr).ToString(), subPath);
+                Logger.Message($"Resolved registry path {directory.Path} to {path}");
             }
             catch (Exception)
             {
@@ -298,8 +319,6 @@ namespace SharpGen.Parser
 
             Logger.RunInContext("castxml", () =>
             {
-                ExecutablePath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), ExecutablePath));
-
                 if (!File.Exists(ExecutablePath)) Logger.Fatal("castxml.exe not found from path: [{0}]", ExecutablePath);
 
                 if (!File.Exists(headerFile)) Logger.Fatal("C++ Header file [{0}] not found", headerFile);
@@ -319,16 +338,22 @@ namespace SharpGen.Parser
 
                     // Delete any previously generated xml file
                     File.Delete(xmlFile);
-
-                    string arguments = GetCastXmlArgs();
-                    arguments += " -o " + xmlFile;
+                    
+                    var builder = new System.Text.StringBuilder();
+                    builder.Append(GetCastXmlArgs());
+                    builder.Append(" -o ");
+                    builder.Append(xmlFile);
 
                     foreach (var directory in GetIncludePaths())
-                        arguments += " " + directory;
+                    {
+                        builder.Append(" ").Append(directory);
+                    }
+
+                    var arguments = builder.ToString();
 
                     startInfo.Arguments = arguments + " " + headerFile;
 
-                    Logger.Message(startInfo.Arguments);
+                    Logger.Message($"Processor arguments: {builder}");
                     currentProcess.StartInfo = startInfo;
                     currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
                     currentProcess.OutputDataReceived += ProcessOutputFromHeaderFile;
@@ -380,7 +405,7 @@ namespace SharpGen.Parser
                     var matchError = matchFileErrorRegex.Match(e.Data);
 
                     bool lineFiltered = false;
-                    foreach (var filterError in _filterErrors)
+                    foreach (var filterError in FilterErrors)
                     {
                         if (filterError.Match(e.Data).Success)
                         {

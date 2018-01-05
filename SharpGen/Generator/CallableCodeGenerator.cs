@@ -13,7 +13,7 @@ namespace SharpGen.Generator
 {
     class CallableCodeGenerator : MemberCodeGeneratorBase<CsMethod>
     {
-        public CallableCodeGenerator(IGeneratorRegistry generators, IDocumentationAggregator documentation, GlobalNamespaceProvider globalNamespace)
+        public CallableCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation, GlobalNamespaceProvider globalNamespace)
             :base(documentation)
         {
             Generators = generators;

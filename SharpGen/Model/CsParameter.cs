@@ -23,33 +23,49 @@ using System.Text;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using System.Reflection;
+using System.Xml.Serialization;
+using System.Runtime.Serialization;
 
 namespace SharpGen.Model
 {
+    [DataContract(Name = "Parameter")]
     public class CsParameter : CsMarshalBase
     {
-        private bool _isFast;
-
         public CsParameter()
         {
-            // Default is In
-            Attribute = CsParameterAttribute.In;
-            _isFast = false;
         }
 
+        public override CppElement CppElement
+        {
+            get => base.CppElement;
+            set
+            {
+                base.CppElement = value;
+                NativeParamAttribute = ((CppParameter)value).Attribute;
+            }
+        }
+        
+        [DataMember]
         public CsParameterAttribute Attribute { get; set; }
 
+        [DataMember]
         public bool HasParams { get; set; }
 
+        [DataMember]
         public bool IsOptional { get; set; }
 
+        [DataMember]
         public bool IsUsedAsReturnType { get; set; }
+
+        [DataMember]
+        public bool IsFast { get; set; }
 
         public bool IsFastOut
         {
-            get { return _isFast && IsOut; }
+            get { return IsFast && IsOut; }
         }
 
+        [DataMember]
         public string DefaultValue { get; set; }
 
         private const int SizeOfLimit = 16;
@@ -60,12 +76,10 @@ namespace SharpGen.Model
             if (tag.ParameterUsedAsReturnType.HasValue)
                 IsUsedAsReturnType = tag.ParameterUsedAsReturnType.Value;
             if (tag.ParameterAttribute.HasValue && (tag.ParameterAttribute.Value & ParamAttribute.Fast) != 0)
-                _isFast = true;
+                IsFast = true;
 
             DefaultValue = tag.DefaultValue;
         }
-
-        public CppParameter CppParameter { get { return (CppParameter) CppElement; } }
 
         public bool IsFixed
         {
@@ -152,17 +166,17 @@ namespace SharpGen.Model
 
         public bool IsStructClass
         {
-            get { return PublicType is CsStruct && ((CsStruct)PublicType).GenerateAsClass; }
+            get { return PublicType is CsStruct csStruct && csStruct.GenerateAsClass; }
         }
 
         public bool HasNativeValueType
         {
-            get { return (PublicType is CsStruct && (PublicType as CsStruct).HasMarshalType) ; }
+            get { return (PublicType is CsStruct csStruct && csStruct.HasMarshalType) ; }
         }
 
         public bool IsStaticMarshal
         {
-            get { return (PublicType is CsStruct && (PublicType as CsStruct).IsStaticMarshal); }
+            get { return (PublicType is CsStruct csStruct && csStruct.IsStaticMarshal); }
         }
 
         public bool IsRefInValueTypeOptional
@@ -170,127 +184,15 @@ namespace SharpGen.Model
             get { return IsRefIn && IsValueType && !IsArray && IsOptional; }
         }
 
+        public ParamAttribute NativeParamAttribute { get; set; }
+
         public bool IsRefInValueTypeByValue
         {
             get
             {
                 return IsRefIn && IsValueType && !IsArray
-                       && ((PublicType.SizeOf <= SizeOfLimit && !HasNativeValueType) || (CppParameter.Attribute & ParamAttribute.Value) != 0);
+                       && ((PublicType.SizeOf <= SizeOfLimit && !HasNativeValueType) || (NativeParamAttribute & ParamAttribute.Value) != 0);
             }
-        }
-
-        public string ParamName
-        {
-            get
-            {
-                StringBuilder builder = new StringBuilder();
-                if (!IsFastOut && Attribute == CsParameterAttribute.Out && (!IsArray || PublicType.Name == "System.String"))
-                    builder.Append("out ");
-                else if ((Attribute == CsParameterAttribute.Ref || Attribute == CsParameterAttribute.RefIn) && !IsArray)
-                {
-                    if (!(IsRefInValueTypeOptional || IsRefInValueTypeByValue) && !IsStructClass)
-                        builder.Append("ref ");
-                } 
-                else if (HasParams && IsArray)
-                {
-                    builder.Append("params ");
-                }
-
-                if (IsRefIn && IsValueType && !IsArray && IsOptional && !IsStructClass)
-                    builder.Append(PublicType.QualifiedName + "?");
-                else
-                    builder.Append(PublicType.QualifiedName);
-
-                if (IsArray && PublicType.Name != "System.String" && !IsComArray)
-                    builder.Append("[]");
-                builder.Append(" ");
-                builder.Append(Name);
-                return builder.ToString();
-            }
-        }
-
-        // Example Code-gen:
-        //
-        //IntPtr pDevice_;
-        //SharpDX.Interop.CalliVoid(_nativePointer, 3 * 4, &pDevice_);
-        //pDevice = new SharpDX.Direct3D11.Device(pDevice_);
-
-        //for (int i = 0; i < pSamplers.Length; i++)
-        //    pSamplers[i] = new SamplerState(pSamplers_[i]);
-
-        public string GetCallName(string pointerSizeTypeName)
-        {
-            // All ComArray are handle the same way
-            if (IsComArray)
-                return $"(void*)({Name}?.NativePointer ?? IntPtr.Zero)";
-
-            if (IsOut)
-            {
-                if (PublicType is CsInterface)
-                {
-                    if (IsArray)
-                    {
-                        return IsOptional ? Name + "==null?(void*)0:" + TempName : TempName;
-                    }
-                    return "&" + TempName;
-                }
-                if (IsArray)
-                {
-                    return IsComArray ? Name : TempName;
-                }
-                if (IsFixed && !HasNativeValueType)
-                {
-                    return IsUsedAsReturnType ? "&" + Name : TempName;
-                }
-                if (HasNativeValueType || IsBoolToInt)
-                {
-                    return "&" + TempName;
-                }
-
-                return IsValueType ? "&" + Name : TempName;
-            }
-            if (IsRefInValueTypeOptional)
-            {
-                if (IsStructClass)
-                {
-                    return "(" + Name + " != null)?&" + TempName + ":(void*)IntPtr.Zero";
-                }
-                return "(" + Name + ".HasValue)?&" + TempName + ":(void*)IntPtr.Zero";
-            }
-            if (IsRefInValueTypeByValue)
-            {
-                return HasNativeValueType ? "&" + TempName : "&" + Name;
-            }
-            if (!IsFixed && PublicType is CsEnum && !IsArray)
-                return "unchecked((int)" + Name + ")";
-            if (PublicType.Type == typeof(string))
-                return "(void*)" + TempName;
-            if (PublicType is CsInterface && Attribute == CsParameterAttribute.In && !IsArray)
-                return $"(void*)({Name}?.NativePointer ?? IntPtr.Zero)";
-            if (IsArray)
-            {
-                if (HasNativeValueType || IsBoolToInt)
-                {
-                    return TempName;
-                }
-                if (IsValueType && IsOptional)
-                {
-                    return TempName;
-                }
-            }
-            if (IsBoolToInt)
-                return "(" + Name + "?1:0)";
-            if (IsFixed && !HasNativeValueType)
-                return TempName;
-            if (PublicType.Type == typeof(IntPtr) && !IsArray)
-                return "(void*)" + Name;
-            if (HasNativeValueType)
-            {
-                return IsIn ? TempName : "&" + TempName;
-            }
-            if (PublicType.Name == pointerSizeTypeName)
-                return "(void*)" + Name;
-            return Name;
         }
 
         public override object Clone()

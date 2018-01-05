@@ -13,7 +13,7 @@ namespace SharpGen.Generator
 {
     class StructCodeGenerator : MemberCodeGeneratorBase<CsStruct>
     {
-        public StructCodeGenerator(IGeneratorRegistry generators, IDocumentationAggregator documentation) : base(documentation)
+        public StructCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation) : base(documentation)
         {
             Generators = generators;
         }

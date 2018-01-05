@@ -13,7 +13,7 @@ namespace SharpGen.Generator
 {
     class InterfaceCodeGenerator : MemberCodeGeneratorBase<CsInterface>
     {
-        public InterfaceCodeGenerator(IGeneratorRegistry generators, IDocumentationAggregator documentation)
+        public InterfaceCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation)
             : base(documentation)
         {
             Generators = generators;
@@ -203,7 +203,7 @@ namespace SharpGen.Generator
 
                 members.AddRange(csElement.InnerInterfaces.Select(iface => PropertyDeclaration(
                     IdentifierName(iface.QualifiedName),
-                    Identifier(iface.PropertyAccesName))
+                    Identifier(iface.PropertyAccessName))
                 .WithModifiers(
                     TokenList(
                         Token(SyntaxKind.PublicKeyword)))
@@ -265,13 +265,13 @@ namespace SharpGen.Generator
             yield return IfStatement(BinaryExpression(SyntaxKind.EqualsExpression,
                 MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                 ThisExpression(),
-                IdentifierName(csInterface.PropertyAccesName)),
+                IdentifierName(csInterface.PropertyAccessName)),
                 LiteralExpression(SyntaxKind.NullLiteralExpression)),
                 ExpressionStatement(
                     AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                         MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                 ThisExpression(),
-                IdentifierName(csInterface.PropertyAccesName)),
+                IdentifierName(csInterface.PropertyAccessName)),
                         ObjectCreationExpression(ParseTypeName(csInterface.QualifiedName))
                         .WithArgumentList(
                             ArgumentList(
@@ -291,7 +291,7 @@ namespace SharpGen.Generator
                         MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
                             ThisExpression(),
-                            IdentifierName(csInterface.PropertyAccesName)),
+                            IdentifierName(csInterface.PropertyAccessName)),
                         IdentifierName("NativePointer")),
                     MemberAccessExpression(
                         SyntaxKind.SimpleMemberAccessExpression,

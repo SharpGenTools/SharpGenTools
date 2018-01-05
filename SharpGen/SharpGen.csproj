@@ -3,7 +3,6 @@
     <OutputType>Library</OutputType>
     <TargetFrameworks>netstandard1.5;net46</TargetFrameworks>
     <Description>Library for generating efficient C# code from C++ and COM headers.</Description>
-    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="**/*.tt" />
@@ -22,7 +21,5 @@
     <PackageReference Include="System.ServiceModel.Security" Version="4.3.0" />
     <PackageReference Include="System.ValueTuple" Version="4.3.1" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
-    <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.3.0" Condition="'$(TargetFramework)' == 'net46'" />
-    <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.0.1" Condition="'$(TargetFramework)' == 'netstandard1.5'" /> <!-- This needs to be <= the version of this package in MSBuild, otherwise .NET Core MSBuild will crash. -->
   </ItemGroup>
 </Project>

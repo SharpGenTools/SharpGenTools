@@ -18,31 +18,33 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System.Linq;
+using System.Runtime.Serialization;
+using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
+    [DataContract(Name = "Property")]
     public class CsProperty : CsMarshalBase
     {
+        public CsProperty()
+        {
+        }
+
         public CsProperty(string name)
         {
             Name = name;
         }
 
+        [DataMember]
         public CsMethod Getter { get; set; }
 
+        [DataMember]
         public CsMethod Setter { get; set; }
 
-        public string CppSignature
-        {
-            get
-            {
-                if (Getter != null) return Getter.CppSignature;
-                return Setter.CppSignature;
-            }
-        }
-
+        [DataMember]
         public bool IsPropertyParam { get; set; }
 
+        [DataMember]
         public bool IsPersistent { get; set; }
 
         public override string DocUnmanagedName
@@ -50,24 +52,8 @@ namespace SharpGen.Model
             get
             {
                 if (Setter != null && Getter != null)
-                    return string.Format("{0} / {1}", Getter.CppElement.Name, Setter.CppElement.Name);
+                    return $"{Getter.CppElementName} / {Setter.CppElementName}";
                 return base.DocUnmanagedName;
-            }
-        }
-
-        public string PrefixSetterParam
-        {
-            get
-            {
-                if (Setter != null)
-                {
-                    var parameter = Setter.Parameters.First();
-                    if (parameter.ParamName.StartsWith("ref"))
-                    {
-                        return "ref ";
-                    }
-                }
-                return "";
             }
         }
     }

@@ -113,7 +113,7 @@ namespace SharpGen.Generator
                                                         IdentifierName("Zero")))),
                                             LiteralExpression(SyntaxKind.NullLiteralExpression),
                                             ObjectCreationExpression(
-                                                IdentifierName(paramInterface.NativeImplem.QualifiedName))
+                                                IdentifierName(paramInterface.GetNativeImplementationOrThis().QualifiedName))
                                                 .WithArgumentList(
                                                     ArgumentList(
                                                         SingletonSeparatedList(
@@ -134,7 +134,7 @@ namespace SharpGen.Generator
                                 AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                                     MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                         ParenthesizedExpression(
-                                            CastExpression(ParseTypeName(paramInterface.NativeImplem.QualifiedName),
+                                            CastExpression(ParseTypeName(paramInterface.GetNativeImplementationOrThis().QualifiedName),
                                                 IdentifierName(param.Name))),
                                         IdentifierName("NativePointer")),
                                     IdentifierName(param.TempName)));
@@ -160,7 +160,7 @@ namespace SharpGen.Generator
                                         LiteralExpression(
                                             SyntaxKind.NullLiteralExpression),
                                         ObjectCreationExpression(
-                                            IdentifierName(paramInterface.NativeImplem.QualifiedName))
+                                            IdentifierName(paramInterface.GetNativeImplementationOrThis().QualifiedName))
                                         .WithArgumentList(
                                             ArgumentList(
                                                 SingletonSeparatedList(

@@ -19,11 +19,12 @@
 // THE SOFTWARE.
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
-    [XmlType("class")]
+    [DataContract(Name = "Group")]
     public class CsClass : CsTypeBase
     {
         public CsClass()
@@ -37,16 +38,13 @@ namespace SharpGen.Model
             get { return Items.OfType<CsFunction>(); }
         }
 
-        public List<string> GetFunctionDllNames()
+        /// <summary>
+        /// Gets the variables stored in this container.
+        /// </summary>
+        /// <value>The variables.</value>
+        public IEnumerable<CsVariable> Variables
         {
-            var functionNames = new List<string>();
-
-            foreach (var cSharpFunction in Functions)
-            {
-                if (!functionNames.Contains(cSharpFunction.DllName) && !cSharpFunction.UseDllImport)
-                    functionNames.Add(cSharpFunction.DllName);
-            }
-            return functionNames;
+            get { return Items.OfType<CsVariable>(); }
         }
 
         public override string ToString()

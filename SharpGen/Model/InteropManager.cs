@@ -18,29 +18,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SharpGen.Model
 {
     public class InteropManager
     {
-        private readonly List<InteropMethodSignature> methods;
+        private readonly HashSet<InteropMethodSignature> methods;
 
         public InteropManager()
         {
-            methods = new List<InteropMethodSignature>();
+            methods = new HashSet<InteropMethodSignature>();
         }
 
-        public IEnumerable<InteropMethodSignature> Methods => methods;
+        public ICollection<InteropMethodSignature> Methods => methods;
 
         public InteropMethodSignature Add(InteropMethodSignature method)
         {
-            method.Index = methods.Count;
-            var indexOf = methods.IndexOf(method);
-            if (indexOf>=0)
-                return methods[indexOf];
-
             methods.Add(method);
-            return method;
+            return methods.First(mthd => mthd.Equals(method));
         }
     }
 }

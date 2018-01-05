@@ -13,7 +13,7 @@ namespace SharpGen.Generator
     abstract class MemberCodeGeneratorBase<T> : IMultiCodeGenerator<T, MemberDeclarationSyntax>
         where T : CsBase
     {
-        protected MemberCodeGeneratorBase(IDocumentationAggregator documentation)
+        protected MemberCodeGeneratorBase(IDocumentationLinker documentation)
         {
             docAggregator = documentation;
         }
@@ -35,6 +35,6 @@ namespace SharpGen.Generator
             return (DocumentationCommentTriviaSyntax)tree.GetCompilationUnitRoot().EndOfFileToken.LeadingTrivia[0].GetStructure();
         }
 
-        private readonly IDocumentationAggregator docAggregator;
+        private readonly IDocumentationLinker docAggregator;
     }
 }

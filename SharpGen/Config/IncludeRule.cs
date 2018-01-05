@@ -137,7 +137,14 @@ namespace SharpGen.Config
 
         public bool Equals(IncludeRule other)
         {
-            return File == other.File;
+            return File == other.File
+                && Pre == other.Pre
+                && Post == other.Post;
+        }
+
+        public override int GetHashCode()
+        {
+            return File.GetHashCode();
         }
     }
 }

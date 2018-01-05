@@ -29,6 +29,11 @@ using SharpGen.Parser;
 using System.Xml.Serialization;
 using SharpGen.Model;
 using SharpGen.Transform;
+using SharpGen.CppModel;
+using SharpGen.Doc;
+#if NETSTANDARD1_5
+using System.Runtime.Loader;
+#endif
 
 namespace SharpGen
 {
@@ -162,75 +167,85 @@ namespace SharpGen
                     Id = ConsumerBindMappingConfigId
                 };
 
-                // Run the parser
-                var parser = new Parser.CppParser(GlobalNamespace, Logger)
+                var (filesWithIncludes, filesWithExtensions) = Config.GetFilesWithIncludesAndExtensionHeaders();
+
+                var configsWithIncludes = new HashSet<ConfigFile>();
+
+                foreach (var config in Config.ConfigFilesLoaded)
                 {
-                    IsGeneratingDoc = IsGeneratingDoc,
-                    DocProviderAssembly = DocProviderAssemblyPath,
-                    ForceParsing = _isAssemblyNew,
-                    CastXmlExecutablePath = CastXmlExecutablePath,
-                    OutputPath = IntermediateOutputPath
-                };
+                    if (filesWithIncludes.Contains(config.Id))
+                    {
+                        configsWithIncludes.Add(config);
+                    }
+                }
 
-                // Init the parser
-                (consumerConfig.IncludeProlog, consumerConfig.IncludeDirs, consumerConfig.Includes) = parser.Init(Config);
+                var sdkResolver = new SdkResolver(Logger);
 
-                if (Logger.HasErrors)
-                    Logger.Fatal("Initializing parser failed");
-
-                // Run the parser
-                var group = parser.Run();
-
-                if (Logger.HasErrors)
-                    Logger.Fatal("C++ compiler failed to parse header files");
-
-                var typeRegistry = new TypeRegistry(Logger);
-                var namingRules = new NamingRulesManager();
-                var docAggregator = new DocumentationAggregator(typeRegistry);
-
-                // Run the main mapping process
-                var transformer = new TransformManager(
-                    GlobalNamespace,
-                    namingRules,
-                    Logger,
-                    typeRegistry,
-                    docAggregator,
-                    new ConstantManager(namingRules, typeRegistry),
-                    new AssemblyManager(Logger, IncludeAssemblyNameFolder, _generatedPath))
+                foreach (var config in Config.ConfigFilesLoaded)
                 {
-                    ForceGenerator = _isAssemblyNew
-                };
+                    foreach (var sdk in config.Sdks)
+                    {
+                        config.IncludeDirs.AddRange(sdkResolver.ResolveIncludeDirsForSdk(sdk));
+                    }
+                }
 
-                var (assemblies, defines) = transformer.Transform(group, Config, IntermediateOutputPath);
-
-                consumerConfig.Extension = new List<ConfigBaseRule>(defines);
+                var cppHeadersUpdated = GenerateHeaders(filesWithExtensions, configsWithIncludes, consumerConfig);
 
                 if (Logger.HasErrors)
-                    Logger.Fatal("Executing mapping rules failed");
+                {
+                    Logger.Fatal("Failed to generate C++ headers.");
+                }
 
-                GenerateCode(docAggregator, assemblies);
+                CppModule group;
+                var groupFileName = $"{Config.Id}-out.xml";
+
+                if (cppHeadersUpdated.Count != 0)
+                {
+                    var castXml = new CastXml(Logger, CastXmlExecutablePath)
+                    {
+                        OutputPath = IntermediateOutputPath,
+                    };
+
+                    castXml.Configure(Config);
+
+                    group = GenerateExtensionHeaders(filesWithExtensions, cppHeadersUpdated, castXml);
+                    group = ParseCpp(castXml, group);
+
+                    if (IsGeneratingDoc)
+                    {
+                        ApplyDocumentation(group);
+                    }
+                }
+                else
+                {
+                    Logger.Progress(10, "Config files unchanged. Read previous C++ parsing...");
+                    if (File.Exists(Path.Combine(IntermediateOutputPath, groupFileName)))
+                    {
+                        group = CppModule.Read(Path.Combine(IntermediateOutputPath, groupFileName)); 
+                    }
+                    else
+                    {
+                        group = new CppModule();
+                    }
+                }
+
+                // Save back the C++ parsed includes
+                group.Write(Path.Combine(IntermediateOutputPath, groupFileName));
+
+                Config.ExpandDynamicVariables(Logger, group);
+                
+                var (docAggregator, solution) = ExecuteMappings(group, consumerConfig);
+
+                solution.Write(Path.Combine(IntermediateOutputPath, "Solution.xml"));
+
+                solution = CsSolution.Read(Path.Combine(IntermediateOutputPath, "Solution.xml"));
+
+                GenerateConfigForConsumers(consumerConfig);
+
+                GenerateCode(docAggregator, solution);
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Code generation failed");
-
-
-                // Print statistics
-                parser.PrintStatistics();
-                transformer.PrintStatistics();
-
-                // Output all elements
-                using (var renameLog = File.Open(Path.Combine(IntermediateOutputPath, "SharpGen_rename.log"), FileMode.OpenOrCreate, FileAccess.Write))
-                using (var fileWriter = new StreamWriter(renameLog))
-                {
-                    transformer.NamingRules.DumpRenames(fileWriter);
-                }
-
-                var (bindings, generatedDefines) = transformer.GenerateTypeBindingsForConsumers();
-
-                consumerConfig.Bindings.AddRange(bindings);
-                consumerConfig.Extension.AddRange(generatedDefines);
-
-                GenerateConfigForConsumers(consumerConfig);
 
                 // Update Checkfile for assembly
                 File.WriteAllText(_assemblyCheckFile, "");
@@ -246,14 +261,115 @@ namespace SharpGen
             }
         }
 
-        private void GenerateCode(DocumentationAggregator docAggregator, IEnumerable<CsAssembly> assemblies)
+        private (IDocumentationLinker doc, CsSolution solution) ExecuteMappings(CppModule group, ConfigFile consumerConfig)
+        {
+            var typeRegistry = new TypeRegistry(Logger);
+            var namingRules = new NamingRulesManager();
+            var docAggregator = new DocumentationLinker(typeRegistry);
+
+            // Run the main mapping process
+            var transformer = new TransformManager(
+                GlobalNamespace,
+                namingRules,
+                Logger,
+                typeRegistry,
+                docAggregator,
+                new ConstantManager(namingRules, typeRegistry),
+                new AssemblyManager())
+            {
+                ForceGenerator = _isAssemblyNew
+            };
+
+            var (solution, defines) = transformer.Transform(group, Config, IntermediateOutputPath);
+
+            consumerConfig.Extension = new List<ConfigBaseRule>(defines);
+
+            var (bindings, generatedDefines) = transformer.GenerateTypeBindingsForConsumers();
+
+            consumerConfig.Bindings.AddRange(bindings);
+            consumerConfig.Extension.AddRange(generatedDefines);
+
+
+            if (Logger.HasErrors)
+                Logger.Fatal("Executing mapping rules failed");
+
+            transformer.PrintStatistics();
+
+            DumpRenames(transformer);
+
+            return (docAggregator, solution);
+        }
+
+        private void DumpRenames(TransformManager transformer)
+        {
+            using (var renameLog = File.Open(Path.Combine(IntermediateOutputPath, "SharpGen_rename.log"), FileMode.OpenOrCreate, FileAccess.Write))
+            using (var fileWriter = new StreamWriter(renameLog))
+            {
+                transformer.NamingRules.DumpRenames(fileWriter);
+            }
+        }
+
+        private CppModule ParseCpp(CastXml castXml, CppModule group)
+        {
+
+            // Run the parser
+            var parser = new CppParser(Logger, castXml)
+            {
+                OutputPath = IntermediateOutputPath
+            };
+            parser.Initialize(Config);
+
+            if (Logger.HasErrors)
+                Logger.Fatal("Initializing parser failed");
+
+            // Run the parser
+            group = parser.Run(group);
+
+            if (Logger.HasErrors)
+            {
+                Logger.Fatal("Parsing C++ failed.");
+            }
+            else
+            {
+                Logger.Message("Parsing C++ finished");
+            }
+
+            // Print statistics
+            parser.PrintStatistics();
+
+            return group;
+        }
+
+        private CppModule GenerateExtensionHeaders(HashSet<string> filesWithExtensions, HashSet<ConfigFile> updatedConfigs, CastXml castXml)
+        {
+            Logger.Progress(10, "Generating C++ extensions from macros");
+
+            var cppExtensionHeaderGenerator = new CppExtensionHeaderGenerator(new MacroManager(castXml));
+
+            var group = cppExtensionHeaderGenerator.GenerateExtensionHeaders(Config, IntermediateOutputPath, filesWithExtensions, updatedConfigs);
+            return group;
+        }
+
+        private HashSet<ConfigFile> GenerateHeaders(HashSet<string> filesWithExtensions, HashSet<ConfigFile> configsWithIncludes, ConfigFile consumerConfig)
+        {
+            var headerGenerator = new CppHeaderGenerator(Logger, _isAssemblyNew, IntermediateOutputPath);
+
+            var (cppHeadersUpdated, cppConsumerConfig) = headerGenerator.GenerateCppHeaders(Config, configsWithIncludes, filesWithExtensions);
+
+            consumerConfig.IncludeProlog.AddRange(cppConsumerConfig.IncludeProlog);
+            consumerConfig.IncludeDirs.AddRange(cppConsumerConfig.IncludeDirs);
+            consumerConfig.Includes.AddRange(cppConsumerConfig.Includes);
+            return cppHeadersUpdated;
+        }
+
+        private void GenerateCode(IDocumentationLinker docAggregator, CsSolution solution)
         {
             var generator = new RoslynGenerator(Logger, GlobalNamespace, docAggregator);
-            generator.Run(GeneratedCodeFolder, assemblies);
+            generator.Run(solution, _generatedPath, GeneratedCodeFolder, IncludeAssemblyNameFolder);
 
             // Update check files for all assemblies
             var processTime = DateTime.Now;
-            foreach (CsAssembly assembly in assemblies)
+            foreach (CsAssembly assembly in solution.Assemblies)
             {
                 File.WriteAllText(Path.Combine(IntermediateOutputPath, assembly.CheckFileName), "");
                 File.SetLastWriteTime(Path.Combine(IntermediateOutputPath, assembly.CheckFileName), processTime);
@@ -275,6 +391,45 @@ namespace SharpGen
                 var serializer = new XmlSerializer(typeof(ConfigFile));
                 serializer.Serialize(fileWriter, consumerConfig);
             }
+        }
+
+        /// <summary>
+        /// Apply documentation from an external provider. This is optional.
+        /// </summary>
+        private CppModule ApplyDocumentation(CppModule group)
+        {
+            // Use default MSDN doc provider
+            IDocProvider docProvider = new MsdnProvider(Logger);
+
+            // Try to load doc provider from an external assembly
+            if (DocProviderAssemblyPath != null)
+            {
+                try
+                {
+#if NETSTANDARD1_5
+                    var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(DocProviderAssemblyPath);
+#else
+                    var assembly = Assembly.LoadFrom(DocProviderAssemblyPath);
+#endif
+
+                    foreach (var type in assembly.GetTypes())
+                    {
+                        if (typeof(IDocProvider).GetTypeInfo().IsAssignableFrom(type))
+                        {
+                            docProvider = (IDocProvider)Activator.CreateInstance(type);
+                            break;
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    Logger.Warning("Warning, Unable to locate/load DocProvider Assembly.");
+                    Logger.Warning("Warning, DocProvider was not found from assembly [{0}]", DocProviderAssemblyPath);
+                }
+            }
+
+            Logger.Progress(20, "Applying C++ documentation");
+            return docProvider.ApplyDocumentation(group);
         }
     }
 }

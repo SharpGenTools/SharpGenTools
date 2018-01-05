@@ -28,10 +28,6 @@ using System.Xml.Linq;
 using SharpGen.Logging;
 using SharpGen.Config;
 using SharpGen.CppModel;
-using SharpGen.Doc;
-#if NETSTANDARD1_5
-using System.Runtime.Loader;
-#endif
 
 namespace SharpGen.Parser
 {
@@ -51,339 +47,94 @@ namespace SharpGen.Parser
     /// </summary>
     public class CppParser
     {
-        private const string EndTagCustomEnumItem = "__sharpgen_enumitem__";
-        private const string EndTagCustomVariable = "__sharpgen_var__";
-        private const string Version = "1.0";
         private CppModule _group;
-        private readonly Dictionary<string, bool> _includeToProcess = new Dictionary<string, bool>();
-        private Dictionary<string, bool> _includeIsAttached = new Dictionary<string, bool>();
-        private Dictionary<string, List<string>> _includeAttachedTypes = new Dictionary<string, List<string>>();
+        private readonly HashSet<string> _includeToProcess = new HashSet<string>();
+        private readonly Dictionary<string, bool> _includeIsAttached = new Dictionary<string, bool>();
+        private readonly Dictionary<string, HashSet<string>> _includeAttachedTypes = new Dictionary<string, HashSet<string>>();
         private readonly Dictionary<string, string> _bindings = new Dictionary<string, string>();
-        private CastXml _gccxml;
-        private string _configRootHeader;
+        private readonly CastXml _gccxml;
         private ConfigFile _configRoot;
         private CppInclude _currentCppInclude;
-        private readonly Dictionary<string, string> _variableMacrosDefined = new Dictionary<string, string>();
         readonly Dictionary<string, XElement> _mapIdToXElement = new Dictionary<string, XElement>();
         readonly Dictionary<string, List<XElement>> _mapFileToXElement = new Dictionary<string, List<XElement>>();
         private readonly Dictionary<string, int> _mapIncludeToAnonymousEnumCount = new Dictionary<string, int>();
-        readonly List<string> _filesWithCreateFromMacros = new List<string>();
-        private bool _isConfigUpdated;
-        private GlobalNamespaceProvider globalNamespace;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CppParser"/> class.
         /// </summary>
-        public CppParser(GlobalNamespaceProvider globalNamespace, Logger logger)
+        public CppParser(Logger logger, CastXml castXml)
         {
-            ForceParsing = false;
-            this.globalNamespace = globalNamespace;
             Logger = logger;
-            SdkResolver = new SdkResolver(logger);
+            _gccxml = castXml;
         }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this instance is generating doc.
-        /// </summary>
-        /// <value>
-        /// 	<c>true</c> if this instance is generating doc; otherwise, <c>false</c>.
-        /// </value>
-        public bool IsGeneratingDoc { get; set; }
-
-        /// <summary>
-        /// Gets or sets the doc provider assembly.
-        /// </summary>
-        /// <value>The doc provider assembly.</value>
-        public string DocProviderAssembly { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this <see cref="CppParser"/> should force to parse headers.
-        /// </summary>
-        /// <value><c>true</c> to force to run parsing regarding of config file updates check; otherwise, <c>false</c>.</value>
-        public bool ForceParsing { get; set; }
-
-        /// <summary>
-        /// Gets or sets the CastXML executable path.
-        /// </summary>
-        /// <value>The CastXML executable path.</value>
-        public string CastXmlExecutablePath { get; set; }
 
         public string OutputPath { get; set; }
 
         public Logger Logger { get; }
-        public SdkResolver SdkResolver { get; }
-
-        /// <summary>
-        /// Initialize this Parser from a root ConfigFile.
-        /// </summary>
-        /// <param name="configRoot">The root config file</param>
-        /// <returns>Returns the full include prolog as well as any include rules with pre or post text and the relevant include directories to flow to consumers.</returns>
-        public (List<string> prolog, List<IncludeDirRule> includeDirs, List<IncludeRule> includeRules) Init(ConfigFile configRoot)
+        
+        public void Initialize(ConfigFile configRoot)
         {
             _configRoot = configRoot ?? throw new ArgumentNullException(nameof(configRoot));
-
-            _configRootHeader = Path.Combine(OutputPath, _configRoot.Id + ".h");
-            _gccxml = new CastXml(Logger)
+            
+            foreach (var bindRule in _configRoot.ConfigFilesLoaded.SelectMany(cfg => cfg.Bindings))
             {
-                ExecutablePath = CastXmlExecutablePath,
-                OutputPath = OutputPath,
-            };
-
-            // Config is updated if ForceParsing is true
-            _isConfigUpdated = ForceParsing;
-
-            _group = new CppModule();
-
-            // Get All include-directories to add to GccXmlApp
-            var prolog = new StringBuilder();
-
-            var includeDirsForConsumers = new List<IncludeDirRule>();
-            var includesForConsumers = new List<IncludeRule>();
-
-            // Configure gccxml with include directory
-            foreach (var configFile in _configRoot.ConfigFilesLoaded)
-            {
-                foreach (var sdk in configFile.Sdks)
+                if (_bindings.ContainsKey(bindRule.From))
                 {
-                    configFile.IncludeDirs.AddRange(SdkResolver.ResolveIncludeDirsForSdk(sdk));
+                    Logger.Error("Duplicate type bind specified.");
                 }
-
-                // Add all include directories
-                foreach (var includeDir in configFile.IncludeDirs)
-                    _gccxml.IncludeDirectoryList.Add(includeDir);
-
-                // Append prolog
-                foreach (var includeProlog in configFile.IncludeProlog)
+                else
                 {
-                    if (!string.IsNullOrEmpty(includeProlog))
-                        prolog.Append(includeProlog);
-                }
-
-                // Prepare bindings
-                foreach (var bindRule in configFile.Bindings)
-                {
-                    if (_bindings.ContainsKey(bindRule.From))
-                    {
-                        Logger.Error("Duplicate type bind specified.");
-                    }
-                    else
-                    {
-                        _bindings.Add(bindRule.From, bindRule.To);
-                    }
+                    _bindings.Add(bindRule.From, bindRule.To);
                 }
             }
 
-            var filesWithIncludes = new List<string>();
-
-
-            // Check if the file has any includes related config
             foreach (var configFile in _configRoot.ConfigFilesLoaded)
             {
-                var isWithInclude = false;
-
-                // Add this config file as an include to process
-                _includeToProcess.Add(configFile.Id, true);
-                _includeIsAttached.Add(configFile.Id, true);
-
-                if (configFile.IncludeDirs.Count > 0)
-                    isWithInclude = true;
-
-                // Build prolog
-                if (configFile.IncludeProlog.Count > 0)
-                    isWithInclude = true;
-
-                if (configFile.Includes.Count > 0)
-                    isWithInclude = true;
-
-                if (configFile.References.Count > 0)
-                    isWithInclude = true;
-
-                // Check if any create from macro
-                foreach (var typeBaseRule in configFile.Extension)
+                foreach (var includeRule in configFile.Includes)
                 {
-                    if (CheckIfRuleIsCreatingHeadersExtension(typeBaseRule))
+                    _includeToProcess.Add(includeRule.Id);
+
+                    // Handle attach types
+                    // Set that the include is attached (so that all types inside are attached
+                    var isIncludeFullyAttached = includeRule.Attach ?? false;
+                    if (isIncludeFullyAttached || includeRule.AttachTypes.Count > 0)
                     {
-                        _filesWithCreateFromMacros.Add(configFile.Id);
-                        isWithInclude = true;
-                        break;
+                        // An include can be fully attached ( include rule is set to true)
+                        // or partially attached (the include rule contains Attach for specific types)
+                        // We need to know which includes are attached, if they are fully or partially
+                        if (!_includeIsAttached.ContainsKey(includeRule.Id))
+                            _includeIsAttached.Add(includeRule.Id, isIncludeFullyAttached);
+                        else if (isIncludeFullyAttached)
+                        {
+                            _includeIsAttached[includeRule.Id] = true;
+                        }
+
+                        // Attach types if any
+                        if (includeRule.AttachTypes.Count > 0)
+                        {
+                            if (!_includeAttachedTypes.TryGetValue(includeRule.Id, out HashSet<string> typesToAttach))
+                            {
+                                typesToAttach = new HashSet<string>();
+                                _includeAttachedTypes.Add(includeRule.Id, typesToAttach);
+                            }
+
+                            // For specific attach types, register them
+                            foreach (var attachTypeName in includeRule.AttachTypes)
+                            {
+                                typesToAttach.Add(attachTypeName);
+                            }
+                        }
                     }
                 }
 
-                // If this config file has any include rules
-                if (isWithInclude)
-                    filesWithIncludes.Add(configFile.Id);
-            }
-
-            // Dump includes
-            foreach (var configFile in _configRoot.ConfigFilesLoaded)
-            {
-                if (!filesWithIncludes.Contains(configFile.Id))
-                    continue;
-
-                using (var outputConfig = new StringWriter())
+                // Register extension headers
+                if (configFile.Extension.Any(rule => rule.GeneratesExtensionHeader()))
                 {
-                    outputConfig.WriteLine("// SharpGen include config [{0}] - Version {1}", configFile.Id, Version);
-
-                    if (_configRoot.Id == configFile.Id)
-                        outputConfig.WriteLine(prolog);
-
-                    // Write includes
-                    foreach (var includeRule in configFile.Includes)
-                    {
-                        var cppInclude = _group.FindInclude(includeRule.Id);
-                        if (cppInclude == null)
-                        {
-                            _includeToProcess.Add(includeRule.Id, true);
-
-                            cppInclude = new CppInclude { Name = includeRule.Id };
-                            _group.Add(cppInclude);
-                        }
-
-                        // Handle attach types
-                        // Set that the include is attached (so that all types inside are attached
-                        var isIncludeFullyAttached = includeRule.Attach ?? false;
-                        if (isIncludeFullyAttached || includeRule.AttachTypes.Count > 0)
-                        {
-                            // An include can be fully attached ( include rule is set to true)
-                            // or partially attached (the include rule contains Attach for specific types)
-                            // We need to know which includes are attached, if they are fully or partially
-                            if (!_includeIsAttached.ContainsKey(includeRule.Id))
-                                _includeIsAttached.Add(includeRule.Id, isIncludeFullyAttached);
-                            else if (isIncludeFullyAttached)
-                            {
-                                _includeIsAttached[includeRule.Id] = true;
-                            }
-
-                            // Attach types if any
-                            if (includeRule.AttachTypes.Count > 0)
-                            {
-                                if (!_includeAttachedTypes.TryGetValue(includeRule.Id, out List<string> typesToAttach))
-                                {
-                                    typesToAttach = new List<string>();
-                                    _includeAttachedTypes.Add(includeRule.Id, typesToAttach);
-                                }
-
-                                // For specific attach types, register them
-                                foreach (var attachTypeName in includeRule.AttachTypes)
-                                {
-                                    if (!typesToAttach.Contains(attachTypeName))
-                                        typesToAttach.Add(attachTypeName);
-                                }
-                            }
-                        }
-
-                        // Add filtering errors
-                        if (includeRule.FilterErrors.Count > 0)
-                        {
-                            foreach (var filterError in includeRule.FilterErrors)
-                                _gccxml.AddFilterError(includeRule.File.ToLower(), filterError);
-                        }
-
-                        if (!string.IsNullOrEmpty(includeRule.Pre))
-                        {
-                            outputConfig.WriteLine(includeRule.Pre);
-                            includesForConsumers.Add(includeRule);
-                            foreach (var includeDir in configFile.IncludeDirs)
-                            {
-                                includeDirsForConsumers.Add(includeDir);
-                            }
-                        }
-                        outputConfig.WriteLine("#include \"{0}\"", includeRule.File);
-                        if (!string.IsNullOrEmpty(includeRule.Post))
-                        {
-                            outputConfig.WriteLine(includeRule.Post);
-                            includesForConsumers.Add(includeRule);
-                            foreach (var includeDir in configFile.IncludeDirs)
-                            {
-                                includeDirsForConsumers.Add(includeDir);
-                            }
-                        }
-                    }
-
-                    // Write includes to references
-                    foreach (var reference in configFile.References)
-                    {
-                        if (filesWithIncludes.Contains(reference.Id))
-                            outputConfig.WriteLine("#include \"{0}\"", reference.Id + ".h");
-                    }
-
-                    // Dump Create from macros
-                    if (_filesWithCreateFromMacros.Contains(configFile.Id))
-                    {
-                        foreach (var typeBaseRule in configFile.Extension)
-                        {
-                            if (CheckIfRuleIsCreatingHeadersExtension(typeBaseRule))
-                                outputConfig.WriteLine("// {0}", typeBaseRule);
-                        }
-                        outputConfig.WriteLine("#include \"{0}\"", configFile.ExtensionFileName);
-
-
-                        _includeToProcess.Add(configFile.ExtensionId, true);
-                        if (!_includeIsAttached.ContainsKey(configFile.ExtensionId))
-                            _includeIsAttached.Add(configFile.ExtensionId, true);
-
-                        // Create Extension file name if it doesn't exist);
-                        if (!File.Exists(Path.Combine(OutputPath, configFile.ExtensionFileName)))
-                            File.WriteAllText(Path.Combine(OutputPath, configFile.ExtensionFileName), "");
-                    }
-
-                    var outputConfigStr = outputConfig.ToString();
-
-                    var fileName = Path.Combine(OutputPath, configFile.Id + ".h");
-
-                    // Test if Last config file was generated. If not, then we need to generate it
-                    // If it exists, then we need to test if it is the same than previous run
-                    configFile.IsConfigUpdated = ForceParsing;
-
-                    if (File.Exists(fileName) && !ForceParsing)
-                        configFile.IsConfigUpdated = outputConfigStr != File.ReadAllText(fileName);
-                    else
-                        configFile.IsConfigUpdated = true;
-
-                    // Small optim: just write the header file when the file is updated or new
-                    if (configFile.IsConfigUpdated)
-                    {
-                        if (!ForceParsing)
-                            Logger.Message("Config file changed for C++ headers [{0}]/[{1}]", configFile.Id, configFile.FilePath);
-
-                        _isConfigUpdated = true;
-
-                        if (File.Exists(fileName))
-                        {
-                            File.Delete(fileName);
-                        }
-
-                        using (var file = File.OpenWrite(fileName))
-                        using (var fileWriter = new StreamWriter(file, Encoding.ASCII))
-                        {
-                            fileWriter.Write(outputConfigStr);
-                        }
-                    }
+                    _includeToProcess.Add(configFile.ExtensionId);
+                    if (!_includeIsAttached.ContainsKey(configFile.ExtensionId))
+                        _includeIsAttached.Add(configFile.ExtensionId, true);
                 }
             }
-
-            return (new List<string> { prolog.ToString() + Environment.NewLine },
-                includeDirsForConsumers.Distinct().ToList(),
-                includesForConsumers.Distinct().Select(include =>
-                new IncludeRule
-                {
-                    File = include.File,
-                    Pre = include.Pre,
-                    Post = include.Post,
-                    FilterErrors = include.FilterErrors
-                }).ToList()
-            );
-        }
-
-        /// <summary>
-        /// Checks if this rule is creating headers extension.
-        /// </summary>
-        /// <param name="rule">The rule to check.</param>
-        /// <returns>true if the rule is creating an header extension.</returns>
-        private static bool CheckIfRuleIsCreatingHeadersExtension(ConfigBaseRule rule)
-        {
-            return ((rule is CreateCppExtensionRule && !string.IsNullOrEmpty(((CreateCppExtensionRule) rule).Macro))
-                    || (rule is ConstantRule && !string.IsNullOrEmpty(((ConstantRule) rule).Macro)));
         }
 
         /// <summary>
@@ -396,15 +147,6 @@ namespace SharpGen.Parser
         }
 
         /// <summary>
-        /// Gets the name of the C++ parsed XML file.
-        /// </summary>
-        /// <value>The name of the C++ parsed XML file.</value>
-        private string GroupFileName
-        {
-            get { return _configRoot.Id + "-out.xml"; }
-        }
-
-        /// <summary>
         /// Gets or sets the GccXml doc.
         /// </summary>
         /// <value>The GccXml doc.</value>
@@ -414,98 +156,54 @@ namespace SharpGen.Parser
         /// Runs this instance.
         /// </summary>
         /// <returns></returns>
-        public CppModule Run()
+        public CppModule Run(CppModule groupSkeleton)
         {
-            // If config is updated, we need to run the
-            if (_isConfigUpdated)
+            _group = groupSkeleton;
+            Logger.Message("Config files changed.");
+
+            const string progressMessage = "Parsing C++ headers starts, please wait...";
+                
+            StreamReader xmlReader = null;
+            try
             {
-                Logger.Message("Config files changed.");
 
-                const string progressMessage = "Parsing C++ headers starts, please wait...";
+                Logger.Progress(15, progressMessage);
 
-                Logger.Progress(10, progressMessage);
+                var configRootHeader = Path.Combine(OutputPath, _configRoot.Id + ".h");
 
-                StreamReader xmlReader = null;
-                try
+                xmlReader = _gccxml.Process(configRootHeader);
+                if (xmlReader != null)
                 {
-                    // TODO Rebuild group
-
-                    var macroManager = new MacroManager(_gccxml);
-                    macroManager.Parse(_configRootHeader, _group);
-
-                    // Dump includes
-                    foreach (var configFile in _configRoot.ConfigFilesLoaded)
-                    {
-                        // Dump Create from macros
-                        if (_filesWithCreateFromMacros.Contains(configFile.Id) && configFile.IsConfigUpdated)
-                        {
-                            using (var extension = File.OpenWrite(Path.Combine(OutputPath, configFile.ExtensionFileName)))
-                            using (var extensionWriter = new StreamWriter(extension))
-                            {
-                                foreach (var typeBaseRule in configFile.Extension)
-                                {
-                                    if (CheckIfRuleIsCreatingHeadersExtension(typeBaseRule))
-                                        extensionWriter.Write(CreateCppFromMacro(typeBaseRule));
-                                    else if (typeBaseRule is ContextRule)
-                                        HandleContextRule(configFile, (ContextRule)typeBaseRule);
-                                }
-                            }
-                        }
-                    }
-
-                    Logger.Progress(15, progressMessage);
-
-                    xmlReader = _gccxml.Process(_configRootHeader);
-                    if (xmlReader != null)
-                    {
-                        Parse(xmlReader);
-
-                        // If doc must be generated
-                        if (IsGeneratingDoc)
-                            ApplyDocumentation();
-                    }
-
-                    Logger.Progress(30, progressMessage);
-
-                    // Save back the C++ parsed includes
-                    _group.Write(Path.Combine(OutputPath, GroupFileName));
+                    Parse(xmlReader);
                 }
-                catch (Exception ex)
-                {
-                    Logger.Error("Unexpected error", ex);
-                }
-                finally
-                {
-                   xmlReader?.Dispose();
 
-                    // Write back GCCXML document on the disk
-                    using (var stream = File.OpenWrite(Path.Combine(OutputPath, GccXmlFileName)))
-                    {
-                        GccXmlDoc?.Save(stream);
-                    }
-                    Logger.Message("Parsing headers is finished.");
-                }
+                Logger.Progress(30, progressMessage);
             }
-            else
+            catch (Exception ex)
             {
-                Logger.Progress(10, "Config files unchanged. Read previous C++ parsing...");
-                _group = CppModule.Read(Path.Combine(OutputPath, GroupFileName));
+                Logger.Error("Unexpected error", ex);
+            }
+            finally
+            {
+                xmlReader?.Dispose();
+
+                // Write back GCCXML document on the disk
+                using (var stream = File.OpenWrite(Path.Combine(OutputPath, GccXmlFileName)))
+                {
+                    GccXmlDoc?.Save(stream);
+                }
+                Logger.Message("Parsing headers is finished.");
             }
 
-            IncludeMacroCounts = new Dictionary<string, int>();
 
-            // Load all defines and store them in the config file to allow dynamic variable substitution
+            // Track number of included macros for statistics
             foreach (var cppInclude in _group.Includes)
             {
                 IncludeMacroCounts.TryGetValue(cppInclude.Name, out int count);
-
                 foreach (var cppDefine in cppInclude.Macros)
                 {
-                    _configRoot.DynamicVariables.Remove(cppDefine.Name);
-                    _configRoot.DynamicVariables.Add(cppDefine.Name, cppDefine.Value);
                     count ++;
                 }
-
                 IncludeMacroCounts[cppInclude.Name] = count;
             }
 
@@ -514,15 +212,14 @@ namespace SharpGen.Parser
 
             return _group;
         }
-
-        private Dictionary<string, int> IncludeMacroCounts { get; set; }
+        
+        private Dictionary<string, int> IncludeMacroCounts { get; } = new Dictionary<string, int>();
 
         /// <summary>
         /// Prints the statistics.
         /// </summary>
         public void PrintStatistics()
         {
-
             var keys = IncludeMacroCounts.Keys.ToList();
             keys.Sort(StringComparer.CurrentCultureIgnoreCase);
 
@@ -532,103 +229,6 @@ namespace SharpGen.Parser
                 Logger.Message("\t{0}\t{1}", key, IncludeMacroCounts[key]);
             }
             Logger.Message("\n");
-        }
-
-        /// <summary>
-        /// Handles the context rule.
-        /// </summary>
-        /// <param name="file">The file.</param>
-        /// <param name="contextRule">The context rule.</param>
-        private void HandleContextRule(ConfigFile file, ContextRule contextRule)
-        {
-            if (contextRule is ClearContextRule)
-                _group.ClearContextFind();
-            else
-            {
-                var contextIds = new List<string>();
-
-                if (!string.IsNullOrEmpty(contextRule.ContextSetId))
-                {
-                    var contextSet = file.FindContextSetById(contextRule.ContextSetId);
-                    if (contextSet != null)
-                        contextIds.AddRange(contextSet.Contexts);
-                }
-                contextIds.AddRange(contextRule.Ids);
-
-                _group.AddContextRangeFind(contextIds);
-            }
-        }
-
-        /// <summary>
-        /// Creates a C++ declaration from a macro rule.
-        /// </summary>
-        /// <param name="rule">The macro rule.</param>
-        /// <returns>A C++ declaration string</returns>
-        private string CreateCppFromMacro(ConfigBaseRule rule)
-        {
-            if (rule is CreateCppExtensionRule)
-            {
-                return CreateEnumFromMacro((CreateCppExtensionRule) rule);
-            }
-
-            if (rule is ConstantRule)
-            {
-                return CreateVariableFromMacro((ConstantRule) rule);
-            }
-            return "";
-        }
-
-        /// <summary>
-        /// Creates a C++ enum declaration from a macro rule.
-        /// </summary>
-        /// <param name="createCpp">The macro rule.</param>
-        /// <returns>A C++ enum declaration string</returns>
-        private string CreateEnumFromMacro(CreateCppExtensionRule createCpp)
-        {
-            var cppEnumText = new StringBuilder();
-
-            cppEnumText.AppendLine("// Enum created from: " + createCpp);
-            cppEnumText.AppendLine("enum " + createCpp.Enum + " {");
-
-            foreach (CppDefine macroDef in _group.Find<CppDefine>(createCpp.Macro))
-            {
-                var macroName = macroDef.Name + EndTagCustomEnumItem;
-
-                // Only add the macro once (could have multiple identical macro in different includes)
-                if (!_variableMacrosDefined.ContainsKey(macroName))
-                {
-                    cppEnumText.AppendFormat("\t {0} = {1},\n", macroName, macroDef.Value);
-                    _variableMacrosDefined.Add(macroName, macroDef.Value);
-                }
-            }
-            cppEnumText.AppendLine("};");
-
-            return cppEnumText.ToString();
-        }
-
-        /// <summary>
-        /// Creates a C++ variable declaration from a macro rule.
-        /// </summary>
-        /// <param name="cstRule">The macro rule.</param>
-        /// <returns>A C++ variable declaration string</returns>
-        private string CreateVariableFromMacro(ConstantRule cstRule)
-        {
-            var builder = new StringBuilder();
-
-            builder.AppendLine("// Variable created from: " + cstRule);
-
-            foreach (CppDefine macroDef in _group.Find<CppDefine>(cstRule.Macro))
-            {
-                var macroName = macroDef.Name + EndTagCustomVariable;
-
-                // Only add the macro once (could have multiple identical macro in different includes)
-                if (!_variableMacrosDefined.ContainsKey(macroName))
-                {
-                    builder.AppendFormat("extern \"C\" {0} {1} = {3}{2};\n", cstRule.CppType ?? cstRule.Type, macroName, macroDef.Name, cstRule.CppCast ?? "");
-                    _variableMacrosDefined.Add(macroName, macroDef.Name);
-                }
-            }
-            return builder.ToString();
         }
 
         /// <summary>
@@ -693,8 +293,7 @@ namespace SharpGen.Parser
                     _mapIdToXElement[id].Add(xElement);
                 }
             }
-
-            // AttachToFile(doc);
+            
             ParseAllElements();
         }
 
@@ -941,18 +540,7 @@ namespace SharpGen.Parser
 
                 if (string.IsNullOrEmpty(cppInterface.ParentName))
                     cppInterface.ParentName = cppInterfaceBase.Name;
-
-                // If interface is binded, then check that the bind is a valid interface and not a ComObject or System.IntPtr
-                if (_bindings.TryGetValue(baseTypeName, out string bindedValueTo))
-                {
-                    if (baseTypeName != "IUnknown" && baseTypeName != "IDispatch" && (
-                            bindedValueTo == globalNamespace.GetTypeName("ComObject")
-                            || bindedValueTo == "System.IntPtr"))
-                    {
-                        Logger.Error("Error binding interface type [{0}] defined in file [{1}]. Interface is inherited and binded to [{2}] and not valid for inheritance", baseTypeName, baseTypeFile, bindedValueTo);
-                    }
-                }
-
+                
                 offsetMethod += cppInterfaceBase.TotalMethodCount;
             }
 
@@ -1196,8 +784,8 @@ namespace SharpGen.Parser
             foreach (var xEnumItems in xElement.Elements())
             {
                 var enumItemName = xEnumItems.AttributeValue("name");
-                if (enumItemName.EndsWith(EndTagCustomEnumItem))
-                    enumItemName = enumItemName.Substring(0, enumItemName.Length - EndTagCustomEnumItem.Length);
+                if (enumItemName.EndsWith(CppExtensionHeaderGenerator.EndTagCustomEnumItem))
+                    enumItemName = enumItemName.Substring(0, enumItemName.Length - CppExtensionHeaderGenerator.EndTagCustomEnumItem.Length);
 
                 cppEnum.Add(new CppEnumItem(enumItemName, xEnumItems.AttributeValue("init")));
 
@@ -1213,8 +801,8 @@ namespace SharpGen.Parser
         private CppElement ParseVariable(XElement xElement)
         {
             var name = xElement.AttributeValue("name");
-            if (name.EndsWith(EndTagCustomVariable))
-                name = name.Substring(0, name.Length - EndTagCustomVariable.Length);
+            if (name.EndsWith(CppExtensionHeaderGenerator.EndTagCustomVariable))
+                name = name.Substring(0, name.Length - CppExtensionHeaderGenerator.EndTagCustomVariable.Length);
 
             var cppType = new CppType();
             ResolveAndFillType(xElement.AttributeValue("type"), cppType);
@@ -1290,7 +878,7 @@ namespace SharpGen.Parser
                 var includeId = GetIncludeIdFromFileId(includeGccXmlId);
 
                 // Process only files listed inside the config files
-                if (!_includeToProcess.ContainsKey(includeId))
+                if (!_includeToProcess.Contains(includeId))
                     continue;
 
                 // Process only files attached (fully or partially) to an assembly/namespace
@@ -1318,7 +906,7 @@ namespace SharpGen.Parser
                     if (xElement.AttributeValue("incomplete") != null)
                         continue;
 
-                    var name = xElement.Name.LocalName;
+                    var castXmlTag = xElement.Name.LocalName;
 
                     var elementName = xElement.AttributeValue("name");
 
@@ -1328,11 +916,11 @@ namespace SharpGen.Parser
                         continue;
 
                     // Ignore CastXML built-in functions
-                    if (isIncludeFullyAttached && elementName.StartsWith("__builtin"))
+                    if (elementName.StartsWith("__builtin"))
                         continue;
 
                     CppElement cppElement = null;
-                    switch (name)
+                    switch (castXmlTag)
                     {
                         case CastXml.TagEnumeration:
                             cppElement = ParseEnum(xElement);
@@ -1374,7 +962,7 @@ namespace SharpGen.Parser
         {
             var fileId = type.AttributeValue("file");
             if (fileId != null)
-                return _includeToProcess.ContainsKey(GetIncludeIdFromFileId(fileId));
+                return _includeToProcess.Contains(GetIncludeIdFromFileId(fileId));
             return false;
         }
 
@@ -1561,200 +1149,6 @@ namespace SharpGen.Parser
                 return "";
             }
             return Path.GetFileNameWithoutExtension(filePath);
-        }
-
-        /// <summary>
-        /// Apply documentation from an external provider. This is optional.
-        /// </summary>
-        private void ApplyDocumentation()
-        {
-            // Use default MSDN doc provider
-            IDocProvider docProvider = new MsdnProvider(Logger);
-
-            // Try to load doc provider from an external assembly
-            if (DocProviderAssembly != null)
-            {
-                try
-                {
-#if NETSTANDARD1_5
-                    var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(DocProviderAssembly);
-#else
-                    var assembly = Assembly.LoadFrom(DocProviderAssembly);
-#endif
-
-                    foreach (var type in assembly.GetTypes())
-                    {
-                        if (typeof(IDocProvider).GetTypeInfo().IsAssignableFrom(type))
-                        {
-                            docProvider = (IDocProvider)Activator.CreateInstance(type);
-                            break;
-                        }
-                    }
-                }
-                catch (Exception)
-                {
-                    Logger.Warning("Warning, Unable to locate/load DocProvider Assembly.");
-                    Logger.Warning("Warning, DocProvider was not found from assembly [{0}]", DocProviderAssembly);
-                }
-            }
-
-            Logger.Progress(20, "Applying C++ documentation");
-
-            docProvider.Begin();
-
-            foreach (CppInclude cppInclude in _group.Includes)
-            {
-                foreach (CppEnum cppEnum in cppInclude.Enums)
-                {
-                    DocItem docItem = docProvider.FindDocumentation(cppEnum.Name);
-                    cppEnum.Id = docItem.Id;
-                    cppEnum.Description = docItem.Description;
-                    cppEnum.Remarks = docItem.Remarks;
-
-                    if (cppEnum.IsEmpty)
-                        continue;
-
-                    var count = Math.Min(cppEnum.Items.Count, docItem.Items.Count);
-                    var i = 0;
-                    foreach (CppEnumItem cppEnumItem in cppEnum.EnumItems)
-                    {
-                        cppEnumItem.Id = docItem.Id;
-
-                        // Try to find the matching item
-                        var foundMatch = false;
-                        foreach (var subItem in docItem.Items)
-                        {
-                            if (Utilities.ContainsCppIdentifier(subItem.Term, cppEnumItem.Name))
-                            {
-                                cppEnumItem.Description = subItem.Description;
-                                foundMatch = true;
-                                break;
-                            }
-                        }
-                        if (!foundMatch && i < count)
-                            cppEnumItem.Description = docItem.Items[i].Description;
-                        i++;
-                    }
-                }
-
-                foreach (CppStruct cppStruct in cppInclude.Structs)
-                {
-                    DocItem docItem = docProvider.FindDocumentation(cppStruct.Name);
-                    cppStruct.Id = docItem.Id;
-                    cppStruct.Description = docItem.Description;
-                    cppStruct.Remarks = docItem.Remarks;
-
-                    if (cppStruct.IsEmpty)
-                        continue;
-
-                    if(cppStruct.Items.Count != docItem.Items.Count)
-                    {
-                        //Logger.Warning("Invalid number of fields in documentation for Struct {0}", cppStruct.Name);
-                    }
-                    var count = Math.Min(cppStruct.Items.Count, docItem.Items.Count);
-                    var i = 0;
-                    foreach (CppField cppField in cppStruct.Fields)
-                    {
-                        cppField.Id = docItem.Id;
-
-                        // Try to find the matching item
-                        var foundMatch = false;
-                        foreach (var subItem in docItem.Items)
-                        {
-                            if (Utilities.ContainsCppIdentifier(subItem.Term, cppField.Name))
-                            {
-                                cppField.Description = subItem.Description;
-                                foundMatch = true;
-                                break;
-                            }
-                        }
-                        if (!foundMatch && i < count)
-                            cppField.Description = docItem.Items[i].Description;
-                        i++;
-                    }
-                }
-
-                foreach (CppInterface cppInterface in cppInclude.Interfaces)
-                {
-                    DocItem docItem = docProvider.FindDocumentation(cppInterface.Name);
-                    cppInterface.Id = docItem.Id;
-                    cppInterface.Description = docItem.Description;
-                    cppInterface.Remarks = docItem.Remarks;
-
-                    if (cppInterface.IsEmpty)
-                        continue;
-
-                    foreach (CppMethod cppMethod in cppInterface.Methods)
-                    {
-                        var methodName = cppInterface.Name + "::" + cppMethod.Name;
-                        DocItem methodDocItem = docProvider.FindDocumentation(methodName);
-                        cppMethod.Id = methodDocItem.Id;
-                        cppMethod.Description = methodDocItem.Description;
-                        cppMethod.Remarks = methodDocItem.Remarks;
-                        cppMethod.ReturnType.Description = methodDocItem.Return;
-
-                        if (cppMethod.IsEmpty)
-                            continue;
-
-                        var count = Math.Min(cppMethod.Items.Count, methodDocItem.Items.Count);
-                        var i = 0;
-                        foreach (CppParameter cppParameter in cppMethod.Parameters)
-                        {
-                            cppParameter.Id = methodDocItem.Id;
-
-                            // Try to find the matching item
-                            var foundMatch = false;
-                            foreach (var subItem in methodDocItem.Items)
-                            {
-                                if (Utilities.ContainsCppIdentifier(subItem.Term, cppParameter.Name))
-                                {
-                                    cppParameter.Description = subItem.Description;
-                                    foundMatch = true;
-                                    break;
-                                }
-                            }
-                            if (!foundMatch && i < count)
-                                cppParameter.Description = methodDocItem.Items[i].Description;
-                            i++;
-                        }
-                    }
-                }
-
-                foreach (CppFunction cppFunction in cppInclude.Functions)
-                {
-                    DocItem docItem = docProvider.FindDocumentation(cppFunction.Name);
-                    cppFunction.Id = docItem.Id;
-                    cppFunction.Description = docItem.Description;
-                    cppFunction.Remarks = docItem.Remarks;
-                    cppFunction.ReturnType.Description = docItem.Return;
-
-                    if (cppFunction.IsEmpty)
-                        continue;
-
-                    var count = Math.Min(cppFunction.Items.Count, docItem.Items.Count);
-                    var i = 0;
-                    foreach (CppParameter cppParameter in cppFunction.Parameters)
-                    {
-                        cppParameter.Id = docItem.Id;
-
-                        // Try to find the matching item
-                        var foundMatch = false;
-                        foreach (var subItem in docItem.Items)
-                        {
-                            if (Utilities.ContainsCppIdentifier(subItem.Term, cppParameter.Name))
-                            {
-                                cppParameter.Description = subItem.Description;
-                                foundMatch = true;
-                                break;
-                            }
-                        }
-                        if (!foundMatch && i < count)
-                            cppParameter.Description = docItem.Items[i].Description;
-                        i++;
-                    }
-                }
-            }
-            docProvider.End();
         }
     }
 }

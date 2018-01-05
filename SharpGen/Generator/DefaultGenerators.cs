@@ -11,7 +11,7 @@ namespace SharpGen.Generator
     {
         public DefaultGenerators(
             GlobalNamespaceProvider globalNamespace,
-            IDocumentationAggregator documentation)
+            IDocumentationLinker documentation)
         {
             Constant = new ConstantCodeGenerator();
             Property = new PropertyCodeGenerator(this, documentation);

@@ -19,7 +19,10 @@
 // THE SOFTWARE.
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
+using System.Runtime.Serialization;
+using System.Xml.Serialization;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Generator;
@@ -27,11 +30,29 @@ using SharpGen.Transform;
 
 namespace SharpGen.Model
 {
+    [DataContract]
     public class CsMethod : CsBase
     {
+        public override CppElement CppElement
+        {
+            get => base.CppElement;
+            set
+            {
+                base.CppElement = value;
+                CppSignature = CppElement.ToString();
+                ShortName = CppElement.ToShortString();
+                CallingConvention = GetCallingConvention((CppMethod)value);
+            }
+        }
+
         protected virtual int MaxSizeReturnParameter
         {
             get { return 4; }
+        }
+
+        public CsMethod()
+        {
+
         }
 
         public CsMethod(CppMethod cppMethod)
@@ -49,44 +70,32 @@ namespace SharpGen.Model
         {
             get
             {
-                return Items.Cast<CsParameter>().Where(param => !param.IsUsedAsReturnType);
+                return Items.OfType<CsParameter>().Where(param => !param.IsUsedAsReturnType);
             }
         }
 
+        [DataMember]
         public bool Hidden { get; set; }
 
-        public int ParameterCount
-        {
-            get { return Parameters.Count; }
-        }
+        [DataMember]
+        public string CallingConvention { get; set; }
 
-        public int PublicParameterCount
+        private static string GetCallingConvention(CppMethod method)
         {
-            get
+            switch (method.CallingConvention)
             {
-                return PublicParameters.Count();
+                case CppCallingConvention.StdCall:
+                    return "StdCall";
+                case CppCallingConvention.CDecl:
+                    return "Cdecl";
+                case CppCallingConvention.ThisCall:
+                    return "ThisCall";
+                default:
+                    return "WinApi";
             }
         }
 
-        public string CallingConvention
-        {
-            get
-            {
-                switch (((CppMethod)CppElement).CallingConvention)
-                {
-                    case CppCallingConvention.StdCall:
-                        return "StdCall";
-                    case CppCallingConvention.CDecl:
-                        return "Cdecl";
-                    case CppCallingConvention.ThisCall:
-                        return "ThisCall";
-                }
-                // By default
-                return "StdCall";
-            }
-        }
-
-        public override void FillDocItems(IList<string> docItems, IDocumentationAggregator manager)
+        public override void FillDocItems(IList<string> docItems, IDocumentationLinker manager)
         {
             foreach (var param in PublicParameters)
                 docItems.Add("<param name=\"" + param.Name + "\">" + manager.GetSingleDoc(param) + "</param>");
@@ -134,37 +143,34 @@ namespace SharpGen.Model
                 RequestRawPtr = tag.RawPtr.Value;
         }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether [use DLL import].
-        /// </summary>
-        /// <value>
-        ///   <c>true</c> if [use DLL import]; otherwise, <c>false</c>.
-        /// </value>
-        /// <remarks>Only used by function</remarks>
-        public bool UseDllImport { get; set; }
-
+        [DataMember]
         public bool AllowProperty { get; set; }
 
+        [DataMember]
         public bool CustomVtbl { get; set; }
 
+        [DataMember]
         public bool IsPersistent { get; set; }
 
+        [DataMember]
         public bool RequestRawPtr { get; set; }
 
+        [DataMember]
         public int Offset { get; set; }
 
+        [DataMember]
         public InteropMethodSignature Interop { get; set; }
 
+        private string _cppSignature;
+
+        [DataMember]
         public string CppSignature
         {
             get
             {
-                if (CppElement != null)
-                {
-                    return CppElement.ToString();
-                }
-                return "Unknown";
+                return _cppSignature ?? "Unknown";
             }
+            set => _cppSignature = value;
         }
 
         public override string DocUnmanagedName
@@ -172,21 +178,24 @@ namespace SharpGen.Model
             get { return CppSignature; }
         }
 
+        [DataMember]
+        public string ShortName { get; set; }
+
         public override string DocUnmanagedShortName
         {
-            get
-            {
-                if (CppElement != null) return CppElement.ToShortString();
-                return null;
-            }
+            get => ShortName;
         }
 
+        [DataMember]
         public bool CheckReturnType { get; set; }
 
+        [DataMember]
         public bool ForceReturnType { get; set; }
 
+        [DataMember]
         public bool HideReturnType { get; set; }
 
+        [DataMember]
         public bool AlwaysReturnHResult { get; set; }
 
         public bool HasReturnType
@@ -208,51 +217,7 @@ namespace SharpGen.Model
             }
         }
 
-
-        public string ReturnTypeForFunction
-        {
-            get
-            {
-                if (ReturnType.PublicType is CsInterface)
-                    return "IntPtr";
-                if (ReturnType.PublicType.Type != null && ReturnType.PublicType.Type == typeof(bool))
-                    return "int";
-                return ReturnType.PublicType.QualifiedName;
-            }
-        }
-        
-        public string CastStart
-        {
-            get
-            {
-                if (ReturnType.PublicType.Type != null && ReturnType.PublicType.Type == typeof (bool))
-                    return "(0!=";
-                if (ReturnType.PublicType is CsInterface)
-                    return "new " + ReturnType.PublicType.QualifiedName + "((IntPtr)";
-                if (ReturnType.PublicType.Type == typeof(string))
-                {
-                    if (ReturnType.IsWideChar)
-                        return "Marshal.PtrToStringUni(";
-                    return "Marshal.PtrToStringAnsi(";
-                }
-                return "";
-            }
-        }
-
-        public string CastEnd
-        {
-            get
-            {
-                if (ReturnType.PublicType.Type != null && ReturnType.PublicType.Type == typeof (bool))
-                    return ")";
-                if (ReturnType.PublicType is CsInterface)
-                    return ")";
-                if (ReturnType.PublicType.Type == typeof(string))
-                    return ")";
-                return "";
-            }
-        }
-
+        [DataMember]
         public CsMarshalBase ReturnType { get; set; }
 
 
@@ -292,7 +257,7 @@ namespace SharpGen.Model
         /// <summary>
         /// Returns the documentation for the return type
         /// </summary>
-        public string GetReturnTypeDoc(IDocumentationAggregator manager)
+        public string GetReturnTypeDoc(IDocumentationLinker manager)
         {
             foreach (var param in Parameters)
             {
@@ -326,7 +291,7 @@ namespace SharpGen.Model
 
             // Clear cached parameters
             method._parameters = null;
-            method.ClearItems();
+            method.ResetItems();
             foreach (var parameter in Parameters)
                 method.Add((CsParameter) parameter.Clone());
             method.Parent = null;

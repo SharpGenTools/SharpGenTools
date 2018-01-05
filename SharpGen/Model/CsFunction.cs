@@ -20,14 +20,21 @@
 
 using SharpGen.Config;
 using SharpGen.CppModel;
+using System.Runtime.Serialization;
+using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
+    [DataContract(Name = "Function")]
     public class CsFunction : CsMethod
     {
+        public CsFunction()
+        {
+
+        }
+
         public CsFunction(CppFunction cppMethod) : base(cppMethod)
         {
-            UseDllImport = true;
         }
 
         protected override int MaxSizeReturnParameter
@@ -42,7 +49,8 @@ namespace SharpGen.Model
         {
             base.UpdateFromTag(tag);
         }
-
+        
+        [DataMember]
         public string DllName { get; set; }
     }
 }

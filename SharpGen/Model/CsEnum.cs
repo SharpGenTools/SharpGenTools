@@ -19,12 +19,13 @@
 // THE SOFTWARE.
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Xml.Serialization;
 using SharpGen.Config;
 
 namespace SharpGen.Model
 {
-    [XmlType("enum")]
+    [DataContract(Name = "Enum")]
     public class CsEnum : CsTypeBase
     {
         public CsEnum()
@@ -33,6 +34,7 @@ namespace SharpGen.Model
             SizeOf = 4;
         }
 
+        [DataMember]
         public bool IsFlag { get; set; }
 
         public string TypeName

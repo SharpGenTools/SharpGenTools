@@ -21,6 +21,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Xml.Serialization;
 using SharpGen.Config;
 using SharpGen.CppModel;
@@ -30,7 +31,7 @@ namespace SharpGen.Model
     /// <summary>
     ///   A structElement that maps to a native struct
     /// </summary>
-    [XmlType("struct")]
+    [DataContract(Name = "Struct")]
     public class CsStruct : CsTypeBase
     {
         public CsStruct()
@@ -66,21 +67,36 @@ namespace SharpGen.Model
         }
 
         /// <summary>
+        /// Gets the variables stored in this container.
+        /// </summary>
+        /// <value>The variables.</value>
+        public IEnumerable<CsVariable> Variables
+        {
+            get { return Items.OfType<CsVariable>(); }
+        }
+
+        /// <summary>
         ///   True if this structure is using an explicit layout else it's a sequential structure
         /// </summary>
+        [DataMember]
         public bool ExplicitLayout { get; set; }
 
         /// <summary>
         ///   True if this struct needs an internal marshal type
         /// </summary>
+        [DataMember]
         public bool HasMarshalType { get; set; }
 
+        [DataMember]
         public bool HasCustomMarshal { get; set; }
 
+        [DataMember]
         public bool IsStaticMarshal { get; set; }
 
+        [DataMember]
         public bool GenerateAsClass { get; set; }
 
+        [DataMember]
         public bool HasCustomNew { get; set; }
 
         public string GetConstructor()
@@ -88,14 +104,7 @@ namespace SharpGen.Model
             return string.Format(HasCustomNew ? "{0}.__NewNative()" : "new {0}.__Native()", QualifiedName);
         }
 
-        public string StructTypeName
-        {
-            get
-            {
-                return GenerateAsClass ? "class" : "struct";
-            }
-        }
-
+        [DataMember]
         public bool IsOut { get; set; }
 
         /// <summary>

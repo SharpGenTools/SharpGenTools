@@ -12,21 +12,6 @@ namespace SharpGen.Transform
 {
     public class AssemblyManager
     {
-        private readonly Logger logger;
-
-        public AssemblyManager(
-            Logger logger,
-            bool includeAssemblyNameFolder,
-            string rootDirectory)
-        {
-            IncludeAssemblyNameFolder = includeAssemblyNameFolder;
-            RootDirectory = rootDirectory;
-            this.logger = logger;
-        }
-
-        public bool IncludeAssemblyNameFolder { get; }
-        public string RootDirectory { get; }
-
         private List<CsAssembly> assemblies = new List<CsAssembly>();
         /// <summary>
         /// Gets assembly list that are processed.
@@ -45,7 +30,6 @@ namespace SharpGen.Transform
             if (selectedAssembly == null)
             {
                 selectedAssembly = new CsAssembly(assemblyName);
-                selectedAssembly.RootDirectory = IncludeAssemblyNameFolder ? Path.Combine(RootDirectory, selectedAssembly.Name) : RootDirectory;
                 assemblies.Add(selectedAssembly);
             }
 
@@ -67,7 +51,7 @@ namespace SharpGen.Transform
             var selectedCsNamespace = selectedAssembly.Namespaces.FirstOrDefault(nameSpaceObject => nameSpaceObject.Name == namespaceName);
             if (selectedCsNamespace == null)
             {
-                selectedCsNamespace = new CsNamespace(selectedAssembly, namespaceName);
+                selectedCsNamespace = new CsNamespace(namespaceName);
                 selectedAssembly.Add(selectedCsNamespace);
             }
             return selectedCsNamespace;

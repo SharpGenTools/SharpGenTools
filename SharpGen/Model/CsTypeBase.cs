@@ -19,9 +19,12 @@
 // THE SOFTWARE.
 using System;
 using System.Reflection;
+using System.Runtime.Serialization;
+using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
+    [DataContract]
     public class CsTypeBase : CsBase
     {
         /// <summary>
@@ -29,8 +32,22 @@ namespace SharpGen.Model
         /// </summary>
         public Type Type { get; set; }
 
-        public bool IsReference { get; set; }
-
+        [DataMember]
+        public string BuiltinTypeName
+        {
+            get
+            {
+                return Type?.FullName;
+            }
+            set
+            {
+                if (value != null)
+                {
+                    Type = Type.GetType(value); 
+                }
+            }
+        }
+        
         public bool IsPointer
         {
             get { return Type == typeof (IntPtr); }
@@ -71,17 +88,5 @@ namespace SharpGen.Model
             // throws an exception?
             return 4;
         }
-
-        private CsAssembly _assembly;
-        public CsAssembly Assembly
-        {
-            get
-            {
-                if (_assembly == null)
-                    _assembly = GetParent<CsAssembly>();
-                return _assembly;
-            }
-        }
-
     }
 }

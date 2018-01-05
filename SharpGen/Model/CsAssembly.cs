@@ -25,16 +25,24 @@ using System.Linq;
 using System.Xml;
 using SharpGen.Logging;
 using SharpGen.Config;
+using System.Xml.Serialization;
+using System.Runtime.Serialization;
 
 namespace SharpGen.Model
 {
     /// <summary>
     /// An assembly container for namespaces.
     /// </summary>
+    [DataContract(Name = "Assembly")]
     public class CsAssembly : CsBase
     {
-        private XmlDocument _codeComments;
         private List<ConfigFile> _configFilesLinked;
+
+        public CsAssembly()
+        {
+            Interop = new InteropManager();
+            _configFilesLinked = new List<ConfigFile>();
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CsAssembly"/> class.
@@ -42,18 +50,10 @@ namespace SharpGen.Model
         /// <param name="assemblyName">Name of the assembly.</param>
         /// <param name="appType">The application type this assembly is generated for. (Used for the check file)</param>
         public CsAssembly(string assemblyName)
+            :this()
         {
             Name = assemblyName;
-            Interop = new InteropManager();
-            _configFilesLinked = new List<ConfigFile>();
-            IsToUpdate = false;
         }
-
-        /// <summary>
-        /// Gets or sets the root directory of this assembly project.
-        /// </summary>
-        /// <value>The root directory.</value>
-        public string RootDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether this instance is to update.
@@ -61,13 +61,9 @@ namespace SharpGen.Model
         /// <value>
         /// 	<c>true</c> if this instance is to update; otherwise, <c>false</c>.
         /// </value>
-        public bool IsToUpdate { get; set; }
-
-        /// <summary>
-        /// Path to the CodeComments file
-        /// </summary>
-        public const string CodeCommentsPath = @"Documentation\CodeComments.xml";
-
+        [DataMember]
+        public bool NeedsToBeUpdated { get; set; }
+        
         /// <summary>
         /// Gets config files linked to this assembly
         /// </summary>
@@ -97,35 +93,6 @@ namespace SharpGen.Model
         }
 
         /// <summary>
-        /// Gets the CodeComments XML document associated with this assembly.
-        /// </summary>
-        /// <value>The code comments.</value>
-        public XmlDocument CodeComments
-        {
-            get
-            {
-                if (_codeComments == null)
-                {
-                    _codeComments = new XmlDocument();
-                    string codeCommentsFullPath = Path.Combine(RootDirectory, CodeCommentsPath);
-
-                    try
-                    {
-                        using (var commentsFile = File.OpenRead(codeCommentsFullPath))
-                        {
-                            _codeComments.Load(commentsFile); 
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        // Failed to lode comments. Just swallow the exception.
-                    }
-                }
-                return _codeComments;
-            }
-        }
-
-        /// <summary>
         /// Gets the namespaces.
         /// </summary>
         /// <value>The namespaces.</value>
@@ -138,10 +105,7 @@ namespace SharpGen.Model
         /// Gets or sets the interop associated with this AssemblyContainer.
         /// </summary>
         /// <value>The interop.</value>
-        public InteropManager Interop
-        {
-            get;
-            private set;
-        }
+        [DataMember]
+        public InteropManager Interop { get; set; }
     }
 }

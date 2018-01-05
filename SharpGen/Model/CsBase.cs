@@ -30,6 +30,9 @@ using SharpGen.CppModel;
 using SharpGen.Generator;
 using System.Diagnostics;
 using SharpGen.Transform;
+using System.Xml.Serialization;
+using System.Collections.Specialized;
+using System.Runtime.Serialization;
 
 namespace SharpGen.Model
 {
@@ -37,9 +40,10 @@ namespace SharpGen.Model
     /// Root class for all model elements.
     /// </summary>
     [DebuggerDisplay("Name: {Name}")]
+    [DataContract]
     public class CsBase
     {
-        private List<CsBase> _items;
+        private ObservableCollection<CsBase> _items;
         private CppElement _cppElement;
         private string _cppElementName;
 
@@ -48,24 +52,37 @@ namespace SharpGen.Model
         /// </summary>
         public CsBase()
         {
-            _items = new List<CsBase>();
             Visibility = Visibility.Public;
             IsFullyMapped = true;
             Description = "No documentation.";
             Remarks = "";
         }
 
+        private void ItemsChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems.OfType<CsBase>())
+                {
+                    item.Parent = this;
+                } 
+            }
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems.OfType<CsBase>())
+                {
+                    item.Parent = null;
+                } 
+            }
+        }
+
         /// <summary>
         /// Gets or sets the parent of this container.
         /// </summary>
         /// <value>The parent.</value>
+        [DataMember]
         public CsBase Parent { get; set; }
-
-        protected void ClearItems()
-        {
-            _items = new List<CsBase>();
-        }
-
+        
         /// <summary>
         /// Gets the parent of a specified type. This method goes back
         /// to all parent and returns the first parent of the type T or null if no parent were found.
@@ -74,7 +91,7 @@ namespace SharpGen.Model
         /// <returns>a valid reference to the parent T or null if no parent of this type</returns>
         public T GetParent<T>() where T : CsBase
         {
-            CsBase parent = Parent;
+            var parent = Parent;
             while (parent != null && !(parent is T))
                 parent = parent.Parent;
             return (T) parent;
@@ -84,20 +101,26 @@ namespace SharpGen.Model
         /// Gets items stored in this container.
         /// </summary>
         /// <value>The items.</value>
-        public ReadOnlyCollection<CsBase> Items
+        [DataMember]
+        public ObservableCollection<CsBase> Items
         {
-            get { return _items.AsReadOnly(); }
+            get
+            {
+                if (_items == null)
+                {
+                    _items = new ObservableCollection<CsBase>();
+                    _items.CollectionChanged += ItemsChanged;
+                }
+                return _items;
+            }
         }
 
-        /// <summary>
-        /// Gets the variables stored in this container.
-        /// TODO: move this method in another inherited class.
-        /// </summary>
-        /// <value>The variables.</value>
-        public IEnumerable<CsVariable> Variables
+        protected void ResetItems()
         {
-            get { return Items.OfType<CsVariable>(); }
+            _items = new ObservableCollection<CsBase>();
+            _items.CollectionChanged += ItemsChanged;
         }
+        
 
         /// <summary>
         /// Adds the specified inner container to this container.
@@ -108,8 +131,7 @@ namespace SharpGen.Model
         /// <param name="innerCs">The inner container.</param>
         public void Add(CsBase innerCs)
         {
-            innerCs.Parent = this;
-            _items.Add(innerCs);
+            Items.Add(innerCs);
         }
 
         /// <summary>
@@ -121,28 +143,21 @@ namespace SharpGen.Model
         /// <param name="innerCs">The inner container.</param>
         public void Remove(CsBase innerCs)
         {
-            innerCs.Parent = null;
-            _items.Remove(innerCs);
-        }
-
-        /// <summary>
-        /// Sorts all elements inside this instance
-        /// </summary>
-        public void Sort()
-        {
-            _items.Sort(delegate(CsBase x, CsBase y) { return x.Name.CompareTo(y.Name); });
+            Items.Remove(innerCs);
         }
 
         /// <summary>
         /// Gets or sets the name of this element.
         /// </summary>
         /// <value>The name.</value>
+        [DataMember]
         public string Name { get; set; }
 
         /// <summary>
         /// Gets or sets the <see cref="Visibility"/> of this element. Default is public.
         /// </summary>
         /// <value>The visibility.</value>
+        [DataMember]
         public Visibility Visibility { get; set; }
 
         /// <summary>
@@ -217,7 +232,7 @@ namespace SharpGen.Model
         /// Gets or sets the C++ element associated to this container.
         /// </summary>
         /// <value>The CPP element.</value>
-        public CppElement CppElement
+        public virtual CppElement CppElement
         {
             get { return _cppElement; }
             set
@@ -228,9 +243,7 @@ namespace SharpGen.Model
                     DocId = string.IsNullOrEmpty(CppElement.Id) ? DocId : CppElement.Id;
                     Description = string.IsNullOrEmpty(CppElement.Description) ? Description : CppElement.Description;
                     Remarks = string.IsNullOrEmpty(CppElement.Remarks) ? Remarks : CppElement.Remarks;
-
-                    // Update this container with tag
-                    //if (_cppElement.Tag != null)
+                    
                     UpdateFromTag(_cppElement.GetTagOrDefault<MappingRule>());
                 }
             }
@@ -240,6 +253,7 @@ namespace SharpGen.Model
         /// Gets the name of the C++ element.
         /// </summary>
         /// <value>The name of the C++ element. "None" if no C++ element attached to this container.</value>
+        [DataMember(Name = "CppElement")]
         public string CppElementName
         {
             get
@@ -257,11 +271,13 @@ namespace SharpGen.Model
         /// Gets or sets the sizeof this element.
         /// </summary>
         /// <value>The size of.</value>
+        [DataMember(Name = "Size")]
         public int SizeOf { get; set; }
 
         /// <summary>
         ///   Packing alignment for this structure (Default is 0 => Platform default)
         /// </summary>
+        [DataMember]
         public int Align { get; set; }
 
         /// <summary>
@@ -270,23 +286,24 @@ namespace SharpGen.Model
         /// <value>
         /// The id.
         /// </value>
+        [DataMember]
         public string DocId { get; set; }
 
         /// <summary>
         /// Gets or sets the description documentation.
         /// </summary>
         /// <value>The description.</value>
+        [DataMember]
         public string Description { get; set; }
 
         /// <summary>
         /// Gets or sets the remarks documentation.
         /// </summary>
         /// <value>The remarks.</value>
+        [DataMember]
         public string Remarks { get; set; }
-
-        public bool HasPersistent { get; set; }
-
-        public virtual void FillDocItems(IList<string> docItems, IDocumentationAggregator manager) {}
+        
+        public virtual void FillDocItems(IList<string> docItems, IDocumentationLinker manager) {}
         
         public virtual string DocUnmanagedName
         {
@@ -296,26 +313,6 @@ namespace SharpGen.Model
         public virtual string DocUnmanagedShortName
         {
             get { return CppElementName; }
-        }
-
-        internal string DocIncludeDirective
-        {
-            get
-            {
-                var subDir = GetParent<CsNamespace>().OutputDirectory;
-                string relativePath = string.IsNullOrEmpty(subDir) ? "." : "..";
-                return "<include file='" + relativePath + "\\..\\..\\" + CsAssembly.CodeCommentsPath + "' path=\"" + CodeCommentsXPath + "/*\"/>";
-            }
-        }
-
-        public bool IsCodeCommentsExternal
-        {
-            get { return GetParent<CsAssembly>().CodeComments.SelectSingleNode(CodeCommentsXPath) != null; }
-        }
-
-        private string CodeCommentsXPath
-        {
-            get { return "/comments/comment[@id='" + ((CppElement != null) ? CppElement.FullName : QualifiedName) + "']"; }
         }
 
         /// <summary>
