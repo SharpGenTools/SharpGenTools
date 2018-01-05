@@ -22,7 +22,7 @@ using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
-    [DataContract]
+    [DataContract(Name = "Variable")]
     public class CsVariable : CsTypeBase
     {
         public CsVariable()
@@ -40,8 +40,10 @@ namespace SharpGen.Model
             Visibility = Config.Visibility.Public | Config.Visibility.Static;
         }
 
+        [DataMember]
         public string Value { get; set; }
 
+        [DataMember]
         public string TypeName { get; set; }
     }
 }

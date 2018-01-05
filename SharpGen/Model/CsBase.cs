@@ -40,7 +40,7 @@ namespace SharpGen.Model
     /// Root class for all model elements.
     /// </summary>
     [DebuggerDisplay("Name: {Name}")]
-    [DataContract]
+    [DataContract(Name = "Element")]
     public class CsBase
     {
         private ObservableCollection<CsBase> _items;
