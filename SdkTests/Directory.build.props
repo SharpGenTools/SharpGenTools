@@ -8,7 +8,10 @@
         <SharpGenRoslynCodeGen>true</SharpGenRoslynCodeGen>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="SharpGenTools.Sdk" Version="$(VersionPrefix)-$(VersionSuffix)">
+        <PackageReference Include="SharpGenTools.Sdk" Version="$(VersionPrefix)-$(VersionSuffix)" Condition="'$(APPVEYOR_REPO_TAG_NAME)' == ''">
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="SharpGenTools.Sdk" Version="$(APPVEYOR_REPO_TAG_NAME)" Condition="'$(APPVEYOR_REPO_TAG_NAME)' != ''">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
     </ItemGroup>
