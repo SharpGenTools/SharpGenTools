@@ -15,8 +15,6 @@ namespace SharpGen.E2ETests
         [Fact]
         public void BasicCppEnumMapsToCSharpEnum()
         {
-            var testDirectory = GenerateTestDirectory();
-
             var config = new Config.ConfigFile
             {
                 Assembly = nameof(BasicCppEnumMapsToCSharpEnum),
@@ -109,8 +107,6 @@ namespace SharpGen.E2ETests
         [Fact]
         public void CppScopedEnumMapsToCSharpEnum()
         {
-            var testDirectory = GenerateTestDirectory();
-
             var config = new Config.ConfigFile
             {
                 Assembly = nameof(CppScopedEnumMapsToCSharpEnum),
@@ -142,8 +138,6 @@ namespace SharpGen.E2ETests
         [Fact]
         public void CppEnumWithExplicitValuesMapsToCSharpEnumWithCorrectValue()
         {
-            var testDirectory = GenerateTestDirectory();
-
             var config = new Config.ConfigFile
             {
                 Assembly = nameof(CppEnumWithExplicitValuesMapsToCSharpEnumWithCorrectValue),
@@ -177,8 +171,6 @@ namespace SharpGen.E2ETests
         [Fact(Skip = "CastXML in GCCXml compat mode does not support C++11 and newer features.")]
         public void CppEnumWithDifferentUnderlyingTypeMapsToCSharpEnum()
         {
-            var testDirectory = GenerateTestDirectory();
-
             var config = new Config.ConfigFile
             {
                 Assembly = nameof(CppEnumWithDifferentUnderlyingTypeMapsToCSharpEnum),
