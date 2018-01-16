@@ -220,12 +220,6 @@ namespace SharpGen.CppModel
             GetSafeItems().Add(element);
         }
 
-        public void Add<T>(IEnumerable<T> elements) where T : CppElement
-        {
-            foreach (var cppElement in elements)
-                Add(cppElement);
-        }
-
         /// <summary>
         ///   Remove an inner element to this CppElement
         /// </summary>

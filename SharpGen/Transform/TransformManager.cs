@@ -41,7 +41,7 @@ namespace SharpGen.Transform
     {
         private readonly List<string> _includesToProcess = new List<string>();
 
-        private readonly IDocumentationLinker docAggregator;
+        private readonly IDocumentationLinker docLinker;
         private readonly TypeRegistry typeRegistry;
         private readonly NamespaceRegistry namespaceRegistry;
         private readonly MarshalledElementFactory marshalledElementFactory;
@@ -57,14 +57,14 @@ namespace SharpGen.Transform
             NamingRulesManager namingRules,
             Logger logger,
             TypeRegistry typeRegistry,
-            IDocumentationLinker docAggregator,
+            IDocumentationLinker docLinker,
             ConstantManager constantManager,
             AssemblyManager assemblyManager)
         {
             GlobalNamespace = globalNamespace;
             Logger = logger;
             NamingRules = namingRules;
-            this.docAggregator = docAggregator;
+            this.docLinker = docLinker;
             this.typeRegistry = typeRegistry;
             this.constantManager = constantManager;
             this.assemblyManager = assemblyManager;
@@ -430,7 +430,7 @@ namespace SharpGen.Transform
                     else if (mappingRule.Element != null)
                         cppModule.Tag<CppElement>(mappingRule.Element, mappingRule);
                     else if (mappingRule.DocItem != null)
-                        docAggregator.AddDocLink(mappingRule.DocItem, mappingRule.MappingNameFinal);
+                        docLinker.AddDocLink(mappingRule.DocItem, mappingRule.MappingNameFinal);
                 }
                 else if (configRule is ContextRule contextRule)
                 {
