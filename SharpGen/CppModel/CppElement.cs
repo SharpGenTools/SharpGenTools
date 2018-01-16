@@ -35,6 +35,7 @@ namespace SharpGen.CppModel
         /// <summary>
         ///   Delegate Modifier
         /// </summary>
+        /// <returns>true to remove the element from the model. false otherwise.</returns>
         public delegate bool ProcessModifier(Regex regex, CppElement cppElement);
 
         /// <summary>
