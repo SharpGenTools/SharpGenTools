@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 
 namespace SharpGen.E2ETests
 {
-    public class StructTests : TestBase
+    public class StructTests : E2ETestBase
     {
         public StructTests(ITestOutputHelper outputHelper) : base(outputHelper)
         {

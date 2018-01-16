@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 
 namespace SharpGen.E2ETests
 {
-    public class FunctionTests : TestBase
+    public class FunctionTests : E2ETestBase
     {
         public FunctionTests(ITestOutputHelper outputHelper) : base(outputHelper)
         {
@@ -17,7 +17,6 @@ namespace SharpGen.E2ETests
         [Fact]
         public void SimpleFunctionMapsCorrectly()
         {
-            var testDirectory = GenerateTestDirectory();
             var config = new Config.ConfigFile
             {
                 Namespace = nameof(SimpleFunctionMapsCorrectly),

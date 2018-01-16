@@ -14,22 +14,22 @@ using Xunit.Abstractions;
 
 namespace SharpGen.E2ETests
 {
-    public abstract class TestBase : IDisposable
+    public abstract class E2ETestBase : IDisposable
     {
         private readonly ITestOutputHelper outputHelper;
         private readonly DirectoryInfo testDirectory;
 
-        protected TestBase(ITestOutputHelper outputHelper)
+        protected E2ETestBase(ITestOutputHelper outputHelper)
         {
             this.outputHelper = outputHelper;
             testDirectory = GenerateTestDirectory();
         }
 
-        public (bool success, string output) RunWithConfig(Config.ConfigFile config, [CallerMemberName] string configName = "", bool failTestOnError = true)
+        public (bool success, string output) RunWithConfig(Config.ConfigFile config, [CallerMemberName] string configName = "")
         {
             config.Id = configName;
 
-            var xUnitLogger = new XUnitLogger(outputHelper, failTestOnError);
+            var xUnitLogger = new XUnitLogger(outputHelper);
             var logger = new Logger(xUnitLogger, null);
 
             var codeGenApp = new CodeGenApp(logger)
@@ -48,18 +48,6 @@ namespace SharpGen.E2ETests
         public static void AssertRanSuccessfully(bool success, string output)
         {
             Assert.True(success, output);
-        }
-
-        public void SaveConfigFile(Config.ConfigFile config, string configName)
-        {
-            config.Id = configName;
-
-            var serializer = new XmlSerializer(typeof(Config.ConfigFile));
-
-            using (var configFile = File.Create(Path.Combine(testDirectory.FullName, configName + "-Mapping.xml")))
-            {
-                serializer.Serialize(configFile, config);
-            }
         }
 
         public Config.IncludeRule CreateCppFile(string cppFileName, string cppFile, [CallerMemberName] string testName = "")
@@ -100,7 +88,7 @@ namespace SharpGen.E2ETests
             }
         }
 
-        public static DirectoryInfo GenerateTestDirectory()
+        private static DirectoryInfo GenerateTestDirectory()
         {
             var tempFolder = Path.GetTempPath();
             var testFolderName = Path.GetRandomFileName();

@@ -7,7 +7,7 @@ using Xunit.Abstractions;
 
 namespace SharpGen.E2ETests
 {
-    public class InterfaceTests : TestBase
+    public class InterfaceTests : E2ETestBase
     {
         private const string ComIncludeProlog = @"
     // Use unicode
@@ -45,7 +45,6 @@ namespace SharpGen.E2ETests
         [Fact]
         public void BasicComInterfaceGeneratesCorrectClass()
         {
-            var testDirectory = GenerateTestDirectory();
             var config = new Config.ConfigFile
             {
                 Namespace = nameof(BasicComInterfaceGeneratesCorrectClass),
@@ -93,7 +92,6 @@ namespace SharpGen.E2ETests
         [Fact]
         public void IUnknownMappingGeneratesCorrectClass()
         {
-            var testDirectory = GenerateTestDirectory();
             var config = new Config.ConfigFile
             {
                 Namespace = nameof(IUnknownMappingGeneratesCorrectClass),

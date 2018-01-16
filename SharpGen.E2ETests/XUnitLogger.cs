@@ -10,7 +10,7 @@ namespace SharpGen.E2ETests
         private ITestOutputHelper output;
         private bool failTestOnFatalError;
 
-        public XUnitLogger(ITestOutputHelper output, bool failTestOnFatalError)
+        public XUnitLogger(ITestOutputHelper output, bool failTestOnFatalError = true)
         {
             this.output = output;
             this.failTestOnFatalError = failTestOnFatalError;

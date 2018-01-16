@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 
 namespace SharpGen.E2ETests
 {
-    public class RemoveTests : TestBase
+    public class RemoveTests : E2ETestBase
     {
         public RemoveTests(ITestOutputHelper outputHelper) : base(outputHelper)
         {

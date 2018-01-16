@@ -1,4 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
+using SharpGen.CppModel;
+using SharpGen.Model;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
@@ -6,41 +8,10 @@ using Xunit.Abstractions;
 
 namespace SharpGen.E2ETests
 {
-    public class EnumTests : TestBase
+    public class EnumTests : E2ETestBase
     {
         public EnumTests(ITestOutputHelper outputHelper) : base(outputHelper)
         {
-        }
-
-        [Fact]
-        public void BasicCppEnumMapsToCSharpEnum()
-        {
-            var config = new Config.ConfigFile
-            {
-                Assembly = nameof(BasicCppEnumMapsToCSharpEnum),
-                Namespace = nameof(BasicCppEnumMapsToCSharpEnum),
-                IncludeDirs =
-                {
-                    GetTestFileIncludeRule()
-                },
-                Includes =
-                {
-                    CreateCppFile("cppEnum", @"
-                        enum TestEnum {
-                            Element1,
-                            Element2
-                        };
-                    ")
-                }
-            };
-
-            (bool success, string output) = RunWithConfig(config);
-            AssertRanSuccessfully(success, output);
-            var compilation = GetCompilationForGeneratedCode();
-            var enumType = compilation.GetTypeByMetadataName($"{nameof(BasicCppEnumMapsToCSharpEnum)}.TestEnum");
-            Assert.Equal(compilation.GetSpecialType(SpecialType.System_Int32), enumType.EnumUnderlyingType);
-            AssertEnumMemberCorrect(enumType, "Element1", 0);
-            AssertEnumMemberCorrect(enumType, "Element2", 1);
         }
 
         [Fact]
@@ -133,39 +104,6 @@ namespace SharpGen.E2ETests
             Assert.Equal(compilation.GetSpecialType(SpecialType.System_Int32), enumType.EnumUnderlyingType);
             AssertEnumMemberCorrect(enumType, "Element1", 0);
             AssertEnumMemberCorrect(enumType, "Element2", 1);
-        }
-
-        [Fact]
-        public void CppEnumWithExplicitValuesMapsToCSharpEnumWithCorrectValue()
-        {
-            var config = new Config.ConfigFile
-            {
-                Assembly = nameof(CppEnumWithExplicitValuesMapsToCSharpEnumWithCorrectValue),
-                Namespace = nameof(CppEnumWithExplicitValuesMapsToCSharpEnumWithCorrectValue),
-                IncludeDirs =
-                {
-                    GetTestFileIncludeRule()
-                },
-                Includes =
-                {
-                    CreateCppFile("cppEnum", @"
-                        enum TestEnum {
-                            Element1 = 10,
-                            Element2 = 15,
-                            Element3 = 10
-                        };
-                    ")
-                }
-            };
-
-            (var success, string output) = RunWithConfig(config);
-            AssertRanSuccessfully(success, output);
-            var compilation = GetCompilationForGeneratedCode();
-            var enumType = compilation.GetTypeByMetadataName($"{nameof(CppEnumWithExplicitValuesMapsToCSharpEnumWithCorrectValue)}.TestEnum");
-            Assert.NotNull(enumType.EnumUnderlyingType);
-            AssertEnumMemberCorrect(enumType, "Element1", 10);
-            AssertEnumMemberCorrect(enumType, "Element2", 15);
-            AssertEnumMemberCorrect(enumType, "Element3", 10);
         }
 
         [Fact(Skip = "CastXML in GCCXml compat mode does not support C++11 and newer features.")]

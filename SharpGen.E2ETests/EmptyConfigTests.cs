@@ -3,7 +3,7 @@ using Xunit.Abstractions;
 
 namespace SharpGen.E2ETests
 {
-    public class EmptyConfigTests : TestBase
+    public class EmptyConfigTests : E2ETestBase
     {
         public EmptyConfigTests(ITestOutputHelper outputHelper) : base(outputHelper)
         {
@@ -12,9 +12,9 @@ namespace SharpGen.E2ETests
         [Fact]
         public void EmptyConfigSucceeds()
         {
-            var testDirectory = GenerateTestDirectory();
-            var config = new Config.ConfigFile { };
-            Assert.True(RunWithConfig(config, failTestOnError: false).success);
+            var config = new Config.ConfigFile();
+            var (success, output) = RunWithConfig(config);
+            AssertRanSuccessfully(success, output);
         }
     }
 }
