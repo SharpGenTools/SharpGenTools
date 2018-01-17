@@ -10,20 +10,16 @@ using Xunit.Abstractions;
 
 namespace SharpGen.E2ETests.Mapping
 {
-    public abstract class MappingTestBase
+    public abstract class MappingTestBase : TestBase
     {
-        private readonly ITestOutputHelper outputHelper;
-
         protected MappingTestBase(ITestOutputHelper outputHelper)
+            :base(outputHelper)
         {
-            this.outputHelper = outputHelper;
         }
 
-        protected (CsSolution Solution, IEnumerable<DefineExtensionRule> Defines) MapModel(CppModule module, ConfigFile config, bool failTestOnError = true)
+        protected (CsSolution Solution, IEnumerable<DefineExtensionRule> Defines) MapModel(CppModule module, ConfigFile config)
         {
-            var logger = new Logger(new XUnitLogger(outputHelper, failTestOnError), null);
-
-            var typeRegistry = new TypeRegistry(logger);
+            var typeRegistry = new TypeRegistry(Logger);
             var namingRules = new NamingRulesManager();
             var docAggregator = new DocumentationLinker(typeRegistry);
 
@@ -31,7 +27,7 @@ namespace SharpGen.E2ETests.Mapping
             var transformer = new TransformManager(
                 new GlobalNamespaceProvider("SharpGen.Runtime"),
                 namingRules,
-                logger,
+                Logger,
                 typeRegistry,
                 docAggregator,
                 new ConstantManager(namingRules, typeRegistry),
@@ -40,7 +36,7 @@ namespace SharpGen.E2ETests.Mapping
                 ForceGenerator = true
             };
 
-            return transformer.Transform(module, ConfigFile.Load(config, new string[0], logger), null);
+            return transformer.Transform(module, ConfigFile.Load(config, new string[0], Logger), null);
         }
     }
 }

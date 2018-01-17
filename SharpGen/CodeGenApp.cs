@@ -340,7 +340,7 @@ namespace SharpGen
             return group;
         }
 
-        private CppModule GenerateExtensionHeaders(HashSet<string> filesWithExtensions, HashSet<ConfigFile> updatedConfigs, CastXml castXml)
+        private CppModule GenerateExtensionHeaders(IReadOnlyCollection<string> filesWithExtensions, IReadOnlyCollection<ConfigFile> updatedConfigs, CastXml castXml)
         {
             Logger.Progress(10, "Generating C++ extensions from macros");
 
@@ -350,7 +350,7 @@ namespace SharpGen
             return group;
         }
 
-        private HashSet<ConfigFile> GenerateHeaders(HashSet<string> filesWithExtensions, HashSet<ConfigFile> configsWithIncludes, ConfigFile consumerConfig)
+        private HashSet<ConfigFile> GenerateHeaders(IReadOnlyCollection<string> filesWithExtensions, IReadOnlyCollection<ConfigFile> configsWithIncludes, ConfigFile consumerConfig)
         {
             var headerGenerator = new CppHeaderGenerator(Logger, _isAssemblyNew, IntermediateOutputPath);
 

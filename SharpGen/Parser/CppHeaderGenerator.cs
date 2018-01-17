@@ -25,7 +25,7 @@ namespace SharpGen.Parser
         }
 
         public (HashSet<ConfigFile> updatedConfigs, ConfigFile consumerConfig)
-            GenerateCppHeaders(ConfigFile configRoot, HashSet<ConfigFile> filesWithIncludes, HashSet<string> filesWithExtensionHeaders)
+            GenerateCppHeaders(ConfigFile configRoot, IReadOnlyCollection<ConfigFile> filesWithIncludes, IReadOnlyCollection<string> filesWithExtensionHeaders)
         {
             var updatedConfigs = new HashSet<ConfigFile>();
             

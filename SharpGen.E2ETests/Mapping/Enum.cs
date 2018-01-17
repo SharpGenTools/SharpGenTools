@@ -111,8 +111,53 @@ namespace SharpGen.E2ETests.Mapping
 
             Assert.Single(csEnum.EnumItems.Where(item => item.Name == "Element1" && item.Value == "10"));
             Assert.Single(csEnum.EnumItems.Where(item => item.Name == "Element2" && item.Value == "15"));
-            Assert.Single(csEnum.EnumItems.Where(item => item.Name == "Element2" && item.Value == "10"));
+            Assert.Single(csEnum.EnumItems.Where(item => item.Name == "Element3" && item.Value == "10"));
             Assert.Equal(typeof(int), csEnum.Type);
+        }
+
+        [Fact]
+        public void ExplicitUnderlyingType()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(ExplicitUnderlyingType),
+                Assembly = nameof(ExplicitUnderlyingType),
+                Namespace = nameof(ExplicitUnderlyingType),
+                Includes =
+                {
+                    new Config.IncludeRule
+                    {
+                        Attach = true,
+                        File = "cppEnum.h",
+                        Namespace = nameof(ExplicitUnderlyingType)
+                    }
+                }
+            };
+
+            var cppModel = new CppModule();
+
+            var cppInclude = new CppInclude
+            {
+                Name = "cppEnum"
+            };
+
+            var cppEnum = new CppEnum
+            {
+                Name = "TestEnum",
+                UnderlyingType = "short"
+            };
+
+            cppInclude.Add(cppEnum);
+            cppModel.Add(cppInclude);
+
+            var (solution, _) = MapModel(cppModel, config);
+
+            var members = solution.EnumerateDescendants();
+
+            Assert.Single(members.OfType<CsEnum>());
+
+            var csEnum = members.OfType<CsEnum>().First();
+            Assert.Equal(typeof(short), csEnum.Type);
         }
     }
 }
