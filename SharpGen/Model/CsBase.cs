@@ -244,7 +244,7 @@ namespace SharpGen.Model
                     Description = string.IsNullOrEmpty(CppElement.Description) ? Description : CppElement.Description;
                     Remarks = string.IsNullOrEmpty(CppElement.Remarks) ? Remarks : CppElement.Remarks;
                     
-                    UpdateFromTag(_cppElement.GetTagOrDefault<MappingRule>());
+                    UpdateFromMappingRule(_cppElement.GetMappingRule());
                 }
             }
         }
@@ -319,7 +319,7 @@ namespace SharpGen.Model
         /// Updates this element from a tag.
         /// </summary>
         /// <param name="tag">The tag.</param>
-        protected virtual void UpdateFromTag(MappingRule tag)
+        protected virtual void UpdateFromMappingRule(MappingRule tag)
         {
             if (tag.Visibility.HasValue)
                 Visibility = tag.Visibility.Value;

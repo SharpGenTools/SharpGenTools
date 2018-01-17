@@ -488,7 +488,7 @@ namespace SharpGen.Parser
             // Parse parameters
             ParseParameters(xElement, cppMethod);
 
-            cppMethod.ReturnType = new CppType();
+            cppMethod.ReturnType = new CppMarshallable();
             ResolveAndFillType(xElement.AttributeValue("returns"), cppMethod.ReturnType);
 
             Logger.PopContext();
@@ -801,12 +801,12 @@ namespace SharpGen.Parser
             if (name.EndsWith(CppExtensionHeaderGenerator.EndTagCustomVariable))
                 name = name.Substring(0, name.Length - CppExtensionHeaderGenerator.EndTagCustomVariable.Length);
 
-            var cppType = new CppType();
-            ResolveAndFillType(xElement.AttributeValue("type"), cppType);
+            var cppMarshallable = new CppMarshallable();
+            ResolveAndFillType(xElement.AttributeValue("type"), cppMarshallable);
 
 
             var value = xElement.AttributeValue("init");
-            if (cppType.TypeName == "GUID")
+            if (cppMarshallable.TypeName == "GUID")
             {
                 var guid = ParseGuid(value);
                 if (!guid.HasValue)
@@ -818,7 +818,7 @@ namespace SharpGen.Parser
             var match = Regex.Match(value, @"\((?:\(.+\))?(.+)\)");
             if (match.Success)
             {
-                value = $"unchecked(({cppType.TypeName}){match.Groups[1].Value})";
+                value = $"unchecked(({cppMarshallable.TypeName}){match.Groups[1].Value})";
             }
 
             // Handle C++ floating point literals
@@ -979,7 +979,7 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="typeId">The id of the type to resolve.</param>
         /// <param name="type">The C++ type to fill.</param>
-        private void ResolveAndFillType(string typeId, CppType type)
+        private void ResolveAndFillType(string typeId, CppMarshallable type)
         {
             var  fullTypeName = new List<string>();
 
@@ -1000,18 +1000,9 @@ namespace SharpGen.Parser
                         isTypeResolved = true;
                         break;
                     case CastXml.TagEnumeration:
-                        type.TypeName = name;
-                        isTypeResolved = true;
-                        break;
                     case CastXml.TagStruct:
                     case CastXml.TagUnion:
                         type.TypeName = name;
-
-                        // If the structure being processed is an external include
-                        // and the type is not binded, then there is probably a missing binding
-                        //if (!IsTypeBinded(xType))
-                            //Logger.Error("Binding is missing for type [{0}] defined in file [{1}]", string.Join("/", fullTypeName), _mapIdToXElement[xType.AttributeValue("file")].AttributeValue("name"));
-
                         isTypeResolved = true;
                         break;
                     case CastXml.TagTypedef:
@@ -1031,7 +1022,7 @@ namespace SharpGen.Parser
                         var maxArrayIndex = xType.AttributeValue("max");
                         var arrayDim = int.Parse(maxArrayIndex.TrimEnd('u')) + 1;
                         if (type.ArrayDimension == null)
-                            type.ArrayDimension = "" + arrayDim;
+                            type.ArrayDimension = arrayDim.ToString();
                         else
                             type.ArrayDimension += "," + arrayDim;
                         xType = _mapIdToXElement[nextType];

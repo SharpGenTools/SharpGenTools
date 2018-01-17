@@ -16,20 +16,20 @@ namespace SharpGen.E2ETests.Mapping
         }
 
         [Fact]
-        public void BasicCppEnumMapsToCSharpEnum()
+        public void Basic()
         {
             var config = new Config.ConfigFile
             {
-                Id = nameof(BasicCppEnumMapsToCSharpEnum),
-                Assembly = nameof(BasicCppEnumMapsToCSharpEnum),
-                Namespace = nameof(BasicCppEnumMapsToCSharpEnum),
+                Id = nameof(Basic),
+                Assembly = nameof(Basic),
+                Namespace = nameof(Basic),
                 Includes =
                 {
                     new Config.IncludeRule
                     {
                         Attach = true,
                         File = "cppEnum.h",
-                        Namespace = nameof(BasicCppEnumMapsToCSharpEnum)
+                        Namespace = nameof(Basic)
                     }
                 }
             };
@@ -65,20 +65,20 @@ namespace SharpGen.E2ETests.Mapping
         }
 
         [Fact]
-        public void CppEnumWithExplicitValuesMapsToCSharpEnumWithCorrectValue()
+        public void ExplicitValues()
         {
             var config = new Config.ConfigFile
             {
-                Id = nameof(BasicCppEnumMapsToCSharpEnum),
-                Assembly = nameof(BasicCppEnumMapsToCSharpEnum),
-                Namespace = nameof(BasicCppEnumMapsToCSharpEnum),
+                Id = nameof(ExplicitValues),
+                Assembly = nameof(ExplicitValues),
+                Namespace = nameof(ExplicitValues),
                 Includes =
                 {
                     new Config.IncludeRule
                     {
                         Attach = true,
                         File = "cppEnum.h",
-                        Namespace = nameof(BasicCppEnumMapsToCSharpEnum)
+                        Namespace = nameof(ExplicitValues)
                     }
                 }
             };

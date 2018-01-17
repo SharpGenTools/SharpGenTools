@@ -25,7 +25,7 @@ namespace SharpGen.CppModel
     /// A C++ field.
     /// </summary>
     [XmlType("field")]
-    public class CppField : CppType
+    public class CppField : CppMarshallable
     {
         /// <summary>
         /// Index of the field mostly used to handle unions.

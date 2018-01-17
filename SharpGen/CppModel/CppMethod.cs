@@ -35,7 +35,7 @@ namespace SharpGen.CppModel
         /// </summary>
         /// <value>The type of the return.</value>
         [XmlElement("return")]
-        public CppType ReturnType { get; set; }
+        public CppMarshallable ReturnType { get; set; }
 
         /// <summary>
         /// Gets or sets the calling convention.

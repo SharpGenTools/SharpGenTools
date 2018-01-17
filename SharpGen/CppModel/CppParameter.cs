@@ -26,7 +26,7 @@ namespace SharpGen.CppModel
     /// A C++ parameter.
     /// </summary>
     [XmlType("param")]
-    public class CppParameter : CppType
+    public class CppParameter : CppMarshallable
     {
         /// <summary>
         /// Gets or sets the attribute.

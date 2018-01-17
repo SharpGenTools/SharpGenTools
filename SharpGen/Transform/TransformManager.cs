@@ -412,23 +412,23 @@ namespace SharpGen.Transform
                 if (configRule is MappingRule mappingRule)
                 {
                     if (mappingRule.Enum != null)
-                        cppModule.Tag<CppEnum>(mappingRule.Enum, mappingRule);
+                        cppModule.ExecuteRule<CppEnum>(mappingRule.Enum, mappingRule);
                     else if (mappingRule.EnumItem != null)
-                        cppModule.Tag<CppEnumItem>(mappingRule.EnumItem, mappingRule);
+                        cppModule.ExecuteRule<CppEnumItem>(mappingRule.EnumItem, mappingRule);
                     else if (mappingRule.Struct != null)
-                        cppModule.Tag<CppStruct>(mappingRule.Struct, mappingRule);
+                        cppModule.ExecuteRule<CppStruct>(mappingRule.Struct, mappingRule);
                     else if (mappingRule.Field != null)
-                        cppModule.Tag<CppField>(mappingRule.Field, mappingRule);
+                        cppModule.ExecuteRule<CppField>(mappingRule.Field, mappingRule);
                     else if (mappingRule.Interface != null)
-                        cppModule.Tag<CppInterface>(mappingRule.Interface, mappingRule);
+                        cppModule.ExecuteRule<CppInterface>(mappingRule.Interface, mappingRule);
                     else if (mappingRule.Function != null)
-                        cppModule.Tag<CppFunction>(mappingRule.Function, mappingRule);
+                        cppModule.ExecuteRule<CppFunction>(mappingRule.Function, mappingRule);
                     else if (mappingRule.Method != null)
-                        cppModule.Tag<CppMethod>(mappingRule.Method, mappingRule);
+                        cppModule.ExecuteRule<CppMethod>(mappingRule.Method, mappingRule);
                     else if (mappingRule.Parameter != null)
-                        cppModule.Tag<CppParameter>(mappingRule.Parameter, mappingRule);
+                        cppModule.ExecuteRule<CppParameter>(mappingRule.Parameter, mappingRule);
                     else if (mappingRule.Element != null)
-                        cppModule.Tag<CppElement>(mappingRule.Element, mappingRule);
+                        cppModule.ExecuteRule<CppElement>(mappingRule.Element, mappingRule);
                     else if (mappingRule.DocItem != null)
                         docLinker.AddDocLink(mappingRule.DocItem, mappingRule.MappingNameFinal);
                 }

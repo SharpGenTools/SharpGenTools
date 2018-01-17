@@ -45,7 +45,7 @@ namespace SharpGen.E2ETests
                     {
                         Function = "Test",
                         FunctionDllName = "\"Test.dll\"",
-                        CsClass = $"{nameof(SimpleFunctionMapsCorrectly)}.Functions"
+                        Group = $"{nameof(SimpleFunctionMapsCorrectly)}.Functions"
                     }
                 }
             };
@@ -101,7 +101,7 @@ namespace SharpGen.E2ETests
                     new Config.MappingRule
                     {
                         Function = "TestFunction",
-                        CsClass = $"{nameof(FunctionTakingStructParameterThatHasNativeTypeGeneratesMarshalTo)}.Functions",
+                        Group = $"{nameof(FunctionTakingStructParameterThatHasNativeTypeGeneratesMarshalTo)}.Functions",
                         FunctionDllName="Dll"
                     }
                 }

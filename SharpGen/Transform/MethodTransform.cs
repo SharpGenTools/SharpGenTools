@@ -68,15 +68,15 @@ namespace SharpGen.Transform
         {
             var cSharpFunction = new CsFunction(cppFunction);
             // All functions must have a tag
-            var tag = cppFunction.GetTagOrDefault<MappingRule>();
+            var tag = cppFunction.GetMappingRule();
 
-            if (tag == null || tag.CsClass == null)
+            if (tag == null || tag.Group == null)
             {
                 Logger.Error("CppFunction [{0}] is not tagged and attached to any Class/FunctionGroup", cppFunction);
                 return null;
             }
 
-            var csClass = groupRegistry.FindGroup(tag.CsClass);
+            var csClass = groupRegistry.FindGroup(tag.Group);
 
             if (csClass == null)
             {
@@ -133,12 +133,12 @@ namespace SharpGen.Transform
 
             // For methods, the tag "type" is only used for return type
             // So we are overriding the return type here
-            var tag = cppMethod.GetTagOrDefault<MappingRule>();
-            if (tag.MappingType != null)
-                cppMethod.ReturnType.Tag = new MappingRule { MappingType = tag.MappingType };
+            var methodRule = cppMethod.GetMappingRule();
+            if (methodRule.MappingType != null)
+                cppMethod.ReturnType.Rule = new MappingRule { MappingType = methodRule.MappingType };
 
             // Apply any offset to the method's vtable
-            method.Offset += tag.LayoutOffsetTranslate;
+            method.Offset += methodRule.LayoutOffsetTranslate;
 
             // Get the inferred return type
             method.ReturnType = factory.Create<CsMarshalBase>(cppMethod.ReturnType);
@@ -154,7 +154,7 @@ namespace SharpGen.Transform
             foreach (var cppParameter in cppMethod.Parameters)
             {
                 var cppAttribute = cppParameter.Attribute;
-                var paramTag = cppParameter.GetTagOrDefault<MappingRule>();
+                var paramRule = cppParameter.GetMappingRule();
 
                 bool hasArray = cppParameter.IsArray || ((cppAttribute & ParamAttribute.Buffer) != 0);
                 bool hasParams = (cppAttribute & ParamAttribute.Params) == ParamAttribute.Params;
@@ -184,7 +184,7 @@ namespace SharpGen.Transform
                     // --------------------------------------------------------------------------------
                     // Handling Parameter Interface
                     // --------------------------------------------------------------------------------
-                    if (publicType is CsInterface)
+                    if (publicType is CsInterface publicInterface)
                     {
                         // Force Interface** to be ParamAttribute.Out when None
                         if (cppAttribute == ParamAttribute.In)
@@ -204,8 +204,7 @@ namespace SharpGen.Transform
                             }
 
                             // If Interface is a callback, use IntPtr as a public marshalling type
-                            CsInterface publicCsInterface = (CsInterface)publicType;
-                            if (publicCsInterface.IsCallback)
+                            if (publicInterface.IsCallback)
                             {
                                 publicType = typeRegistry.ImportType(typeof(IntPtr));
                                 // By default, set the Visibility to internal for methods using callbacks
@@ -218,8 +217,6 @@ namespace SharpGen.Transform
                                 }
                             }
                         }
-                        //else if ((cppParameter.Attribute & ParamAttribute.InOut) != 0)
-                        //    parameterAttribute = method.ParameterAttribute.Ref;
                         else if ((cppAttribute & ParamAttribute.Out) != 0)
                             parameterAttribute = CsParameterAttribute.Out;
                     }
@@ -332,8 +329,7 @@ namespace SharpGen.Transform
             }
             else if (csMethod.ReturnType.MarshalType.Type != null)
             {
-                Type type = csMethod.ReturnType.MarshalType.Type;
-                cSharpInteropCalliSignature.ReturnType = type;
+                cSharpInteropCalliSignature.ReturnType = csMethod.ReturnType.MarshalType.Type;
             }
             else
             {
@@ -344,7 +340,7 @@ namespace SharpGen.Transform
             foreach (var param in csMethod.Parameters)
             {
                 InteropType interopType;
-                string publicName = param.PublicType.QualifiedName;
+                var publicName = param.PublicType.QualifiedName;
                 // Patch for Mono bug with structs marshalling and calli.
                 if (publicName == globalNamespace.GetTypeName("PointerSize"))
                 {
@@ -365,7 +361,7 @@ namespace SharpGen.Transform
                 }
                 else
                 {
-                    Type type = param.MarshalType.Type;
+                    var type = param.MarshalType.Type;
                     // Patch for Mono bug with structs marshalling and calli.
                     if (type == typeof(IntPtr))
                         type = typeof(void*);

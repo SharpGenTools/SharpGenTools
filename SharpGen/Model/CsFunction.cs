@@ -45,9 +45,9 @@ namespace SharpGen.Model
             }
         }
 
-        protected override void UpdateFromTag(MappingRule tag)
+        protected override void UpdateFromMappingRule(MappingRule tag)
         {
-            base.UpdateFromTag(tag);
+            base.UpdateFromMappingRule(tag);
         }
         
         [DataMember]

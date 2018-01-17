@@ -56,9 +56,9 @@ namespace SharpGen.Model
             get { return Items.OfType<CsEnumItem>(); }
         }
 
-        protected override void UpdateFromTag(MappingRule tag)
+        protected override void UpdateFromMappingRule(MappingRule tag)
         {
-            base.UpdateFromTag(tag);
+            base.UpdateFromMappingRule(tag);
             if (tag.EnumHasFlags.HasValue)
                 IsFlag = tag.EnumHasFlags.Value;
         }

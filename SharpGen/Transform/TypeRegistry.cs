@@ -101,7 +101,7 @@ namespace SharpGen.Transform
             // Check for type replacer
             if (type.CppElement != null)
             {
-                var tag = type.CppElement.GetTagOrDefault<MappingRule>();
+                var tag = type.CppElement.GetMappingRule();
                 if (tag.Replace != null)
                 {
                     Logger.Warning("Replace type {0} -> {1}", cppName, tag.Replace);

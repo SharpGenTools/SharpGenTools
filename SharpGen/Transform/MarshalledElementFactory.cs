@@ -26,41 +26,41 @@ namespace SharpGen.Transform
         /// Gets the C# type from a C++ type.
         /// </summary>
         /// <typeparam name="T">The C# type to return</typeparam>
-        /// <param name="cppType">The C++ type to process.</param>
+        /// <param name="marshallable">The marshallable element to create the C# type from.</param>
         /// <param name="isTypeUsedInStruct">if set to <c>true</c> this type is used in a struct declaration.</param>
         /// <returns>An instantiated C# type</returns>
-        public T Create<T>(CppType cppType, bool isTypeUsedInStruct = false) where T : CsMarshalBase, new()
+        public T Create<T>(CppMarshallable marshallable, bool isTypeUsedInStruct = false) where T : CsMarshalBase, new()
         {
             CsTypeBase publicType = null;
             CsTypeBase marshalType = null;
             var interopType = new T
             {
-                CppElement = cppType,
-                IsArray = cppType.IsArray,
-                ArrayDimension = cppType.ArrayDimension,
+                CppElement = marshallable,
+                IsArray = marshallable.IsArray,
+                ArrayDimension = marshallable.ArrayDimension,
                 // TODO: handle multidimension
-                HasPointer = !string.IsNullOrEmpty(cppType.Pointer) && (cppType.Pointer.Contains("*") || cppType.Pointer.Contains("&")),
+                HasPointer = !string.IsNullOrEmpty(marshallable.Pointer) && (marshallable.Pointer.Contains("*") || marshallable.Pointer.Contains("&")),
             };
 
             // Calculate ArrayDimension
             int arrayDimensionValue = 0;
-            if (cppType.IsArray)
+            if (marshallable.IsArray)
             {
-                if (string.IsNullOrEmpty(cppType.ArrayDimension))
+                if (string.IsNullOrEmpty(marshallable.ArrayDimension))
                     arrayDimensionValue = 0;
-                else if (!int.TryParse(cppType.ArrayDimension, out arrayDimensionValue))
+                else if (!int.TryParse(marshallable.ArrayDimension, out arrayDimensionValue))
                     arrayDimensionValue = 1;
             }
 
             // If array Dimension is 0, then it is not an array
             if (arrayDimensionValue == 0)
             {
-                cppType.IsArray = false;
+                marshallable.IsArray = false;
                 interopType.IsArray = false;
             }
             interopType.ArrayDimensionValue = arrayDimensionValue;
 
-            string typeName = cppType.GetTypeNameWithMapping();
+            string typeName = marshallable.GetTypeNameWithMapping();
 
             switch (typeName)
             {
@@ -88,8 +88,8 @@ namespace SharpGen.Transform
                 default:
 
                     // If CppType is an array, try first to get the binding for this array
-                    if (cppType.IsArray)
-                        publicType = typeRegistry.FindBoundType(typeName + "[" + cppType.ArrayDimension + "]");
+                    if (marshallable.IsArray)
+                        publicType = typeRegistry.FindBoundType(typeName + "[" + marshallable.ArrayDimension + "]");
 
                     // Else get the typeName
                     if (publicType == null)
@@ -111,10 +111,8 @@ namespace SharpGen.Transform
                     // Get a MarshalType if any
                     marshalType = typeRegistry.FindBoundMarshalType(typeName);
 
-                    if (publicType is CsStruct)
+                    if (publicType is CsStruct referenceStruct)
                     {
-                        var referenceStruct = publicType as CsStruct;
-
                         // If a structure was not already parsed, then parse it before going further
                         if (!referenceStruct.IsFullyMapped)
                         {
@@ -125,8 +123,7 @@ namespace SharpGen.Transform
                         {
                             logger.Fatal($"No struct processor processed {referenceStruct.QualifiedName}. Cannot continue processing");
                         }
-
-
+                        
                         // If referenced structure has a specialized marshalling, then specify marshalling
                         if (referenceStruct.HasMarshalType && !interopType.HasPointer)
                         {
@@ -146,7 +143,7 @@ namespace SharpGen.Transform
             }
 
             // Set bool to int conversion case
-            interopType.IsBoolToInt = marshalType != null && marshalType.Type == typeof(int) && publicType.Type == typeof(bool);
+            interopType.IsBoolToInt = marshalType?.Type == typeof(int) && publicType.Type == typeof(bool);
 
             // Default IntPtr type for pointer, unless modified by specialized type (like char* map to string)
             if (interopType.HasPointer)
@@ -187,7 +184,7 @@ namespace SharpGen.Transform
             }
 
             interopType.PublicType = publicType;
-            interopType.HasMarshalType = (marshalType != null || cppType.IsArray);
+            interopType.HasMarshalType = (marshalType != null || marshallable.IsArray);
             if (marshalType == null)
                 marshalType = publicType;
             interopType.MarshalType = marshalType;

@@ -257,12 +257,6 @@ namespace SharpGen.Config
         public bool _RawPtr_ { get { return RawPtr.Value; } set { RawPtr = value; } } public bool ShouldSerialize_RawPtr_() { return RawPtr != null; }
 
         /// <summary>
-        /// DLL name attached to a function
-        /// </summary>
-        [XmlAttribute("macro-dll")]
-        public string FunctionDllNameFromMacro { get; set; }
-
-        /// <summary>
         /// Parameter Attribute
         /// </summary>
         [XmlIgnore]
@@ -282,7 +276,7 @@ namespace SharpGen.Config
         /// ClassType attached to a function
         /// </summary>
         [XmlAttribute("group")]
-        public string CsClass { get; set; }
+        public string Group { get; set; }
 
 		/// <summary>
 		/// An integer that can be used to transform the method's vtable offset relative to the value specified by the compiler.

@@ -70,9 +70,9 @@ namespace SharpGen.Model
 
         private const int SizeOfLimit = 16;
 
-        protected override void UpdateFromTag(MappingRule tag)
+        protected override void UpdateFromMappingRule(MappingRule tag)
         {
-            base.UpdateFromTag(tag);
+            base.UpdateFromMappingRule(tag);
             if (tag.ParameterUsedAsReturnType.HasValue)
                 IsUsedAsReturnType = tag.ParameterUsedAsReturnType.Value;
             if (tag.ParameterAttribute.HasValue && (tag.ParameterAttribute.Value & ParamAttribute.Fast) != 0)

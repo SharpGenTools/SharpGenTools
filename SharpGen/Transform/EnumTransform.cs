@@ -77,7 +77,7 @@ namespace SharpGen.Transform
             var cppEnum = (CppEnum) newEnum.CppElement;
 
             // Get tag from C++ enum
-            var tag = cppEnum.GetTagOrDefault<MappingRule>();
+            var tag = cppEnum.GetMappingRule();
 
             // Determine enum type. Default is int
             string typeName = cppEnum.GetTypeNameWithMapping();

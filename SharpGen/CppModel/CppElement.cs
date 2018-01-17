@@ -17,6 +17,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using SharpGen.Config;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -85,7 +86,7 @@ namespace SharpGen.CppModel
         /// </summary>
         /// <value>The tag.</value>
         [XmlIgnore]
-        public object Tag { get; set; }
+        public MappingRule Rule { get; set; }
 
         /// <summary>
         /// Gets the parent include.
@@ -165,7 +166,7 @@ namespace SharpGen.CppModel
         [XmlArrayItem(typeof (CppMethod))]
         [XmlArrayItem(typeof (CppParameter))]
         [XmlArrayItem(typeof (CppStruct))]
-        [XmlArrayItem(typeof (CppType))]
+        [XmlArrayItem(typeof (CppMarshallable))]
         public List<CppElement> Items { get; set; }
 
         /// <summary>
@@ -193,15 +194,15 @@ namespace SharpGen.CppModel
             get { return Items == null || Items.Count == 0; }
         }
 
-        public T GetTagOrDefault<T>() where T : new()
+        public MappingRule GetMappingRule()
         {
-            return (T) (Tag ?? new T());
+            return Rule ?? new MappingRule();
         }
 
         public static string ShortName<T>() where T : CppElement
         {
             var type = typeof (T);
-            string tagname = type.Name;
+            var tagname = type.Name;
             var attribute = type.GetTypeInfo().GetCustomAttributes<DataContractAttribute>(false).FirstOrDefault();
             if (attribute != null)
                 tagname = attribute.Name;

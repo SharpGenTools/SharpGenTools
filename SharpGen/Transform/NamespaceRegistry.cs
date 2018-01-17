@@ -76,7 +76,7 @@ namespace SharpGen.Transform
         /// <returns>The attached namespace for this C++ element.</returns>
         internal CsNamespace ResolveNamespace(CppElement element)
         {
-            var tag = element.GetTagOrDefault<MappingRule>();
+            var tag = element.GetMappingRule();
 
             // If a type is redispatched to another namespace
             if (!string.IsNullOrEmpty(tag.Assembly) && !string.IsNullOrEmpty(tag.Namespace))

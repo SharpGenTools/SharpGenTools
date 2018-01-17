@@ -59,9 +59,9 @@ namespace SharpGen.Model
             get { return Items.OfType<CsVariable>(); }
         }
 
-        protected override void UpdateFromTag(MappingRule tag)
+        protected override void UpdateFromMappingRule(MappingRule tag)
         {
-            base.UpdateFromTag(tag);
+            base.UpdateFromMappingRule(tag);
             IsCallback = tag.IsCallbackInterface ?? false;
             IsDualCallback = tag.IsDualCallbackInterface ?? false;
         }

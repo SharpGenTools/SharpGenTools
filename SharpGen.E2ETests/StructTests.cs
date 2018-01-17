@@ -208,7 +208,7 @@ namespace SharpGen.E2ETests
                     new Config.MappingRule
                     {
                         Function = "TestFunction",
-                        CsClass = $"{nameof(StructWithBoolToIntArrayMemberGeneratesBoolArrayProperty)}.Functions",
+                        Group = $"{nameof(StructWithBoolToIntArrayMemberGeneratesBoolArrayProperty)}.Functions",
                         FunctionDllName="Dll"
                     }
                 }

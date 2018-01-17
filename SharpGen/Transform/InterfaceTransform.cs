@@ -96,7 +96,7 @@ namespace SharpGen.Transform
         /// <summary>
         /// Prepares the specified C++ element to a C# element.
         /// </summary>
-        /// <param name="cppElement">The C++ element.</param>
+        /// <param name="cppInterface">The C++ element.</param>
         /// <returns>The C# element created and registered to the <see cref="TransformManager"/></returns>
         public override CsInterface Prepare(CppInterface cppInterface)
         {
@@ -231,7 +231,7 @@ namespace SharpGen.Transform
             // If interfaceType is DualCallback, then need to generate a default implentation
             if (interfaceType.IsDualCallback)
             {
-                var tagForInterface = cppInterface.GetTagOrDefault<MappingRule>();
+                var tagForInterface = cppInterface.GetMappingRule();
                 var nativeCallback = new CsInterface(interfaceType.CppElement as CppInterface)
                 {
                     Name = interfaceType.Name + "Native",
@@ -270,7 +270,7 @@ namespace SharpGen.Transform
                     if (innerElement is CsMethod method)
                     {
                         var newCsMethod = (CsMethod)method.Clone();
-                        var tagForMethod = method.CppElement.GetTagOrDefault<MappingRule>();
+                        var tagForMethod = method.CppElement.GetMappingRule();
                         bool keepMethodPublic = tagForMethod.IsKeepImplementPublic.HasValue && tagForMethod.IsKeepImplementPublic.Value;
                         if (!keepMethodPublic)
                         {

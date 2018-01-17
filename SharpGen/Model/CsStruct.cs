@@ -45,9 +45,9 @@ namespace SharpGen.Model
             CppElement = cppStruct;
         }
 
-        protected override void UpdateFromTag(MappingRule tag)
+        protected override void UpdateFromMappingRule(MappingRule tag)
         {
-            base.UpdateFromTag(tag);
+            base.UpdateFromMappingRule(tag);
             Align = tag.StructPack ?? 0;
             HasMarshalType = tag.StructHasNativeValueType ?? false;
             GenerateAsClass = tag.StructToClass ?? false;
