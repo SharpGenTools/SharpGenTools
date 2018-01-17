@@ -41,7 +41,6 @@ namespace SharpGen.Model
 
         public CsStruct(CppStruct cppStruct) 
         {
-            IsOut = false; 
             CppElement = cppStruct;
         }
 
@@ -54,7 +53,7 @@ namespace SharpGen.Model
             HasCustomMarshal = tag.StructCustomMarshal ?? false;
             IsStaticMarshal = tag.IsStaticMarshal ?? false;
             HasCustomNew = tag.StructCustomNew ?? false;
-            IsOut = tag.StructForceMarshalToToBeGenerated ?? false;
+            MarshalledToNative = tag.StructForceMarshalToToBeGenerated ?? false;
 
             // Force a marshalling if a struct need to be treated as a class)
             if (GenerateAsClass)
@@ -105,7 +104,7 @@ namespace SharpGen.Model
         }
 
         [DataMember]
-        public bool IsOut { get; set; }
+        public bool MarshalledToNative { get; set; }
 
         /// <summary>
         ///   List of declared inner structs
