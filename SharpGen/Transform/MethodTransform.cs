@@ -99,6 +99,20 @@ namespace SharpGen.Transform
         /// <param name="csElement">The C# element.</param>
         public override void Process(CsMethod csElement)
         {
+            var cppMethod = (CppMethod)csElement.CppElement;
+
+            csElement.Offset = cppMethod.Offset;
+
+            var methodRule = cppMethod.GetMappingRule();
+
+            // Apply any offset to the method's vtable
+            csElement.Offset += methodRule.LayoutOffsetTranslate;
+
+            ProcessCallable(csElement, false);
+        }
+
+        private void ProcessCallable(CsCallable csElement, bool isFunction)
+        {
             try
             {
                 var csMethod = csElement;
@@ -106,7 +120,7 @@ namespace SharpGen.Transform
 
                 ProcessMethod(csMethod);
 
-                RegisterNativeInteropSignature(csMethod);
+                RegisterNativeInteropSignature(csMethod, isFunction);
             }
             finally
             {
@@ -117,28 +131,24 @@ namespace SharpGen.Transform
         public void Process(CsFunction csFunction)
         {
             csFunction.Visibility = csFunction.Visibility | Visibility.Static;
-            Process((CsMethod)csFunction);
+            ProcessCallable(csFunction, true);
         }
 
         /// <summary>
         /// Processes the specified method.
         /// </summary>
         /// <param name="method">The method.</param>
-        private void ProcessMethod(CsMethod method)
+        private void ProcessMethod(CsCallable method)
         {
-            var cppMethod = (CppMethod)method.CppElement;
+            var cppMethod = (CppCallable)method.CppElement;
 
             method.Name = NamingRules.Rename(cppMethod);
-            method.Offset = cppMethod.Offset;
 
             // For methods, the tag "type" is only used for return type
             // So we are overriding the return type here
             var methodRule = cppMethod.GetMappingRule();
             if (methodRule.MappingType != null)
                 cppMethod.ReturnValue.Rule = new MappingRule { MappingType = methodRule.MappingType };
-
-            // Apply any offset to the method's vtable
-            method.Offset += methodRule.LayoutOffsetTranslate;
 
             // Get the inferred return type
             method.ReturnValue = factory.Create<CsReturnValue>(cppMethod.ReturnValue);
@@ -303,10 +313,10 @@ namespace SharpGen.Transform
         /// Registers the native interop signature.
         /// </summary>
         /// <param name="csMethod">The cs method.</param>
-        private void RegisterNativeInteropSignature(CsMethod csMethod)
+        private void RegisterNativeInteropSignature(CsCallable csMethod, bool isFunction)
         {
             // Tag if the method is a function
-            var cSharpInteropCalliSignature = new InteropMethodSignature { IsFunction = (csMethod is CsFunction) };
+            var cSharpInteropCalliSignature = new InteropMethodSignature { IsFunction = isFunction };
 
             // Handle Return Type parameter
             // MarshalType.Type == null, then check that it is a structure

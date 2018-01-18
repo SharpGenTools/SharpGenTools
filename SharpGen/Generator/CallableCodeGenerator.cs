@@ -11,7 +11,7 @@ using SharpGen.Transform;
 
 namespace SharpGen.Generator
 {
-    class CallableCodeGenerator : MemberCodeGeneratorBase<CsMethod>
+    class CallableCodeGenerator : MemberCodeGeneratorBase<CsCallable>
     {
         public CallableCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation, GlobalNamespaceProvider globalNamespace)
             :base(documentation)
@@ -24,7 +24,7 @@ namespace SharpGen.Generator
 
         public IGeneratorRegistry Generators { get; }
 
-        public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsMethod csElement)
+        public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsCallable csElement)
         {
             // Documentation
             var documentationTrivia = GenerateDocumentationTrivia(csElement);
@@ -44,13 +44,6 @@ namespace SharpGen.Generator
                         )
                 )
                 .WithLeadingTrivia(Trivia(documentationTrivia));
-
-            // If not hidden, generate body
-            if (csElement.Hidden)
-            {
-                // return Comment(methodDeclaration.NormalizeWhitespace().ToFullString());
-                yield break;
-            }
 
             var statements = new List<StatementSyntax>();
 
@@ -112,7 +105,7 @@ namespace SharpGen.Generator
         }
 
 
-        private static List<FixedStatementSyntax> GenerateFixedStatements(CsMethod csElement)
+        private static List<FixedStatementSyntax> GenerateFixedStatements(CsCallable csElement)
         {
             var fixedStatements = new List<FixedStatementSyntax>();
             foreach (var param in csElement.Parameters)

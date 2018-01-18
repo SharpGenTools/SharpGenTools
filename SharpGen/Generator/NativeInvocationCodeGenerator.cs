@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace SharpGen.Generator
 {
-    class NativeInvocationCodeGenerator : ICodeGenerator<CsMethod, ExpressionSyntax>
+    class NativeInvocationCodeGenerator : ICodeGenerator<CsCallable, ExpressionSyntax>
     {
         public NativeInvocationCodeGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
         {
@@ -51,27 +51,27 @@ namespace SharpGen.Generator
             return invocation;
         }
         
-        public ExpressionSyntax GenerateCode(CsMethod method)
+        public ExpressionSyntax GenerateCode(CsCallable callable)
         {
             var arguments = new List<ArgumentSyntax>();
 
-            if (!(method is CsFunction))
+            if (!(callable is CsFunction))
             {
                 arguments.Add(Argument(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                             ThisExpression(),
                                             IdentifierName("_nativePointer"))));
             }
 
-            if (method.IsReturnStructLarge)
+            if (callable.IsReturnStructLarge)
             {
                 arguments.Add(Argument(CastExpression(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
                                         PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
                                             IdentifierName("__result__")))));
             }
 
-            arguments.AddRange(method.Parameters.Select(param => Generators.Argument.GenerateCode(param)));
+            arguments.AddRange(callable.Parameters.Select(param => Generators.Argument.GenerateCode(param)));
 
-            if (!(method is CsFunction))
+            if (callable is CsMethod method)
             {
                 arguments.Add(Argument(
                     ElementAccessExpression(
@@ -86,7 +86,7 @@ namespace SharpGen.Generator
                                 Argument(method.CustomVtbl ?
                                 (ExpressionSyntax)MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                     ThisExpression(),
-                                    IdentifierName($"{method.Name}__vtbl_index"))
+                                    IdentifierName($"{callable.Name}__vtbl_index"))
                                 : LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(method.Offset))
                                 )
                             )))));
@@ -94,11 +94,11 @@ namespace SharpGen.Generator
 
             return GetCastedReturn(
                 InvocationExpression(
-                    IdentifierName(method is CsFunction ?
-                        method.CppElementName + "_"
-                    : method.GetParent<CsAssembly>().QualifiedName + ".LocalInterop." + method.Interop.Name),
+                    IdentifierName(callable is CsFunction ?
+                        callable.CppElementName + "_"
+                    : callable.GetParent<CsAssembly>().QualifiedName + ".LocalInterop." + callable.Interop.Name),
                     ArgumentList(SeparatedList(arguments))),
-                method.ReturnValue
+                callable.ReturnValue
             );
         }
 

@@ -301,7 +301,7 @@ namespace SharpGen.Parser
         /// <returns>A C++ function parsed</returns>
         private CppFunction ParseFunction(XElement xElement)
         {
-            return ParseMethodOrFunction<CppFunction>(xElement);
+            return ParseCallable<CppFunction>(xElement);
         }
 
         /// <summary>
@@ -476,7 +476,7 @@ namespace SharpGen.Parser
         /// <typeparam name="T">The resulting C++ parsed element. Must be a subclass of <see cref="CppMethod"/>.</typeparam>
         /// <param name="xElement">The gccxml <see cref="XElement"/> that describes a C++ method/function declaration.</param>
         /// <returns>The C++ parsed T.</returns>
-        private T ParseMethodOrFunction<T>(XElement xElement) where T : CppMethod, new()
+        private T ParseCallable<T>(XElement xElement) where T : CppCallable, new()
         {
             var cppMethod = new T { Name = xElement.AttributeValue("name") };
 
@@ -553,7 +553,7 @@ namespace SharpGen.Parser
                 if (method.Name.LocalName == "Method" && !string.IsNullOrWhiteSpace(method.AttributeValue("pure_virtual"))
                     && string.IsNullOrWhiteSpace(method.AttributeValue("overrides")))
                 {
-                    var cppMethod = ParseMethodOrFunction<CppMethod>(method);
+                    var cppMethod = ParseCallable<CppMethod>(method);
                     methods.Add(cppMethod);
                 }
             }

@@ -15,10 +15,10 @@ namespace SharpGen.Generator
         IMultiCodeGenerator<CsField, MemberDeclarationSyntax> ExplicitOffsetField { get; }
         IMultiCodeGenerator<CsField, MemberDeclarationSyntax> AutoLayoutField { get; }
         IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax> Struct { get; }
-        ICodeGenerator<CsMethod, ExpressionSyntax> NativeInvocation { get; }
+        ICodeGenerator<CsCallable, ExpressionSyntax> NativeInvocation { get; }
         IMultiCodeGenerator<CsParameter, StatementSyntax> ParameterProlog { get; }
         IMultiCodeGenerator<CsParameter, StatementSyntax> ParameterEpilog { get; }
-        IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax> Callable { get; }
+        IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> Callable { get; }
         IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax> Method { get; }
         IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax> Function { get; }
         IMultiCodeGenerator<CsInterface, MemberDeclarationSyntax> Interface { get; }
