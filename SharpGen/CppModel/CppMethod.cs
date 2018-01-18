@@ -35,7 +35,7 @@ namespace SharpGen.CppModel
         /// </summary>
         /// <value>The type of the return.</value>
         [XmlElement("return")]
-        public CppMarshallable ReturnType { get; set; }
+        public CppReturnValue ReturnValue { get; set; }
 
         /// <summary>
         /// Gets or sets the calling convention.
@@ -66,7 +66,7 @@ namespace SharpGen.CppModel
             get
             {
                 var allElements = new List<CppElement>(Iterate<CppElement>());
-                allElements.Add(ReturnType);
+                allElements.Add(ReturnValue);
                 return allElements;
             }            
         }
@@ -80,7 +80,7 @@ namespace SharpGen.CppModel
         public override string ToString()
         {
             var builder = new StringBuilder();
-            builder.Append(ReturnType);
+            builder.Append(ReturnValue);
             builder.Append(" ");
             if (Parent is CppInterface)
             {

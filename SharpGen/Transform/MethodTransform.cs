@@ -135,17 +135,17 @@ namespace SharpGen.Transform
             // So we are overriding the return type here
             var methodRule = cppMethod.GetMappingRule();
             if (methodRule.MappingType != null)
-                cppMethod.ReturnType.Rule = new MappingRule { MappingType = methodRule.MappingType };
+                cppMethod.ReturnValue.Rule = new MappingRule { MappingType = methodRule.MappingType };
 
             // Apply any offset to the method's vtable
             method.Offset += methodRule.LayoutOffsetTranslate;
 
             // Get the inferred return type
-            method.ReturnType = factory.Create<CsMarshalBase>(cppMethod.ReturnType);
+            method.ReturnValue = factory.Create<CsReturnValue>(cppMethod.ReturnValue);
 
             // Hide return type only if it is a HRESULT and AlwaysReturnHResult is false
-            if (method.CheckReturnType && method.ReturnType.PublicType != null &&
-                method.ReturnType.PublicType.QualifiedName == globalNamespace.GetTypeName("Result"))
+            if (method.CheckReturnType && method.ReturnValue.PublicType != null &&
+                method.ReturnValue.PublicType.QualifiedName == globalNamespace.GetTypeName("Result"))
             {
                 method.HideReturnType = !method.AlwaysReturnHResult;
             }
@@ -307,7 +307,7 @@ namespace SharpGen.Transform
 
             // Handle Return Type parameter
             // MarshalType.Type == null, then check that it is a structure
-            if (csMethod.ReturnType.PublicType is CsStruct || csMethod.ReturnType.PublicType is CsEnum)
+            if (csMethod.ReturnValue.PublicType is CsStruct || csMethod.ReturnValue.PublicType is CsEnum)
             {
                 // Return type and 1st parameter are implicitly a pointer to the structure to fill 
                 if (csMethod.IsReturnStructLarge)
@@ -318,22 +318,22 @@ namespace SharpGen.Transform
                 else
                 {
                     // Patch for Mono bug with structs marshalling and calli.
-                    var returnQualifiedName = csMethod.ReturnType.PublicType.QualifiedName;
+                    var returnQualifiedName = csMethod.ReturnValue.PublicType.QualifiedName;
                     if (returnQualifiedName == globalNamespace.GetTypeName("Result"))
                         cSharpInteropCalliSignature.ReturnType = typeof(int);
                     else if (returnQualifiedName == globalNamespace.GetTypeName("PointerSize"))
                         cSharpInteropCalliSignature.ReturnType = typeof(void*);
                     else
-                        cSharpInteropCalliSignature.ReturnType = csMethod.ReturnType.PublicType.QualifiedName;
+                        cSharpInteropCalliSignature.ReturnType = csMethod.ReturnValue.PublicType.QualifiedName;
                 }
             }
-            else if (csMethod.ReturnType.MarshalType.Type != null)
+            else if (csMethod.ReturnValue.MarshalType.Type != null)
             {
-                cSharpInteropCalliSignature.ReturnType = csMethod.ReturnType.MarshalType.Type;
+                cSharpInteropCalliSignature.ReturnType = csMethod.ReturnValue.MarshalType.Type;
             }
             else
             {
-                throw new ArgumentException(string.Format(System.Globalization.CultureInfo.InvariantCulture, "Invalid return type {0} for method {1}", csMethod.ReturnType.PublicType.QualifiedName, csMethod.CppElement));
+                throw new ArgumentException(string.Format(System.Globalization.CultureInfo.InvariantCulture, "Invalid return type {0} for method {1}", csMethod.ReturnValue.PublicType.QualifiedName, csMethod.CppElement));
             }
 
             // Handle Parameters

@@ -100,7 +100,7 @@ namespace SharpGen.Doc
                         cppMethod.Id = methodDocItem.Id;
                         cppMethod.Description = methodDocItem.Description;
                         cppMethod.Remarks = methodDocItem.Remarks;
-                        cppMethod.ReturnType.Description = methodDocItem.Return;
+                        cppMethod.ReturnValue.Description = methodDocItem.Return;
 
                         if (cppMethod.IsEmpty)
                             continue;
@@ -135,7 +135,7 @@ namespace SharpGen.Doc
                     cppFunction.Id = docItem.Id;
                     cppFunction.Description = docItem.Description;
                     cppFunction.Remarks = docItem.Remarks;
-                    cppFunction.ReturnType.Description = docItem.Return;
+                    cppFunction.ReturnValue.Description = docItem.Return;
 
                     if (cppFunction.IsEmpty)
                         continue;

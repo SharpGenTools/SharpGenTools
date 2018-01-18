@@ -96,7 +96,7 @@ namespace SharpGen.Generator
                         method.CppElementName + "_"
                     : method.GetParent<CsAssembly>().QualifiedName + ".LocalInterop." + method.Interop.Name),
                     ArgumentList(SeparatedList(arguments))),
-                method.ReturnType
+                method.ReturnValue
             );
         }
 

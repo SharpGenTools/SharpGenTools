@@ -488,8 +488,8 @@ namespace SharpGen.Parser
             // Parse parameters
             ParseParameters(xElement, cppMethod);
 
-            cppMethod.ReturnType = new CppMarshallable();
-            ResolveAndFillType(xElement.AttributeValue("returns"), cppMethod.ReturnType);
+            cppMethod.ReturnValue = new CppReturnValue();
+            ResolveAndFillType(xElement.AttributeValue("returns"), cppMethod.ReturnValue);
 
             Logger.PopContext();
 

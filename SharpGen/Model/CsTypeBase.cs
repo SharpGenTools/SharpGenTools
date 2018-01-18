@@ -47,11 +47,8 @@ namespace SharpGen.Model
                 }
             }
         }
-        
-        public bool IsPointer
-        {
-            get { return Type == typeof (IntPtr); }
-        }
+
+        private bool IsPointer => Type == typeof(IntPtr);
 
         /// <summary>
         /// Calculates the natural alignment of a type. -1 if it is a pointer alignment (4 on x86, 8 on x64)

@@ -352,7 +352,7 @@ namespace SharpGen.Transform
                 // Check Getter
                 if (isGet)
                 {
-                    if ((cSharpMethod.ReturnType.PublicType.Name == globalNamespace.GetTypeName("Result") || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
+                    if ((cSharpMethod.ReturnValue.PublicType.Name == globalNamespace.GetTypeName("Result") || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
                         parameterList[0].IsOut && !parameterList[0].IsArray)
                     {
                         csProperty.Getter = cSharpMethod;
@@ -362,7 +362,7 @@ namespace SharpGen.Transform
                     else if (parameterCount == 0 && cSharpMethod.HasReturnType)
                     {
                         csProperty.Getter = cSharpMethod;
-                        csProperty.PublicType = csProperty.Getter.ReturnType.PublicType;
+                        csProperty.PublicType = csProperty.Getter.ReturnValue.PublicType;
                     }
                     else
                     {
@@ -375,7 +375,7 @@ namespace SharpGen.Transform
                 else
                 {
                     // Check Setter
-                    if ((cSharpMethod.ReturnType?.Name == globalNamespace.GetTypeName("Result") || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
+                    if ((cSharpMethod.ReturnValue?.Name == globalNamespace.GetTypeName("Result") || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
                         (parameterList[0].IsRefIn || parameterList[0].IsIn || parameterList[0].IsRef) && !parameterList[0].IsArray)
                     {
                         csProperty.Setter = cSharpMethod;
@@ -384,7 +384,7 @@ namespace SharpGen.Transform
                     else if (parameterCount == 1 && !cSharpMethod.HasReturnType)
                     {
                         csProperty.Setter = cSharpMethod;
-                        csProperty.PublicType = csProperty.Setter.ReturnType.PublicType;
+                        csProperty.PublicType = csProperty.Setter.ReturnValue.PublicType;
                     }
                     else
                     {
@@ -411,7 +411,7 @@ namespace SharpGen.Transform
                     }
                     else
                     {
-                        var getterType = csProperty.Getter.ReturnType;
+                        var getterType = csProperty.Getter.ReturnValue;
                         var setterType = csProperty.Setter.Parameters.First();
                         if (getterType.PublicType.QualifiedName != setterType.PublicType.QualifiedName)
                             removeProperty = true;

@@ -108,9 +108,9 @@ namespace SharpGen.Model
         {
             get
             {
-                if (ReturnType.PublicType is CsStruct csStruct)
+                if (ReturnValue.PublicType is CsStruct csStruct)
                 {
-                    if (ReturnType.MarshalType.Type == typeof(IntPtr))
+                    if (ReturnValue.MarshalType.Type == typeof(IntPtr))
                         return false;
 
                     return csStruct.SizeOf > MaxSizeReturnParameter;
@@ -200,7 +200,7 @@ namespace SharpGen.Model
 
         public bool HasReturnType
         {
-            get { return !(ReturnType.PublicType.Type != null && ReturnType.PublicType.Type == typeof (void)); }
+            get { return !(ReturnValue.PublicType.Type != null && ReturnValue.PublicType.Type == typeof (void)); }
         }
 
         public bool HasPublicReturnType
@@ -218,7 +218,7 @@ namespace SharpGen.Model
         }
 
         [DataMember]
-        public CsMarshalBase ReturnType { get; set; }
+        public CsReturnValue ReturnValue { get; set; }
 
 
         /// <summary>
@@ -250,7 +250,7 @@ namespace SharpGen.Model
                 if (HideReturnType && !ForceReturnType)
                     return "void";
 
-                return ReturnType.PublicType.QualifiedName;
+                return ReturnValue.PublicType.QualifiedName;
             }
         }
 
@@ -266,7 +266,7 @@ namespace SharpGen.Model
                     return manager.GetSingleDoc(param);
                 }
             }
-            return manager.GetSingleDoc(ReturnType);
+            return manager.GetSingleDoc(ReturnValue);
         }
 
         /// <summary>

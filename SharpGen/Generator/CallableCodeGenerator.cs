@@ -63,7 +63,7 @@ namespace SharpGen.Generator
             {
                 statements.Add(LocalDeclarationStatement(
                     VariableDeclaration(
-                        ParseTypeName(csElement.ReturnType.PublicType.QualifiedName),
+                        ParseTypeName(csElement.ReturnValue.PublicType.QualifiedName),
                         SingletonSeparatedList(
                             VariableDeclarator("__result__")))));
             }
@@ -93,7 +93,7 @@ namespace SharpGen.Generator
             // Return
             if (csElement.HasPublicReturnType)
             {
-                if ((csElement.ReturnType.PublicType.Name == globalNamespace.GetTypeName("Result")) && csElement.CheckReturnType)
+                if ((csElement.ReturnValue.PublicType.Name == globalNamespace.GetTypeName("Result")) && csElement.CheckReturnType)
                 {
                     statements.Add(ExpressionStatement(
                         InvocationExpression(
