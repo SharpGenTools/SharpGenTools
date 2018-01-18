@@ -113,7 +113,7 @@ namespace SharpGen.Model
         {
             get
             {
-                return PublicType is CsComArray;
+                return PublicType is CsInterfaceArray;
             }
         }
 

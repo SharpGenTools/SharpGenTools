@@ -76,7 +76,7 @@ namespace SharpGen.Model
         /// Interface Parent inheritance
         /// </summary>
         [DataMember]
-        public CsTypeBase IBase { get; set; }
+        public CsInterface IBase { get; set; }
 
         [DataMember]
         public CsInterface NativeImplementation { get; set; }

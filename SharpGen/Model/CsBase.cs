@@ -161,7 +161,7 @@ namespace SharpGen.Model
         public Visibility Visibility { get; set; }
 
         /// <summary>
-        /// Returns a textual representation of the <see cref="CsBase.Visibility"/> property.
+        /// Returns a textual representation of the <see cref="Visibility"/> property.
         /// </summary>
         /// <value>The full name of the visibility.</value>
         public string VisibilityName

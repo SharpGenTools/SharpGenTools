@@ -257,16 +257,16 @@ namespace SharpGen.Model
         /// <summary>
         /// Returns the documentation for the return type
         /// </summary>
-        public string GetReturnTypeDoc(IDocumentationLinker manager)
+        public string GetReturnTypeDoc(IDocumentationLinker linker)
         {
             foreach (var param in Parameters)
             {
                 if (param.IsUsedAsReturnType)
                 {
-                    return manager.GetSingleDoc(param);
+                    return linker.GetSingleDoc(param);
                 }
             }
-            return manager.GetSingleDoc(ReturnValue);
+            return linker.GetSingleDoc(ReturnValue);
         }
 
         /// <summary>

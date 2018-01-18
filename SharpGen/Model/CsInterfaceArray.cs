@@ -25,16 +25,16 @@ using System.Xml.Serialization;
 namespace SharpGen.Model
 {
     [DataContract(Name = "InterfaceArray")]
-    public class CsComArray : CsInterface
+    public class CsInterfaceArray : CsTypeBase
     {
-        public CsComArray()
+        public CsInterfaceArray()
         {
         }
 
-        public CsComArray(CsInterface element, string comArrayTypeName) : base((CppInterface)element.CppElement)
+        public CsInterfaceArray(CsInterface element, string interfaceArrayTypeName)
         {
             BaseElement = element;
-            InterfaceArrayTypeName = comArrayTypeName;
+            InterfaceArrayTypeName = interfaceArrayTypeName;
         }
 
         public override string QualifiedName
