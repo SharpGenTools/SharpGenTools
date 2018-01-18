@@ -470,7 +470,7 @@ namespace SharpGen.Transform
             bool hasComArrayLike = false;
             foreach (var csParameter in csMethod.Parameters)
             {
-                if (csParameter.IsInComArrayLike)
+                if (csParameter.IsInInterfaceArrayLike)
                 {
                     hasComArrayLike = true;
                     break;
@@ -480,11 +480,11 @@ namespace SharpGen.Transform
             // Look for at least one parameter ComArray candidate
             if (hasComArrayLike)
             {
-                // Create a new method and transforms all array of ComObject to ComArray<ComObject>
+                // Create a new method and transforms all array of CppObject to InterfaceArray<CppObject>
                 var newMethod = (CsMethod)csMethod.Clone();
                 foreach (var csSubParameter in newMethod.Parameters)
                 {
-                    if (csSubParameter.IsInComArrayLike)
+                    if (csSubParameter.IsInInterfaceArrayLike)
                         csSubParameter.PublicType = new CsInterfaceArray((CsInterface)csSubParameter.PublicType, globalNamespace.GetTypeName("ComArray"));
                 }
                 interfaceType.Add(newMethod);
@@ -498,7 +498,7 @@ namespace SharpGen.Transform
                 rawMethod.Visibility = Visibility.Private;
                 foreach (var csSubParameter in rawMethod.Parameters)
                 {
-                    if (csSubParameter.IsArray || csSubParameter.IsComObject || csSubParameter.HasPointer)
+                    if (csSubParameter.IsArray || csSubParameter.IsInterface || csSubParameter.HasPointer)
                     {
                         csSubParameter.PublicType = intPtrType;
                         csSubParameter.IsArray = false;

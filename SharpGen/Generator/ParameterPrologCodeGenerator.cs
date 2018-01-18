@@ -152,7 +152,7 @@ namespace SharpGen.Generator
                         VariableDeclaration(PredefinedType(Token(SyntaxKind.IntKeyword)),
                             SingletonSeparatedList(VariableDeclarator(csElement.TempName))));
                 }
-                else if (csElement.IsComObject)
+                else if (csElement.IsInterface)
                 {
                     if (csElement.IsArray)
                     {
@@ -203,7 +203,7 @@ namespace SharpGen.Generator
             // handle array [In] parameters
             else if (csElement.IsArray)
             {
-                if (csElement.IsComObject)
+                if (csElement.IsInterface)
                 {
                     yield return LocalDeclarationStatement(
                         VariableDeclaration(

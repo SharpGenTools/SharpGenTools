@@ -24,7 +24,7 @@ namespace SharpGen.Generator
 
         private ExpressionSyntax GenerateExpression(CsParameter param)
         {
-            if (param.IsComArray)
+            if (param.IsInterfaceArray)
             {
                 return CastExpression(
                     PointerType(
@@ -79,7 +79,7 @@ namespace SharpGen.Generator
                 }
                 else if (param.IsArray)
                 {
-                    return param.IsComArray ? IdentifierName(param.Name) : IdentifierName(param.TempName);
+                    return param.IsInterfaceArray ? IdentifierName(param.Name) : IdentifierName(param.TempName);
                 }
                 else if (param.IsFixed && !param.HasNativeValueType)
                 {

@@ -93,7 +93,7 @@ namespace SharpGen.Model
                 }
                 if (Attribute == CsParameterAttribute.Out && !IsBoolToInt)
                     return true;
-                if (IsArray && !IsComArray)
+                if (IsArray && !IsInterfaceArray)
                     return true;
                 return false;
             }
@@ -109,7 +109,7 @@ namespace SharpGen.Model
             get { return Attribute == CsParameterAttribute.Ref; }
         }
 
-        public bool IsComArray
+        public bool IsInterfaceArray
         {
             get
             {
@@ -117,19 +117,19 @@ namespace SharpGen.Model
             }
         }
 
-        public bool IsInComArrayLike
+        public bool IsInInterfaceArrayLike
         {
             get
             {
-                return IsArray && IsComObject && !IsOut;
+                return IsArray && IsInterface && !IsOut;
             }
         }
 
-        public bool IsComObject
+        public bool IsInterface
         {
             get
             {
-                return PublicType.GetType() == typeof(CsInterface);
+                return PublicType is CsInterface;
             }
         }
 
