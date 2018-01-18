@@ -25,7 +25,7 @@ namespace SharpGen.Generator
                     BaseList().
                         WithTypes(SingletonSeparatedList<BaseTypeSyntax>
                 (
-                    SimpleBaseType(ParseTypeName(csElement.TypeName))
+                    SimpleBaseType(ParseTypeName(csElement.UnderlyingType.FullName))
                 )))
                 .AddMembers(csElement.EnumItems.Select(item =>
                 {
@@ -38,7 +38,7 @@ namespace SharpGen.Generator
                             CheckedExpression(
                                 SyntaxKind.UncheckedExpression,
                                 CastExpression(
-                                    ParseTypeName(csElement.TypeName),
+                                    ParseTypeName(csElement.UnderlyingType.FullName),
                                     LiteralExpression(
                                         SyntaxKind.NumericLiteralExpression,
                                         Literal(int.Parse(item.Value)))))));

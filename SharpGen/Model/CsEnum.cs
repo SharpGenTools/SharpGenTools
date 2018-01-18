@@ -17,6 +17,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -30,26 +31,32 @@ namespace SharpGen.Model
     {
         public CsEnum()
         {
-            Type = typeof (int);
+            UnderlyingType = typeof (int);
             SizeOf = 4;
+        }
+
+        public Type UnderlyingType { get; set; }
+
+
+
+        [DataMember]
+        public string UnderlyingTypeName
+        {
+            get
+            {
+                return UnderlyingType?.FullName;
+            }
+            set
+            {
+                if (value != null)
+                {
+                    UnderlyingType = Type.GetType(value);
+                }
+            }
         }
 
         [DataMember]
         public bool IsFlag { get; set; }
-
-        public string TypeName
-        {
-            get
-            {
-                if ( Type == typeof(int) )
-                    return "int";
-                if (Type == typeof(short))
-                    return "short";
-                if (Type == typeof(byte))
-                    return "byte";
-                return "UNKNOWN";
-            }
-        }
 
         public IEnumerable<CsEnumItem> EnumItems
         {

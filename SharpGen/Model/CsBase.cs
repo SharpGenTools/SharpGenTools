@@ -275,7 +275,7 @@ namespace SharpGen.Model
         public int SizeOf { get; set; }
 
         /// <summary>
-        ///   Packing alignment for this structure (Default is 0 => Platform default)
+        ///   Packing alignment for this type (Default is 0 => Platform default)
         /// </summary>
         [DataMember]
         public int Align { get; set; }

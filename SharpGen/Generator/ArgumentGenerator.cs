@@ -130,7 +130,10 @@ namespace SharpGen.Generator
                             Token(SyntaxKind.IntKeyword)),
                         IdentifierName(param.Name)));
             }
-            if (param.PublicType.Type == typeof(string))
+
+            var fundamental = param.PublicType as CsFundamentalType;
+
+            if (fundamental?.Type == typeof(string))
             {
                 return CastExpression(
                     PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
@@ -177,7 +180,7 @@ namespace SharpGen.Generator
             {
                 return IdentifierName(param.TempName);
             }
-            if (param.PublicType.Type == typeof(IntPtr) && !param.IsArray)
+            if (fundamental?.Type == typeof(IntPtr) && !param.IsArray)
             {
                 return CastExpression(
                     PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),

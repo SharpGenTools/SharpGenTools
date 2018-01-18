@@ -150,18 +150,18 @@ namespace SharpGen.Model
 
         public bool IsPrimitive
         {
-            get { return PublicType.Type != null && PublicType.Type.GetTypeInfo().IsPrimitive; }
+            get { return PublicType is CsFundamentalType type && type.Type.GetTypeInfo().IsPrimitive; }
         }
 
         public bool IsString
         {
-            get { return PublicType.Type == typeof (string); }
+            get { return PublicType is CsFundamentalType type && type.Type == typeof (string); }
         }
 
         public bool IsValueType
         {
             get { return PublicType is CsStruct || PublicType is CsEnum ||
-                    (PublicType.Type != null && (PublicType.Type.GetTypeInfo().IsValueType || PublicType.Type.GetTypeInfo().IsPrimitive)); }
+                    (PublicType is CsFundamentalType type && (type.Type.GetTypeInfo().IsValueType || type.Type.GetTypeInfo().IsPrimitive)); }
         }
 
         public bool IsStructClass

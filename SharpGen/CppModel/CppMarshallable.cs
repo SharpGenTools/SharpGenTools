@@ -25,7 +25,6 @@ namespace SharpGen.CppModel
     /// <summary>
     /// Type declaration.
     /// </summary>
-    [XmlType("marshallable")]
     public class CppMarshallable : CppElement
     {
         /// <summary>

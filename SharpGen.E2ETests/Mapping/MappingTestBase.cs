@@ -19,9 +19,9 @@ namespace SharpGen.E2ETests.Mapping
 
         protected (CsSolution Solution, IEnumerable<DefineExtensionRule> Defines) MapModel(CppModule module, ConfigFile config)
         {
-            var typeRegistry = new TypeRegistry(Logger);
+            var docLinker = new DocumentationLinker();
+            var typeRegistry = new TypeRegistry(Logger, docLinker);
             var namingRules = new NamingRulesManager();
-            var docAggregator = new DocumentationLinker(typeRegistry);
 
             // Run the main mapping process
             var transformer = new TransformManager(
@@ -29,8 +29,8 @@ namespace SharpGen.E2ETests.Mapping
                 namingRules,
                 Logger,
                 typeRegistry,
-                docAggregator,
-                new ConstantManager(namingRules, typeRegistry),
+                docLinker,
+                new ConstantManager(namingRules, docLinker),
                 new AssemblyManager())
             {
                 ForceGenerator = true

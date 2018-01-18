@@ -110,7 +110,7 @@ namespace SharpGen.Model
             {
                 if (ReturnValue.PublicType is CsStruct csStruct)
                 {
-                    if (ReturnValue.MarshalType.Type == typeof(IntPtr))
+                    if (ReturnValue.MarshalType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr))
                         return false;
 
                     return csStruct.SizeOf > MaxSizeReturnParameter;
@@ -200,7 +200,7 @@ namespace SharpGen.Model
 
         public bool HasReturnType
         {
-            get { return !(ReturnValue.PublicType.Type != null && ReturnValue.PublicType.Type == typeof (void)); }
+            get { return !(ReturnValue.PublicType is CsFundamentalType fundamental && fundamental.Type == typeof (void)); }
         }
 
         public bool HasPublicReturnType

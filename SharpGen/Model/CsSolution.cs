@@ -64,7 +64,10 @@ namespace SharpGen.Model
                         typeof(CsProperty),
                         typeof(CsVariable),
                         typeof(CsTypeBase),
-                        typeof(CsMarshalBase)
+                        typeof(CsReturnValue),
+                        typeof(CsMarshalBase),
+                        typeof(CsFundamentalType),
+                        typeof(CsUndefinedType)
             };
 
             return new DataContractSerializer(typeof(CsSolution), new DataContractSerializerSettings

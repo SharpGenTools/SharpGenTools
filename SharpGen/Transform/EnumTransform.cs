@@ -80,19 +80,19 @@ namespace SharpGen.Transform
             var tag = cppEnum.GetMappingRule();
 
             // Determine enum type. Default is int
-            string typeName = cppEnum.GetTypeNameWithMapping();
+            var typeName = cppEnum.GetTypeNameWithMapping();
             switch (typeName)
             {
                 case "byte":
-                    newEnum.Type = typeof(byte);
+                    newEnum.UnderlyingType = typeof(byte);
                     newEnum.SizeOf = 1;
                     break;
                 case "short":
-                    newEnum.Type = typeof(short);
+                    newEnum.UnderlyingType = typeof(short);
                     newEnum.SizeOf = 1;
                     break;
                 case "int":
-                    newEnum.Type = typeof(int);
+                    newEnum.UnderlyingType = typeof(int);
                     newEnum.SizeOf = 4;
                     break;
                 default:

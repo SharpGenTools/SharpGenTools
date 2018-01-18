@@ -45,7 +45,7 @@ namespace SharpGen.Model
         {
             get
             {
-                return MarshalType is CsStruct || PublicType.Type == typeof(System.IntPtr);
+                return MarshalType is CsStruct || PublicType is CsFundamentalType fundamental && fundamental.Type == typeof(System.IntPtr);
             }
         }
     }

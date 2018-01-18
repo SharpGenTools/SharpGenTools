@@ -166,7 +166,8 @@ namespace SharpGen.CppModel
         [XmlArrayItem(typeof (CppMethod))]
         [XmlArrayItem(typeof (CppParameter))]
         [XmlArrayItem(typeof (CppStruct))]
-        [XmlArrayItem(typeof (CppMarshallable))]
+        [XmlArrayItem(typeof(CppReturnValue))]
+        [XmlArrayItem(typeof(CppMarshallable))]
         public List<CppElement> Items { get; set; }
 
         /// <summary>

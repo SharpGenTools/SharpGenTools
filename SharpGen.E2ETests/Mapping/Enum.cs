@@ -61,7 +61,7 @@ namespace SharpGen.E2ETests.Mapping
 
             Assert.Single(csEnum.EnumItems.Where(item => item.Name == "Element1" && item.Value == "0"));
             Assert.Single(csEnum.EnumItems.Where(item => item.Name == "Element2" && item.Value == "1"));
-            Assert.Equal(typeof(int), csEnum.Type);
+            Assert.Equal(typeof(int), csEnum.UnderlyingType);
         }
 
         [Fact]
@@ -112,7 +112,7 @@ namespace SharpGen.E2ETests.Mapping
             Assert.Single(csEnum.EnumItems.Where(item => item.Name == "Element1" && item.Value == "10"));
             Assert.Single(csEnum.EnumItems.Where(item => item.Name == "Element2" && item.Value == "15"));
             Assert.Single(csEnum.EnumItems.Where(item => item.Name == "Element3" && item.Value == "10"));
-            Assert.Equal(typeof(int), csEnum.Type);
+            Assert.Equal(typeof(int), csEnum.UnderlyingType);
         }
 
         [Fact]
@@ -157,7 +157,7 @@ namespace SharpGen.E2ETests.Mapping
             Assert.Single(members.OfType<CsEnum>());
 
             var csEnum = members.OfType<CsEnum>().First();
-            Assert.Equal(typeof(short), csEnum.Type);
+            Assert.Equal(typeof(short), csEnum.UnderlyingType);
         }
     }
 }

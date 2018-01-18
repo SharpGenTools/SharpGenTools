@@ -263,9 +263,9 @@ namespace SharpGen
 
         private (IDocumentationLinker doc, CsSolution solution) ExecuteMappings(CppModule group, ConfigFile consumerConfig)
         {
-            var typeRegistry = new TypeRegistry(Logger);
+            var docLinker = new DocumentationLinker();
+            var typeRegistry = new TypeRegistry(Logger, docLinker);
             var namingRules = new NamingRulesManager();
-            var docAggregator = new DocumentationLinker(typeRegistry);
 
             // Run the main mapping process
             var transformer = new TransformManager(
@@ -273,8 +273,8 @@ namespace SharpGen
                 namingRules,
                 Logger,
                 typeRegistry,
-                docAggregator,
-                new ConstantManager(namingRules, typeRegistry),
+                docLinker,
+                new ConstantManager(namingRules, docLinker),
                 new AssemblyManager())
             {
                 ForceGenerator = _isAssemblyNew
@@ -297,7 +297,7 @@ namespace SharpGen
 
             DumpRenames(transformer);
 
-            return (docAggregator, solution);
+            return (docLinker, solution);
         }
 
         private void DumpRenames(TransformManager transformer)

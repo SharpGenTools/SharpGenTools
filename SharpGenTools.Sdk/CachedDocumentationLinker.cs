@@ -21,13 +21,13 @@ namespace SharpGenTools.Sdk
             {
                 var pair = reader.ReadLine();
                 var components = pair.Split(Delimiter);
-                AddDocLink(components[0], components[1]);
+                AddOrUpdateDocLink(components[0], components[1]);
             }
         }
 
-        public void AddDocLink(string cppName, string cSharpName)
+        public void AddOrUpdateDocLink(string cppName, string cSharpName)
         {
-            Links.Add(cppName, cSharpName);
+            Links[cppName] = cSharpName;
         }
 
         public string FindDocName(string cppName)

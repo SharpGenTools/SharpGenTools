@@ -430,7 +430,7 @@ namespace SharpGen.Transform
                     else if (mappingRule.Element != null)
                         cppModule.ExecuteRule<CppElement>(mappingRule.Element, mappingRule);
                     else if (mappingRule.DocItem != null)
-                        docLinker.AddDocLink(mappingRule.DocItem, mappingRule.MappingNameFinal);
+                        docLinker.AddOrUpdateDocLink(mappingRule.DocItem, mappingRule.MappingNameFinal);
                 }
                 else if (configRule is ContextRule contextRule)
                 {
@@ -582,7 +582,7 @@ namespace SharpGen.Transform
                         cppItem.ToString(),
                         () =>
                         {
-                            // If a struct is already mapped, it means that there is already a predefined mapping
+                            // If already mapped, it means that there is already a predefined mapping
                             if (typeRegistry.FindBoundType(cppItem.Name) == null)
                             {
                                 var csElement = transform.Prepare(cppItem);

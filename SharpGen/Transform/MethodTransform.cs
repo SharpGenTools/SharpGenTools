@@ -233,8 +233,10 @@ namespace SharpGen.Transform
 
                         if ((cppAttribute & ParamAttribute.In) != 0)
                         {
-                            parameterAttribute = publicType.Type == typeof(IntPtr) || publicType.Name == globalNamespace.GetTypeName("FunctionCallback") ||
-                                                 publicType.Type == typeof(string)
+                            var fundamentalType = (publicType as CsFundamentalType)?.Type;
+                            parameterAttribute = fundamentalType == typeof(IntPtr)
+                                                || publicType.Name == globalNamespace.GetTypeName("FunctionCallback")
+                                                || fundamentalType == typeof(string)
                                                      ? CsParameterAttribute.In
                                                      : CsParameterAttribute.RefIn;
                         }
@@ -260,7 +262,8 @@ namespace SharpGen.Transform
                             hasArray = false;
                             parameterAttribute = CsParameterAttribute.In;
                         }
-                        else if (publicType.Type == typeof(string) && (cppAttribute & ParamAttribute.Out) != 0)
+                        else if (publicType is CsFundamentalType fundamental && fundamental.Type == typeof(string)
+                            && (cppAttribute & ParamAttribute.Out) != 0)
                         {
                             publicType = typeRegistry.ImportType(typeof(IntPtr));
                             parameterAttribute = CsParameterAttribute.In;
@@ -327,9 +330,9 @@ namespace SharpGen.Transform
                         cSharpInteropCalliSignature.ReturnType = csMethod.ReturnValue.PublicType.QualifiedName;
                 }
             }
-            else if (csMethod.ReturnValue.MarshalType.Type != null)
+            else if (csMethod.ReturnValue.MarshalType is CsFundamentalType fundamentalReturn)
             {
-                cSharpInteropCalliSignature.ReturnType = csMethod.ReturnValue.MarshalType.Type;
+                cSharpInteropCalliSignature.ReturnType = fundamentalReturn.Type;
             }
             else
             {
@@ -346,7 +349,15 @@ namespace SharpGen.Transform
                 {
                     interopType = typeof(void*);
                 }
-                else if (param.MarshalType.Type == null)
+                else if (param.MarshalType is CsFundamentalType fundamental)
+                {
+                    var type = fundamental.Type;
+                    // Patch for Mono bug with structs marshalling and calli.
+                    if (type == typeof(IntPtr))
+                        type = typeof(void*);
+                    interopType = type;
+                }
+                else
                 {
                     if (param.PublicType is CsStruct)
                     {
@@ -358,14 +369,6 @@ namespace SharpGen.Transform
                     {
                         throw new ArgumentException(string.Format(System.Globalization.CultureInfo.InvariantCulture, "Invalid parameter {0} for method {1}", param.PublicType.QualifiedName, csMethod.CppElement));
                     }
-                }
-                else
-                {
-                    var type = param.MarshalType.Type;
-                    // Patch for Mono bug with structs marshalling and calli.
-                    if (type == typeof(IntPtr))
-                        type = typeof(void*);
-                    interopType = type;
                 }
 
                 cSharpInteropCalliSignature.ParameterTypes.Add(interopType);

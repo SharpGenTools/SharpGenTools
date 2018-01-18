@@ -130,20 +130,21 @@ namespace SharpGen.Transform
                             marshalType = publicType;
                         }
                     }
-                    else if (publicType is CsEnum)
+                    else if (publicType is CsEnum referenceEnum)
                     {
-                        var referenceEnum = publicType as CsEnum;
                         // Fixed array of enum should be mapped to their respective blittable type
                         if (interopType.IsArray)
                         {
-                            marshalType = typeRegistry.ImportType(referenceEnum.Type);
+                            marshalType = typeRegistry.ImportType(referenceEnum.UnderlyingType);
                         }
                     }
                     break;
             }
 
             // Set bool to int conversion case
-            interopType.IsBoolToInt = marshalType?.Type == typeof(int) && publicType.Type == typeof(bool);
+            interopType.IsBoolToInt = 
+                marshalType is CsFundamentalType fundamental && fundamental.Type == typeof(int)
+                && publicType is CsFundamentalType publicFundamental && publicFundamental.Type == typeof(bool);
 
             // Default IntPtr type for pointer, unless modified by specialized type (like char* map to string)
             if (interopType.HasPointer)
