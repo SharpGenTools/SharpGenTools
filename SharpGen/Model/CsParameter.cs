@@ -191,7 +191,7 @@ namespace SharpGen.Model
             get
             {
                 return IsRefIn && IsValueType && !IsArray
-                       && ((PublicType.SizeOf <= SizeOfLimit && !HasNativeValueType) || (NativeParamAttribute & ParamAttribute.Value) != 0);
+                       && ((PublicType.Size <= SizeOfLimit && !HasNativeValueType) || (NativeParamAttribute & ParamAttribute.Value) != 0);
             }
         }
 

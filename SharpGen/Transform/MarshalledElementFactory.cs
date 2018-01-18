@@ -135,7 +135,7 @@ namespace SharpGen.Transform
                         // Fixed array of enum should be mapped to their respective blittable type
                         if (interopType.IsArray)
                         {
-                            marshalType = typeRegistry.ImportType(referenceEnum.UnderlyingType);
+                            marshalType = typeRegistry.ImportType(referenceEnum.UnderlyingType.Type);
                         }
                     }
                     break;
@@ -189,9 +189,6 @@ namespace SharpGen.Transform
             if (marshalType == null)
                 marshalType = publicType;
             interopType.MarshalType = marshalType;
-
-            // Update the SizeOf according to the SizeOf MarshalType
-            interopType.SizeOf = interopType.MarshalType.SizeOf * ((interopType.ArrayDimensionValue > 1) ? interopType.ArrayDimensionValue : 1);
 
             return interopType;
         }

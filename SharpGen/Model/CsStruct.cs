@@ -60,6 +60,27 @@ namespace SharpGen.Model
                 HasMarshalType = true;
         }
 
+        private int size;
+
+        public override int Size
+        {
+            get
+            {
+                return size;
+            }
+        }
+        
+        /// <summary>
+        ///   Packing alignment for this type (Default is 0 => Platform default)
+        /// </summary>
+        [DataMember]
+        public int Align { get; set; }
+
+        public void SetSize(int size)
+        {
+            this.size = size;
+        }
+
         public IEnumerable<CsField> Fields
         {
             get { return Items.OfType<CsField>(); }

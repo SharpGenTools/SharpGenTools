@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text;
 
@@ -31,6 +32,30 @@ namespace SharpGen.Model
                 {
                     Type = Type.GetType(value);
                 }
+            }
+        }
+
+        private int? size;
+
+        public override int Size
+        {
+            get
+            {
+                return size ?? (size = GetSize()).Value;
+            }
+        }
+
+        private int GetSize()
+        {
+            try
+            {
+#pragma warning disable 0618
+                return Marshal.SizeOf(Type);
+#pragma warning restore 0618
+            }
+            catch (Exception)
+            {
+                return 0;
             }
         }
 

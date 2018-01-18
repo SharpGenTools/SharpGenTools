@@ -113,7 +113,7 @@ namespace SharpGen.Model
                     if (ReturnValue.MarshalType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr))
                         return false;
 
-                    return csStruct.SizeOf > MaxSizeReturnParameter;
+                    return csStruct.Size > MaxSizeReturnParameter;
                 }
                 return false;
             }

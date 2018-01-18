@@ -25,9 +25,9 @@ using System.Xml.Serialization;
 namespace SharpGen.Model
 {
     [DataContract(Name = "Group")]
-    public class CsClass : CsTypeBase
+    public class CsGroup : CsBase
     {
-        public CsClass()
+        public CsGroup()
         {
             Visibility = Config.Visibility.PublicProtected | Config.Visibility.Static;
             Description = "Functions";

@@ -11,7 +11,7 @@ using SharpGen.Transform;
 
 namespace SharpGen.Generator
 {
-    class GroupCodeGenerator : MemberCodeGeneratorBase<CsClass>
+    class GroupCodeGenerator : MemberCodeGeneratorBase<CsGroup>
     {
         public GroupCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation)
             : base(documentation)
@@ -21,7 +21,7 @@ namespace SharpGen.Generator
 
         public IGeneratorRegistry Generators { get; }
 
-        public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsClass csElement)
+        public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsGroup csElement)
         {
             yield return ClassDeclaration(Identifier(csElement.Name))
                 .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))

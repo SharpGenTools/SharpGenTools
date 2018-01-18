@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Runtime.InteropServices;
 using System.Xml.Serialization;
 using SharpGen.Config;
 
@@ -29,31 +30,11 @@ namespace SharpGen.Model
     [DataContract(Name = "Enum")]
     public class CsEnum : CsTypeBase
     {
-        public CsEnum()
-        {
-            UnderlyingType = typeof (int);
-            SizeOf = 4;
-        }
-
-        public Type UnderlyingType { get; set; }
-
-
-
-        [DataMember]
-        public string UnderlyingTypeName
-        {
-            get
-            {
-                return UnderlyingType?.FullName;
-            }
-            set
-            {
-                if (value != null)
-                {
-                    UnderlyingType = Type.GetType(value);
-                }
-            }
-        }
+        public CsFundamentalType UnderlyingType { get; set; }
+        
+#pragma warning disable 0618
+        public int SizeOf => Marshal.SizeOf(UnderlyingType.Type);
+#pragma warning restore 0618
 
         [DataMember]
         public bool IsFlag { get; set; }

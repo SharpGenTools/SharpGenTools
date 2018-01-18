@@ -93,7 +93,7 @@ namespace SharpGen.Generator
                     var declaration = fieldDecl.WithDeclaration(fieldDecl.Declaration.AddVariables(VariableDeclarator($"__{field.Name}{i}")));
                     if (csStruct.ExplicitLayout)
                     {
-                        var offset = field.Offset + (field.SizeOf / field.ArrayDimensionValue) * i;
+                        var offset = field.Offset + (field.Size / field.ArrayDimensionValue) * i;
                         declaration = declaration.WithAttributeLists(SingletonList(
                             AttributeList(
                                 SingletonSeparatedList(Attribute(

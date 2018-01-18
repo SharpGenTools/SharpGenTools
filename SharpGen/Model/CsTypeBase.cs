@@ -27,6 +27,8 @@ namespace SharpGen.Model
     [DataContract]
     public abstract class CsTypeBase : CsBase
     {
+        public virtual int Size => 0;
+
         public virtual int CalculateAlignment()
         {
             return 4;

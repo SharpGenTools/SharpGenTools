@@ -50,7 +50,7 @@ namespace SharpGen.Generator
         public IMultiCodeGenerator<CsInterface, MemberDeclarationSyntax> Interface { get; }
         public ICodeGenerator<CsParameter, ParameterSyntax> Parameter { get; }
         public ICodeGenerator<CsParameter, ArgumentSyntax> Argument { get; }
-        public IMultiCodeGenerator<CsClass, MemberDeclarationSyntax> Group { get; }
+        public IMultiCodeGenerator<CsGroup, MemberDeclarationSyntax> Group { get; }
 
         public ICodeGenerator<CsAssembly, NamespaceDeclarationSyntax> LocalInterop { get; }
 

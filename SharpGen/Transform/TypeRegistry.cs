@@ -61,7 +61,7 @@ namespace SharpGen.Transform
             return cSharpType;
         }
 
-        public CsTypeBase ImportType(Type type)
+        public CsFundamentalType ImportType(Type type)
         {
             var typeName = type.FullName;
 
@@ -72,22 +72,10 @@ namespace SharpGen.Transform
 
             if (_mapDefinedCSharpType.TryGetValue(typeName, out CsTypeBase preDefined))
             {
-                return preDefined;
+                return (CsFundamentalType)preDefined;
             }
 
-                var sizeOf = 0;
-            try
-            {
-#pragma warning disable 0618
-                sizeOf = Marshal.SizeOf(type);
-#pragma warning restore 0618
-            }
-            catch (Exception)
-            {
-                Logger.Message($"Tried to get the size of type {typeName}, which is not a struct.");
-            }
-
-            var cSharpType = new CsFundamentalType(type) { Name = typeName, SizeOf = sizeOf };
+            var cSharpType = new CsFundamentalType(type) { Name = typeName };
             DefineType(cSharpType);
             return cSharpType;
         }

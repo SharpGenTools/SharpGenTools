@@ -220,14 +220,14 @@ namespace SharpGen.Transform
                             {
                                 maxSizeOfField = 0;
                             }
-                            maxSizeOfField = fieldStruct.SizeOf > maxSizeOfField ? fieldStruct.SizeOf : maxSizeOfField;
+                            maxSizeOfField = fieldStruct.Size > maxSizeOfField ? fieldStruct.Size : maxSizeOfField;
                             isInUnion = true;
                             csStruct.ExplicitLayout = true;
                             previousFieldSize = 0;
                         }
                         else
                         {
-                            previousFieldSize = fieldStruct.SizeOf;
+                            previousFieldSize = fieldStruct.Size;
                         }
                         previousFieldOffsetIndex = cppField.Offset;
                     });
@@ -259,7 +259,7 @@ namespace SharpGen.Transform
                 }
             }
 
-            csStruct.SizeOf = currentFieldAbsoluteOffset + previousFieldSize;
+            csStruct.SetSize(currentFieldAbsoluteOffset + previousFieldSize);
             csStruct.HasMarshalType = hasMarshalType;
         }
     }

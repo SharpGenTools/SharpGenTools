@@ -24,7 +24,7 @@ namespace SharpGen.Generator
         IMultiCodeGenerator<CsInterface, MemberDeclarationSyntax> Interface { get; }
         ICodeGenerator<CsParameter, ParameterSyntax> Parameter { get; }
         ICodeGenerator<CsParameter, ArgumentSyntax> Argument { get; }
-        IMultiCodeGenerator<CsClass, MemberDeclarationSyntax> Group { get; }
+        IMultiCodeGenerator<CsGroup, MemberDeclarationSyntax> Group { get; }
         ICodeGenerator<CsAssembly, NamespaceDeclarationSyntax> LocalInterop { get; }
 
         IMultiCodeGenerator<InteropMethodSignature, MemberDeclarationSyntax> InteropMethod { get; }
