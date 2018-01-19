@@ -97,7 +97,7 @@ namespace SharpGen.CppModel
         {
             get
             {
-                CppElement cppInclude = Parent;
+                var cppInclude = Parent;
                 while (cppInclude != null && !(cppInclude is CppInclude))
                     cppInclude = cppInclude.Parent;
                 return cppInclude as CppInclude;
@@ -113,7 +113,7 @@ namespace SharpGen.CppModel
         {
             get
             {
-                CppElement cppRoot = this;
+                var cppRoot = this;
                 while (cppRoot.Parent != null)
                     cppRoot = cppRoot.Parent;
                 return cppRoot;
@@ -387,7 +387,6 @@ namespace SharpGen.CppModel
 
             if (_findContext == null)
             {
-                // Optimized version with findContext
                 foreach (var innerElement in AllItems)
                 {
                     if (innerElement.Find(regex, toAdd, modifier, ref modifyParent))
@@ -396,6 +395,7 @@ namespace SharpGen.CppModel
             }
             else
             {
+                // Optimized version with findContext
                 foreach (var innerElement in AllItems)
                 {
                     if (_findContext.Contains(innerElement.Name))
