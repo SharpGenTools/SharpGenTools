@@ -105,8 +105,8 @@ namespace SharpGen.Model
 
                     if (element is CppMarshallable cppType)
                     {
-                        if (tag.MappingType != null)
-                            cppType.TypeName = tag.MappingType;
+                        if (newRule.MappingType != null)
+                            tag.MappingType = newRule.MappingType;
 
                         if (newRule.Pointer != null)
                         {

@@ -125,48 +125,7 @@ namespace SharpGen.E2ETests
             Assert.Equal("Field2", members[1].Name);
             Assert.Equal("Field3", members[2].Name);
         }
-
-        [Fact]
-        public void StructWithBoolToIntMemberGeneratesBoolField()
-        {
-            var config = new Config.ConfigFile
-            {
-                Namespace = nameof(StructWithBoolToIntMemberGeneratesBoolField),
-                Assembly = nameof(StructWithBoolToIntMemberGeneratesBoolField),
-                IncludeDirs = { GetTestFileIncludeRule() },
-                Includes =
-                {
-                    CreateCppFile("boolToInt", @"
-                        struct BoolToInt {
-                            int test;
-                        };
-                    ")
-                },
-                Bindings =
-                {
-                    new Config.BindRule("int", "System.Int32"),
-                    new Config.BindRule("bool", "System.Boolean")
-                },
-                Mappings =
-                {
-                    new Config.MappingRule
-                    {
-                        Field = "BoolToInt::test",
-                        MappingType = "bool",
-                    }
-                }
-            };
-
-            var result = RunWithConfig(config);
-            AssertRanSuccessfully(result.success, result.output);
-
-            var compilation = GetCompilationForGeneratedCode();
-            var structType = compilation.GetTypeByMetadataName($"{nameof(StructWithBoolToIntMemberGeneratesBoolField)}.BoolToInt");
-            var member = structType.GetMembers("Test")[0] as IFieldSymbol;
-            Assert.NotNull(member);
-            Assert.Equal(compilation.GetSpecialType(SpecialType.System_Boolean), member.Type);
-        }
-
+        
         [Fact]
         public void StructWithBoolToIntArrayMemberGeneratesBoolArrayProperty()
         {

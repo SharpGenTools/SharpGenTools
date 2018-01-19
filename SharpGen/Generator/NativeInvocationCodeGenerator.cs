@@ -25,7 +25,7 @@ namespace SharpGen.Generator
         {
             var fundamentalPublic = returnValue.PublicType as CsFundamentalType;
 
-            if (fundamentalPublic?.Type == typeof(bool))
+            if (returnValue.IsBoolToInt)
                 return BinaryExpression(SyntaxKind.NotEqualsExpression,
                     LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)),
                     invocation);
