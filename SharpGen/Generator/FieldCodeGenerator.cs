@@ -43,7 +43,7 @@ namespace SharpGen.Generator
                             })))
                     .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
                     .WithLeadingTrivia(Trivia(docComments));
-                yield return GenerateBackingField(csElement, explicitLayout, null);
+                yield return GenerateBackingField(csElement.Name, csElement.MarshalType, csElement.VisibilityName, explicitLayout ? csElement.Offset : (int?)null);
             }
             else if (csElement.IsArray && csElement.PublicType.QualifiedName != "System.String")
             {
@@ -71,7 +71,8 @@ namespace SharpGen.Generator
                                 })))
                     .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
                     .WithLeadingTrivia(Trivia(docComments));
-                yield return GenerateBackingField(csElement, explicitLayout, null, isArray: true);
+
+                yield return GenerateBackingField(csElement.Name, csElement.PublicType, csElement.VisibilityName, explicitLayout ? csElement.Offset : (int?)null, isArray: true);
             }
             else if (csElement.IsBitField)
             {
@@ -223,26 +224,26 @@ namespace SharpGen.Generator
                     .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
                     .WithLeadingTrivia(Trivia(docComments));
                 }
-                yield return GenerateBackingField(csElement, explicitLayout, null);
+                yield return GenerateBackingField(csElement.Name, csElement.PublicType, csElement.VisibilityName, explicitLayout ? csElement.Offset : (int?)null);
             }
             else
             {
-                yield return GenerateBackingField(csElement, explicitLayout, docComments, propertyBacking: false);
+                yield return GenerateBackingField(csElement.Name, csElement.PublicType, csElement.VisibilityName, explicitLayout ? csElement.Offset : (int?)null, docTrivia: docComments, propertyBacking: false);
             }
         }
 
-        private static MemberDeclarationSyntax GenerateBackingField(CsField field, bool explicitLayout, DocumentationCommentTriviaSyntax docTrivia, bool isArray = false, bool propertyBacking = true)
+        private static MemberDeclarationSyntax GenerateBackingField(string name, CsTypeBase type, string visibility, int? offset, bool isArray = false, bool propertyBacking = true, DocumentationCommentTriviaSyntax docTrivia = null)
         {
             var fieldDecl = FieldDeclaration(
-                VariableDeclaration(isArray ?
-                    ArrayType(ParseTypeName(field.PublicType.QualifiedName), SingletonList(ArrayRankSpecifier()))
-                    : ParseTypeName(field.PublicType.QualifiedName),
-                    SingletonSeparatedList(
-                        VariableDeclarator(propertyBacking ? $"_{field.Name}": field.Name)
-                    )))
-                    .WithModifiers(propertyBacking ? TokenList(Token(SyntaxKind.InternalKeyword)) : TokenList(ParseTokens(field.VisibilityName)));
+               VariableDeclaration(isArray ?
+                   ArrayType(ParseTypeName(type.QualifiedName), SingletonList(ArrayRankSpecifier()))
+                   : ParseTypeName(type.QualifiedName),
+                   SingletonSeparatedList(
+                       VariableDeclarator(propertyBacking ? $"_{name}" : name)
+                   )))
+               .WithModifiers(propertyBacking ? TokenList(Token(SyntaxKind.InternalKeyword)) : TokenList(ParseTokens(visibility)));
 
-            if (explicitLayout)
+            if (offset.HasValue)
             {
                 fieldDecl = fieldDecl.WithAttributeLists(SingletonList(
                     AttributeList(
@@ -250,7 +251,7 @@ namespace SharpGen.Generator
                             ParseName("System.Runtime.InteropServices.FieldOffset"),
                             AttributeArgumentList(
                                 SingletonSeparatedList(AttributeArgument(
-                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(field.Offset))))))))
+                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(offset.Value))))))))
                 ));
             }
             return docTrivia != null ? fieldDecl.WithLeadingTrivia(Trivia(docTrivia)) : fieldDecl;

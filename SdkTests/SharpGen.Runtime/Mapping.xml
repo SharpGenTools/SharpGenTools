@@ -122,7 +122,7 @@
     <bind from="unsigned longlong" to="System.UInt64" />
     <bind from="float" to="System.Single" />
     <bind from="double" to="System.Double" />
-    <bind from="bool" to="System.Boolean" />
+    <bind from="bool" to="System.Boolean" marshal="System.Byte" />
 
     <!-- SharpGen.Runtime bindings -->
     <bind from="SHARPGEN_RUNTIME_USHORT" to="System.UInt16" />
