@@ -140,10 +140,10 @@ namespace SharpGen.Transform
 
             var inheritedStructs = new Stack<CppStruct>();
             var currentStruct = cppStruct;
-            while (currentStruct != null && currentStruct.ParentName != currentStruct.Name)
+            while (currentStruct != null && currentStruct.Base != currentStruct.Name)
             {
                 inheritedStructs.Push(currentStruct);
-                currentStruct = typeRegistry.FindBoundType(currentStruct.ParentName)?.CppElement as CppStruct;
+                currentStruct = typeRegistry.FindBoundType(currentStruct.Base)?.CppElement as CppStruct;
             }
 
             while (inheritedStructs.Count > 0)

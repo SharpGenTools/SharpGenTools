@@ -16,6 +16,201 @@ namespace SharpGen.E2ETests.Mapping
         }
 
         [Fact]
+        public void Simple()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(Simple),
+                Namespace = nameof(Simple),
+                Assembly = nameof(Simple),
+                Includes =
+                {
+                    new Config.IncludeRule
+                    {
+                        File = "simple.h",
+                        Attach = true,
+                        Namespace = nameof(Simple)
+                    }
+                },
+                Bindings =
+                {
+                    new Config.BindRule("int", "System.Int32")
+                }
+            };
+
+            var cppStruct = new CppStruct
+            {
+                Name = "struct"
+            };
+
+            cppStruct.Add(new CppField
+            {
+                Name = "field",
+                TypeName = "int"
+            });
+
+            var cppInclude = new CppInclude
+            {
+                Name = "simple"
+            };
+
+            var cppModule = new CppModule();
+
+            cppModule.Add(cppInclude);
+            cppInclude.Add(cppStruct);
+
+            var (solution, _) = MapModel(cppModule, config);
+
+            Assert.Single(solution.EnumerateDescendants().OfType<CsStruct>());
+
+            var csStruct = solution.EnumerateDescendants().OfType<CsStruct>().First();
+
+            Assert.Single(csStruct.Fields.Where(fld => fld.Name == "Field"));
+
+            var field = csStruct.Fields.First(fld => fld.Name == "Field");
+
+            Assert.IsType<CsFundamentalType>(field.PublicType);
+
+            var fundamental = (CsFundamentalType)field.PublicType;
+
+            Assert.Equal(typeof(int), fundamental.Type);
+        }
+
+
+        [Fact]
+        public void SequentialOffsets()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(SequentialOffsets),
+                Namespace = nameof(SequentialOffsets),
+                Assembly = nameof(SequentialOffsets),
+                Includes =
+                {
+                    new Config.IncludeRule
+                    {
+                        File = "simple.h",
+                        Attach = true,
+                        Namespace = nameof(SequentialOffsets)
+                    }
+                },
+                Bindings =
+                {
+                    new Config.BindRule("int", "System.Int32")
+                }
+            };
+
+            var cppStruct = new CppStruct
+            {
+                Name = "struct"
+            };
+
+            cppStruct.Add(new CppField
+            {
+                Name = "field",
+                TypeName = "int"
+            });
+
+            cppStruct.Add(new CppField
+            {
+                Name = "field2",
+                TypeName = "int",
+                Offset = 1
+            });
+
+            var cppInclude = new CppInclude
+            {
+                Name = "simple"
+            };
+
+            var cppModule = new CppModule();
+
+            cppModule.Add(cppInclude);
+            cppInclude.Add(cppStruct);
+
+            var (solution, _) = MapModel(cppModule, config);
+
+            var csStruct = solution.EnumerateDescendants().OfType<CsStruct>().First();
+
+            var field = csStruct.Fields.First(fld => fld.Name == "Field");
+            var field2 = csStruct.Fields.First(fld => fld.Name == "Field2");
+
+            Assert.Equal(0, field.Offset);
+
+            Assert.Equal(4, field2.Offset);
+        }
+
+        [Fact]
+        public void InheritingStructs()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(InheritingStructs),
+                Namespace = nameof(InheritingStructs),
+                Assembly = nameof(InheritingStructs),
+                Includes =
+                {
+                    new Config.IncludeRule
+                    {
+                        File = "struct.h",
+                        Attach = true,
+                        Namespace = nameof(SequentialOffsets)
+                    }
+                },
+                Bindings =
+                {
+                    new Config.BindRule("int", "System.Int32")
+                }
+            };
+
+            var baseStruct = new CppStruct
+            {
+                Name = "base"
+            };
+
+            baseStruct.Add(new CppField
+            {
+                Name = "field",
+                TypeName = "int"
+            });
+
+            var inheritingStruct = new CppStruct
+            {
+                Name = "inheriting",
+                Base = "base"
+            };
+
+            inheritingStruct.Add(new CppField
+            {
+                Name = "field2",
+                TypeName = "int",
+                Offset = 1
+            });
+
+            var cppInclude = new CppInclude
+            {
+                Name = "struct"
+            };
+
+            var cppModule = new CppModule();
+
+            cppModule.Add(cppInclude);
+            cppInclude.Add(baseStruct);
+            cppInclude.Add(inheritingStruct);
+
+            var (solution, _) = MapModel(cppModule, config);
+
+            var csStruct = solution.EnumerateDescendants().OfType<CsStruct>().First(@struct => @struct.Name == "Inheriting");
+
+            var field = csStruct.Fields.First(fld => fld.Name == "Field");
+            var field2 = csStruct.Fields.First(fld => fld.Name == "Field2");
+
+            Assert.Equal(0, field.Offset);
+
+            Assert.Equal(4, field2.Offset);
+        }
+
+        [Fact]
         public void AsParameterByValueMarkedAsMarshalToNative()
         {
             var config = new Config.ConfigFile

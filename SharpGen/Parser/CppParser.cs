@@ -684,8 +684,8 @@ namespace SharpGen.Parser
                 CppStruct cppStructBase = null;
                 Logger.RunInContext("Base", () => { cppStructBase = ParseStructOrUnion(xElementBase); });
 
-                if (string.IsNullOrEmpty(cppStructBase.ParentName))
-                    cppStruct.ParentName = cppStructBase.Name;
+                if (string.IsNullOrEmpty(cppStructBase.Base))
+                    cppStruct.Base = cppStructBase.Name;
             }
 
             // Parse all fields
