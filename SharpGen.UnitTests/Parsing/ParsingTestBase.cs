@@ -3,10 +3,12 @@ using SharpGen.CppModel;
 using SharpGen.Parser;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Xunit.Abstractions;
 
-namespace SharpGen.E2ETests.Parsing
+namespace SharpGen.UnitTests.Parsing
 {
     public abstract class ParsingTestBase : FileSystemTestBase
     {
@@ -14,6 +16,18 @@ namespace SharpGen.E2ETests.Parsing
 
         protected ParsingTestBase(ITestOutputHelper outputHelper) : base(outputHelper)
         {
+        }
+        
+        public IncludeRule CreateCppFile(string cppFileName, string cppFile, [CallerMemberName] string testName = "")
+        {
+            var includesDir = TestDirectory.CreateSubdirectory("includes");
+            File.WriteAllText(Path.Combine(includesDir.FullName, cppFileName + ".h"), cppFile);
+            return new IncludeRule
+            {
+                Attach = true,
+                File = cppFileName + ".h",
+                Namespace = testName,
+            };
         }
 
         protected CppModule ParseCpp(ConfigFile config)

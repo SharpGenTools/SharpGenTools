@@ -3,7 +3,7 @@ using System;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace SharpGen.E2ETests
+namespace SharpGen.UnitTests
 {
     class XUnitLogger : LoggerBase
     {

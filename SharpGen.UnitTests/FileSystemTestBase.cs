@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Xunit.Abstractions;
 
-namespace SharpGen.E2ETests
+namespace SharpGen.UnitTests
 {
     public abstract class FileSystemTestBase : TestBase, IDisposable
     {
@@ -15,18 +15,6 @@ namespace SharpGen.E2ETests
             :base(outputHelper)
         {
             TestDirectory = GenerateTestDirectory();
-        }
-
-        public Config.IncludeRule CreateCppFile(string cppFileName, string cppFile, [CallerMemberName] string testName = "")
-        {
-            var includesDir = TestDirectory.CreateSubdirectory("includes");
-            File.WriteAllText(Path.Combine(includesDir.FullName, cppFileName + ".h"), cppFile);
-            return new Config.IncludeRule
-            {
-                Attach = true,
-                File = cppFileName + ".h",
-                Namespace = testName,
-            };
         }
 
         public Config.IncludeDirRule GetTestFileIncludeRule()

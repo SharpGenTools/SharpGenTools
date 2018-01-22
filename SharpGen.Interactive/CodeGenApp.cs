@@ -35,7 +35,7 @@ using SharpGen.Doc;
 using System.Runtime.Loader;
 #endif
 
-namespace SharpGen
+namespace SharpGen.Interactive
 {
     /// <summary>
     /// CodeGen Application.

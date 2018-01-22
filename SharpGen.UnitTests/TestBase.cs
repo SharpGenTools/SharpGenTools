@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using Xunit.Abstractions;
 
-namespace SharpGen.E2ETests
+namespace SharpGen.UnitTests
 {
     public class TestBase
     {

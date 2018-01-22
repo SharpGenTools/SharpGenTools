@@ -39,6 +39,7 @@
     <ApplicationIcon>SharpGen.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="CodeGenApp.cs" />
     <Compile Include="ConsoleLogger.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ProgressForm.cs">

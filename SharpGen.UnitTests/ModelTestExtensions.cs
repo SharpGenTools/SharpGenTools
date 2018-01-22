@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SharpGen.E2ETests
+namespace SharpGen.UnitTests
 {
     static class ModelTestExtensions
     {

@@ -5,7 +5,7 @@ using System.Text;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace SharpGen.E2ETests.Parsing
+namespace SharpGen.UnitTests.Parsing
 {
     public class Struct : ParsingTestBase
     {

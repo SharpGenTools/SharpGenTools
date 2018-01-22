@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Text;
 using Xunit.Abstractions;
 
-namespace SharpGen.E2ETests.Mapping
+namespace SharpGen.UnitTests.Mapping
 {
     public abstract class MappingTestBase : TestBase
     {

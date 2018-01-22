@@ -7,7 +7,7 @@ using System.Text;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace SharpGen.E2ETests.Mapping
+namespace SharpGen.UnitTests.Mapping
 {
     public class Interface : MappingTestBase
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace SharpGen.E2ETests.Mapping
+namespace SharpGen.UnitTests.Mapping
 {
     public class RenameRules : MappingTestBase
     {
