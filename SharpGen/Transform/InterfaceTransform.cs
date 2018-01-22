@@ -126,7 +126,7 @@ namespace SharpGen.Transform
             var cppInterface = (CppInterface)interfaceType.CppElement;
 
             // Associate Parent
-            var parentType = typeRegistry.FindBoundType(cppInterface.ParentName);
+            var parentType = typeRegistry.FindBoundType(cppInterface.Base);
             if (parentType != null)
             {
                 interfaceType.Base = parentType;

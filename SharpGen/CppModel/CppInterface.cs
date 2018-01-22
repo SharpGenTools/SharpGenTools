@@ -40,7 +40,7 @@ namespace SharpGen.CppModel
         /// </summary>
         /// <value>The name of the parent.</value>
         [XmlAttribute("base")]
-        public string ParentName { get; set; }
+        public string Base { get; set; }
 
         /// <summary>
         /// Gets the methods.
@@ -56,6 +56,7 @@ namespace SharpGen.CppModel
         /// Gets or sets the total method count.
         /// </summary>
         /// <value>The total method count.</value>
-        internal int TotalMethodCount { get; set; }
+        [XmlIgnore]
+        public int TotalMethodCount { get; set; }
     }
 }

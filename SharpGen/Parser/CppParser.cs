@@ -535,8 +535,8 @@ namespace SharpGen.Parser
                 CppInterface cppInterfaceBase = null;
                 Logger.RunInContext("Base", () => { cppInterfaceBase = ParseInterface(xElementBase); });
 
-                if (string.IsNullOrEmpty(cppInterface.ParentName))
-                    cppInterface.ParentName = cppInterfaceBase.Name;
+                if (string.IsNullOrEmpty(cppInterface.Base))
+                    cppInterface.Base = cppInterfaceBase.Name;
                 
                 offsetMethod += cppInterfaceBase.TotalMethodCount;
             }

@@ -59,7 +59,7 @@ namespace SharpGen.E2ETests.Parsing
                 IncludeDirs = { GetTestFileIncludeRule() },
                 Includes =
                 {
-                    CreateCppFile("sequentialFields", @"
+                    CreateCppFile("union", @"
                         union Test {
                             int field1;
                             int field2;

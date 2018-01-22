@@ -128,7 +128,7 @@ namespace SharpGen.Transform
                 newEnum.Add(csharpEnumItem);
             }
 
-            var rule = cppEnum.Rule;
+            var rule = cppEnum.GetMappingRule();
 
             bool tryToAddNone = rule.EnumHasNone ?? false;
 
