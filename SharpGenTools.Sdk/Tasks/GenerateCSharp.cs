@@ -7,6 +7,9 @@ using System.Text;
 using SharpGen;
 using Logger = SharpGen.Logging.Logger;
 using SharpGen.Model;
+using System.Xml;
+using System.IO;
+using SharpGen.Transform;
 
 namespace SharpGenTools.Sdk.Tasks
 {
@@ -29,12 +32,27 @@ namespace SharpGenTools.Sdk.Tasks
         [Required]
         public string GlobalNamespace { get; set; }
 
+        public ITaskItem[] ExternalDocumentation { get; set; }
+
         public override bool Execute()
         {
+            var documentationFiles = new Dictionary<string, XmlDocument>();
+
+            foreach (var file in ExternalDocumentation)
+            {
+                using (var stream = File.OpenRead(file.ItemSpec))
+                {
+                    var xml = new XmlDocument();
+                    xml.Load(stream);
+                    documentationFiles.Add(file.ItemSpec, xml);
+                }
+            }
+
             var generator = new RoslynGenerator(
                 new Logger(new MsBuildSharpGenLogger(Log), null),
                 new GlobalNamespaceProvider(GlobalNamespace),
-                new CachedDocumentationLinker(DocLinkCache.ItemSpec));
+                new CachedDocumentationLinker(DocLinkCache.ItemSpec),
+                new ExternalDocCommentsReader(documentationFiles));
 
             generator.Run(CsSolution.Read(Model.ItemSpec), OutputDirectory, GeneratedCodeFolder, IncludeAssemblyNameFolder);
 

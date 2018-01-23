@@ -31,6 +31,7 @@ using SharpGen.Model;
 using SharpGen.Transform;
 using SharpGen.CppModel;
 using SharpGen.Doc;
+using System.Xml;
 
 namespace SharpGen.Interactive
 {
@@ -97,6 +98,7 @@ namespace SharpGen.Interactive
         public string ConsumerBindMappingConfigId { get; set; }
 
         public GlobalNamespaceProvider GlobalNamespace { get; set; }
+        public Dictionary<string, XmlDocument> ExternalDocumentation { get; set; } = new Dictionary<string, XmlDocument>();
 
         private string _thisAssemblyPath;
         private bool _isAssemblyNew;
@@ -239,7 +241,7 @@ namespace SharpGen.Interactive
 
                 GenerateConfigForConsumers(consumerConfig);
 
-                GenerateCode(docAggregator, solution);
+                GenerateCode(docAggregator, solution, new ExternalDocCommentsReader(ExternalDocumentation));
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Code generation failed");
@@ -359,9 +361,9 @@ namespace SharpGen.Interactive
             return cppHeadersUpdated;
         }
 
-        private void GenerateCode(IDocumentationLinker docAggregator, CsSolution solution)
+        private void GenerateCode(IDocumentationLinker docAggregator, CsSolution solution, ExternalDocCommentsReader docCommentsReader)
         {
-            var generator = new RoslynGenerator(Logger, GlobalNamespace, docAggregator);
+            var generator = new RoslynGenerator(Logger, GlobalNamespace, docAggregator, docCommentsReader);
             generator.Run(solution, _generatedPath, GeneratedCodeFolder, IncludeAssemblyNameFolder);
 
             // Update check files for all assemblies

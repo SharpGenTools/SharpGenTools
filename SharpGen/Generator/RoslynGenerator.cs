@@ -19,11 +19,11 @@ namespace SharpGen.Generator
 
         public IGeneratorRegistry Generators { get; }
 
-        public RoslynGenerator(Logger logger, GlobalNamespaceProvider globalNamespace, IDocumentationLinker documentation)
+        public RoslynGenerator(Logger logger, GlobalNamespaceProvider globalNamespace, IDocumentationLinker documentation, ExternalDocCommentsReader docReader)
         {
             Logger = logger;
             this.globalNamespace = globalNamespace;
-            Generators = new DefaultGenerators(globalNamespace, documentation);
+            Generators = new DefaultGenerators(globalNamespace, documentation, docReader);
         }
 
         public Logger Logger { get; }
