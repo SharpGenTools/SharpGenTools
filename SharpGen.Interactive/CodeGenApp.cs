@@ -31,9 +31,6 @@ using SharpGen.Model;
 using SharpGen.Transform;
 using SharpGen.CppModel;
 using SharpGen.Doc;
-#if NETSTANDARD1_5
-using System.Runtime.Loader;
-#endif
 
 namespace SharpGen.Interactive
 {
@@ -406,11 +403,7 @@ namespace SharpGen.Interactive
             {
                 try
                 {
-#if NETSTANDARD1_5
-                    var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(DocProviderAssemblyPath);
-#else
                     var assembly = Assembly.LoadFrom(DocProviderAssemblyPath);
-#endif
 
                     foreach (var type in assembly.GetTypes())
                     {
