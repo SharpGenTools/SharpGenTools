@@ -26,7 +26,7 @@ namespace SharpGen.Parser
             var module = configRoot.CreateSkeletonModule();
             MacroManager.Parse(Path.Combine(outputPath, $"{configRoot.Id}.h"), module);
 
-            var mapper = new ElementMapper(module);
+            var finder = new CppElementFinder(module);
 
             // Dump includes
             foreach (var configFile in configRoot.ConfigFilesLoaded)
@@ -40,9 +40,9 @@ namespace SharpGen.Parser
                         foreach (var typeBaseRule in configFile.Extension)
                         {
                             if (typeBaseRule.GeneratesExtensionHeader())
-                                extensionWriter.Write(CreateCppFromMacro(mapper, typeBaseRule));
+                                extensionWriter.Write(CreateCppFromMacro(finder, typeBaseRule));
                             else if (typeBaseRule is ContextRule context)
-                                HandleContextRule(configFile, mapper, context);
+                                HandleContextRule(configFile, finder, context);
                         }
                     }
                 }
@@ -57,10 +57,10 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="file">The file.</param>
         /// <param name="contextRule">The context rule.</param>
-        private void HandleContextRule(ConfigFile file, ElementMapper mapper, ContextRule contextRule)
+        private void HandleContextRule(ConfigFile file, CppElementFinder finder, ContextRule contextRule)
         {
             if (contextRule is ClearContextRule)
-                mapper.ClearContextFind();
+                finder.ClearCurrentContexts();
             else
             {
                 var contextIds = new List<string>();
@@ -73,7 +73,7 @@ namespace SharpGen.Parser
                 }
                 contextIds.AddRange(contextRule.Ids);
 
-                mapper.AddContextRangeFind(contextIds);
+                finder.AddContexts(contextIds);
             }
         }
 
@@ -82,16 +82,16 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="rule">The macro rule.</param>
         /// <returns>A C++ declaration string</returns>
-        private string CreateCppFromMacro(ElementMapper mapper, ConfigBaseRule rule)
+        private string CreateCppFromMacro(CppElementFinder finder, ConfigBaseRule rule)
         {
             if (rule is CreateCppExtensionRule createExtension)
             {
-                return CreateEnumFromMacro(mapper, createExtension);
+                return CreateEnumFromMacro(finder, createExtension);
             }
 
             if (rule is ConstantRule constant)
             {
-                return CreateVariableFromMacro(mapper, constant);
+                return CreateVariableFromMacro(finder, constant);
             }
             return "";
         }
@@ -101,14 +101,14 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="createCpp">The macro rule.</param>
         /// <returns>A C++ enum declaration string</returns>
-        private string CreateEnumFromMacro(ElementMapper moduleMapper, CreateCppExtensionRule createCpp)
+        private string CreateEnumFromMacro(CppElementFinder finder, CreateCppExtensionRule createCpp)
         {
             var cppEnumText = new StringBuilder();
 
             cppEnumText.AppendLine("// Enum created from: " + createCpp);
             cppEnumText.AppendLine("enum " + createCpp.Enum + " {");
 
-            foreach (CppDefine macroDef in moduleMapper.Find<CppDefine>(createCpp.Macro))
+            foreach (CppDefine macroDef in finder.Find<CppDefine>(createCpp.Macro))
             {
                 var macroName = macroDef.Name + EndTagCustomEnumItem;
 
@@ -129,13 +129,13 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="cstRule">The macro rule.</param>
         /// <returns>A C++ variable declaration string</returns>
-        private string CreateVariableFromMacro(ElementMapper mapper, ConstantRule cstRule)
+        private string CreateVariableFromMacro(CppElementFinder finder, ConstantRule cstRule)
         {
             var builder = new StringBuilder();
 
             builder.AppendLine("// Variable created from: " + cstRule);
 
-            foreach (CppDefine macroDef in mapper.Find<CppDefine>(cstRule.Macro))
+            foreach (CppDefine macroDef in finder.Find<CppDefine>(cstRule.Macro))
             {
                 var macroName = macroDef.Name + EndTagCustomVariable;
 

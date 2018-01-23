@@ -16,7 +16,7 @@ namespace SharpGen.UnitTests
         public static IEnumerable<T> Find<T>(this CppElement element, string path)
             where T : CppElement
         {
-            var mapper = new ElementMapper(element);
+            var mapper = new CppElementFinder(element);
 
             return mapper.Find<T>(path);
         }
