@@ -33,7 +33,7 @@ namespace SharpGen.CppModel
             get { return Iterate<CppParameter>(); }
         }
 
-        protected override IEnumerable<CppElement> AllItems
+        protected internal override IEnumerable<CppElement> AllItems
         {
             get
             {

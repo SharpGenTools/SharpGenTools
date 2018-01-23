@@ -149,8 +149,10 @@ namespace SharpGen.Transform
                 while (rootBase != null && rootBase is CsInterface && rootBase.Base != null)
                     rootBase = (CsInterface)rootBase.Base;
 
+                var finder = new CppElementFinder(cppInterface.ParentInclude);
+
                 // look for GUID only for ComObjects
-                var cppGuid = cppInterface.ParentInclude.Find<CppGuid>("^IID_" + cppInterface.Name + "$").FirstOrDefault();
+                var cppGuid = finder.Find<CppGuid>("^IID_" + cppInterface.Name + "$").FirstOrDefault();
                 if (cppGuid == null)
                 {
                     // If Guid == null && BaseRoot != null && BaseRoot is a ComObject

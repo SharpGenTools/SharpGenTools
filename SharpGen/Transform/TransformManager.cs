@@ -263,12 +263,14 @@ namespace SharpGen.Transform
                 // Update Naming Rules
                 UpdateNamingRules(file);
 
+                var elementFinder = new CppElementFinder(cppModule);
+
                 // Only attach includes when there is a bind to an assembly
                 if (assembly != null)
                 {
                     AttachIncludes(file);
 
-                    ProcessExtensions(cppModule, file);
+                    ProcessExtensions(elementFinder, file);
                 }
 
                 // Handle defines separately since they do not depend on the included C++
@@ -278,7 +280,7 @@ namespace SharpGen.Transform
                 // Register bindings from <bindings> tag
                 RegisterBindings(file);
 
-                ProcessMappings(cppModule, file);
+                ProcessMappings(elementFinder, file);
                 return defines;
             }
             finally
@@ -373,7 +375,7 @@ namespace SharpGen.Transform
             return defines;
         }
 
-        private void ProcessExtensions(CppModule cppModule, ConfigFile file)
+        private void ProcessExtensions(CppElementFinder elementFinder, ConfigFile file)
         {
             // Register defined Types from <extension> tag
             foreach (var extensionRule in file.Extension)
@@ -391,11 +393,11 @@ namespace SharpGen.Transform
                 }
                 else if (extensionRule is ConstantRule constantRule)
                 {
-                    HandleConstantRule(cppModule, constantRule, file.Namespace);
+                    HandleConstantRule(elementFinder, constantRule, file.Namespace);
                 }
                 else if (extensionRule is ContextRule contextRule)
                 {
-                    HandleContextRule(cppModule, file, contextRule);
+                    HandleContextRule(elementFinder, file, contextRule);
                 }
             }
         }
@@ -426,7 +428,7 @@ namespace SharpGen.Transform
                 MapIncludeToNamespace(file.ExtensionId, file.Assembly, file.Namespace);
         }
 
-        private void ProcessMappings(CppModule cppModule, ConfigFile file)
+        private void ProcessMappings(CppElementFinder elementFinder, ConfigFile file)
         {
             // Perform all mappings from <mappings> tag
             foreach (var configRule in file.Mappings)
@@ -434,50 +436,50 @@ namespace SharpGen.Transform
                 if (configRule is MappingRule mappingRule)
                 {
                     if (mappingRule.Enum != null)
-                        cppModule.ExecuteRule<CppEnum>(mappingRule.Enum, mappingRule);
+                        elementFinder.ExecuteRule<CppEnum>(mappingRule.Enum, mappingRule);
                     else if (mappingRule.EnumItem != null)
-                        cppModule.ExecuteRule<CppEnumItem>(mappingRule.EnumItem, mappingRule);
+                        elementFinder.ExecuteRule<CppEnumItem>(mappingRule.EnumItem, mappingRule);
                     else if (mappingRule.Struct != null)
-                        cppModule.ExecuteRule<CppStruct>(mappingRule.Struct, mappingRule);
+                        elementFinder.ExecuteRule<CppStruct>(mappingRule.Struct, mappingRule);
                     else if (mappingRule.Field != null)
-                        cppModule.ExecuteRule<CppField>(mappingRule.Field, mappingRule);
+                        elementFinder.ExecuteRule<CppField>(mappingRule.Field, mappingRule);
                     else if (mappingRule.Interface != null)
-                        cppModule.ExecuteRule<CppInterface>(mappingRule.Interface, mappingRule);
+                        elementFinder.ExecuteRule<CppInterface>(mappingRule.Interface, mappingRule);
                     else if (mappingRule.Function != null)
-                        cppModule.ExecuteRule<CppFunction>(mappingRule.Function, mappingRule);
+                        elementFinder.ExecuteRule<CppFunction>(mappingRule.Function, mappingRule);
                     else if (mappingRule.Method != null)
-                        cppModule.ExecuteRule<CppMethod>(mappingRule.Method, mappingRule);
+                        elementFinder.ExecuteRule<CppMethod>(mappingRule.Method, mappingRule);
                     else if (mappingRule.Parameter != null)
-                        cppModule.ExecuteRule<CppParameter>(mappingRule.Parameter, mappingRule);
+                        elementFinder.ExecuteRule<CppParameter>(mappingRule.Parameter, mappingRule);
                     else if (mappingRule.Element != null)
-                        cppModule.ExecuteRule<CppElement>(mappingRule.Element, mappingRule);
+                        elementFinder.ExecuteRule<CppElement>(mappingRule.Element, mappingRule);
                     else if (mappingRule.DocItem != null)
                         docLinker.AddOrUpdateDocLink(mappingRule.DocItem, mappingRule.MappingNameFinal);
                 }
                 else if (configRule is ContextRule contextRule)
                 {
-                    HandleContextRule(cppModule, file, contextRule);
+                    HandleContextRule(elementFinder, file, contextRule);
                 }
                 else if (configRule is RemoveRule removeRule)
                 {
                     if (removeRule.Enum != null)
-                        cppModule.Remove<CppEnum>(removeRule.Enum);
+                        RemoveElements<CppEnum>(elementFinder, removeRule.Enum);
                     else if (removeRule.EnumItem != null)
-                        cppModule.Remove<CppEnumItem>(removeRule.EnumItem);
+                        RemoveElements<CppEnumItem>(elementFinder, removeRule.EnumItem);
                     else if (removeRule.Struct != null)
-                        cppModule.Remove<CppStruct>(removeRule.Struct);
+                        RemoveElements<CppStruct>(elementFinder, removeRule.Struct);
                     else if (removeRule.Field != null)
-                        cppModule.Remove<CppField>(removeRule.Field);
+                        RemoveElements<CppField>(elementFinder, removeRule.Field);
                     else if (removeRule.Interface != null)
-                        cppModule.Remove<CppInterface>(removeRule.Interface);
+                        RemoveElements<CppInterface>(elementFinder, removeRule.Interface);
                     else if (removeRule.Function != null)
-                        cppModule.Remove<CppFunction>(removeRule.Function);
+                        RemoveElements<CppFunction>(elementFinder, removeRule.Function);
                     else if (removeRule.Method != null)
-                        cppModule.Remove<CppMethod>(removeRule.Method);
+                        RemoveElements<CppMethod>(elementFinder, removeRule.Method);
                     else if (removeRule.Parameter != null)
-                        cppModule.Remove<CppParameter>(removeRule.Parameter);
+                        RemoveElements<CppParameter>(elementFinder, removeRule.Parameter);
                     else if (removeRule.Element != null)
-                        cppModule.Remove<CppElement>(removeRule.Element);
+                        RemoveElements<CppElement>(elementFinder, removeRule.Element);
                 }
                 else if (configRule is MoveRule moveRule)
                 {
@@ -489,16 +491,25 @@ namespace SharpGen.Transform
             }
         }
 
+        private static void RemoveElements<T>(CppElementFinder finder, string regex)
+            where T : CppElement
+        {
+            foreach (var item in finder.Find<T>(regex).ToList())
+            {
+                item.Parent.Remove(item);
+            }
+        }
+
         /// <summary>
         /// Handles the context rule.
         /// </summary>
         /// <param name="file">The file.</param>
         /// <param name="contextRule">The context rule.</param>
-        /// <param name="cppModule">The C++ Module we are handling the context rule for.</param>
-        private void HandleContextRule(CppModule cppModule, ConfigFile file, ContextRule contextRule)
+        /// <param name="moduleMapper">The C++ Module we are handling the context rule for.</param>
+        private void HandleContextRule(CppElementFinder moduleMapper, ConfigFile file, ContextRule contextRule)
         {
             if (contextRule is ClearContextRule)
-                cppModule.ClearContextFind();
+                moduleMapper.ClearCurrentContexts();
             else
             {
                 var contextIds = new List<string>();
@@ -511,7 +522,7 @@ namespace SharpGen.Transform
                 }
                 contextIds.AddRange(contextRule.Ids);
 
-                cppModule.AddContextRangeFind(contextIds);
+                moduleMapper.AddContexts(contextIds);
             }
         }
 
@@ -676,10 +687,10 @@ namespace SharpGen.Transform
         /// Handles the constant rule.
         /// </summary>
         /// <param name="constantRule">The constant rule.</param>
-        private void HandleConstantRule(CppModule cppModule, ConstantRule constantRule, string nameSpace)
+        private void HandleConstantRule(CppElementFinder elementFinder, ConstantRule constantRule, string nameSpace)
         {
             constantManager.AddConstantFromMacroToCSharpType(
-                cppModule,
+                elementFinder,
                 constantRule.Macro ?? constantRule.Guid,
                 constantRule.ClassName,
                 constantRule.Type,
