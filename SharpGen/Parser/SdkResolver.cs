@@ -36,13 +36,7 @@ namespace SharpGen.Parser
 
         private IEnumerable<IncludeDirRule> ResolveStdLib(string version)
         {
-            bool onWindows;
-#if NETSTANDARD1_5
-            onWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-#else
-            onWindows = Environment.OSVersion.Platform == PlatformID.Win32NT;
-#endif
-            if (onWindows)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var vcInstallDir = Path.Combine(GetVSInstallPath(), "VC");
 
