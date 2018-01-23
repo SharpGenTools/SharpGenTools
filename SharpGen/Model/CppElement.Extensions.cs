@@ -22,28 +22,35 @@ using System.Text.RegularExpressions;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using System.Reflection;
+using SharpGen.Transform;
 
 namespace SharpGen.Model
 {
     public static class CppElementExtensions
     {
-
-        private static string LastCppOuterElement = "???";
-
-        public static void ExecuteRule<T>(this CppElement element, string regex, MappingRule rule) where T : CppElement
+        /// <summary>
+        ///   Strips the regex. Removes ^ and $ at the end of the string
+        /// </summary>
+        /// <param name = "regex">The regex.</param>
+        /// <returns></returns>
+        public static string StripRegex(string regex)
         {
-            var regexStr = CppElement.StripRegex(regex);
-            if (typeof(CppMethod).GetTypeInfo().IsAssignableFrom(typeof(T).GetTypeInfo())
-                || typeof(CppStruct).GetTypeInfo().IsAssignableFrom(typeof(T).GetTypeInfo()))
-            {
-                LastCppOuterElement = regexStr;
-            }
-            else if ( (typeof(T) == typeof(CppParameter) || typeof(T) == typeof(CppField)) && !regexStr.Contains("::"))
-            {
-                regexStr = LastCppOuterElement + "::" + regexStr;
-            }
-            
-            element.Modify<T>(regexStr, ProcessRule(rule));
+            string friendlyRegex = regex;
+            // Remove ^ and $
+            if (friendlyRegex.StartsWith("^"))
+                friendlyRegex = friendlyRegex.Substring(1);
+            if (friendlyRegex.EndsWith("$"))
+                friendlyRegex = friendlyRegex.Substring(0, friendlyRegex.Length - 1);
+            return friendlyRegex;
+        }
+
+        public static void ExecuteRule<T>(this ElementMapper mapper, string regex, MappingRule rule) where T : CppElement
+        {
+            var regexStr = StripRegex(regex);
+
+            var fullMatchRegex = ElementMapper.CreateFullMatchRegex(regex);
+
+            mapper.Modify<T>(fullMatchRegex, ProcessRule(rule, fullMatchRegex));
         }
 
         public static string GetTypeNameWithMapping(this CppElement cppType)
@@ -68,9 +75,9 @@ namespace SharpGen.Model
         /// </summary>
         /// <param name = "newRule"></param>
         /// <returns></returns>
-        private static CppElement.ProcessModifier ProcessRule(MappingRule newRule)
+        private static Action<CppElement> ProcessRule(MappingRule newRule, Regex patchRegex)
         {
-            return (patchRegex, element) =>
+            return element =>
                 {
                     var tag = element.Rule;
                     if (tag == null)
@@ -134,7 +141,6 @@ namespace SharpGen.Model
                         tag.ParameterAttribute = newRule.ParameterAttribute.Value;
                     }
                     if (newRule.ParameterUsedAsReturnType != null ) tag.ParameterUsedAsReturnType = newRule.ParameterUsedAsReturnType;
-                    return false;
                 };
         }
     }

@@ -24,7 +24,7 @@ namespace SharpGen.Transform
         /// <summary>
         /// Adds a list of constant gathered from macros/guids to a C# type.
         /// </summary>
-        /// <param name="cppModule">The C++ module to search.</param>
+        /// <param name="moduleMapper">The C++ module to search.</param>
         /// <param name="macroRegexp">The macro regexp.</param>
         /// <param name="fullNameCSharpType">Full type of the name C sharp.</param>
         /// <param name="type">The type.</param>
@@ -32,10 +32,10 @@ namespace SharpGen.Transform
         /// <param name="valueMap">The value map.</param>
         /// <param name="visibility">The visibility.</param>
         /// <param name="nameSpace">The current namespace.</param>
-        public void AddConstantFromMacroToCSharpType(CppModule cppModule, string macroRegexp, string fullNameCSharpType, string type, string fieldName, string valueMap,
+        public void AddConstantFromMacroToCSharpType(ElementMapper moduleMapper, string macroRegexp, string fullNameCSharpType, string type, string fieldName, string valueMap,
                                                      Visibility? visibility, string nameSpace)
         {
-            var constantDefinitions = cppModule.Find<CppConstant>(macroRegexp);
+            var constantDefinitions = moduleMapper.Find<CppConstant>(macroRegexp);
             var regex = new Regex(macroRegexp);
 
             // $0: Name of the C++ macro
@@ -67,7 +67,7 @@ namespace SharpGen.Transform
                 constant.Visibility = visibility ?? Visibility.Public | Visibility.Const;
             }
 
-            var guidDefinitions = cppModule.Find<CppGuid>(macroRegexp);
+            var guidDefinitions = moduleMapper.Find<CppGuid>(macroRegexp);
             foreach (var guidDef in guidDefinitions)
             {
                 var finalFieldName = fieldName == null ?

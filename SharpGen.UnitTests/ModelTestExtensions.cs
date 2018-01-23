@@ -1,4 +1,6 @@
-﻿using SharpGen.Model;
+﻿using SharpGen.CppModel;
+using SharpGen.Model;
+using SharpGen.Transform;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +10,17 @@ namespace SharpGen.UnitTests
 {
     static class ModelTestExtensions
     {
+        public static T FindFirst<T>(this CppElement element, string path)
+            where T : CppElement => element.Find<T>(path).FirstOrDefault();
+
+        public static IEnumerable<T> Find<T>(this CppElement element, string path)
+            where T : CppElement
+        {
+            var mapper = new ElementMapper(element);
+
+            return mapper.Find<T>(path);
+        }
+
         public static IEnumerable<CsBase> EnumerateDescendants(this CsBase element)
         {
             yield return element;

@@ -184,7 +184,7 @@ namespace SharpGen.CppModel
             }
         }
 
-        protected virtual IEnumerable<CppElement> AllItems
+        protected internal virtual IEnumerable<CppElement> AllItems
         {
             get { return Iterate<CppElement>(); }
         }
@@ -240,33 +240,6 @@ namespace SharpGen.CppModel
         }
 
         /// <summary>
-        ///   Adds a context to the finder.
-        /// </summary>
-        /// <param name = "contextName">Name of the context.</param>
-        public void AddContextFind(string contextName)
-        {
-            ContextFindList.Add(contextName);
-        }
-
-        /// <summary>
-        ///   Adds a set of context to the finder.
-        /// </summary>
-        /// <param name = "contextNames">The context names.</param>
-        public void AddContextRangeFind(IEnumerable<string> contextNames)
-        {
-            foreach (var contextName in contextNames)
-                AddContextFind(contextName);
-        }
-
-        /// <summary>
-        ///   Clears the context finder.
-        /// </summary>
-        public void ClearContextFind()
-        {
-            ContextFindList.Clear();
-        }
-
-        /// <summary>
         ///   Iterates on items on this instance.
         /// </summary>
         /// <typeparam name = "T">Type of the item to iterate</typeparam>
@@ -274,148 +247,6 @@ namespace SharpGen.CppModel
         public IEnumerable<T> Iterate<T>() where T : CppElement
         {
             return Items == null ? Enumerable.Empty<T>() : Items.OfType<T>();
-        }
-
-        /// <summary>
-        ///   Finds the first element by regex.
-        /// </summary>
-        /// <typeparam name = "T"></typeparam>
-        /// <param name = "regex">The regex.</param>
-        /// <returns></returns>
-        public T FindFirst<T>(string regex) where T : CppElement
-        {
-            return Find<T>(regex).FirstOrDefault();
-        }
-
-        /// <summary>
-        ///   Finds the specified elements by regex.
-        /// </summary>
-        /// <typeparam name = "T"></typeparam>
-        /// <param name = "regex">The regex.</param>
-        /// <returns></returns>
-        public IEnumerable<T> Find<T>(string regex) where T : CppElement
-        {
-            var cppElements = new List<T>();
-            bool modifyParent = false;
-            Find(new Regex("^" + regex + "$"), cppElements, null, ref modifyParent);
-            return cppElements.OfType<T>();
-        }
-
-        /// <summary>
-        ///   Remove recursively elements matching the regex of type T
-        /// </summary>
-        /// <typeparam name = "T">the T type to match</typeparam>
-        /// <param name = "regex">the regex to match</param>
-        public void Remove<T>(string regex) where T : CppElement
-        {
-            Modify<T>(regex, (pathREgex, element) => true);
-        }
-
-        /// <summary>
-        ///   Modifies the specified elements by regex with the specified modifier.
-        /// </summary>
-        /// <typeparam name = "T"></typeparam>
-        /// <param name = "regex">The regex.</param>
-        /// <param name = "modifier">The modifier.</param>
-        public void Modify<T>(string regex, ProcessModifier modifier) where T : CppElement
-        {
-            var cppElements = new List<T>();
-            bool modifyParent = regex.StartsWith("#");
-            regex = regex.TrimStart('#');
-            regex = "^" + regex + "$";
-            Find(new Regex(regex), cppElements, modifier, ref modifyParent);
-        }
-
-        /// <summary>
-        ///   Strips the regex. Removes ^ and $ at the end of the string
-        /// </summary>
-        /// <param name = "regex">The regex.</param>
-        /// <returns></returns>
-        public static string StripRegex(string regex)
-        {
-            string friendlyRegex = regex;
-            // Remove ^ and $
-            if (friendlyRegex.StartsWith("^"))
-                friendlyRegex = friendlyRegex.Substring(1);
-            if (friendlyRegex.EndsWith("$"))
-                friendlyRegex = friendlyRegex.Substring(0, friendlyRegex.Length - 1);
-            return friendlyRegex;
-        }
-
-        /// <summary>
-        ///   Finds all elements by regex.
-        /// </summary>
-        /// <param name = "regex">The regex.</param>
-        /// <returns></returns>
-        public IEnumerable<CppElement> FindAll(string regex)
-        {
-            return Find<CppElement>(regex);
-        }
-
-        /// <summary>
-        /// Finds the specified elements by regex and modifier.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="regex">The regex.</param>
-        /// <param name="toAdd">To add.</param>
-        /// <param name="modifier">The modifier.</param>
-        /// <param name="modifyParent">if set to <c>true</c> [modify parent].</param>
-        /// <returns></returns>
-        private bool Find<T>(Regex regex, List<T> toAdd, ProcessModifier modifier, ref bool modifyParent) where T : CppElement
-        {
-            bool isToRemove = false;
-            string path = FullName;
-
-            var elementToModify = modifyParent ? Parent : this;
-
-            if ((elementToModify is T) && path != null && regex.Match(path).Success)
-            {
-                if (toAdd != null)
-                    toAdd.Add((T)elementToModify);
-
-                if (modifier != null)
-                {
-                    isToRemove = modifier(regex, elementToModify);
-                }
-            }
-
-            var elementsToRemove = new List<CppElement>();
-
-            // Force _findContext to reverse to null if not used anymore
-            if (_findContext != null && _findContext.Count == 0)
-                _findContext = null;
-
-            if (_findContext == null)
-            {
-                foreach (var innerElement in AllItems)
-                {
-                    if (innerElement.Find(regex, toAdd, modifier, ref modifyParent))
-                        elementsToRemove.Add(innerElement);
-                }
-            }
-            else
-            {
-                // Optimized version with findContext
-                foreach (var innerElement in AllItems)
-                {
-                    if (_findContext.Contains(innerElement.Name))
-                        if (innerElement.Find(regex, toAdd, modifier, ref modifyParent))
-                            elementsToRemove.Add(innerElement);
-                }
-            }
-
-            // If we are removing the parent using modifyParent flag
-            // Set modifyParent to false after removing in order to avoid recursive remove of all parents
-            if (elementsToRemove.Count > 0 && modifyParent)
-            {
-                modifyParent = false;
-                return true;
-            }
-
-            foreach (var innerElementToRemove in elementsToRemove)
-                Remove(innerElementToRemove);
-
-            return isToRemove;
         }
 
         protected void ResetParents()
