@@ -79,7 +79,7 @@
     <create-cpp enum="SHARPGEN_RUNTIME_ERRORCODE" macro="ERROR_(.*)" />
     <context-clear/>
 
-    <define enum="System.IO.SeekOrigin" sizeof="4" />
+    <define enum="System.IO.SeekOrigin" sizeof="4" underlying="System.UInt32"  />
     <define struct="SharpGen.Runtime.Size2F" sizeof="8" />
     <define struct="SharpGen.Runtime.Size2" sizeof="8" />
     <define struct="SharpGen.Runtime.Mathematics.Interop.RawPoint" sizeof="8" />

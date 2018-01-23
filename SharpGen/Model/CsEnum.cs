@@ -30,6 +30,7 @@ namespace SharpGen.Model
     [DataContract(Name = "Enum")]
     public class CsEnum : CsTypeBase
     {
+        [DataMember]
         public CsFundamentalType UnderlyingType { get; set; }
         
 #pragma warning disable 0618

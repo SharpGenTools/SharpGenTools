@@ -9,6 +9,7 @@ using System.Text;
 
 namespace SharpGen.Model
 {
+    [DataContract]
     public abstract class CsCallable : CsBase
     {
         public override CppElement CppElement
@@ -63,7 +64,7 @@ namespace SharpGen.Model
                 case CppCallingConvention.ThisCall:
                     return "ThisCall";
                 default:
-                    return "WinApi";
+                    return "Winapi";
             }
         }
 
@@ -80,7 +81,7 @@ namespace SharpGen.Model
         {
             get
             {
-                if (ReturnValue.PublicType is CsStruct csStruct)
+                if ((ReturnValue.MarshalType ?? ReturnValue.PublicType) is CsStruct csStruct)
                 {
                     if (ReturnValue.MarshalType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr))
                         return false;

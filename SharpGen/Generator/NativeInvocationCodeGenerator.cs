@@ -21,7 +21,7 @@ namespace SharpGen.Generator
 
         public IGeneratorRegistry Generators { get; }
 
-        private static ExpressionSyntax GetCastedReturn(ExpressionSyntax invocation, CsReturnValue returnValue)
+        private static ExpressionSyntax GetCastedReturn(ExpressionSyntax invocation, CsReturnValue returnValue, bool largeReturn)
         {
             var fundamentalPublic = returnValue.PublicType as CsFundamentalType;
 
@@ -48,6 +48,16 @@ namespace SharpGen.Generator
                                     invocation
                                     ))));
             }
+
+            if (returnValue.MarshalType != null && !largeReturn) // If this is not null, the return type of the invocation differs from the public type
+            {
+                return CheckedExpression(
+                            SyntaxKind.UncheckedExpression,
+                            CastExpression(
+                                ParseTypeName(returnValue.PublicType.QualifiedName),
+                                ParenthesizedExpression(invocation)));
+            }
+
             return invocation;
         }
         
@@ -98,7 +108,8 @@ namespace SharpGen.Generator
                         callable.CppElementName + "_"
                     : callable.GetParent<CsAssembly>().QualifiedName + ".LocalInterop." + callable.Interop.Name),
                     ArgumentList(SeparatedList(arguments))),
-                callable.ReturnValue
+                callable.ReturnValue,
+                callable.IsReturnStructLarge
             );
         }
 

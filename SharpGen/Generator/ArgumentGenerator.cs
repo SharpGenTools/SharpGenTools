@@ -19,7 +19,26 @@ namespace SharpGen.Generator
 
         public ArgumentSyntax GenerateCode(CsParameter csElement)
         {
-            return Argument(GenerateExpression(csElement));
+            // Cast the argument to the native (marshal) type
+            if (csElement.MarshalType != null)
+            {
+                if (csElement.MarshalType.QualifiedName == "System.IntPtr") // Marshal System.IntPtr as void* for arguments.
+                {
+                    return Argument(
+                        CastExpression(
+                            PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
+                            ParenthesizedExpression(GenerateExpression(csElement))));
+                }
+                return Argument(CheckedExpression(
+                            SyntaxKind.UncheckedExpression,
+                            CastExpression(
+                                ParseTypeName(csElement.MarshalType.QualifiedName),
+                                GenerateExpression(csElement)))); 
+            }
+            else
+            {
+                return Argument(GenerateExpression(csElement));
+            }
         }
 
         private ExpressionSyntax GenerateExpression(CsParameter param)
@@ -121,13 +140,12 @@ namespace SharpGen.Generator
                 return PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
                     IdentifierName(param.HasNativeValueType ? param.TempName : param.Name));
             }
-            if (!param.IsFixed && param.PublicType is CsEnum && !param.IsArray)
+            if (!param.IsFixed && param.PublicType is CsEnum csEnum && !param.IsArray)
             {
                 return CheckedExpression(
                     SyntaxKind.UncheckedExpression,
                     CastExpression(
-                        PredefinedType(
-                            Token(SyntaxKind.IntKeyword)),
+                        ParseTypeName(csEnum.UnderlyingType?.Type.FullName ?? "int"),
                         IdentifierName(param.Name)));
             }
 

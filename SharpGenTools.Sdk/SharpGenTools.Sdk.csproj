@@ -14,6 +14,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.3.409" />
     <PackageReference Include="Mono.Cecil" Version="0.10.0-beta6" />
+    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" Condition="'$(TargetFramework)' == 'netstandard1.5'" />
     <PackageReference Update="*">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>

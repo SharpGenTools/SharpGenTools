@@ -316,10 +316,10 @@ namespace SharpGen.Transform
 
                 if (defineRule.Enum != null)
                 {
-                    var newEnum = new CsEnum { Name = defineRule.Enum };
+                    var newEnum = new CsEnum { Name = defineRule.Enum, UnderlyingType = (CsFundamentalType)typeRegistry.ImportType(defineRule.UnderlyingType) };
                     defineType = newEnum;
 
-                    if (defineRule.SizeOf.HasValue)
+                    if (defineRule.SizeOf.HasValue && newEnum.UnderlyingType == null)
                     {
                         var size = defineRule.SizeOf.Value;
 
@@ -785,7 +785,8 @@ namespace SharpGen.Transform
                         yield return new DefineExtensionRule
                         {
                             Enum = csEnum.QualifiedName,
-                            SizeOf = csEnum.SizeOf
+                            SizeOf = csEnum.SizeOf,
+                            UnderlyingType = csEnum.UnderlyingType?.BuiltinTypeName
                         };
                         break;
                     case CsStruct csStruct:

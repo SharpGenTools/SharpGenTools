@@ -46,6 +46,9 @@ namespace SharpGen.Config
         [XmlAttribute("interface")]
         public string Interface { get; set; }
 
+        [XmlAttribute("underlying")]
+        public string UnderlyingType { get; set; }
+
 
         [XmlIgnore]
         public int? SizeOf { get; set; }

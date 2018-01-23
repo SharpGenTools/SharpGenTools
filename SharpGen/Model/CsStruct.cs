@@ -20,6 +20,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Xml.Serialization;
@@ -60,15 +61,11 @@ namespace SharpGen.Model
                 HasMarshalType = true;
         }
 
-        private int size;
+        public override int Size => _Size_;
 
-        public override int Size
-        {
-            get
-            {
-                return size;
-            }
-        }
+        [DataMember(Name = "Size")]
+        [Browsable(false)]
+        public int _Size_ { get; set; }
         
         /// <summary>
         ///   Packing alignment for this type (Default is 0 => Platform default)
@@ -78,7 +75,7 @@ namespace SharpGen.Model
 
         public void SetSize(int size)
         {
-            this.size = size;
+            _Size_ = size;
         }
 
         public IEnumerable<CsField> Fields
