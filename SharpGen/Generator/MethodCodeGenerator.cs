@@ -29,6 +29,12 @@ namespace SharpGen.Generator
                     .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)));
             }
 
+            // If not hidden, generate body
+            if (csElement.Hidden)
+            {
+                yield break;
+            }
+
             foreach (var member in Generators.Callable.GenerateCode(csElement))
             {
                 yield return member;

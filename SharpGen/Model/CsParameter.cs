@@ -70,9 +70,9 @@ namespace SharpGen.Model
 
         private const int SizeOfLimit = 16;
 
-        protected override void UpdateFromTag(MappingRule tag)
+        protected override void UpdateFromMappingRule(MappingRule tag)
         {
-            base.UpdateFromTag(tag);
+            base.UpdateFromMappingRule(tag);
             if (tag.ParameterUsedAsReturnType.HasValue)
                 IsUsedAsReturnType = tag.ParameterUsedAsReturnType.Value;
             if (tag.ParameterAttribute.HasValue && (tag.ParameterAttribute.Value & ParamAttribute.Fast) != 0)
@@ -93,7 +93,7 @@ namespace SharpGen.Model
                 }
                 if (Attribute == CsParameterAttribute.Out && !IsBoolToInt)
                     return true;
-                if (IsArray && !IsComArray)
+                if (IsArray && !IsInterfaceArray)
                     return true;
                 return false;
             }
@@ -109,27 +109,27 @@ namespace SharpGen.Model
             get { return Attribute == CsParameterAttribute.Ref; }
         }
 
-        public bool IsComArray
+        public bool IsInterfaceArray
         {
             get
             {
-                return PublicType is CsComArray;
+                return PublicType is CsInterfaceArray;
             }
         }
 
-        public bool IsInComArrayLike
+        public bool IsInInterfaceArrayLike
         {
             get
             {
-                return IsArray && IsComObject && !IsOut;
+                return IsArray && IsInterface && !IsOut;
             }
         }
 
-        public bool IsComObject
+        public bool IsInterface
         {
             get
             {
-                return PublicType.GetType() == typeof(CsInterface);
+                return PublicType is CsInterface;
             }
         }
 
@@ -150,18 +150,18 @@ namespace SharpGen.Model
 
         public bool IsPrimitive
         {
-            get { return PublicType.Type != null && PublicType.Type.GetTypeInfo().IsPrimitive; }
+            get { return PublicType is CsFundamentalType type && type.Type.GetTypeInfo().IsPrimitive; }
         }
 
         public bool IsString
         {
-            get { return PublicType.Type == typeof (string); }
+            get { return PublicType is CsFundamentalType type && type.Type == typeof (string); }
         }
 
         public bool IsValueType
         {
             get { return PublicType is CsStruct || PublicType is CsEnum ||
-                    (PublicType.Type != null && (PublicType.Type.GetTypeInfo().IsValueType || PublicType.Type.GetTypeInfo().IsPrimitive)); }
+                    (PublicType is CsFundamentalType type && (type.Type.GetTypeInfo().IsValueType || type.Type.GetTypeInfo().IsPrimitive)); }
         }
 
         public bool IsStructClass
@@ -191,7 +191,7 @@ namespace SharpGen.Model
             get
             {
                 return IsRefIn && IsValueType && !IsArray
-                       && ((PublicType.SizeOf <= SizeOfLimit && !HasNativeValueType) || (NativeParamAttribute & ParamAttribute.Value) != 0);
+                       && ((PublicType.Size <= SizeOfLimit && !HasNativeValueType) || (NativeParamAttribute & ParamAttribute.Value) != 0);
             }
         }
 

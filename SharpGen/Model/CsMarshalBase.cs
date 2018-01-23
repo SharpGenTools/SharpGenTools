@@ -57,5 +57,7 @@ namespace SharpGen.Model
 
         [DataMember]
         public bool IsBoolToInt { get; set; }
+        
+        public int Size => MarshalType.Size * ((ArrayDimensionValue > 1) ? ArrayDimensionValue : 1);
     }
 }

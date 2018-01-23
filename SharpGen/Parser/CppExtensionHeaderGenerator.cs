@@ -3,6 +3,7 @@ using SharpGen.CppModel;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace SharpGen.Parser
@@ -20,7 +21,7 @@ namespace SharpGen.Parser
 
         public MacroManager MacroManager { get; }
 
-        public CppModule GenerateExtensionHeaders(ConfigFile configRoot, string outputPath, HashSet<string> filesWithExtensions, HashSet<ConfigFile> updatedConfigs)
+        public CppModule GenerateExtensionHeaders(ConfigFile configRoot, string outputPath, IReadOnlyCollection<string> filesWithExtensions, IReadOnlyCollection<ConfigFile> updatedConfigs)
         {
             var module = configRoot.CreateSkeletonModule();
             MacroManager.Parse(Path.Combine(outputPath, $"{configRoot.Id}.h"), module);

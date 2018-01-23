@@ -1,6 +1,6 @@
 $env:Path += ";C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\"
 
-pushd SharpGen.E2ETests
+pushd SharpGen.UnitTests
     dotnet xunit
     if ($LastExitCode -ne 0) {
         exit 1

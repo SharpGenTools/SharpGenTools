@@ -20,6 +20,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Xml.Serialization;
@@ -41,24 +42,40 @@ namespace SharpGen.Model
 
         public CsStruct(CppStruct cppStruct) 
         {
-            IsOut = false; 
             CppElement = cppStruct;
         }
 
-        protected override void UpdateFromTag(MappingRule tag)
+        protected override void UpdateFromMappingRule(MappingRule tag)
         {
-            base.UpdateFromTag(tag);
+            base.UpdateFromMappingRule(tag);
             Align = tag.StructPack ?? 0;
             HasMarshalType = tag.StructHasNativeValueType ?? false;
             GenerateAsClass = tag.StructToClass ?? false;
             HasCustomMarshal = tag.StructCustomMarshal ?? false;
             IsStaticMarshal = tag.IsStaticMarshal ?? false;
             HasCustomNew = tag.StructCustomNew ?? false;
-            IsOut = tag.StructForceMarshalToToBeGenerated ?? false;
+            MarshalledToNative = tag.StructForceMarshalToToBeGenerated ?? false;
 
             // Force a marshalling if a struct need to be treated as a class)
             if (GenerateAsClass)
                 HasMarshalType = true;
+        }
+
+        public override int Size => _Size_;
+
+        [DataMember(Name = "Size")]
+        [Browsable(false)]
+        public int _Size_ { get; set; }
+        
+        /// <summary>
+        ///   Packing alignment for this type (Default is 0 => Platform default)
+        /// </summary>
+        [DataMember]
+        public int Align { get; set; }
+
+        public void SetSize(int size)
+        {
+            _Size_ = size;
         }
 
         public IEnumerable<CsField> Fields
@@ -105,7 +122,7 @@ namespace SharpGen.Model
         }
 
         [DataMember]
-        public bool IsOut { get; set; }
+        public bool MarshalledToNative { get; set; }
 
         /// <summary>
         ///   List of declared inner structs

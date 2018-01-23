@@ -245,12 +245,13 @@
   <Target
     Name="UpdateSdkAssemblyCheckFile"
     DependsOnTargets="GenerateCSharp">
-    <WriteLinesToFile File="@(SharpGenSdkCheckFile)" Lines="@(SharpGenSdkAssembly)" Overwrite="True" />
+    <Touch Files="@(SharpGenSdkCheckFile)" AlwaysCreate="True" />
   </Target>
 
   <Target
     Name="GenerateConsumerBindMappingFile"
     DependsOnTargets="MapCppToCSharp"
+    Inputs="@(SharpGenMapping)"
     Outputs="@(SharpGenConsumerBindMappingFile)"
   />
   

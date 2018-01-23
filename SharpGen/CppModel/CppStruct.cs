@@ -40,7 +40,7 @@ namespace SharpGen.CppModel
         /// </summary>
         /// <value>The name of the parent.</value>
         [XmlAttribute("base")]
-        public string ParentName { get; set; }
+        public string Base { get; set; }
 
         /// <summary>
         /// Gets the fields.

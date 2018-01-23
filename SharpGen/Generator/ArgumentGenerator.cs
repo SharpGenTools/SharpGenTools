@@ -19,12 +19,31 @@ namespace SharpGen.Generator
 
         public ArgumentSyntax GenerateCode(CsParameter csElement)
         {
-            return Argument(GenerateExpression(csElement));
+            // Cast the argument to the native (marshal) type
+            if (csElement.MarshalType != null)
+            {
+                if (csElement.MarshalType.QualifiedName == "System.IntPtr") // Marshal System.IntPtr as void* for arguments.
+                {
+                    return Argument(
+                        CastExpression(
+                            PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
+                            ParenthesizedExpression(GenerateExpression(csElement))));
+                }
+                return Argument(CheckedExpression(
+                            SyntaxKind.UncheckedExpression,
+                            CastExpression(
+                                ParseTypeName(csElement.MarshalType.QualifiedName),
+                                GenerateExpression(csElement)))); 
+            }
+            else
+            {
+                return Argument(GenerateExpression(csElement));
+            }
         }
 
         private ExpressionSyntax GenerateExpression(CsParameter param)
         {
-            if (param.IsComArray)
+            if (param.IsInterfaceArray)
             {
                 return CastExpression(
                     PointerType(
@@ -79,7 +98,7 @@ namespace SharpGen.Generator
                 }
                 else if (param.IsArray)
                 {
-                    return param.IsComArray ? IdentifierName(param.Name) : IdentifierName(param.TempName);
+                    return param.IsInterfaceArray ? IdentifierName(param.Name) : IdentifierName(param.TempName);
                 }
                 else if (param.IsFixed && !param.HasNativeValueType)
                 {
@@ -121,16 +140,18 @@ namespace SharpGen.Generator
                 return PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
                     IdentifierName(param.HasNativeValueType ? param.TempName : param.Name));
             }
-            if (!param.IsFixed && param.PublicType is CsEnum && !param.IsArray)
+            if (!param.IsFixed && param.PublicType is CsEnum csEnum && !param.IsArray)
             {
                 return CheckedExpression(
                     SyntaxKind.UncheckedExpression,
                     CastExpression(
-                        PredefinedType(
-                            Token(SyntaxKind.IntKeyword)),
+                        ParseTypeName(csEnum.UnderlyingType?.Type.FullName ?? "int"),
                         IdentifierName(param.Name)));
             }
-            if (param.PublicType.Type == typeof(string))
+
+            var fundamental = param.PublicType as CsFundamentalType;
+
+            if (fundamental?.Type == typeof(string))
             {
                 return CastExpression(
                     PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
@@ -177,7 +198,7 @@ namespace SharpGen.Generator
             {
                 return IdentifierName(param.TempName);
             }
-            if (param.PublicType.Type == typeof(IntPtr) && !param.IsArray)
+            if (fundamental?.Type == typeof(IntPtr) && !param.IsArray)
             {
                 return CastExpression(
                     PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),

@@ -17,6 +17,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using SharpGen.Config;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,6 +36,7 @@ namespace SharpGen.CppModel
         /// <summary>
         ///   Delegate Modifier
         /// </summary>
+        /// <returns>true to remove the element from the model. false otherwise.</returns>
         public delegate bool ProcessModifier(Regex regex, CppElement cppElement);
 
         /// <summary>
@@ -84,7 +86,7 @@ namespace SharpGen.CppModel
         /// </summary>
         /// <value>The tag.</value>
         [XmlIgnore]
-        public object Tag { get; set; }
+        public MappingRule Rule { get; set; }
 
         /// <summary>
         /// Gets the parent include.
@@ -95,7 +97,7 @@ namespace SharpGen.CppModel
         {
             get
             {
-                CppElement cppInclude = Parent;
+                var cppInclude = Parent;
                 while (cppInclude != null && !(cppInclude is CppInclude))
                     cppInclude = cppInclude.Parent;
                 return cppInclude as CppInclude;
@@ -111,7 +113,7 @@ namespace SharpGen.CppModel
         {
             get
             {
-                CppElement cppRoot = this;
+                var cppRoot = this;
                 while (cppRoot.Parent != null)
                     cppRoot = cppRoot.Parent;
                 return cppRoot;
@@ -164,7 +166,8 @@ namespace SharpGen.CppModel
         [XmlArrayItem(typeof (CppMethod))]
         [XmlArrayItem(typeof (CppParameter))]
         [XmlArrayItem(typeof (CppStruct))]
-        [XmlArrayItem(typeof (CppType))]
+        [XmlArrayItem(typeof(CppReturnValue))]
+        [XmlArrayItem(typeof(CppMarshallable))]
         public List<CppElement> Items { get; set; }
 
         /// <summary>
@@ -192,15 +195,15 @@ namespace SharpGen.CppModel
             get { return Items == null || Items.Count == 0; }
         }
 
-        public T GetTagOrDefault<T>() where T : new()
+        public MappingRule GetMappingRule()
         {
-            return (T) (Tag ?? new T());
+            return Rule ?? new MappingRule();
         }
 
         public static string ShortName<T>() where T : CppElement
         {
             var type = typeof (T);
-            string tagname = type.Name;
+            var tagname = type.Name;
             var attribute = type.GetTypeInfo().GetCustomAttributes<DataContractAttribute>(false).FirstOrDefault();
             if (attribute != null)
                 tagname = attribute.Name;
@@ -217,12 +220,6 @@ namespace SharpGen.CppModel
                 element.Parent.Remove(element);
             element.Parent = this;
             GetSafeItems().Add(element);
-        }
-
-        public void Add<T>(IEnumerable<T> elements) where T : CppElement
-        {
-            foreach (var cppElement in elements)
-                Add(cppElement);
         }
 
         /// <summary>
@@ -390,7 +387,6 @@ namespace SharpGen.CppModel
 
             if (_findContext == null)
             {
-                // Optimized version with findContext
                 foreach (var innerElement in AllItems)
                 {
                     if (innerElement.Find(regex, toAdd, modifier, ref modifyParent))
@@ -399,6 +395,7 @@ namespace SharpGen.CppModel
             }
             else
             {
+                // Optimized version with findContext
                 foreach (var innerElement in AllItems)
                 {
                     if (_findContext.Contains(innerElement.Name))

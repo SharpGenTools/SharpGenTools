@@ -140,10 +140,10 @@ namespace SharpGen.Transform
 
             var inheritedStructs = new Stack<CppStruct>();
             var currentStruct = cppStruct;
-            while (currentStruct != null && currentStruct.ParentName != currentStruct.Name)
+            while (currentStruct != null && currentStruct.Base != currentStruct.Name)
             {
                 inheritedStructs.Push(currentStruct);
-                currentStruct = typeRegistry.FindBoundType(currentStruct.ParentName)?.CppElement as CppStruct;
+                currentStruct = typeRegistry.FindBoundType(currentStruct.Base)?.CppElement as CppStruct;
             }
 
             while (inheritedStructs.Count > 0)
@@ -220,14 +220,14 @@ namespace SharpGen.Transform
                             {
                                 maxSizeOfField = 0;
                             }
-                            maxSizeOfField = fieldStruct.SizeOf > maxSizeOfField ? fieldStruct.SizeOf : maxSizeOfField;
+                            maxSizeOfField = fieldStruct.Size > maxSizeOfField ? fieldStruct.Size : maxSizeOfField;
                             isInUnion = true;
                             csStruct.ExplicitLayout = true;
                             previousFieldSize = 0;
                         }
                         else
                         {
-                            previousFieldSize = fieldStruct.SizeOf;
+                            previousFieldSize = fieldStruct.Size;
                         }
                         previousFieldOffsetIndex = cppField.Offset;
                     });
@@ -259,7 +259,7 @@ namespace SharpGen.Transform
                 }
             }
 
-            csStruct.SizeOf = currentFieldAbsoluteOffset + previousFieldSize;
+            csStruct.SetSize(currentFieldAbsoluteOffset + previousFieldSize);
             csStruct.HasMarshalType = hasMarshalType;
         }
     }

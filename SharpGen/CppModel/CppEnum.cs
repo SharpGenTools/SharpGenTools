@@ -55,5 +55,9 @@ namespace SharpGen.CppModel
         {
             get { return Iterate<CppEnumItem>(); }
         }
+
+
+        [XmlAttribute("underlying-type")]
+        public string UnderlyingType { get; set; } = "int";
     }
 }

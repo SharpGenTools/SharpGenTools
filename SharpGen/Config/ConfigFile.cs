@@ -401,10 +401,7 @@ namespace SharpGen.Config
             GetRoot().MapIdToFile.Add(Id, this);            
         }
 
-        public IEnumerable<ConfigFile> ConfigFilesLoaded
-        {
-            get { return GetRoot().MapIdToFile.Values; }
-        }
+        public IReadOnlyCollection<ConfigFile> ConfigFilesLoaded => GetRoot().MapIdToFile.Values;
 
 
         /// <summary>

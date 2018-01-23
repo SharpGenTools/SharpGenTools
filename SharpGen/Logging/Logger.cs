@@ -37,7 +37,7 @@ namespace SharpGen.Logging
         /// <summary>
         /// Initializes the <see cref="Logger"/> class.
         /// </summary>
-        public Logger(ILogger output, IProgressReport progress)
+        public Logger(ILogger output, IProgressReport progress = null)
         {
             LoggerOutput = output;
             ProgressReport = progress;

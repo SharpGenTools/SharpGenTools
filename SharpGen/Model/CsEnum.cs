@@ -17,9 +17,11 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Runtime.InteropServices;
 using System.Xml.Serialization;
 using SharpGen.Config;
 
@@ -28,37 +30,24 @@ namespace SharpGen.Model
     [DataContract(Name = "Enum")]
     public class CsEnum : CsTypeBase
     {
-        public CsEnum()
-        {
-            Type = typeof (int);
-            SizeOf = 4;
-        }
+        [DataMember]
+        public CsFundamentalType UnderlyingType { get; set; }
+        
+#pragma warning disable 0618
+        public int SizeOf => Marshal.SizeOf(UnderlyingType.Type);
+#pragma warning restore 0618
 
         [DataMember]
         public bool IsFlag { get; set; }
-
-        public string TypeName
-        {
-            get
-            {
-                if ( Type == typeof(int) )
-                    return "int";
-                if (Type == typeof(short))
-                    return "short";
-                if (Type == typeof(byte))
-                    return "byte";
-                return "UNKNOWN";
-            }
-        }
 
         public IEnumerable<CsEnumItem> EnumItems
         {
             get { return Items.OfType<CsEnumItem>(); }
         }
 
-        protected override void UpdateFromTag(MappingRule tag)
+        protected override void UpdateFromMappingRule(MappingRule tag)
         {
-            base.UpdateFromTag(tag);
+            base.UpdateFromMappingRule(tag);
             if (tag.EnumHasFlags.HasValue)
                 IsFlag = tag.EnumHasFlags.Value;
         }

@@ -161,7 +161,7 @@ namespace SharpGen.Model
         public Visibility Visibility { get; set; }
 
         /// <summary>
-        /// Returns a textual representation of the <see cref="CsBase.Visibility"/> property.
+        /// Returns a textual representation of the <see cref="Visibility"/> property.
         /// </summary>
         /// <value>The full name of the visibility.</value>
         public string VisibilityName
@@ -231,7 +231,7 @@ namespace SharpGen.Model
         /// <summary>
         /// Gets or sets the C++ element associated to this container.
         /// </summary>
-        /// <value>The CPP element.</value>
+        /// <value>The C++ element.</value>
         public virtual CppElement CppElement
         {
             get { return _cppElement; }
@@ -244,7 +244,7 @@ namespace SharpGen.Model
                     Description = string.IsNullOrEmpty(CppElement.Description) ? Description : CppElement.Description;
                     Remarks = string.IsNullOrEmpty(CppElement.Remarks) ? Remarks : CppElement.Remarks;
                     
-                    UpdateFromTag(_cppElement.GetTagOrDefault<MappingRule>());
+                    UpdateFromMappingRule(_cppElement.GetMappingRule());
                 }
             }
         }
@@ -252,7 +252,7 @@ namespace SharpGen.Model
         /// <summary>
         /// Gets the name of the C++ element.
         /// </summary>
-        /// <value>The name of the C++ element. "None" if no C++ element attached to this container.</value>
+        /// <value>The name of the C++ element.</value>
         [DataMember(Name = "CppElement")]
         public string CppElementName
         {
@@ -260,25 +260,10 @@ namespace SharpGen.Model
             {
                 if (!string.IsNullOrEmpty(_cppElementName))
                     return _cppElementName;
-                if (CppElement != null && CppElement.Name != null)
-                    return CppElement.Name;
-                return "None";
+                return CppElement?.Name;
             } 
             set { _cppElementName = value; }
         }
-
-        /// <summary>
-        /// Gets or sets the sizeof this element.
-        /// </summary>
-        /// <value>The size of.</value>
-        [DataMember(Name = "Size")]
-        public int SizeOf { get; set; }
-
-        /// <summary>
-        ///   Packing alignment for this structure (Default is 0 => Platform default)
-        /// </summary>
-        [DataMember]
-        public int Align { get; set; }
 
         /// <summary>
         /// Gets or sets the doc id.
@@ -319,7 +304,7 @@ namespace SharpGen.Model
         /// Updates this element from a tag.
         /// </summary>
         /// <param name="tag">The tag.</param>
-        protected virtual void UpdateFromTag(MappingRule tag)
+        protected virtual void UpdateFromMappingRule(MappingRule tag)
         {
             if (tag.Visibility.HasValue)
                 Visibility = tag.Visibility.Value;

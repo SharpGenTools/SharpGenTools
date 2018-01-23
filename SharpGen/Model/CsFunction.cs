@@ -26,29 +26,18 @@ using System.Xml.Serialization;
 namespace SharpGen.Model
 {
     [DataContract(Name = "Function")]
-    public class CsFunction : CsMethod
+    public class CsFunction : CsCallable
     {
         public CsFunction()
         {
 
         }
 
-        public CsFunction(CppFunction cppMethod) : base(cppMethod)
+        public CsFunction(CppFunction cppFunction) : base(cppFunction)
         {
         }
 
-        protected override int MaxSizeReturnParameter
-        {
-            get
-            {
-                return 8;
-            }
-        }
-
-        protected override void UpdateFromTag(MappingRule tag)
-        {
-            base.UpdateFromTag(tag);
-        }
+        protected override int MaxSizeReturnParameter => 8;
         
         [DataMember]
         public string DllName { get; set; }

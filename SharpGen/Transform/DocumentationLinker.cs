@@ -10,19 +10,11 @@ namespace SharpGen.Transform
 {
     public class DocumentationLinker : IDocumentationLinker
     {
-        private readonly TypeRegistry typeRegistry;
-
         private readonly Dictionary<string, string> _docToCSharp = new Dictionary<string, string>();
 
-        public DocumentationLinker(TypeRegistry typeRegistry)
+        public void AddOrUpdateDocLink(string cppName, string cSharpName)
         {
-            this.typeRegistry = typeRegistry;
-        }
-
-        public void AddDocLink(string cppName, string cSharpName)
-        {
-            if (!_docToCSharp.ContainsKey(cppName))
-                _docToCSharp.Add(cppName, cSharpName);
+            _docToCSharp[cppName] = cSharpName;
         }
 
         /// <summary>
@@ -32,10 +24,7 @@ namespace SharpGen.Transform
         /// <returns>Name of the C# type</returns>
         public string FindDocName(string cppName)
         {
-            if (_docToCSharp.TryGetValue(cppName, out string cSharpName))
-                return cSharpName;
-
-            return typeRegistry.FindBoundType(cppName)?.QualifiedName;
+            return _docToCSharp.TryGetValue(cppName, out string cSharpName) ? cSharpName : null;
         }
 
         public IEnumerable<(string cppName, string cSharpName)> GetAllDocLinks()
@@ -43,11 +32,6 @@ namespace SharpGen.Transform
             foreach (var link in _docToCSharp)
             {
                 yield return (link.Key, link.Value);
-            }
-
-            foreach (var binding in typeRegistry.GetTypeBindings())
-            {
-                yield return (binding.CppType, binding.CSharpType.QualifiedName);
             }
         }
     }

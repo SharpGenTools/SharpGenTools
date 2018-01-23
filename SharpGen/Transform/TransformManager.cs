@@ -41,7 +41,7 @@ namespace SharpGen.Transform
     {
         private readonly List<string> _includesToProcess = new List<string>();
 
-        private readonly IDocumentationLinker docAggregator;
+        private readonly IDocumentationLinker docLinker;
         private readonly TypeRegistry typeRegistry;
         private readonly NamespaceRegistry namespaceRegistry;
         private readonly MarshalledElementFactory marshalledElementFactory;
@@ -57,14 +57,14 @@ namespace SharpGen.Transform
             NamingRulesManager namingRules,
             Logger logger,
             TypeRegistry typeRegistry,
-            IDocumentationLinker docAggregator,
+            IDocumentationLinker docLinker,
             ConstantManager constantManager,
             AssemblyManager assemblyManager)
         {
             GlobalNamespace = globalNamespace;
             Logger = logger;
             NamingRules = namingRules;
-            this.docAggregator = docAggregator;
+            this.docLinker = docLinker;
             this.typeRegistry = typeRegistry;
             this.constantManager = constantManager;
             this.assemblyManager = assemblyManager;
@@ -315,34 +315,56 @@ namespace SharpGen.Transform
                 CsTypeBase defineType = null;
 
                 if (defineRule.Enum != null)
-                    defineType = new CsEnum { Name = defineRule.Enum };
+                {
+                    var newEnum = new CsEnum { Name = defineRule.Enum, UnderlyingType = (CsFundamentalType)typeRegistry.ImportType(defineRule.UnderlyingType) };
+                    defineType = newEnum;
+
+                    if (defineRule.SizeOf.HasValue && newEnum.UnderlyingType == null)
+                    {
+                        var size = defineRule.SizeOf.Value;
+
+                        switch (size)
+                        {
+                            case 1:
+                                newEnum.UnderlyingType = typeRegistry.ImportType(typeof(byte));
+                                break;
+                            case 2:
+                                newEnum.UnderlyingType = typeRegistry.ImportType(typeof(short));
+                                break;
+                            case 4:
+                                newEnum.UnderlyingType = typeRegistry.ImportType(typeof(int));
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
                 else if (defineRule.Struct != null)
                 {
-                    defineType = new CsStruct { Name = defineRule.Struct };
+                    var newStruct = new CsStruct { Name = defineRule.Struct };
+                    defineType = newStruct;
                     if (defineRule.HasCustomMarshal.HasValue)
-                        ((CsStruct)defineType).HasMarshalType = defineRule.HasCustomMarshal.Value;
+                        newStruct.HasMarshalType = defineRule.HasCustomMarshal.Value;
 
                     if (defineRule.IsStaticMarshal.HasValue)
-                        ((CsStruct)defineType).IsStaticMarshal = defineRule.IsStaticMarshal.Value;
+                        newStruct.IsStaticMarshal = defineRule.IsStaticMarshal.Value;
 
                     if (defineRule.HasCustomNew.HasValue)
-                        ((CsStruct)defineType).HasCustomNew = defineRule.HasCustomNew.Value;
+                        newStruct.HasCustomNew = defineRule.HasCustomNew.Value;
+
+                    if (defineRule.SizeOf.HasValue)
+                        newStruct.SetSize(defineRule.SizeOf.Value);
+
+                    if (defineRule.Align.HasValue)
+                        newStruct.Align = defineRule.Align.Value;
                 }
                 else if (defineRule.Interface != null)
                     defineType = new CsInterface { Name = defineRule.Interface };
-                else if (defineRule.NewClass != null)
-                    defineType = new CsClass { Name = defineRule.NewClass };
                 else
                 {
-                    Logger.Error("Invalid rule [{0}]. Requires one of enum, struct, class or interface", defineRule);
+                    Logger.Error("Invalid rule [{0}]. Requires one of enum, struct, or interface", defineRule);
                     continue;
                 }
-
-                if (defineRule.SizeOf.HasValue)
-                    defineType.SizeOf = defineRule.SizeOf.Value;
-
-                if (defineRule.Align.HasValue)
-                    defineType.Align = defineRule.Align.Value;
 
                 // Define this type
                 typeRegistry.DefineType(defineType);
@@ -360,7 +382,7 @@ namespace SharpGen.Transform
                 {
                     if (createRule.NewClass != null)
                     {
-                        var functionGroup = CreateCsClassContainer(file.Assembly, file.Namespace, createRule.NewClass);
+                        var functionGroup = CreateCsGroup(file.Assembly, file.Namespace, createRule.NewClass);
                         if (createRule.Visibility.HasValue)
                             functionGroup.Visibility = createRule.Visibility.Value;
                     }
@@ -412,25 +434,25 @@ namespace SharpGen.Transform
                 if (configRule is MappingRule mappingRule)
                 {
                     if (mappingRule.Enum != null)
-                        cppModule.Tag<CppEnum>(mappingRule.Enum, mappingRule);
+                        cppModule.ExecuteRule<CppEnum>(mappingRule.Enum, mappingRule);
                     else if (mappingRule.EnumItem != null)
-                        cppModule.Tag<CppEnumItem>(mappingRule.EnumItem, mappingRule);
+                        cppModule.ExecuteRule<CppEnumItem>(mappingRule.EnumItem, mappingRule);
                     else if (mappingRule.Struct != null)
-                        cppModule.Tag<CppStruct>(mappingRule.Struct, mappingRule);
+                        cppModule.ExecuteRule<CppStruct>(mappingRule.Struct, mappingRule);
                     else if (mappingRule.Field != null)
-                        cppModule.Tag<CppField>(mappingRule.Field, mappingRule);
+                        cppModule.ExecuteRule<CppField>(mappingRule.Field, mappingRule);
                     else if (mappingRule.Interface != null)
-                        cppModule.Tag<CppInterface>(mappingRule.Interface, mappingRule);
+                        cppModule.ExecuteRule<CppInterface>(mappingRule.Interface, mappingRule);
                     else if (mappingRule.Function != null)
-                        cppModule.Tag<CppFunction>(mappingRule.Function, mappingRule);
+                        cppModule.ExecuteRule<CppFunction>(mappingRule.Function, mappingRule);
                     else if (mappingRule.Method != null)
-                        cppModule.Tag<CppMethod>(mappingRule.Method, mappingRule);
+                        cppModule.ExecuteRule<CppMethod>(mappingRule.Method, mappingRule);
                     else if (mappingRule.Parameter != null)
-                        cppModule.Tag<CppParameter>(mappingRule.Parameter, mappingRule);
+                        cppModule.ExecuteRule<CppParameter>(mappingRule.Parameter, mappingRule);
                     else if (mappingRule.Element != null)
-                        cppModule.Tag<CppElement>(mappingRule.Element, mappingRule);
+                        cppModule.ExecuteRule<CppElement>(mappingRule.Element, mappingRule);
                     else if (mappingRule.DocItem != null)
-                        docAggregator.AddDocLink(mappingRule.DocItem, mappingRule.MappingNameFinal);
+                        docLinker.AddOrUpdateDocLink(mappingRule.DocItem, mappingRule.MappingNameFinal);
                 }
                 else if (configRule is ContextRule contextRule)
                 {
@@ -582,7 +604,7 @@ namespace SharpGen.Transform
                         cppItem.ToString(),
                         () =>
                         {
-                            // If a struct is already mapped, it means that there is already a predefined mapping
+                            // If already mapped, it means that there is already a predefined mapping
                             if (typeRegistry.FindBoundType(cppItem.Name) == null)
                             {
                                 var csElement = transform.Prepare(cppItem);
@@ -617,13 +639,13 @@ namespace SharpGen.Transform
         }
 
         /// <summary>
-        /// Creates the C# class container (used by functions, constants, variables).
+        /// Creates the C# class container used to group together loose elements (i.e. functions, constants).
         /// </summary>
         /// <param name="assemblyName">Name of the assembly.</param>
         /// <param name="namespaceName">Name of the namespace.</param>
         /// <param name="className">Name of the class.</param>
         /// <returns>The C# class container</returns>
-        private CsClass CreateCsClassContainer(string assemblyName, string namespaceName, string className)
+        private CsGroup CreateCsGroup(string assemblyName, string namespaceName, string className)
         {
             if (className == null) throw new ArgumentNullException(nameof(className));
 
@@ -642,7 +664,7 @@ namespace SharpGen.Transform
             }
 
 
-            var group = new CsClass {Name = className};
+            var group = new CsGroup {Name = className};
             csNameSpace.Add(group);
 
             groupRegistry.RegisterGroup(namespaceName + "." + className, group);
@@ -764,22 +786,14 @@ namespace SharpGen.Transform
                         {
                             Enum = csEnum.QualifiedName,
                             SizeOf = csEnum.SizeOf,
-                            Align = csEnum.Align
-                        };
-                        break;
-                    case CsClass csClass:
-                        yield return new DefineExtensionRule
-                        {
-                            NewClass = csClass.QualifiedName,
-                            SizeOf = csClass.SizeOf,
-                            Align = csClass.Align
+                            UnderlyingType = csEnum.UnderlyingType?.BuiltinTypeName
                         };
                         break;
                     case CsStruct csStruct:
                         yield return new DefineExtensionRule
                         {
                             Struct = csStruct.QualifiedName,
-                            SizeOf = csStruct.SizeOf,
+                            SizeOf = csStruct.Size,
                             Align = csStruct.Align,
                             HasCustomMarshal = csStruct.HasCustomMarshal,
                             HasCustomNew = csStruct.HasCustomNew,
@@ -789,9 +803,7 @@ namespace SharpGen.Transform
                     case CsInterface csInterface:
                         yield return new DefineExtensionRule
                         {
-                            Interface = csInterface.QualifiedName,
-                            SizeOf = csInterface.SizeOf,
-                            Align = csInterface.Align
+                            Interface = csInterface.QualifiedName
                         };
                         break;
                 }

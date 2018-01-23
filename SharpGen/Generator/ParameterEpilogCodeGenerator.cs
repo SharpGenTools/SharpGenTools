@@ -78,7 +78,7 @@ namespace SharpGen.Generator
                         }
                     }
                 }
-                else if (param.IsComObject)
+                else if (param.IsInterface)
                 {
                     var paramInterface = param.PublicType as CsInterface;
                     if (param.IsArray)

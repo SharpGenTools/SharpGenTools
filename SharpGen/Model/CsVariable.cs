@@ -23,7 +23,7 @@ using System.Xml.Serialization;
 namespace SharpGen.Model
 {
     [DataContract(Name = "Variable")]
-    public class CsVariable : CsTypeBase
+    public class CsVariable : CsBase
     {
         public CsVariable()
         {

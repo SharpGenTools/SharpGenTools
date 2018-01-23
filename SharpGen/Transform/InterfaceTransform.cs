@@ -96,7 +96,7 @@ namespace SharpGen.Transform
         /// <summary>
         /// Prepares the specified C++ element to a C# element.
         /// </summary>
-        /// <param name="cppElement">The C++ element.</param>
+        /// <param name="cppInterface">The C++ element.</param>
         /// <returns>The C# element created and registered to the <see cref="TransformManager"/></returns>
         public override CsInterface Prepare(CppInterface cppInterface)
         {
@@ -126,7 +126,7 @@ namespace SharpGen.Transform
             var cppInterface = (CppInterface)interfaceType.CppElement;
 
             // Associate Parent
-            var parentType = typeRegistry.FindBoundType(cppInterface.ParentName);
+            var parentType = typeRegistry.FindBoundType(cppInterface.Base);
             if (parentType != null)
             {
                 interfaceType.Base = parentType;
@@ -231,7 +231,7 @@ namespace SharpGen.Transform
             // If interfaceType is DualCallback, then need to generate a default implentation
             if (interfaceType.IsDualCallback)
             {
-                var tagForInterface = cppInterface.GetTagOrDefault<MappingRule>();
+                var tagForInterface = cppInterface.GetMappingRule();
                 var nativeCallback = new CsInterface(interfaceType.CppElement as CppInterface)
                 {
                     Name = interfaceType.Name + "Native",
@@ -270,7 +270,7 @@ namespace SharpGen.Transform
                     if (innerElement is CsMethod method)
                     {
                         var newCsMethod = (CsMethod)method.Clone();
-                        var tagForMethod = method.CppElement.GetTagOrDefault<MappingRule>();
+                        var tagForMethod = method.CppElement.GetMappingRule();
                         bool keepMethodPublic = tagForMethod.IsKeepImplementPublic.HasValue && tagForMethod.IsKeepImplementPublic.Value;
                         if (!keepMethodPublic)
                         {
@@ -352,7 +352,7 @@ namespace SharpGen.Transform
                 // Check Getter
                 if (isGet)
                 {
-                    if ((cSharpMethod.ReturnType.PublicType.Name == globalNamespace.GetTypeName("Result") || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
+                    if ((cSharpMethod.ReturnValue.PublicType.Name == globalNamespace.GetTypeName("Result") || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
                         parameterList[0].IsOut && !parameterList[0].IsArray)
                     {
                         csProperty.Getter = cSharpMethod;
@@ -362,7 +362,7 @@ namespace SharpGen.Transform
                     else if (parameterCount == 0 && cSharpMethod.HasReturnType)
                     {
                         csProperty.Getter = cSharpMethod;
-                        csProperty.PublicType = csProperty.Getter.ReturnType.PublicType;
+                        csProperty.PublicType = csProperty.Getter.ReturnValue.PublicType;
                     }
                     else
                     {
@@ -375,7 +375,7 @@ namespace SharpGen.Transform
                 else
                 {
                     // Check Setter
-                    if ((cSharpMethod.ReturnType?.Name == globalNamespace.GetTypeName("Result") || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
+                    if ((cSharpMethod.ReturnValue?.Name == globalNamespace.GetTypeName("Result") || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
                         (parameterList[0].IsRefIn || parameterList[0].IsIn || parameterList[0].IsRef) && !parameterList[0].IsArray)
                     {
                         csProperty.Setter = cSharpMethod;
@@ -384,7 +384,7 @@ namespace SharpGen.Transform
                     else if (parameterCount == 1 && !cSharpMethod.HasReturnType)
                     {
                         csProperty.Setter = cSharpMethod;
-                        csProperty.PublicType = csProperty.Setter.ReturnType.PublicType;
+                        csProperty.PublicType = csProperty.Setter.ReturnValue.PublicType;
                     }
                     else
                     {
@@ -411,7 +411,7 @@ namespace SharpGen.Transform
                     }
                     else
                     {
-                        var getterType = csProperty.Getter.ReturnType;
+                        var getterType = csProperty.Getter.ReturnValue;
                         var setterType = csProperty.Setter.Parameters.First();
                         if (getterType.PublicType.QualifiedName != setterType.PublicType.QualifiedName)
                             removeProperty = true;
@@ -470,7 +470,7 @@ namespace SharpGen.Transform
             bool hasComArrayLike = false;
             foreach (var csParameter in csMethod.Parameters)
             {
-                if (csParameter.IsInComArrayLike)
+                if (csParameter.IsInInterfaceArrayLike)
                 {
                     hasComArrayLike = true;
                     break;
@@ -480,12 +480,12 @@ namespace SharpGen.Transform
             // Look for at least one parameter ComArray candidate
             if (hasComArrayLike)
             {
-                // Create a new method and transforms all array of ComObject to ComArray<ComObject>
+                // Create a new method and transforms all array of CppObject to InterfaceArray<CppObject>
                 var newMethod = (CsMethod)csMethod.Clone();
                 foreach (var csSubParameter in newMethod.Parameters)
                 {
-                    if (csSubParameter.IsInComArrayLike)
-                        csSubParameter.PublicType = new CsComArray((CsInterface)csSubParameter.PublicType, globalNamespace.GetTypeName("ComArray"));
+                    if (csSubParameter.IsInInterfaceArrayLike)
+                        csSubParameter.PublicType = new CsInterfaceArray((CsInterface)csSubParameter.PublicType, globalNamespace.GetTypeName("ComArray"));
                 }
                 interfaceType.Add(newMethod);
             }
@@ -498,7 +498,7 @@ namespace SharpGen.Transform
                 rawMethod.Visibility = Visibility.Private;
                 foreach (var csSubParameter in rawMethod.Parameters)
                 {
-                    if (csSubParameter.IsArray || csSubParameter.IsComObject || csSubParameter.HasPointer)
+                    if (csSubParameter.IsArray || csSubParameter.IsInterface || csSubParameter.HasPointer)
                     {
                         csSubParameter.PublicType = intPtrType;
                         csSubParameter.IsArray = false;

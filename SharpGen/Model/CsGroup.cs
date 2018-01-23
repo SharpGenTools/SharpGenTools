@@ -17,39 +17,39 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-
-using SharpGen.CppModel;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
-    [DataContract(Name = "InterfaceArray")]
-    public class CsComArray : CsInterface
+    [DataContract(Name = "Group")]
+    public class CsGroup : CsBase
     {
-        public CsComArray()
+        public CsGroup()
         {
+            Visibility = Config.Visibility.PublicProtected | Config.Visibility.Static;
+            Description = "Functions";
         }
 
-        public CsComArray(CsInterface element, string comArrayTypeName) : base((CppInterface)element.CppElement)
+        public IEnumerable<CsFunction> Functions
         {
-            BaseElement = element;
-            InterfaceArrayTypeName = comArrayTypeName;
+            get { return Items.OfType<CsFunction>(); }
         }
 
-        public override string QualifiedName
+        /// <summary>
+        /// Gets the variables stored in this container.
+        /// </summary>
+        /// <value>The variables.</value>
+        public IEnumerable<CsVariable> Variables
         {
-            get
-            {
-                return $"{InterfaceArrayTypeName}<{BaseElement.QualifiedName}>";
-            }
+            get { return Items.OfType<CsVariable>(); }
         }
 
-        [DataMember]
-        public CsInterface BaseElement { get;set; }
-
-        [DataMember]
-        public string InterfaceArrayTypeName { get; set; }
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }
-

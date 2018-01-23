@@ -301,7 +301,7 @@ namespace SharpGen.Parser
         /// <returns>A C++ function parsed</returns>
         private CppFunction ParseFunction(XElement xElement)
         {
-            return ParseMethodOrFunction<CppFunction>(xElement);
+            return ParseCallable<CppFunction>(xElement);
         }
 
         /// <summary>
@@ -476,7 +476,7 @@ namespace SharpGen.Parser
         /// <typeparam name="T">The resulting C++ parsed element. Must be a subclass of <see cref="CppMethod"/>.</typeparam>
         /// <param name="xElement">The gccxml <see cref="XElement"/> that describes a C++ method/function declaration.</param>
         /// <returns>The C++ parsed T.</returns>
-        private T ParseMethodOrFunction<T>(XElement xElement) where T : CppMethod, new()
+        private T ParseCallable<T>(XElement xElement) where T : CppCallable, new()
         {
             var cppMethod = new T { Name = xElement.AttributeValue("name") };
 
@@ -488,8 +488,8 @@ namespace SharpGen.Parser
             // Parse parameters
             ParseParameters(xElement, cppMethod);
 
-            cppMethod.ReturnType = new CppType();
-            ResolveAndFillType(xElement.AttributeValue("returns"), cppMethod.ReturnType);
+            cppMethod.ReturnValue = new CppReturnValue();
+            ResolveAndFillType(xElement.AttributeValue("returns"), cppMethod.ReturnValue);
 
             Logger.PopContext();
 
@@ -535,8 +535,8 @@ namespace SharpGen.Parser
                 CppInterface cppInterfaceBase = null;
                 Logger.RunInContext("Base", () => { cppInterfaceBase = ParseInterface(xElementBase); });
 
-                if (string.IsNullOrEmpty(cppInterface.ParentName))
-                    cppInterface.ParentName = cppInterfaceBase.Name;
+                if (string.IsNullOrEmpty(cppInterface.Base))
+                    cppInterface.Base = cppInterfaceBase.Name;
                 
                 offsetMethod += cppInterfaceBase.TotalMethodCount;
             }
@@ -553,7 +553,7 @@ namespace SharpGen.Parser
                 if (method.Name.LocalName == "Method" && !string.IsNullOrWhiteSpace(method.AttributeValue("pure_virtual"))
                     && string.IsNullOrWhiteSpace(method.AttributeValue("overrides")))
                 {
-                    var cppMethod = ParseMethodOrFunction<CppMethod>(method);
+                    var cppMethod = ParseCallable<CppMethod>(method);
                     methods.Add(cppMethod);
                 }
             }
@@ -684,8 +684,8 @@ namespace SharpGen.Parser
                 CppStruct cppStructBase = null;
                 Logger.RunInContext("Base", () => { cppStructBase = ParseStructOrUnion(xElementBase); });
 
-                if (string.IsNullOrEmpty(cppStructBase.ParentName))
-                    cppStruct.ParentName = cppStructBase.Name;
+                if (string.IsNullOrEmpty(cppStructBase.Base))
+                    cppStruct.Base = cppStructBase.Name;
             }
 
             // Parse all fields
@@ -801,12 +801,12 @@ namespace SharpGen.Parser
             if (name.EndsWith(CppExtensionHeaderGenerator.EndTagCustomVariable))
                 name = name.Substring(0, name.Length - CppExtensionHeaderGenerator.EndTagCustomVariable.Length);
 
-            var cppType = new CppType();
-            ResolveAndFillType(xElement.AttributeValue("type"), cppType);
+            var cppMarshallable = new CppMarshallable();
+            ResolveAndFillType(xElement.AttributeValue("type"), cppMarshallable);
 
 
             var value = xElement.AttributeValue("init");
-            if (cppType.TypeName == "GUID")
+            if (cppMarshallable.TypeName == "GUID")
             {
                 var guid = ParseGuid(value);
                 if (!guid.HasValue)
@@ -818,7 +818,7 @@ namespace SharpGen.Parser
             var match = Regex.Match(value, @"\((?:\(.+\))?(.+)\)");
             if (match.Success)
             {
-                value = $"unchecked(({cppType.TypeName}){match.Groups[1].Value})";
+                value = $"unchecked(({cppMarshallable.TypeName}){match.Groups[1].Value})";
             }
 
             // Handle C++ floating point literals
@@ -979,7 +979,7 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="typeId">The id of the type to resolve.</param>
         /// <param name="type">The C++ type to fill.</param>
-        private void ResolveAndFillType(string typeId, CppType type)
+        private void ResolveAndFillType(string typeId, CppMarshallable type)
         {
             var  fullTypeName = new List<string>();
 
@@ -1000,18 +1000,9 @@ namespace SharpGen.Parser
                         isTypeResolved = true;
                         break;
                     case CastXml.TagEnumeration:
-                        type.TypeName = name;
-                        isTypeResolved = true;
-                        break;
                     case CastXml.TagStruct:
                     case CastXml.TagUnion:
                         type.TypeName = name;
-
-                        // If the structure being processed is an external include
-                        // and the type is not binded, then there is probably a missing binding
-                        //if (!IsTypeBinded(xType))
-                            //Logger.Error("Binding is missing for type [{0}] defined in file [{1}]", string.Join("/", fullTypeName), _mapIdToXElement[xType.AttributeValue("file")].AttributeValue("name"));
-
                         isTypeResolved = true;
                         break;
                     case CastXml.TagTypedef:
@@ -1031,7 +1022,7 @@ namespace SharpGen.Parser
                         var maxArrayIndex = xType.AttributeValue("max");
                         var arrayDim = int.Parse(maxArrayIndex.TrimEnd('u')) + 1;
                         if (type.ArrayDimension == null)
-                            type.ArrayDimension = "" + arrayDim;
+                            type.ArrayDimension = arrayDim.ToString();
                         else
                             type.ArrayDimension += "," + arrayDim;
                         xType = _mapIdToXElement[nextType];

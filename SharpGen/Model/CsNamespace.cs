@@ -90,9 +90,9 @@ namespace SharpGen.Model
         /// Gets all declared classes from this namespace.
         /// </summary>
         /// <value>The function groups.</value>
-        public IEnumerable<CsClass> Classes
+        public IEnumerable<CsGroup> Classes
         {
-            get { return Items.OfType<CsClass>(); }
+            get { return Items.OfType<CsGroup>(); }
         }
     }
 }

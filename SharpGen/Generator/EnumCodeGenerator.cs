@@ -20,12 +20,13 @@ namespace SharpGen.Generator
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsEnum csElement)
         {
             var enumDecl = EnumDeclaration(csElement.Name);
+            var underlyingType = ParseTypeName(csElement.UnderlyingType?.Type.FullName ?? "int");
             enumDecl = enumDecl.WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
                 .WithBaseList(
                     BaseList().
                         WithTypes(SingletonSeparatedList<BaseTypeSyntax>
                 (
-                    SimpleBaseType(ParseTypeName(csElement.TypeName))
+                    SimpleBaseType(underlyingType)
                 )))
                 .AddMembers(csElement.EnumItems.Select(item =>
                 {
@@ -38,10 +39,11 @@ namespace SharpGen.Generator
                             CheckedExpression(
                                 SyntaxKind.UncheckedExpression,
                                 CastExpression(
-                                    ParseTypeName(csElement.TypeName),
-                                    LiteralExpression(
-                                        SyntaxKind.NumericLiteralExpression,
-                                        Literal(int.Parse(item.Value)))))));
+                                    underlyingType,
+                                    ParenthesizedExpression(
+                                        LiteralExpression(
+                                            SyntaxKind.NumericLiteralExpression,
+                                            Literal(int.Parse(item.Value))))))));
                     }
                     return itemDecl
                         .WithLeadingTrivia(Trivia(GenerateDocumentationTrivia(item)));

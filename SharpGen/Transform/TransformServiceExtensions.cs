@@ -41,7 +41,7 @@ namespace SharpGen.Transform
                 docItems.Add("</remarks>");
             }
 
-            if (element.CppElement != null)
+            if (element.CppElementName != null)
             {
                 if (element.DocId != null)
                 {

@@ -35,7 +35,7 @@ using SharpGen.Doc;
 using System.Runtime.Loader;
 #endif
 
-namespace SharpGen
+namespace SharpGen.Interactive
 {
     /// <summary>
     /// CodeGen Application.
@@ -263,9 +263,9 @@ namespace SharpGen
 
         private (IDocumentationLinker doc, CsSolution solution) ExecuteMappings(CppModule group, ConfigFile consumerConfig)
         {
-            var typeRegistry = new TypeRegistry(Logger);
+            var docLinker = new DocumentationLinker();
+            var typeRegistry = new TypeRegistry(Logger, docLinker);
             var namingRules = new NamingRulesManager();
-            var docAggregator = new DocumentationLinker(typeRegistry);
 
             // Run the main mapping process
             var transformer = new TransformManager(
@@ -273,8 +273,8 @@ namespace SharpGen
                 namingRules,
                 Logger,
                 typeRegistry,
-                docAggregator,
-                new ConstantManager(namingRules, typeRegistry),
+                docLinker,
+                new ConstantManager(namingRules, docLinker),
                 new AssemblyManager())
             {
                 ForceGenerator = _isAssemblyNew
@@ -297,7 +297,7 @@ namespace SharpGen
 
             DumpRenames(transformer);
 
-            return (docAggregator, solution);
+            return (docLinker, solution);
         }
 
         private void DumpRenames(TransformManager transformer)
@@ -340,7 +340,7 @@ namespace SharpGen
             return group;
         }
 
-        private CppModule GenerateExtensionHeaders(HashSet<string> filesWithExtensions, HashSet<ConfigFile> updatedConfigs, CastXml castXml)
+        private CppModule GenerateExtensionHeaders(IReadOnlyCollection<string> filesWithExtensions, IReadOnlyCollection<ConfigFile> updatedConfigs, CastXml castXml)
         {
             Logger.Progress(10, "Generating C++ extensions from macros");
 
@@ -350,7 +350,7 @@ namespace SharpGen
             return group;
         }
 
-        private HashSet<ConfigFile> GenerateHeaders(HashSet<string> filesWithExtensions, HashSet<ConfigFile> configsWithIncludes, ConfigFile consumerConfig)
+        private HashSet<ConfigFile> GenerateHeaders(IReadOnlyCollection<string> filesWithExtensions, IReadOnlyCollection<ConfigFile> configsWithIncludes, ConfigFile consumerConfig)
         {
             var headerGenerator = new CppHeaderGenerator(Logger, _isAssemblyNew, IntermediateOutputPath);
 

@@ -41,16 +41,16 @@ namespace SharpGen.Generator
         public IMultiCodeGenerator<CsField, MemberDeclarationSyntax> ExplicitOffsetField { get; }
         public IMultiCodeGenerator<CsField, MemberDeclarationSyntax> AutoLayoutField { get; }
         public IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax> Struct { get; }
-        public ICodeGenerator<CsMethod, ExpressionSyntax> NativeInvocation { get; }
+        public ICodeGenerator<CsCallable, ExpressionSyntax> NativeInvocation { get; }
         public IMultiCodeGenerator<CsParameter, StatementSyntax> ParameterProlog { get; }
         public IMultiCodeGenerator<CsParameter, StatementSyntax> ParameterEpilog { get; }
-        public IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax> Callable { get; }
+        public IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> Callable { get; }
         public IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax> Method { get; }
         public IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax> Function { get; }
         public IMultiCodeGenerator<CsInterface, MemberDeclarationSyntax> Interface { get; }
         public ICodeGenerator<CsParameter, ParameterSyntax> Parameter { get; }
         public ICodeGenerator<CsParameter, ArgumentSyntax> Argument { get; }
-        public IMultiCodeGenerator<CsClass, MemberDeclarationSyntax> Group { get; }
+        public IMultiCodeGenerator<CsGroup, MemberDeclarationSyntax> Group { get; }
 
         public ICodeGenerator<CsAssembly, NamespaceDeclarationSyntax> LocalInterop { get; }
 

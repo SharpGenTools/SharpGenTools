@@ -25,8 +25,7 @@ namespace SharpGen.CppModel
     /// <summary>
     /// Type declaration.
     /// </summary>
-    [XmlType("type")]
-    public class CppType : CppElement
+    public class CppMarshallable : CppElement
     {
         /// <summary>
         /// Gets or sets the name of the type.
@@ -43,7 +42,7 @@ namespace SharpGen.CppModel
         public string Pointer { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this <see cref="CppType"/> is const.
+        /// Gets or sets a value indicating whether this <see cref="CppMarshallable"/> is const.
         /// </summary>
         /// <value><c>true</c> if const; otherwise, <c>false</c>.</value>
         [XmlAttribute("const")]
@@ -97,7 +96,7 @@ namespace SharpGen.CppModel
             return TypeName;
         }
 
-        public bool Equals(CppType other)
+        public bool Equals(CppMarshallable other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
@@ -116,8 +115,8 @@ namespace SharpGen.CppModel
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != typeof (CppType)) return false;
-            return Equals((CppType) obj);
+            if (obj.GetType() != typeof (CppMarshallable)) return false;
+            return Equals((CppMarshallable) obj);
         }
     }
 }

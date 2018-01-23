@@ -40,9 +40,9 @@ namespace SharpGenTools.Sdk.Tasks
             var group = CppModule.Read(FullCppModule.ItemSpec);
             config.ExpandDynamicVariables(SharpGenLogger, group);
 
-            var typeRegistry = new TypeRegistry(SharpGenLogger);
+            var docLinker = new DocumentationLinker();
+            var typeRegistry = new TypeRegistry(SharpGenLogger, docLinker);
             var namingRules = new NamingRulesManager();
-            var docAggregator = new DocumentationLinker(typeRegistry);
 
             // Run the main mapping process
             var transformer = new TransformManager(
@@ -50,8 +50,8 @@ namespace SharpGenTools.Sdk.Tasks
                 namingRules,
                 SharpGenLogger,
                 typeRegistry,
-                docAggregator,
-                new ConstantManager(namingRules, typeRegistry),
+                docLinker,
+                new ConstantManager(namingRules, docLinker),
                 new AssemblyManager())
             {
                 ForceGenerator = ForceGenerator
@@ -74,7 +74,7 @@ namespace SharpGenTools.Sdk.Tasks
 
             GenerateConfigForConsumers(consumerConfig);
 
-            SaveDocLinks(docAggregator);
+            SaveDocLinks(docLinker);
 
             return true;
         }

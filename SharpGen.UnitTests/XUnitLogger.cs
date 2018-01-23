@@ -3,14 +3,14 @@ using System;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace SharpGen.E2ETests
+namespace SharpGen.UnitTests
 {
     class XUnitLogger : LoggerBase
     {
         private ITestOutputHelper output;
         private bool failTestOnFatalError;
 
-        public XUnitLogger(ITestOutputHelper output, bool failTestOnFatalError)
+        public XUnitLogger(ITestOutputHelper output, bool failTestOnFatalError = true)
         {
             this.output = output;
             this.failTestOnFatalError = failTestOnFatalError;

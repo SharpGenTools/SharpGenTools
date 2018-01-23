@@ -25,7 +25,7 @@ namespace SharpGen.CppModel
     /// A C++ function.
     /// </summary>
     [XmlType("function")]
-    public class CppFunction : CppMethod
+    public class CppFunction : CppCallable
     {
     }
 }

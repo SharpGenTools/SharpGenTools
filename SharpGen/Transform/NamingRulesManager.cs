@@ -39,7 +39,7 @@ namespace SharpGen.Transform
         /// <summary>
         /// The recorded names, a list of previous name and new name.
         /// </summary>
-        public readonly List<Tuple<CppElement, string>> RecordNames = new List<Tuple<CppElement, string>>();
+        public readonly List<(string originalName, string finalName)> RecordNames = new List<(string, string)>();
 
         /// <summary>
         /// Adds the short name rule.
@@ -68,7 +68,7 @@ namespace SharpGen.Transform
             bool nameModifiedByTag = false;
 
             // Handle Tag
-            var tag = cppElement.GetTagOrDefault<MappingRule>();
+            var tag = cppElement.GetMappingRule();
             if (tag != null)
             {
                 if (!string.IsNullOrEmpty(tag.MappingName))
@@ -156,9 +156,9 @@ namespace SharpGen.Transform
         /// <param name="writer">Text output of the dump</param>
         public void DumpRenames(TextWriter writer)
         {
-            foreach (var recordName in RecordNames)
+            foreach (var (originalName, finalName) in RecordNames)
             {
-                writer.WriteLine("{0},{1}", recordName.Item1.FullName, recordName.Item2);
+                writer.WriteLine("{0},{1}", originalName, finalName);
             }
         }
 
@@ -170,7 +170,7 @@ namespace SharpGen.Transform
         /// <returns>The new name</returns>
         private string RecordRename(CppElement fromElement, string toName)
         {
-            RecordNames.Add(new Tuple<CppElement, string>(fromElement, toName));
+            RecordNames.Add((fromElement.FullName, toName));
             return toName;
         }
 
@@ -217,13 +217,7 @@ namespace SharpGen.Transform
             // Second letter must be lower
             if (str.Length > 1 && char.IsUpper(str[1]))
                 return false;
-
-            // other chars must be letter or numbers
-            //foreach (char charInStr in str)
-            //{
-            //    if (!char.IsLetterOrDigit(charInStr))
-            //        return false;
-            //}
+            
             return str.All(charInStr => char.IsLetterOrDigit(charInStr));
         }
 
@@ -333,85 +327,86 @@ namespace SharpGen.Transform
         /// <summary>
         /// Reserved C# keywords.
         /// </summary>
-        private static readonly string[] CSharpKeywords = new[]
-                                                               {
-                                                                   "abstract",
-                                                                   "as",
-                                                                   "base",
-                                                                   "bool",
-                                                                   "break",
-                                                                   "byte",
-                                                                   "case",
-                                                                   "catch",
-                                                                   "char",
-                                                                   "checked",
-                                                                   "class",
-                                                                   "const",
-                                                                   "continue",
-                                                                   "decimal",
-                                                                   "default",
-                                                                   "delegate",
-                                                                   "do",
-                                                                   "double",
-                                                                   "else",
-                                                                   "enum",
-                                                                   "event",
-                                                                   "explicit",
-                                                                   "extern",
-                                                                   "false",
-                                                                   "finally",
-                                                                   "fixed",
-                                                                   "float",
-                                                                   "for",
-                                                                   "foreach",
-                                                                   "goto",
-                                                                   "if",
-                                                                   "implicit",
-                                                                   "in",
-                                                                   "int",
-                                                                   "interface",
-                                                                   "internal",
-                                                                   "is",
-                                                                   "lock",
-                                                                   "long",
-                                                                   "namespace",
-                                                                   "new",
-                                                                   "null",
-                                                                   "object",
-                                                                   "operator",
-                                                                   "out",
-                                                                   "override",
-                                                                   "params",
-                                                                   "private",
-                                                                   "protected",
-                                                                   "public",
-                                                                   "readonly",
-                                                                   "ref",
-                                                                   "return",
-                                                                   "sbyte",
-                                                                   "sealed",
-                                                                   "short",
-                                                                   "sizeof",
-                                                                   "stackalloc",
-                                                                   "static",
-                                                                   "string",
-                                                                   "struct",
-                                                                   "switch",
-                                                                   "this",
-                                                                   "throw",
-                                                                   "true",
-                                                                   "try",
-                                                                   "typeof",
-                                                                   "uint",
-                                                                   "ulong",
-                                                                   "unchecked",
-                                                                   "unsafe",
-                                                                   "ushort",
-                                                                   "using",
-                                                                   "virtual",
-                                                                   "volatile",
-                                                                   "void",
-                                                                   "while",
-                                                               };
+        private static readonly string[] CSharpKeywords =
+            new[]
+            {
+                "abstract",
+                "as",
+                "base",
+                "bool",
+                "break",
+                "byte",
+                "case",
+                "catch",
+                "char",
+                "checked",
+                "class",
+                "const",
+                "continue",
+                "decimal",
+                "default",
+                "delegate",
+                "do",
+                "double",
+                "else",
+                "enum",
+                "event",
+                "explicit",
+                "extern",
+                "false",
+                "finally",
+                "fixed",
+                "float",
+                "for",
+                "foreach",
+                "goto",
+                "if",
+                "implicit",
+                "in",
+                "int",
+                "interface",
+                "internal",
+                "is",
+                "lock",
+                "long",
+                "namespace",
+                "new",
+                "null",
+                "object",
+                "operator",
+                "out",
+                "override",
+                "params",
+                "private",
+                "protected",
+                "public",
+                "readonly",
+                "ref",
+                "return",
+                "sbyte",
+                "sealed",
+                "short",
+                "sizeof",
+                "stackalloc",
+                "static",
+                "string",
+                "struct",
+                "switch",
+                "this",
+                "throw",
+                "true",
+                "try",
+                "typeof",
+                "uint",
+                "ulong",
+                "unchecked",
+                "unsafe",
+                "ushort",
+                "using",
+                "virtual",
+                "volatile",
+                "void",
+                "while",
+            };
     }
 }

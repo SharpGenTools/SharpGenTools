@@ -25,67 +25,12 @@ using System.Xml.Serialization;
 namespace SharpGen.Model
 {
     [DataContract]
-    public class CsTypeBase : CsBase
+    public abstract class CsTypeBase : CsBase
     {
-        /// <summary>
-        /// The built-in .NET type that this type instance represents, if one exists.
-        /// </summary>
-        public Type Type { get; set; }
+        public virtual int Size => 0;
 
-        [DataMember]
-        public string BuiltinTypeName
-        {
-            get
-            {
-                return Type?.FullName;
-            }
-            set
-            {
-                if (value != null)
-                {
-                    Type = Type.GetType(value); 
-                }
-            }
-        }
-        
-        public bool IsPointer
-        {
-            get { return Type == typeof (IntPtr); }
-        }
-
-        /// <summary>
-        /// Calculates the natural alignment of a type. -1 if it is a pointer alignment (4 on x86, 8 on x64)
-        /// </summary>
-        /// <returns>System.Int32.</returns>
         public virtual int CalculateAlignment()
         {
-            if (Type == typeof(long) || Type == typeof(ulong) || Type == typeof(double))
-            {
-                return 8;
-            }
-
-            if (Type == typeof(int) || Type == typeof(uint) ||
-                Type == typeof(float))
-            {
-                return 4;
-            }
-
-            if (Type == typeof(short) || Type == typeof(ushort) || Type == typeof(char))
-            {
-                return 2;
-            }
-
-            if (Type == typeof(byte) || Type == typeof(sbyte))
-            {
-                return 1;
-            }
-
-            if (IsPointer)
-            {
-                return -1;
-            }
-
-            // throws an exception?
             return 4;
         }
     }

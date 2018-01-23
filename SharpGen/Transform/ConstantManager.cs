@@ -12,14 +12,14 @@ namespace SharpGen.Transform
     {
         private readonly Dictionary<string, List<CsVariable>> _mapConstantToCSharpType = new Dictionary<string, List<CsVariable>>();
 
-        public ConstantManager(NamingRulesManager namingRules, TypeRegistry registry)
+        public ConstantManager(NamingRulesManager namingRules, IDocumentationLinker linker)
         {
             NamingRules = namingRules;
-            Registry = registry;
+            DocumentationLinker = linker;
         }
 
         public NamingRulesManager NamingRules { get; }
-        public TypeRegistry Registry { get; }
+        public IDocumentationLinker DocumentationLinker { get; }
 
         /// <summary>
         /// Adds a list of constant gathered from macros/guids to a C# type.
@@ -114,7 +114,7 @@ namespace SharpGen.Transform
             };
             constantDefinitions.Add(constantToAdd);
 
-            Registry.BindType(cppElement.Name, constantToAdd);
+            DocumentationLinker.AddOrUpdateDocLink(cppElement.Name, constantToAdd.QualifiedName);
 
             return constantToAdd;
         }

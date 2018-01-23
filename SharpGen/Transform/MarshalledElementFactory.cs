@@ -26,49 +26,49 @@ namespace SharpGen.Transform
         /// Gets the C# type from a C++ type.
         /// </summary>
         /// <typeparam name="T">The C# type to return</typeparam>
-        /// <param name="cppType">The C++ type to process.</param>
+        /// <param name="marshallable">The marshallable element to create the C# type from.</param>
         /// <param name="isTypeUsedInStruct">if set to <c>true</c> this type is used in a struct declaration.</param>
         /// <returns>An instantiated C# type</returns>
-        public T Create<T>(CppType cppType, bool isTypeUsedInStruct = false) where T : CsMarshalBase, new()
+        public T Create<T>(CppMarshallable marshallable, bool isTypeUsedInStruct = false) where T : CsMarshalBase, new()
         {
             CsTypeBase publicType = null;
             CsTypeBase marshalType = null;
-            var interopType = new T
+            var csMarshallable = new T
             {
-                CppElement = cppType,
-                IsArray = cppType.IsArray,
-                ArrayDimension = cppType.ArrayDimension,
+                CppElement = marshallable,
+                IsArray = marshallable.IsArray,
+                ArrayDimension = marshallable.ArrayDimension,
                 // TODO: handle multidimension
-                HasPointer = !string.IsNullOrEmpty(cppType.Pointer) && (cppType.Pointer.Contains("*") || cppType.Pointer.Contains("&")),
+                HasPointer = !string.IsNullOrEmpty(marshallable.Pointer) && (marshallable.Pointer.Contains("*") || marshallable.Pointer.Contains("&")),
             };
 
             // Calculate ArrayDimension
             int arrayDimensionValue = 0;
-            if (cppType.IsArray)
+            if (marshallable.IsArray)
             {
-                if (string.IsNullOrEmpty(cppType.ArrayDimension))
+                if (string.IsNullOrEmpty(marshallable.ArrayDimension))
                     arrayDimensionValue = 0;
-                else if (!int.TryParse(cppType.ArrayDimension, out arrayDimensionValue))
+                else if (!int.TryParse(marshallable.ArrayDimension, out arrayDimensionValue))
                     arrayDimensionValue = 1;
             }
 
             // If array Dimension is 0, then it is not an array
             if (arrayDimensionValue == 0)
             {
-                cppType.IsArray = false;
-                interopType.IsArray = false;
+                marshallable.IsArray = false;
+                csMarshallable.IsArray = false;
             }
-            interopType.ArrayDimensionValue = arrayDimensionValue;
+            csMarshallable.ArrayDimensionValue = arrayDimensionValue;
 
-            string typeName = cppType.GetTypeNameWithMapping();
+            string publicTypeName = marshallable.GetTypeNameWithMapping();
 
-            switch (typeName)
+            switch (publicTypeName)
             {
                 case "char":
                     publicType = typeRegistry.ImportType(typeof(byte));
-                    if (interopType.HasPointer)
+                    if (csMarshallable.HasPointer)
                         publicType = typeRegistry.ImportType(typeof(string));
-                    if (interopType.IsArray)
+                    if (csMarshallable.IsArray)
                     {
                         publicType = typeRegistry.ImportType(typeof(string));
                         marshalType = typeRegistry.ImportType(typeof(byte));
@@ -76,10 +76,10 @@ namespace SharpGen.Transform
                     break;
                 case "wchar_t":
                     publicType = typeRegistry.ImportType(typeof(char));
-                    interopType.IsWideChar = true;
-                    if (interopType.HasPointer)
+                    csMarshallable.IsWideChar = true;
+                    if (csMarshallable.HasPointer)
                         publicType = typeRegistry.ImportType(typeof(string));
-                    if (interopType.IsArray)
+                    if (csMarshallable.IsArray)
                     {
                         publicType = typeRegistry.ImportType(typeof(string));
                         marshalType = typeRegistry.ImportType(typeof(char));
@@ -88,68 +88,77 @@ namespace SharpGen.Transform
                 default:
 
                     // If CppType is an array, try first to get the binding for this array
-                    if (cppType.IsArray)
-                        publicType = typeRegistry.FindBoundType(typeName + "[" + cppType.ArrayDimension + "]");
+                    if (marshallable.IsArray)
+                        publicType = typeRegistry.FindBoundType(publicTypeName + "[" + marshallable.ArrayDimension + "]");
 
                     // Else get the typeName
                     if (publicType == null)
                     {
                         // Try to get a declared struct
                         // If it fails, then this struct is unknown
-                        publicType = typeRegistry.FindBoundType(typeName);
+                        publicType = typeRegistry.FindBoundType(publicTypeName);
                         if (publicType == null)
                         {
-                            logger.Fatal("Unknown type found [{0}]", typeName);
+                            logger.Fatal("Unknown type found [{0}]", publicTypeName);
                         }
                     }
                     else
                     {
-                        interopType.ArrayDimensionValue = 0;
-                        interopType.IsArray = false;
+                        csMarshallable.ArrayDimensionValue = 0;
+                        csMarshallable.IsArray = false;
                     }
 
-                    // Get a MarshalType if any
-                    marshalType = typeRegistry.FindBoundMarshalType(typeName);
-
-                    if (publicType is CsStruct)
+                    // By default, use the underlying native type as the marshal type
+                    // if it differs from the public type.
+                    marshalType = typeRegistry.FindBoundType(marshallable.TypeName);
+                    if (publicType == marshalType)
                     {
-                        var referenceStruct = publicType as CsStruct;
+                        marshalType = null;
+                    }
 
+                    if (marshalType == null)
+                    {
+                        // Otherwise, get the registered marshal type if one exists
+                        marshalType = typeRegistry.FindBoundMarshalType(publicTypeName);
+                    }
+
+                    if (publicType is CsStruct csStruct)
+                    {
                         // If a structure was not already parsed, then parse it before going further
-                        if (!referenceStruct.IsFullyMapped)
+                        if (!csStruct.IsFullyMapped)
                         {
-                            RequestStructProcessing?.Invoke(referenceStruct);
+                            RequestStructProcessing?.Invoke(csStruct);
                         }
 
-                        if (!referenceStruct.IsFullyMapped) // No one tried to map the struct so we can't continue.
+                        if (!csStruct.IsFullyMapped) // No one tried to map the struct so we can't continue.
                         {
-                            logger.Fatal($"No struct processor processed {referenceStruct.QualifiedName}. Cannot continue processing");
+                            logger.Fatal($"No struct processor processed {csStruct.QualifiedName}. Cannot continue processing");
                         }
-
-
+                        
                         // If referenced structure has a specialized marshalling, then specify marshalling
-                        if (referenceStruct.HasMarshalType && !interopType.HasPointer)
+                        if (csStruct.HasMarshalType && !csMarshallable.HasPointer)
                         {
                             marshalType = publicType;
                         }
                     }
-                    else if (publicType is CsEnum)
+                    else if (publicType is CsEnum referenceEnum)
                     {
-                        var referenceEnum = publicType as CsEnum;
                         // Fixed array of enum should be mapped to their respective blittable type
-                        if (interopType.IsArray)
+                        if (csMarshallable.IsArray)
                         {
-                            marshalType = typeRegistry.ImportType(referenceEnum.Type);
+                            marshalType = typeRegistry.ImportType(referenceEnum.UnderlyingType.Type);
                         }
                     }
                     break;
             }
 
             // Set bool to int conversion case
-            interopType.IsBoolToInt = marshalType != null && marshalType.Type == typeof(int) && publicType.Type == typeof(bool);
+            csMarshallable.IsBoolToInt = 
+                marshalType is CsFundamentalType marshalFundamental && IsIntegerFundamentalType(marshalFundamental)
+                && publicType is CsFundamentalType publicFundamental && publicFundamental.Type == typeof(bool);
 
             // Default IntPtr type for pointer, unless modified by specialized type (like char* map to string)
-            if (interopType.HasPointer)
+            if (csMarshallable.HasPointer)
             {
                 if (isTypeUsedInStruct)
                 {
@@ -157,13 +166,13 @@ namespace SharpGen.Transform
                 }
                 else
                 {
-                    if (typeName == "void")
+                    if (publicTypeName == "void")
                         publicType = typeRegistry.ImportType(typeof(IntPtr));
 
                     marshalType = typeRegistry.ImportType(typeof(IntPtr));
                 }
 
-                switch (typeName)
+                switch (publicTypeName)
                 {
                     case "char":
                         publicType = typeRegistry.ImportType(typeof(string));
@@ -172,7 +181,7 @@ namespace SharpGen.Transform
                     case "wchar_t":
                         publicType = typeRegistry.ImportType(typeof(string));
                         marshalType = typeRegistry.ImportType(typeof(IntPtr));
-                        interopType.IsWideChar = true;
+                        csMarshallable.IsWideChar = true;
                         break;
                 }
             }
@@ -186,18 +195,25 @@ namespace SharpGen.Transform
                 }
             }
 
-            interopType.PublicType = publicType;
-            interopType.HasMarshalType = (marshalType != null || cppType.IsArray);
+            csMarshallable.PublicType = publicType;
+            csMarshallable.HasMarshalType = (marshalType != null || marshallable.IsArray);
             if (marshalType == null)
                 marshalType = publicType;
-            interopType.MarshalType = marshalType;
+            csMarshallable.MarshalType = marshalType;
 
-            // Update the SizeOf according to the SizeOf MarshalType
-            interopType.SizeOf = interopType.MarshalType.SizeOf * ((interopType.ArrayDimensionValue > 1) ? interopType.ArrayDimensionValue : 1);
-
-            return interopType;
+            return csMarshallable;
         }
 
-
+        private static bool IsIntegerFundamentalType(CsFundamentalType marshalType)
+        {
+            return marshalType.Type == typeof(int)
+                || marshalType.Type == typeof(short)
+                || marshalType.Type == typeof(byte)
+                || marshalType.Type == typeof(long)
+                || marshalType.Type == typeof(uint)
+                || marshalType.Type == typeof(ushort)
+                || marshalType.Type == typeof(sbyte)
+                || marshalType.Type == typeof(ulong);
+        }
     }
 }

@@ -8,7 +8,7 @@ namespace SharpGen.Transform
 {
     public interface IDocumentationLinker
     {
-        void AddDocLink(string cppName, string cSharpName);
+        void AddOrUpdateDocLink(string cppName, string cSharpName);
 
         IEnumerable<(string cppName, string cSharpName)> GetAllDocLinks();
         

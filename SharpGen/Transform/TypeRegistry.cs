@@ -15,10 +15,12 @@ namespace SharpGen.Transform
         private readonly Dictionary<string, CsTypeBase> _mapDefinedCSharpType = new Dictionary<string, CsTypeBase>();
 
         private Logger Logger { get; }
+        public IDocumentationLinker DocLinker { get; }
 
-        public TypeRegistry(Logger logger)
+        public TypeRegistry(Logger logger, IDocumentationLinker docLinker)
         {
             Logger = logger;
+            DocLinker = docLinker;
         }
 
         /// <summary>
@@ -50,7 +52,7 @@ namespace SharpGen.Transform
                 if (type == null)
                 {
                     Logger.Warning("Type [{0}] is not defined", typeName);
-                    cSharpType = new CsTypeBase { Name = typeName };
+                    cSharpType = new CsUndefinedType { Name = typeName };
                     DefineType(cSharpType);
                     return cSharpType;
                 }
@@ -59,7 +61,7 @@ namespace SharpGen.Transform
             return cSharpType;
         }
 
-        public CsTypeBase ImportType(Type type)
+        public CsFundamentalType ImportType(Type type)
         {
             var typeName = type.FullName;
 
@@ -70,22 +72,10 @@ namespace SharpGen.Transform
 
             if (_mapDefinedCSharpType.TryGetValue(typeName, out CsTypeBase preDefined))
             {
-                return preDefined;
+                return (CsFundamentalType)preDefined;
             }
 
-                var sizeOf = 0;
-            try
-            {
-#pragma warning disable 0618
-                sizeOf = Marshal.SizeOf(type);
-#pragma warning restore 0618
-            }
-            catch (Exception)
-            {
-                Logger.Message($"Tried to get the size of type {typeName}, which is not a struct.");
-            }
-
-            var cSharpType = new CsTypeBase { Name = typeName, Type = type, SizeOf = sizeOf };
+            var cSharpType = new CsFundamentalType(type) { Name = typeName };
             DefineType(cSharpType);
             return cSharpType;
         }
@@ -101,19 +91,19 @@ namespace SharpGen.Transform
             // Check for type replacer
             if (type.CppElement != null)
             {
-                var tag = type.CppElement.GetTagOrDefault<MappingRule>();
-                if (tag.Replace != null)
+                var rule = type.CppElement.GetMappingRule();
+                if (rule.Replace != null)
                 {
-                    Logger.Warning("Replace type {0} -> {1}", cppName, tag.Replace);
+                    Logger.Warning("Replace type {0} -> {1}", cppName, rule.Replace);
 
                     // Remove old type from namespace if any
-                    var oldType = FindBoundType(tag.Replace);
+                    var oldType = FindBoundType(rule.Replace);
                     oldType?.Parent?.Remove(oldType);
 
-                    _mapCppNameToCSharpType.Remove(tag.Replace);
+                    _mapCppNameToCSharpType.Remove(rule.Replace);
 
                     // Replace the name
-                    cppName = tag.Replace;
+                    cppName = rule.Replace;
                 }
             }
 
@@ -126,6 +116,7 @@ namespace SharpGen.Transform
             else
             {
                 _mapCppNameToCSharpType.Add(cppName, (type, marshalType));
+                DocLinker.AddOrUpdateDocLink(cppName, type.QualifiedName);
             }
         }
 

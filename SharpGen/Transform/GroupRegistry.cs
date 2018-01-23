@@ -7,9 +7,9 @@ namespace SharpGen.Transform
 {
     public class GroupRegistry
     {
-        private readonly Dictionary<string, CsClass> _mapRegisteredFunctionGroup = new Dictionary<string, CsClass>();
+        private readonly Dictionary<string, CsGroup> _mapRegisteredFunctionGroup = new Dictionary<string, CsGroup>();
 
-        public void RegisterGroup(string className, CsClass group)
+        public void RegisterGroup(string className, CsGroup group)
         {
             _mapRegisteredFunctionGroup.Add(className, group);
         }
@@ -19,9 +19,9 @@ namespace SharpGen.Transform
         /// </summary>
         /// <param name="className">Name of the class.</param>
         /// <returns></returns>
-        public CsClass FindGroup(string className)
+        public CsGroup FindGroup(string className)
         {
-            _mapRegisteredFunctionGroup.TryGetValue(className, out CsClass csClass);
+            _mapRegisteredFunctionGroup.TryGetValue(className, out CsGroup csClass);
             return csClass;
         }
 

@@ -52,9 +52,9 @@ namespace SharpGen.Model
                         typeof(CsAssembly),
                         typeof(CsNamespace),
                         typeof(CsInterface),
-                        typeof(CsClass),
+                        typeof(CsGroup),
                         typeof(CsStruct),
-                        typeof(CsComArray),
+                        typeof(CsInterfaceArray),
                         typeof(CsEnum),
                         typeof(CsEnumItem),
                         typeof(CsFunction),
@@ -64,7 +64,10 @@ namespace SharpGen.Model
                         typeof(CsProperty),
                         typeof(CsVariable),
                         typeof(CsTypeBase),
-                        typeof(CsMarshalBase)
+                        typeof(CsReturnValue),
+                        typeof(CsMarshalBase),
+                        typeof(CsFundamentalType),
+                        typeof(CsUndefinedType)
             };
 
             return new DataContractSerializer(typeof(CsSolution), new DataContractSerializerSettings
@@ -83,9 +86,9 @@ namespace SharpGen.Model
                     typeof(CsAssembly),
                     typeof(CsNamespace),
                     typeof(CsInterface),
-                    typeof(CsClass),
+                    typeof(CsGroup),
                     typeof(CsStruct),
-                    typeof(CsComArray),
+                    typeof(CsInterfaceArray),
                     typeof(CsEnum),
                     typeof(CsEnumItem),
                     typeof(CsFunction),

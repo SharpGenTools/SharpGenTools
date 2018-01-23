@@ -43,7 +43,7 @@ namespace SharpGen.Generator
                 type = NullableType(type);
             }
 
-            if (csElement.IsArray && csElement.PublicType.Name != "System.String" && !csElement.IsComArray)
+            if (csElement.IsArray && csElement.PublicType.Name != "System.String" && !csElement.IsInterfaceArray)
             {
                 type = ArrayType(type, SingletonList(ArrayRankSpecifier()));
             }
