@@ -353,11 +353,9 @@ namespace SharpGen.Interactive
         {
             var headerGenerator = new CppHeaderGenerator(Logger, _isAssemblyNew, IntermediateOutputPath);
 
-            var (cppHeadersUpdated, cppConsumerConfig) = headerGenerator.GenerateCppHeaders(Config, configsWithIncludes, filesWithExtensions);
+            var (cppHeadersUpdated, prolog) = headerGenerator.GenerateCppHeaders(Config, configsWithIncludes, filesWithExtensions);
 
-            consumerConfig.IncludeProlog.AddRange(cppConsumerConfig.IncludeProlog);
-            consumerConfig.IncludeDirs.AddRange(cppConsumerConfig.IncludeDirs);
-            consumerConfig.Includes.AddRange(cppConsumerConfig.Includes);
+            consumerConfig.IncludeProlog.Add(prolog);
             return cppHeadersUpdated;
         }
 

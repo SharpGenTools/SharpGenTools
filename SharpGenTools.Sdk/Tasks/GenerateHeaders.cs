@@ -51,11 +51,19 @@ namespace SharpGenTools.Sdk.Tasks
                 configsWithExtensions.Add(file.GetMetadata("ConfigId"));
             }
 
-            var (updatedConfigs, consumerCppConfig) = cppHeaderGenerator.GenerateCppHeaders(config, configsWithHeaders, configsWithExtensions);
+            var (updatedConfigs, prolog) = cppHeaderGenerator.GenerateCppHeaders(config, configsWithHeaders, configsWithExtensions);
 
-            consumerCppConfig.Id = "ConsumerCppConfigCache";
+            var consumerConfig = new ConfigFile
+            {
+                Id = "CppConsumerConfig",
+                IncludeProlog =
+                {
+                    prolog
+                }
 
-            consumerCppConfig.Write(CppConsumerConfigCache.ItemSpec);
+            };
+
+            consumerConfig.Write(CppConsumerConfigCache.ItemSpec);
 
             var updatedConfigFiles = new List<ITaskItem>();
 

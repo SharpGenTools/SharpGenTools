@@ -24,13 +24,11 @@ namespace SharpGen.Parser
             OutputPath = outputPath;
         }
 
-        public (HashSet<ConfigFile> updatedConfigs, ConfigFile consumerConfig)
+        public (HashSet<ConfigFile> updatedConfigs, string prolog)
             GenerateCppHeaders(ConfigFile configRoot, IReadOnlyCollection<ConfigFile> filesWithIncludes, IReadOnlyCollection<string> filesWithExtensionHeaders)
         {
             var updatedConfigs = new HashSet<ConfigFile>();
             
-            var includeDirsForConsumers = new HashSet<IncludeDirRule>();
-            var includesForConsumers = new HashSet<IncludeRule>();
             var prolog = new StringBuilder();
 
             foreach (var prologStr in configRoot.ConfigFilesLoaded.SelectMany(file => file.IncludeProlog))
@@ -54,21 +52,11 @@ namespace SharpGen.Parser
                         if (!string.IsNullOrEmpty(includeRule.Pre))
                         {
                             outputConfig.WriteLine(includeRule.Pre);
-                            includesForConsumers.Add(includeRule);
-                            foreach (var includeDir in configFile.IncludeDirs)
-                            {
-                                includeDirsForConsumers.Add(includeDir);
-                            }
                         }
                         outputConfig.WriteLine("#include \"{0}\"", includeRule.File);
                         if (!string.IsNullOrEmpty(includeRule.Post))
                         {
                             outputConfig.WriteLine(includeRule.Post);
-                            includesForConsumers.Add(includeRule);
-                            foreach (var includeDir in configFile.IncludeDirs)
-                            {
-                                includeDirsForConsumers.Add(includeDir);
-                            }
                         }
                     }
 
@@ -129,24 +117,7 @@ namespace SharpGen.Parser
                 }
             }
 
-            var consumerConfig = new ConfigFile
-            {
-                IncludeProlog =
-                {
-                    prolog.ToString() + Environment.NewLine
-                },
-                IncludeDirs = includeDirsForConsumers.ToList(),
-                Includes = includesForConsumers.Select(include =>
-                    new IncludeRule
-                    {
-                        File = include.File,
-                        Pre = include.Pre,
-                        Post = include.Post,
-                        FilterErrors = include.FilterErrors
-                    }).ToList()
-            };
-
-            return (updatedConfigs, consumerConfig);
+            return (updatedConfigs, prolog.ToString() + Environment.NewLine);
         }
 
         public static (HashSet<string> filesWithIncludes, HashSet<string> filesWithExtensionHeaders)
