@@ -35,6 +35,8 @@ namespace SharpGenTools.Sdk.Tasks
         [Required]
         public ITaskItem DocLinksCache { get; set; }
 
+        public bool GenerateConsumerConfig { get; set; }
+
         protected override bool Execute(ConfigFile config)
         {
             var group = CppModule.Read(FullCppModule.ItemSpec);
@@ -72,7 +74,10 @@ namespace SharpGenTools.Sdk.Tasks
             consumerConfig.Bindings.AddRange(bindings);
             consumerConfig.Extension.AddRange(generatedDefines);
 
-            GenerateConfigForConsumers(consumerConfig);
+            if (GenerateConsumerConfig)
+            {
+                GenerateConfigForConsumers(consumerConfig); 
+            }
 
             SaveDocLinks(docLinker);
 

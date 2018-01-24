@@ -37,7 +37,7 @@
       Properties="%(_MSBuildProjectReferenceExistent.SetConfiguration); %(_MSBuildProjectReferenceExistent.SetPlatform); %(_MSBuildProjectReferenceExistent.SetTargetFramework); $(GenerateConsumerBindMappingFilePlaceholderProperty)"
       ContinueOnError="$(ContinueOnError)"
       RemoveProperties="%(_MSBuildProjectReferenceExistent.GlobalPropertiesToRemove)">
-      <Output TaskParameter="TargetOutputs" ItemName="SharpGenMapping" />
+      <Output TaskParameter="TargetOutputs" ItemName="SharpGenConsumerMapping" />
     </MSBuild>
   </Target>
 
@@ -50,7 +50,7 @@
         <PackagePath>build/$(TargetFramework);buildMultiTargeting/$(TargetFramework)</PackagePath>
         <Pack>true</Pack>
       </TfmConsumerProps>
-      <SharpGenConsumerBindMappingFile Include="$(MSBuildProjectDirectory)/$(IntermediateOutputPath)SharpGen/$(SharpGenConsumerBindMappingConfigId).BindMapping.xml">
+      <SharpGenConsumerBindMappingFile Condition="'$(SharpGenGenerateConsumerBindMapping)' == 'true'" Include="$(MSBuildProjectDirectory)/$(IntermediateOutputPath)SharpGen/$(SharpGenConsumerBindMappingConfigId).BindMapping.xml">
         <PackagePath>build/$(TargetFramework);buildMultiTargeting/$(TargetFramework)</PackagePath>
         <Pack>true</Pack>
       </SharpGenConsumerBindMappingFile>
@@ -61,6 +61,7 @@
     Name="GenerateTfmSpecificConsumerProps"
     DependsOnTargets="GenerateConsumerBindMappingFile"
     Outputs="@(TfmConsumerProps)"
+     Condition="'$(SharpGenGenerateConsumerBindMapping)' == 'true'"
   >
     <PropertyGroup>
       <EmbeddedConsumerProp>$</EmbeddedConsumerProp>
@@ -68,7 +69,7 @@
     <ItemGroup>
       <TfmConsumerPropsLines Include="&lt;Project&gt;" />
       <TfmConsumerPropsLines Include="&lt;ItemGroup&gt;" />
-      <TfmConsumerPropsLines Include='&lt;SharpGenMapping Include=&quot;$(EmbeddedConsumerProp)(MSBuildThisFileDirectory)/$(SharpGenConsumerBindMappingConfigId).BindMapping.xml&quot;/&gt;' />
+      <TfmConsumerPropsLines Include='&lt;SharpGenConsumerMapping Include=&quot;$(EmbeddedConsumerProp)(MSBuildThisFileDirectory)/$(SharpGenConsumerBindMappingConfigId).BindMapping.xml&quot;/&gt;' />
       <TfmConsumerPropsLines Include="&lt;/ItemGroup&gt;" />
       <TfmConsumerPropsLines Include="&lt;/Project&gt;" />
     </ItemGroup>
@@ -91,6 +92,7 @@
                       AddGeneratedCSharpFilesToCompilation;
                       UpdateSdkAssemblyCheckFile;
                       GenerateConsumerBindMappingFile"
+    Condition="'@(SharpGenMapping)' != ''"
     />
 
   <Target Name="CheckIfPackageNew"
@@ -108,7 +110,7 @@
   <Target
     Name="PrepareCppGeneration">
     <GetGeneratedHeaderNames
-      ConfigFiles="@(SharpGenMapping)"
+      ConfigFiles="@(SharpGenMapping);@(SharpGenConsumerMapping)"
       Macros="$(SharpGenMacros)"
       OutputPath="$(SharpGenIntermediateDir)">
       <Output TaskParameter="Headers" ItemName="Headers" />
@@ -118,11 +120,11 @@
 
   <Target
     Name="GenerateHeaders"
-    DependsOnTargets="PrepareCppGeneration"
-    Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping)"
+    DependsOnTargets="PrepareCppGeneration;GetMappingsFromProjectReferences"
+    Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping);@(SharpGenConsumerMapping)"
     Outputs="@(Headers);@(CppConsumerConfig)">
     <GenerateHeaders
-      ConfigFiles="@(SharpGenMapping)"
+      ConfigFiles="@(SharpGenMapping);@(SharpGenConsumerMapping)"
       Macros="$(SharpGenMacros)"
       HeaderFiles="@(Headers)"
       ExtensionHeaders="@(ExtensionHeaders)"
@@ -136,10 +138,10 @@
   <Target
     Name="GenerateExtensionHeaders"
     DependsOnTargets="PrepareCppGeneration;GenerateHeaders"
-    Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping);@(Headers)"
+    Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping);@(SharpGenConsumerMapping);@(Headers)"
     Outputs="@(ExtensionHeaders);@(PartialCppModule)">
     <GenerateExtensionHeaders
-      ConfigFiles="@(SharpGenMapping)"
+      ConfigFiles="@(SharpGenMapping);@(SharpGenConsumerMapping)"
       Macros="$(SharpGenMacros)"
       ExtensionHeaders="@(ExtensionHeaders)"
       CastXmlExecutablePath="$(CastXmlPath)"
@@ -152,10 +154,10 @@
   <Target
     Name="ParseCPlusPlus"
     DependsOnTargets="GenerateHeaders;GenerateExtensionHeaders"
-    Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping);@(PartialCppModule)"
+    Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping);@(SharpGenConsumerMapping);@(PartialCppModule)"
     Outputs="@(ParsedCppModule)">
     <ParseCPlusPlus
-      ConfigFiles="@(SharpGenMapping)"
+      ConfigFiles="@(SharpGenMapping);@(SharpGenConsumerMapping)"
       Macros="$(SharpGenMacros)"
       CastXmlExecutablePath="$(CastXmlPath)"
       OutputPath="$(MSBuildProjectDirectory)/$(SharpGenIntermediateDir)"
@@ -184,11 +186,12 @@
   <Target
     Name="MapCppToCSharp"
     DependsOnTargets="ParseCPlusPlus;GenerateDocumentation"
-    Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping);@(FullCppModule);@(CppConsumerConfig)"
+    Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping);@(FullCppModule);@(CppConsumerConfig);@(SharpGenConsumerMapping)"
     Outputs="@(CSharpModel);@(DocLinksCache);@(SharpGenConsumerBindMapping)">
     <TransformCppToCSharp
-      ConfigFiles="@(SharpGenMapping)"
+      ConfigFiles="@(SharpGenMapping);@(SharpGenConsumerMapping)"
       Macros="$(SharpGenMacros)"
+      GenerateConsumerConfig="$(SharpGenGenerateConsumerBindMapping)"
       ConsumerBindMappingConfigId="$(SharpGenConsumerBindMappingConfigId)"
       FullCppModule="@(FullCppModule)"
       CppConsumerConfigCache="@(CppConsumerConfig)"
@@ -254,7 +257,6 @@
   <Target
     Name="GenerateConsumerBindMappingFile"
     DependsOnTargets="MapCppToCSharp"
-    Inputs="@(SharpGenMapping)"
     Outputs="@(SharpGenConsumerBindMappingFile)"
   />
   
