@@ -18,6 +18,9 @@ namespace SharpGenTools.Sdk.Tasks
         public string DocProviderAssemblyPath { get; set; }
 
         [Required]
+        public string OutputPath { get; set; }
+
+        [Required]
         public ITaskItem ParsedCppModule { get; set; }
 
         [Required]
@@ -57,6 +60,8 @@ namespace SharpGenTools.Sdk.Tasks
                     Log.LogWarning("Falling back to MSDN documentation provider");
                 }
             }
+
+            docProvider.OutputPath = OutputPath;
 
             docProvider.ApplyDocumentation(CppModule.Read(ParsedCppModule.ItemSpec)).Write(DocumentedCppModule.ItemSpec);
 

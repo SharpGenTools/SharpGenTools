@@ -13,8 +13,8 @@ namespace SharpGen.Generator
 {
     class InterfaceCodeGenerator : MemberCodeGeneratorBase<CsInterface>
     {
-        public InterfaceCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation)
-            : base(documentation)
+        public InterfaceCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation, ExternalDocCommentsReader docReader)
+            : base(documentation, docReader)
         {
             Generators = generators;
         }

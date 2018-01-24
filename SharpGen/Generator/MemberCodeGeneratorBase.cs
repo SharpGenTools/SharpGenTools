@@ -13,16 +13,19 @@ namespace SharpGen.Generator
     abstract class MemberCodeGeneratorBase<T> : IMultiCodeGenerator<T, MemberDeclarationSyntax>
         where T : CsBase
     {
-        protected MemberCodeGeneratorBase(IDocumentationLinker documentation)
+        private readonly ExternalDocCommentsReader docReader;
+
+        protected MemberCodeGeneratorBase(IDocumentationLinker documentation, ExternalDocCommentsReader docReader)
         {
             docAggregator = documentation;
+            this.docReader = docReader;
         }
 
         public abstract IEnumerable<MemberDeclarationSyntax> GenerateCode(T csElement);
         
         protected DocumentationCommentTriviaSyntax GenerateDocumentationTrivia(CsBase csElement)
         {
-            var docItems = docAggregator.GetDocItems(csElement);
+            var docItems = docAggregator.GetDocItems(docReader, csElement);
 
             var builder = new StringBuilder();
             foreach (var docItem in docItems)

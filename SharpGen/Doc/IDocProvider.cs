@@ -44,5 +44,7 @@ namespace SharpGen.Doc
         // Ends the process of the documentation provider
         /// </summary>
         void End();
+
+        string OutputPath { get; set; }
     }
 }

@@ -11,25 +11,26 @@ namespace SharpGen.Generator
     {
         public DefaultGenerators(
             GlobalNamespaceProvider globalNamespace,
-            IDocumentationLinker documentation)
+            IDocumentationLinker documentation,
+            ExternalDocCommentsReader docReader)
         {
             Constant = new ConstantCodeGenerator();
-            Property = new PropertyCodeGenerator(this, documentation);
-            Enum = new EnumCodeGenerator(documentation);
-            ExplicitOffsetField = new FieldCodeGenerator(documentation, true);
-            AutoLayoutField = new FieldCodeGenerator(documentation, false);
-            Struct = new StructCodeGenerator(this, documentation);
+            Property = new PropertyCodeGenerator(this, documentation, docReader);
+            Enum = new EnumCodeGenerator(documentation, docReader);
+            ExplicitOffsetField = new FieldCodeGenerator(documentation, docReader, true);
+            AutoLayoutField = new FieldCodeGenerator(documentation, docReader, false);
+            Struct = new StructCodeGenerator(this, documentation, docReader);
             NativeStruct = new NativeStructCodeGenerator(globalNamespace);
             NativeInvocation = new NativeInvocationCodeGenerator(this, globalNamespace);
             ParameterProlog = new ParameterPrologCodeGenerator(globalNamespace);
             ParameterEpilog = new ParameterEpilogCodeGenerator();
-            Callable = new CallableCodeGenerator(this, documentation, globalNamespace);
+            Callable = new CallableCodeGenerator(this, documentation, docReader, globalNamespace);
             Method = new MethodCodeGenerator(this);
             Function = new FunctionCodeGenerator(this);
-            Interface = new InterfaceCodeGenerator(this, documentation);
+            Interface = new InterfaceCodeGenerator(this, documentation, docReader);
             Parameter = new ParameterCodeGenerator();
             Argument = new ArgumentGenerator(globalNamespace);
-            Group = new GroupCodeGenerator(this, documentation);
+            Group = new GroupCodeGenerator(this, documentation, docReader);
             LocalInterop = new LocalInteropCodeGenerator(this);
             InteropMethod = new InteropMethodCodeGenerator();
         }
