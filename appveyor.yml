@@ -28,3 +28,4 @@ deploy:
     secure: dtTGYQHgEupz5SmTDFkvDW1uEZH7mEM8PD948uzOZY/XCl965mhorbEl2e+6U8pO
   on:
     branch: master
+    APPVEYOR_REPO_TAG: false
