@@ -1,6 +1,7 @@
 ﻿<Project>
   <PropertyGroup>
     <SharpGenIntermediateDir>$(IntermediateOutputPath)SharpGen/</SharpGenIntermediateDir>
+    <SharpGenDocumentationOutputDir Condition="'$(SharpGenDocumentationOutputDir)' == ''">$(SharpGenIntermediateDir)</SharpGenDocumentationOutputDir>
     <SharpGenGeneratedCodeFolder Condition="'$(SharpGenGeneratedCodeFolder)' == ''">$(SharpGenIntermediateDir)Generated</SharpGenGeneratedCodeFolder>
     <SharpGenConsumerBindMappingConfigId Condition="'$(SharpGenConsumerBindMappingConfigId)' == ''">$(AssemblyName)</SharpGenConsumerBindMappingConfigId>
     <SharpGenOutputDirectory Condition="'$(SharpGenOutputDirectory)' == ''">$(MSBuildProjectDirectory)</SharpGenOutputDirectory>
@@ -15,7 +16,7 @@
     <PartialCppModule Include="$(SharpGenIntermediateDir)PartialCppModule.xml" />
     <ParsedCppModule Include="$(SharpGenIntermediateDir)ParsedCpp.xml" />
     <FullCppModule Condition="'$(SharpGenGenerateDoc)' != 'true'" Include="@(ParsedCppModule)" />
-    <FullCppModule Condition="'$(SharpGenGenerateDoc)' == 'true'" Include="$(SharpGenIndermediateDir)CppModel.xml" />
+    <FullCppModule Condition="'$(SharpGenGenerateDoc)' == 'true'" Include="$(SharpGenIntermediateDir)CppModel.xml" />
   </ItemGroup>
 
   <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="SharpPatch" />
@@ -171,6 +172,7 @@
     <DocumentCppModule
       ParsedCppModule="@(ParsedCppModule)"
       DocumentedCppModule="@(FullCppModule)"
+      OutputPath="$(SharpGenDocumentationOutputDir)"
     />
   </Target>
 
@@ -213,7 +215,7 @@
   <Target
     Name="GenerateCSharp"
     DependsOnTargets="GetGeneratedCSharpFiles;RemoveGeneratedCSharpFiles"
-    Inputs="@(SharpGenSdkAssembly);@(CSharpModel);@(DocLinksCache)"
+    Inputs="@(SharpGenSdkAssembly);@(CSharpModel);@(DocLinksCache);@(SharpGenExternalDocs)"
     Outputs="@(GeneratedCSharpFiles)">
     <GenerateCSharp
       Model="@(CSharpModel)"
@@ -222,6 +224,7 @@
       IncludeAssemblyNameFolder="$(SharpGenIncludeAssemblyNameFolder)"
       GlobalNamespace="$(SharpGenGlobalNamespace)"
       DocLinkCache="@(DocLinksCache)"
+      ExternalDocumentation="@(SharpGenExternalDocs)"
     />
   </Target>
 

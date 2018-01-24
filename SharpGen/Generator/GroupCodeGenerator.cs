@@ -13,8 +13,8 @@ namespace SharpGen.Generator
 {
     class GroupCodeGenerator : MemberCodeGeneratorBase<CsGroup>
     {
-        public GroupCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation)
-            : base(documentation)
+        public GroupCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation, ExternalDocCommentsReader reader)
+            : base(documentation, reader)
         {
             Generators = generators;
         }

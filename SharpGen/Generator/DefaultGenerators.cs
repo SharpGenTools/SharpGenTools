@@ -30,7 +30,7 @@ namespace SharpGen.Generator
             Interface = new InterfaceCodeGenerator(this, documentation, docReader);
             Parameter = new ParameterCodeGenerator();
             Argument = new ArgumentGenerator(globalNamespace);
-            Group = new GroupCodeGenerator(this, documentation);
+            Group = new GroupCodeGenerator(this, documentation, docReader);
             LocalInterop = new LocalInteropCodeGenerator(this);
             InteropMethod = new InteropMethodCodeGenerator();
         }

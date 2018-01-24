@@ -25,8 +25,6 @@ namespace SharpGen.Doc
 
         public MsdnProvider(Logger logger)
         {
-            ArchiveName = "MSDNDoc.zip";
-            UseArchive = true;
             mapReplaceName = new Dictionary<Regex, string>();
             ReplaceName("W::", @"::");
             ReplaceName("([a-z0-9])A::", @"$1::");
@@ -43,17 +41,13 @@ namespace SharpGen.Doc
         /// <summary>
         /// Archive to use to save the documentation
         /// </summary>
-        public string ArchiveName { get; set; }
+        private string ArchiveName => "MSDNDoc.zip";
 
         /// <summary>
         /// Output path for the archive / Directory
         /// </summary>
         public string OutputPath { get; set; }
 
-        /// <summary>
-        /// Set to true to use a zip for caching documentation
-        /// </summary>
-        public bool UseArchive { get; set; }
         public Logger Logger { get; private set; }
 
         /// <summary>
@@ -69,11 +63,8 @@ namespace SharpGen.Doc
             if (!Directory.Exists(outputDirectory))
                 Directory.CreateDirectory(outputDirectory);
 
-            if (UseArchive)
-            {
-                archiveFullPath = outputDirectory + Path.DirectorySeparatorChar + ArchiveName;
-                OpenArchive();
-            }
+            archiveFullPath = Path.Combine(outputDirectory, ArchiveName);
+            OpenArchive();
         }
 
         /// <summary>
@@ -81,10 +72,7 @@ namespace SharpGen.Doc
         /// </summary>
         public void End()
         {
-            if (UseArchive)
-            {
-                CloseArchive();
-            }
+            CloseArchive();
         }
 
         private void OpenArchive()
@@ -151,7 +139,7 @@ namespace SharpGen.Doc
             string doc = GetDocumentationFromCacheOrMsdn(name);
             if (doc == null)
             {
-                return new DocItem { Description = "No documentation for Direct3D12" };
+                return new DocItem { Description = "No documentation" };
             }
             return ParseDocumentation(doc);
         }
@@ -164,63 +152,46 @@ namespace SharpGen.Doc
         private string GetDocumentationFromCacheOrMsdn(string name)
         {
             string fileName = name.Replace("::", "-") + ".html";
+            counter++;
 
             string doc;
 
-            if (UseArchive)
+            OpenArchive();
+
+            var zipEntry = _zipFile.GetEntry(fileName);
+            if (zipEntry != null)
             {
-                OpenArchive();
-                var zipEntry = _zipFile.GetEntry(fileName);
-                if (zipEntry != null)
+                using (var streamInput = zipEntry.Open())
+                using (var reader = new StreamReader(streamInput))
                 {
-                    using (var streamInput = zipEntry.Open())
-                    using (var reader = new StreamReader(streamInput))
-                    {
-                        doc = reader.ReadToEnd();
-                    }
-                }
-                else
-                {
-                    // Begin update if zip is not updated
-                    if (!isZipUpdated)
-                    {
-                        isZipUpdated = true;
-                    }
-
-                    Logger.Progress(20 + (counter / 50) % 10, "Fetching C++ documentation ([{0}]) from MSDN", name);
-
-                    doc = GetDocumentationFromMsdn(name);
-
-                    var newEntry = _zipFile.CreateEntry(fileName);
-                    using (var stream = newEntry.Open())
-                    using (var writer = new StreamWriter(stream))
-                    {
-                        writer.Write(doc);
-                    }
-
-                    // Commit update every 20 files
-                    filesAddedToArchive++;
-                    if ((filesAddedToArchive % 20) == 0)
-                    {
-                        // Force a Flush of the archive
-                        CloseArchive(true);
-                    }
+                    doc = reader.ReadToEnd();
                 }
             }
             else
             {
-                fileName = OutputPath + Path.DirectorySeparatorChar + fileName;
-
-                if (!File.Exists(fileName))
+                // Begin update if zip is not updated
+                if (!isZipUpdated)
                 {
-                    Logger.Progress(20 + (counter / 50) % 10, "Fetching C++ documentation ([{0}]) from MSDN", name);
-
-                    doc = GetDocumentationFromMsdn(name);
-                    File.WriteAllText(fileName, doc);
+                    isZipUpdated = true;
                 }
-                else
+
+                Logger.Progress(20 + (counter / 50) % 10, "Fetching C++ documentation ([{0}]) from MSDN", name);
+
+                doc = GetDocumentationFromMsdn(name);
+
+                var newEntry = _zipFile.CreateEntry(fileName);
+                using (var stream = newEntry.Open())
+                using (var writer = new StreamWriter(stream))
                 {
-                    doc = File.ReadAllText(fileName);
+                    writer.Write(doc);
+                }
+
+                // Commit update every 20 files
+                filesAddedToArchive++;
+                if ((filesAddedToArchive % 20) == 0)
+                {
+                    // Force a Flush of the archive
+                    CloseArchive(true);
                 }
             }
             return doc;
@@ -292,7 +263,7 @@ namespace SharpGen.Doc
         }
 
         private static Regex regexCapitals = new Regex(@"([^0-9A-Za-z_:\{])([A-Z][A-Z0-9_][0-9A-Za-z_:]*)");
-        private static readonly Regex RegexReplacePointer = new Regex(@"pointer");
+        private static readonly Regex RegexReplacePointer = new Regex("pointer");
 
 
         /// <summary>
@@ -360,7 +331,6 @@ namespace SharpGen.Doc
                 return new DocItem();
 
             var htmlDocument = new HtmlDocument();
-            //            htmlDocument.Load("Documentation\\d3d11-ID3D11Device-CheckCounter.html");
             htmlDocument.LoadHtml(documentationToParse);
 
             var item = new DocItem { Id = htmlDocument.DocumentNode.ChildNodes.FindFirst("id").InnerText };
@@ -434,7 +404,7 @@ namespace SharpGen.Doc
             return item;
         }
 
-        private static Regex regexUrlMoved = new Regex(@"This content has moved to\s+<a href=""(.*?)\""");
+        private static readonly Regex regexUrlMoved = new Regex(@"This content has moved to\s+<a href=""(.*?)\""");
 
         /// <summary>
         /// Get MSDN documentation using an http query
@@ -461,7 +431,8 @@ namespace SharpGen.Doc
             try
             {
                 if (proxy == null)
-                    proxy = new ContentServicePortTypeClient();
+                    proxy = new ContentServicePortTypeClient(ContentServicePortTypeClient.EndpointConfiguration.ContentService);
+                
 
                 var request = new getContentRequest
                 {
@@ -488,9 +459,9 @@ namespace SharpGen.Doc
         {
             try
             {
-                var url = "http://social.msdn.microsoft.com/Search/en-US?query=" + WebUtility.UrlEncode(name) + "&addenglish=1";
+                var searchUrl = "http://social.msdn.microsoft.com/Search/en-US?query=" + WebUtility.UrlEncode(name) + "&addenglish=1";
 
-                var result = GetFromUrl(url);
+                var result = GetFromUrl(searchUrl);
 
                 if (string.IsNullOrEmpty(result))
                     return string.Empty;

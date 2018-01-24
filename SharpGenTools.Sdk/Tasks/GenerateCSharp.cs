@@ -10,6 +10,7 @@ using SharpGen.Model;
 using System.Xml;
 using System.IO;
 using SharpGen.Transform;
+using System.Linq;
 
 namespace SharpGenTools.Sdk.Tasks
 {
@@ -38,7 +39,7 @@ namespace SharpGenTools.Sdk.Tasks
         {
             var documentationFiles = new Dictionary<string, XmlDocument>();
 
-            foreach (var file in ExternalDocumentation)
+            foreach (var file in ExternalDocumentation ?? Enumerable.Empty<ITaskItem>())
             {
                 using (var stream = File.OpenRead(file.ItemSpec))
                 {
