@@ -49,7 +49,8 @@ namespace SharpGen.Generator
                                     ))));
             }
 
-            if (returnValue.MarshalType != null && !largeReturn) // If this is not null, the return type of the invocation differs from the public type
+            // If this is not null, the return type of the invocation differs from the public type
+            if (returnValue.MarshalType != returnValue.PublicType && !largeReturn && returnValue.PublicType.QualifiedName != "void") 
             {
                 return CheckedExpression(
                             SyntaxKind.UncheckedExpression,

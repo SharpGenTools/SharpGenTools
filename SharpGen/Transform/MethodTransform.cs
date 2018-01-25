@@ -359,26 +359,39 @@ namespace SharpGen.Transform
                 {
                     interopType = typeof(void*);
                 }
-                else if (param.MarshalType is CsFundamentalType fundamental)
+                else if (param.HasPointer)
                 {
-                    var type = fundamental.Type;
+                    interopType = typeof(void*);
+                }
+                else if (param.MarshalType is CsFundamentalType marshalFundamental)
+                {
+                    var type = marshalFundamental.Type;
                     // Patch for Mono bug with structs marshalling and calli.
                     if (type == typeof(IntPtr))
                         type = typeof(void*);
                     interopType = type;
                 }
+                else if (param.PublicType is CsFundamentalType publicFundamental)
+                {
+                    var type = publicFundamental.Type;
+                    // Patch for Mono bug with structs marshalling and calli.
+                    if (type == typeof(IntPtr))
+                        type = typeof(void*);
+                    interopType = type;
+                }
+                else if (param.PublicType is CsStruct)
+                {
+                    // If parameter is a struct, then a LocalInterop is needed
+                    interopType = param.PublicType.QualifiedName;
+                    cSharpInteropCalliSignature.IsLocal = true;
+                }
+                else if (param.PublicType is CsEnum csEnum)
+                {
+                    interopType = csEnum.UnderlyingType.Type;
+                }
                 else
                 {
-                    if (param.PublicType is CsStruct)
-                    {
-                        // If parameter is a struct, then a LocalInterop is needed
-                        interopType = param.PublicType.QualifiedName;
-                        cSharpInteropCalliSignature.IsLocal = true;
-                    }
-                    else
-                    {
-                        throw new ArgumentException(string.Format(System.Globalization.CultureInfo.InvariantCulture, "Invalid parameter {0} for method {1}", param.PublicType.QualifiedName, csMethod.CppElement));
-                    }
+                    throw new ArgumentException(string.Format(System.Globalization.CultureInfo.InvariantCulture, "Invalid parameter {0} for method {1}", param.PublicType.QualifiedName, csMethod.CppElement));
                 }
 
                 cSharpInteropCalliSignature.ParameterTypes.Add(interopType);
