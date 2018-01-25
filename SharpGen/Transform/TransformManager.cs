@@ -318,7 +318,13 @@ namespace SharpGen.Transform
 
                 if (defineRule.Enum != null)
                 {
-                    var newEnum = new CsEnum { Name = defineRule.Enum, UnderlyingType = (CsFundamentalType)typeRegistry.ImportType(defineRule.UnderlyingType) };
+                    var newEnum = new CsEnum
+                    {
+                        Name = defineRule.Enum,
+                        UnderlyingType = !string.IsNullOrWhiteSpace(defineRule.UnderlyingType)
+                            ? (CsFundamentalType)typeRegistry.ImportType(defineRule.UnderlyingType)
+                            : null
+                    };
                     defineType = newEnum;
 
                     if (defineRule.SizeOf.HasValue && newEnum.UnderlyingType == null)
