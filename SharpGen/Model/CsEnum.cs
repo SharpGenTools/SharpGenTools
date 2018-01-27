@@ -32,10 +32,8 @@ namespace SharpGen.Model
     {
         [DataMember]
         public CsFundamentalType UnderlyingType { get; set; }
-        
-#pragma warning disable 0618
-        public int SizeOf => Marshal.SizeOf(UnderlyingType.Type);
-#pragma warning restore 0618
+
+        public override int Size => UnderlyingType.Size;
 
         [DataMember]
         public bool IsFlag { get; set; }

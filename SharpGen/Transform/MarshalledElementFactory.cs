@@ -143,11 +143,7 @@ namespace SharpGen.Transform
                     }
                     else if (publicType is CsEnum referenceEnum)
                     {
-                        // Fixed array of enum should be mapped to their respective blittable type
-                        if (csMarshallable.IsArray)
-                        {
-                            marshalType = typeRegistry.ImportType(referenceEnum.UnderlyingType.Type);
-                        }
+                        marshalType = null; // enums don't need a marshal type. They can always marshal as their underlying type.
                     }
                     break;
             }
@@ -160,6 +156,7 @@ namespace SharpGen.Transform
             // Default IntPtr type for pointer, unless modified by specialized type (like char* map to string)
             if (csMarshallable.HasPointer)
             {
+                marshalType = typeRegistry.ImportType(typeof(IntPtr));
                 if (isTypeUsedInStruct)
                 {
                     publicType = typeRegistry.ImportType(typeof(IntPtr));

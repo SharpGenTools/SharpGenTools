@@ -267,29 +267,59 @@ namespace SharpGen.Generator
                     }
                     else
                     {
-                        if (param.IsRef)
+                        if (param.IsRefIn && param.IsValueType && param.IsOptional && !param.IsStructClass)
                         {
+                            yield return GenerateNullCheckIfNeeded(param, false,
+                                    ExpressionStatement(
+                                        InvocationExpression(
+                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                                    IdentifierName(param.Name),
+                                                    IdentifierName("Value")),
+                                                IdentifierName("__MarshalFrom")),
+                                            ArgumentList(
+                                                SingletonSeparatedList(
+                                                    Argument(IdentifierName(param.TempName))
+                                                        .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
                             yield return GenerateNullCheckIfNeeded(param, true,
                                 ExpressionStatement(
                                     InvocationExpression(
-                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            IdentifierName(param.Name),
-                                            IdentifierName("__MarshalFrom")),
+                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                                    IdentifierName(param.Name),
+                                                    IdentifierName("Value")),
+                                                IdentifierName("__MarshalFrom")),
                                         ArgumentList(
                                             SingletonSeparatedList(
                                                 Argument(IdentifierName(param.TempName))
                                                     .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
                         }
-                        yield return GenerateNullCheckIfNeeded(param, true,
-                            ExpressionStatement(
-                                InvocationExpression(
-                                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                        IdentifierName(param.Name),
-                                        IdentifierName("__MarshalFrom")),
-                                    ArgumentList(
-                                        SingletonSeparatedList(
-                                            Argument(IdentifierName(param.TempName))
-                                                .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
+                        else
+                        {
+                            if (param.IsRef)
+                            {
+                                yield return GenerateNullCheckIfNeeded(param, true,
+                                    ExpressionStatement(
+                                        InvocationExpression(
+                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                                IdentifierName(param.Name),
+                                                IdentifierName("__MarshalFrom")),
+                                            ArgumentList(
+                                                SingletonSeparatedList(
+                                                    Argument(IdentifierName(param.TempName))
+                                                        .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
+                            }
+                            yield return GenerateNullCheckIfNeeded(param, true,
+                                ExpressionStatement(
+                                    InvocationExpression(
+                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                            IdentifierName(param.Name),
+                                            IdentifierName("__MarshalFree")),
+                                        ArgumentList(
+                                            SingletonSeparatedList(
+                                                Argument(IdentifierName(param.TempName))
+                                                    .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
+                        }
                     }
                 }
             }

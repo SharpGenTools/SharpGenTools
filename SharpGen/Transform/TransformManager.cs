@@ -802,7 +802,7 @@ namespace SharpGen.Transform
                         yield return new DefineExtensionRule
                         {
                             Enum = csEnum.QualifiedName,
-                            SizeOf = csEnum.SizeOf,
+                            SizeOf = csEnum.Size,
                             UnderlyingType = csEnum.UnderlyingType?.BuiltinTypeName
                         };
                         break;

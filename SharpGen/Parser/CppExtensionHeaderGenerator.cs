@@ -1,5 +1,6 @@
 ﻿using SharpGen.Config;
 using SharpGen.CppModel;
+using SharpGen.Model;
 using System;
 using System.Collections.Generic;
 using System.IO;

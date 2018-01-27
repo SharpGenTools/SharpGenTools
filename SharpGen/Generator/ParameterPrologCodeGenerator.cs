@@ -98,7 +98,23 @@ namespace SharpGen.Generator
                                     .WithInitializer(
                                         EqualsValueClause(
                                             ParseExpression(((CsStruct)csElement.PublicType).GetConstructor()))))));
-                    if (csElement.IsRefIn || csElement.IsRef || csElement.IsIn)
+
+                    if (csElement.IsRefIn && csElement.IsValueType && csElement.IsOptional && !csElement.IsStructClass)
+                    {
+                        yield return GenerateNullCheckIfNeeded(csElement, false,
+                                ExpressionStatement(
+                                    InvocationExpression(
+                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                                IdentifierName(csElement.Name),
+                                                IdentifierName("Value")),
+                                            IdentifierName("__MarshalTo")),
+                                        ArgumentList(
+                                            SingletonSeparatedList(
+                                                Argument(IdentifierName(csElement.TempName))
+                                                    .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
+                    }
+                    else if (csElement.IsRefIn || csElement.IsRef || csElement.IsIn)
                     {
                         if (csElement.IsStaticMarshal)
                         {

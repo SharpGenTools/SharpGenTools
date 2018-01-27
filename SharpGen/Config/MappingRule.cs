@@ -189,6 +189,15 @@ namespace SharpGen.Config
         public string MappingType { get; set; }
 
         /// <summary>
+        /// Set to true to override the type used to natively represent this member when marshalling with the mapping type
+        /// </summary>
+        [XmlIgnore]
+        public bool? OverrideNativeType { get; set; }
+        [XmlAttribute("override-native-type")]
+        public bool _OverrideNativeType_ { get { return OverrideNativeType.Value; } set { OverrideNativeType = value; } }
+        public bool ShouldSerialize_OverrideNativeType_() { return OverrideNativeType != null; }
+
+        /// <summary>
         /// Pointer to modify the type
         /// </summary>
         [XmlAttribute("pointer")]

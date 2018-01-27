@@ -23,17 +23,34 @@ using SharpGen.Config;
 using SharpGen.CppModel;
 using System.Reflection;
 using SharpGen.Transform;
+using System.Collections.Generic;
 
 namespace SharpGen.Model
 {
     public static class CppElementExtensions
     {
+
+        /// <summary>
+        ///   Finds the specified elements by regex.
+        /// </summary>
+        /// <typeparam name = "T"></typeparam>
+        /// <param name = "regex">The regex.</param>
+        /// <param name="finder">The C++ element finder instance to use.</param>
+        /// <param name="mode">The selection mode for selecting matched elements.</param>
+        /// <returns></returns>
+        public static IEnumerable<T> Find<T>(
+            this CppElementFinder finder,
+            string regex,
+            CppElementFinder.SelectionMode mode = CppElementFinder.SelectionMode.MatchedElement)
+            where T : CppElement
+                => finder.Find<T>(BuildFullRegex(regex), mode);
+
         /// <summary>
         ///   Strips the regex. Removes ^ and $ at the end of the string
         /// </summary>
         /// <param name = "regex">The regex.</param>
         /// <returns></returns>
-        public static string StripRegex(string regex)
+        private static Regex BuildFullRegex(string regex)
         {
             string friendlyRegex = regex;
             // Remove ^ and $
@@ -41,18 +58,24 @@ namespace SharpGen.Model
                 friendlyRegex = friendlyRegex.Substring(1);
             if (friendlyRegex.EndsWith("$"))
                 friendlyRegex = friendlyRegex.Substring(0, friendlyRegex.Length - 1);
-            return friendlyRegex;
+            return new Regex($"^{friendlyRegex}$");
         }
 
         public static void ExecuteRule<T>(this CppElementFinder finder, string regex, MappingRule rule) where T : CppElement
         {
-            var regexStr = StripRegex(regex);
+            var mode = CppElementFinder.SelectionMode.MatchedElement;
 
-            var fullMatchRegex = CppElementFinder.CreateFullMatchRegex(regex);
-
-            foreach (var item in finder.Find<T>(fullMatchRegex))
+            if (regex.StartsWith("#"))
             {
-                ProcessRule(item, rule, fullMatchRegex);
+                mode = CppElementFinder.SelectionMode.Parent;
+                regex = regex.Substring(1);
+            }
+
+            var fullRegex = BuildFullRegex(regex);
+
+            foreach (var item in finder.Find<T>(fullRegex, mode))
+            {
+                ProcessRule(item, rule, fullRegex);
             }
         }
 
@@ -110,9 +133,15 @@ namespace SharpGen.Model
             if (newRule.StructForceMarshalToToBeGenerated != null)
                 tag.StructForceMarshalToToBeGenerated = newRule.StructForceMarshalToToBeGenerated;
             if (newRule.MappingType != null) tag.MappingType = RegexRename(patchRegex, element.FullName, newRule.MappingType);
+            if (newRule.OverrideNativeType != null) tag.OverrideNativeType = newRule.OverrideNativeType;
 
             if (element is CppMarshallable cppType)
             {
+                if (tag.OverrideNativeType == true)
+                {
+                    cppType.TypeName = tag.MappingType;
+                }
+
                 if (newRule.Pointer != null)
                 {
                     cppType.Pointer = newRule.Pointer;

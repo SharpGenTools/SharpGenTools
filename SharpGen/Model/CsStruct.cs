@@ -97,7 +97,7 @@ namespace SharpGen.Model
         /// </summary>
         [DataMember]
         public bool ExplicitLayout { get; set; }
-
+        
         /// <summary>
         ///   True if this struct needs an internal marshal type
         /// </summary>
@@ -121,8 +121,38 @@ namespace SharpGen.Model
             return string.Format(HasCustomNew ? "{0}.__NewNative()" : "new {0}.__Native()", QualifiedName);
         }
 
+        private bool marshalledToNative;
+
         [DataMember]
-        public bool MarshalledToNative { get; set; }
+        public bool MarshalledToNative
+        {
+            get => marshalledToNative;
+            set
+            {
+                if (value)
+                {
+                    SetMarshalledToNative(this);
+                }
+                else
+                {
+                    marshalledToNative = false;
+                }
+            }
+        }
+
+
+        private static void SetMarshalledToNative(CsStruct csStruct)
+        {
+            csStruct.marshalledToNative = true;
+
+            foreach (var field in csStruct.Fields)
+            {
+                if (field.PublicType is CsStruct innerStruct)
+                {
+                    SetMarshalledToNative(innerStruct);
+                }
+            }
+        }
 
         /// <summary>
         ///   List of declared inner structs

@@ -9,6 +9,12 @@ namespace SharpGen.CppModel
 {
     public class CppElementFinder
     {
+        public enum SelectionMode
+        {
+            MatchedElement,
+            Parent
+        }
+
         public CppElementFinder(CppElement root)
         {
             Root = root;
@@ -55,23 +61,12 @@ namespace SharpGen.CppModel
         /// </summary>
         /// <typeparam name = "T"></typeparam>
         /// <param name = "regex">The regex.</param>
-        /// <returns></returns>
-        public IEnumerable<T> Find<T>(string regex) where T : CppElement => Find<T>(CreateFullMatchRegex(regex));
-
-        /// <summary>
-        ///   Finds the specified elements by regex.
-        /// </summary>
-        /// <typeparam name = "T"></typeparam>
-        /// <param name = "regex">The regex.</param>
-        /// <returns></returns>
-        public IEnumerable<T> Find<T>(Regex regex) where T : CppElement
+        /// <param name="mode">The selection mode.</param>
+        /// <returns>The selected elements.</returns>
+        public IEnumerable<T> Find<T>(Regex regex, SelectionMode mode = SelectionMode.MatchedElement)
+            where T : CppElement
         {
-            return Find<T>(Root, regex).OfType<T>();
-        }
-
-        public static Regex CreateFullMatchRegex(string regex)
-        {
-            return new Regex("^" + regex + "$");
+            return Find<T>(Root, regex, mode).OfType<T>();
         }
 
         /// <summary>
@@ -80,14 +75,27 @@ namespace SharpGen.CppModel
         /// <typeparam name="T">The type of element to find</typeparam>
         /// <param name="currentNode">The current node in the search.</param>
         /// <param name="regex">The regex.</param>
-        /// <returns></returns>
-        private IEnumerable<T> Find<T>(CppElement currentNode, Regex regex) where T : CppElement
+        /// <param name="mode">The selection mode.</param>
+        /// <returns>The selected elements.</returns>
+        private IEnumerable<T> Find<T>(CppElement currentNode, Regex regex, SelectionMode mode) where T : CppElement
         {
             var path = currentNode.FullName;
 
-            var elementToModify = currentNode;
+            CppElement selectedElement;
 
-            if (path != null && (elementToModify is T cppElement) && regex.Match(path).Success)
+            switch (mode)
+            {
+                case SelectionMode.MatchedElement:
+                    selectedElement = currentNode;
+                    break;
+                case SelectionMode.Parent:
+                    selectedElement = currentNode.Parent;
+                    break;
+                default:
+                    throw new ArgumentException("Invalid selection mode.", nameof(mode));
+            }
+
+            if (path != null && (selectedElement is T cppElement) && regex.Match(path).Success)
             {
                 yield return cppElement;
             }
@@ -97,7 +105,7 @@ namespace SharpGen.CppModel
                 // Optimized version with context attributes
                 foreach (var innerElement in currentNode.AllItems.Where(element => CurrentContexts.Contains(element.Name)))
                 {
-                    foreach (var item in Find<T>(innerElement, regex))
+                    foreach (var item in Find<T>(innerElement, regex, mode))
                     {
                         yield return item;
                     }
@@ -107,7 +115,7 @@ namespace SharpGen.CppModel
             {
                 foreach (var innerElement in currentNode.AllItems)
                 {
-                    foreach (var item in Find<T>(innerElement, regex))
+                    foreach (var item in Find<T>(innerElement, regex, mode))
                     {
                         yield return item;
                     }

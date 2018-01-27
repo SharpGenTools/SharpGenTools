@@ -65,5 +65,62 @@ namespace SharpGen.UnitTests.Mapping
 
             Assert.Single(members.OfType<CsEnum>());
         }
+
+        [Fact]
+        public void RemoveParentDoesNotRemoveAllParents()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(RemoveParentDoesNotRemoveAllParents),
+                Assembly = nameof(RemoveParentDoesNotRemoveAllParents),
+                Namespace = nameof(RemoveParentDoesNotRemoveAllParents),
+                Includes =
+                {
+                    new Config.IncludeRule
+                    {
+                        Attach = true,
+                        File = "cppEnum.h",
+                        Namespace = nameof(RemoveParentDoesNotRemoveAllParents)
+                    }
+                },
+                Mappings =
+                {
+                    new Config.RemoveRule
+                    {
+                        Method = @"#.*ToRemove"
+                    }
+                }
+            };
+
+            var cppModel = new CppModule();
+
+            var cppInclude = new CppInclude
+            {
+                Name = "cppEnum"
+            };
+
+            var cppIface = new CppInterface
+            {
+                Name = "TestInterface"
+            };
+            cppInclude.Add(cppIface);
+
+            var cppMethod = new CppMethod
+            {
+                Name = "Method"
+            };
+            cppMethod.Add(new CppParameter
+            {
+                Name = "ParamToRemove"
+            });
+            cppModel.Add(cppInclude);
+
+            var (solution, _) = MapModel(cppModel, config);
+
+            var members = solution.EnumerateDescendants();
+
+            Assert.NotEmpty(members.OfType<CsInterface>());
+            Assert.Empty(members.OfType<CsParameter>());
+        }
     }
 }

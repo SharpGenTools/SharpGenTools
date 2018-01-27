@@ -34,7 +34,7 @@ namespace SharpGen.Generator
                                 AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
                                     .WithExpressionBody(ArrowExpressionClause(
                                         BinaryExpression(SyntaxKind.NotEqualsExpression,
-                                                ParseName($"_{csElement.Name}"),
+                                                IdentifierName($"_{csElement.Name}"),
                                                 LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)))))
                                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
                                 AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)

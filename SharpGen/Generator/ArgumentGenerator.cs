@@ -19,16 +19,17 @@ namespace SharpGen.Generator
 
         public ArgumentSyntax GenerateCode(CsParameter csElement)
         {
-            // Cast the argument to the native (marshal) type
-            if (csElement.MarshalType != null)
+            if (csElement.MarshalType.QualifiedName == "System.IntPtr") // Marshal System.IntPtr as void* for arguments.
             {
-                if (csElement.MarshalType.QualifiedName == "System.IntPtr") // Marshal System.IntPtr as void* for arguments.
-                {
-                    return Argument(
-                        CastExpression(
-                            PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
-                            ParenthesizedExpression(GenerateExpression(csElement))));
-                }
+                return Argument(
+                    CastExpression(
+                        PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
+                        ParenthesizedExpression(GenerateExpression(csElement))));
+            }
+
+            // Cast the argument to the native (marshal) type
+            if (csElement.MarshalType != csElement.PublicType)
+            {
                 return Argument(CheckedExpression(
                             SyntaxKind.UncheckedExpression,
                             CastExpression(

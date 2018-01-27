@@ -267,7 +267,7 @@ namespace SharpGen.Transform
                             parameterAttribute = CsParameterAttribute.Out;
 
                         // Handle void* with Buffer attribute
-                        if (cppParameter.TypeName == "void" && (cppAttribute & ParamAttribute.Buffer) != 0)
+                        if (cppParameter.GetTypeNameWithMapping() == "void" && (cppAttribute & ParamAttribute.Buffer) != 0)
                         {
                             hasArray = false;
                             parameterAttribute = CsParameterAttribute.In;
@@ -379,10 +379,17 @@ namespace SharpGen.Transform
                         type = typeof(void*);
                     interopType = type;
                 }
-                else if (param.PublicType is CsStruct)
+                else if (param.PublicType is CsStruct csStruct)
                 {
                     // If parameter is a struct, then a LocalInterop is needed
-                    interopType = param.PublicType.QualifiedName;
+                    if (csStruct.HasMarshalType)
+                    {
+                        interopType = $"{csStruct.QualifiedName}.__Native";
+                    }
+                    else
+                    {
+                        interopType = csStruct.QualifiedName; 
+                    }
                     cSharpInteropCalliSignature.IsLocal = true;
                 }
                 else if (param.PublicType is CsEnum csEnum)

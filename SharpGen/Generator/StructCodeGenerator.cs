@@ -50,7 +50,12 @@ namespace SharpGen.Generator
                 return generator.GenerateCode(field);
             });
 
-            var marshallingStructAndConversions = Generators.NativeStruct.GenerateCode(csElement);
+            var marshallingStructAndConversions = Enumerable.Empty<MemberDeclarationSyntax>();
+
+            if (csElement.HasMarshalType && !csElement.HasCustomMarshal)
+            {
+                marshallingStructAndConversions = Generators.NativeStruct.GenerateCode(csElement);
+            }
 
             yield return (csElement.GenerateAsClass ?
                 (MemberDeclarationSyntax)ClassDeclaration(
