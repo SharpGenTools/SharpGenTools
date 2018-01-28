@@ -67,7 +67,7 @@ namespace SharpGen.Doc
                 Directory.CreateDirectory(outputDirectory);
 
             archiveFullPath = Path.Combine(outputDirectory, ArchiveName);
-            shadowCopyFullPath = Path.GetTempFileName();
+            shadowCopyFullPath = ShadowCopy ? Path.GetTempFileName() : archiveFullPath;
             OpenArchive();
         }
 
@@ -84,9 +84,18 @@ namespace SharpGen.Doc
             if (_zipFile == null)
             {
                 isZipUpdated = false;
-                File.Copy(archiveFullPath, shadowCopyFullPath, true);
-
-                _zipFile = ZipFile.Open(shadowCopyFullPath, ZipArchiveMode.Update);
+                if (ShadowCopy)
+                {
+                    if (File.Exists(archiveFullPath))
+                    {
+                        File.Copy(archiveFullPath, shadowCopyFullPath, true);
+                    }
+                    _zipFile = ZipFile.Open(shadowCopyFullPath, ZipArchiveMode.Update);
+                }
+                else
+                {
+                    _zipFile = ZipFile.Open(archiveFullPath, ZipArchiveMode.Update);
+                }
             }
         }
 
@@ -95,11 +104,14 @@ namespace SharpGen.Doc
             if (_zipFile != null)
             {
                 _zipFile.Dispose();
-                if (isZipUpdated)
+                if (isZipUpdated && ShadowCopy)
                 {
                     File.Copy(shadowCopyFullPath, archiveFullPath, true);
                 }
-                File.Delete(shadowCopyFullPath);
+                if (ShadowCopy)
+                {
+                    File.Delete(shadowCopyFullPath); 
+                }
                 _zipFile = null;
             }
         }
