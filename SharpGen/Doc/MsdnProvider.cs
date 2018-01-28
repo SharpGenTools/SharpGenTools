@@ -14,18 +14,17 @@ namespace SharpGen.Doc
 {
     public class MsdnProvider : IDocProvider
     {
-        private static Regex stripSpace = new Regex(@"[\r\n]+\s+", RegexOptions.Multiline);
-        private static Regex beginWithSpace = new Regex(@"^\s+");
-        private Dictionary<Regex, string> mapReplaceName;
+        private static readonly Regex StripSpace = new Regex(@"[\r\n]+\s+", RegexOptions.Multiline);
+        private static readonly Regex BeginWithWhitespace = new Regex(@"^\s+");
+        private readonly Dictionary<Regex, string> CommonReplaceRuleMap;
         private ZipArchive _zipFile;
         private bool isZipUpdated;
         private string archiveFullPath;
-
-        private int filesAddedToArchive = 0;
+        private string shadowCopyFullPath;
 
         public MsdnProvider(Logger logger)
         {
-            mapReplaceName = new Dictionary<Regex, string>();
+            CommonReplaceRuleMap = new Dictionary<Regex, string>();
             ReplaceName("W::", @"::");
             ReplaceName("([a-z0-9])A::", @"$1::");
             ReplaceName("W$", @"");
@@ -33,9 +32,9 @@ namespace SharpGen.Doc
             Logger = logger;
         }
 
-        public void ReplaceName(string fromNameRegex, string toName)
+        private void ReplaceName(string fromNameRegex, string toName)
         {
-            mapReplaceName.Add(new Regex(fromNameRegex), toName);
+            CommonReplaceRuleMap.Add(new Regex(fromNameRegex), toName);
         }
 
         /// <summary>
@@ -48,6 +47,11 @@ namespace SharpGen.Doc
         /// </summary>
         public string OutputPath { get; set; }
 
+        /// <summary>
+        /// Shadow copy the archive when running. Defaults to true.
+        /// </summary>
+        public bool ShadowCopy { get; set; } = true;
+
         public Logger Logger { get; private set; }
 
         /// <summary>
@@ -55,15 +59,15 @@ namespace SharpGen.Doc
         /// </summary>
         public void Begin()
         {
-            filesAddedToArchive = 0;
-            string fullPath = (OutputPath ?? ".") + Path.DirectorySeparatorChar + ArchiveName;
+            var fullPath = Path.Combine((OutputPath ?? "."), ArchiveName);
 
-            string outputDirectory = Path.GetDirectoryName(fullPath);
+            var outputDirectory = Path.GetDirectoryName(fullPath);
 
             if (!Directory.Exists(outputDirectory))
                 Directory.CreateDirectory(outputDirectory);
 
             archiveFullPath = Path.Combine(outputDirectory, ArchiveName);
+            shadowCopyFullPath = Path.GetTempFileName();
             OpenArchive();
         }
 
@@ -80,31 +84,27 @@ namespace SharpGen.Doc
             if (_zipFile == null)
             {
                 isZipUpdated = false;
-                var fileInfo = new FileInfo(archiveFullPath);
-                if (fileInfo.Exists && fileInfo.Length > 0)
-                {
-                    _zipFile = ZipFile.Open(archiveFullPath, ZipArchiveMode.Update);
-                }
-                else
-                {
-                    File.Delete(archiveFullPath);
-                    _zipFile = ZipFile.Open(archiveFullPath, ZipArchiveMode.Update);
-                }
+                File.Copy(archiveFullPath, shadowCopyFullPath, true);
+
+                _zipFile = ZipFile.Open(shadowCopyFullPath, ZipArchiveMode.Update);
             }
         }
 
-        private void CloseArchive(bool clone = false)
+        private void CloseArchive()
         {
             if (_zipFile != null)
             {
                 _zipFile.Dispose();
-                if (isZipUpdated && clone)
-                    File.Copy(archiveFullPath, archiveFullPath + ".backup", true);
+                if (isZipUpdated)
+                {
+                    File.Copy(shadowCopyFullPath, archiveFullPath, true);
+                }
+                File.Delete(shadowCopyFullPath);
                 _zipFile = null;
             }
         }
 
-        private int counter = 0;
+        private int counter;
 
 
         /// <summary>
@@ -114,9 +114,9 @@ namespace SharpGen.Doc
         /// <returns></returns>
         public DocItem FindDocumentation(string name)
         {
-            string oldName = name;
+            var oldName = name;
             // Regex replacer
-            foreach (var keyValue in mapReplaceName)
+            foreach (var keyValue in CommonReplaceRuleMap)
             {
                 if (keyValue.Key.Match(name).Success)
                 {
@@ -128,7 +128,7 @@ namespace SharpGen.Doc
             // Handle name with ends A or W
             if (name.EndsWith("A") || name.EndsWith("W"))
             {
-                string previouewChar = new string(name[name.Length - 2], 1);
+                var previouewChar = new string(name[name.Length - 2], 1);
 
                 if (previouewChar.ToUpper() != previouewChar)
                 {
@@ -136,7 +136,7 @@ namespace SharpGen.Doc
                 }
             }
 
-            string doc = GetDocumentationFromCacheOrMsdn(name);
+            var doc = GetDocumentationFromCacheOrMsdn(name);
             if (doc == null)
             {
                 return new DocItem { Description = "No documentation" };
@@ -151,7 +151,7 @@ namespace SharpGen.Doc
         /// <returns></returns>
         private string GetDocumentationFromCacheOrMsdn(string name)
         {
-            string fileName = name.Replace("::", "-") + ".html";
+            var fileName = name.Replace("::", "-") + ".html";
             counter++;
 
             string doc;
@@ -185,20 +185,12 @@ namespace SharpGen.Doc
                 {
                     writer.Write(doc);
                 }
-
-                // Commit update every 20 files
-                filesAddedToArchive++;
-                if ((filesAddedToArchive % 20) == 0)
-                {
-                    // Force a Flush of the archive
-                    CloseArchive(true);
-                }
             }
             return doc;
         }
 
 
-        private static HashSet<string> HtmlPreserveTags = new HashSet<string>(StringComparer.CurrentCultureIgnoreCase) { "dl", "dt", "dd", "p", "strong", "pre", "em", "code", "ul", "ol", "li", "table", "tr", "th", "td" };
+        private static readonly HashSet<string> HtmlPreserveTags = new HashSet<string>(StringComparer.CurrentCultureIgnoreCase) { "dl", "dt", "dd", "p", "strong", "pre", "em", "code", "ul", "ol", "li", "table", "tr", "th", "td" };
 
         private static string ParseSubNodes(HtmlNode htmlNode, bool isRoot)
         {
@@ -229,10 +221,10 @@ namespace SharpGen.Doc
             else if (htmlNode.NodeType == HtmlNodeType.Text)
             {
                 string text = htmlNode.InnerText;
-                if (beginWithSpace.Match(text).Success)
-                    text = beginWithSpace.Replace(text, " ");
-                if (stripSpace.Match(text).Success)
-                    text = stripSpace.Replace(text, " ");
+                if (BeginWithWhitespace.Match(text).Success)
+                    text = BeginWithWhitespace.Replace(text, " ");
+                if (StripSpace.Match(text).Success)
+                    text = StripSpace.Replace(text, " ");
                 return text;
             }
 
@@ -262,8 +254,7 @@ namespace SharpGen.Doc
             return documentation.ToString();
         }
 
-        private static Regex regexCapitals = new Regex(@"([^0-9A-Za-z_:\{])([A-Z][A-Z0-9_][0-9A-Za-z_:]*)");
-        private static readonly Regex RegexReplacePointer = new Regex("pointer");
+        private static readonly Regex regexCapitals = new Regex(@"([^0-9A-Za-z_:\{])([A-Z][A-Z0-9_][0-9A-Za-z_:]*)");
 
 
         /// <summary>
@@ -276,7 +267,7 @@ namespace SharpGen.Doc
         {
             var result = ParseSubNodes(htmlNode, true);
             result = regexCapitals.Replace(result, "$1{{$2}}");
-            result = RegexReplacePointer.Replace(result, "reference");
+            result = result.Replace("pointer", "reference");
             result = result.Trim();
             return result;
         }
@@ -403,9 +394,7 @@ namespace SharpGen.Doc
             }
             return item;
         }
-
-        private static readonly Regex regexUrlMoved = new Regex(@"This content has moved to\s+<a href=""(.*?)\""");
-
+        
         /// <summary>
         /// Get MSDN documentation using an http query
         /// </summary>
@@ -447,6 +436,7 @@ namespace SharpGen.Doc
             }
             catch (Exception)
             {
+                return string.Empty;
             }
             return string.Empty;
         }
@@ -488,30 +478,6 @@ namespace SharpGen.Doc
             return string.Empty;
         }
 
-        private static bool IsPageNotFound(string value)
-        {
-            return value.Contains("Page Not Found");
-        }
-
-        private static string GetFromUrlHandlingMove(string url)
-        {
-            string result = GetFromUrl(url);
-
-            if (IsPageNotFound(result))
-                return null;
-
-            var matchMoved = regexUrlMoved.Match(result);
-            if (matchMoved.Success)
-            {
-                result = GetFromUrl(matchMoved.Groups[1].Value);
-            }
-
-            if (IsPageNotFound(result))
-                return null;
-
-            return result;
-        }
-
         internal static string GetFromUrl(string url)
         {
             try
@@ -523,17 +489,14 @@ namespace SharpGen.Doc
 
                 request.Method = "GET";
                 request.Accept = "*/*";
-
-                StreamReader responseStream = null;
+                
                 HttpWebResponse webResponse = null;
-                string webResponseStream = string.Empty;
                 // Get response for http web request
                 webResponse = (HttpWebResponse)request.GetResponseAsync().Result;
-                responseStream = new StreamReader(webResponse.GetResponseStream());
-                webResponseStream = responseStream.ReadToEnd();
-                /*This content has moved to <a href=\"http://msdn.microsoft.com/en-us/library/microsoft.directx_sdk.reference.dideviceobjectinstance(v=VS.85).aspx?appId=Dev10IDEF1&amp;l=ENUS&amp;k=kDIDEVICEOBJECTINSTANCE);k(DevLang-&quot;C++&quot;);k(TargetOS-WINDOWS)&amp;rd=true\"
-                                */
-                return webResponseStream;
+                using (var responseStream = new StreamReader(webResponse.GetResponseStream()))
+                {
+                    return responseStream.ReadToEnd();
+                }
             }
             catch (Exception ex)
             {

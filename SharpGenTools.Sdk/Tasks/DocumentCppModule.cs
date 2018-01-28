@@ -20,11 +20,14 @@ namespace SharpGenTools.Sdk.Tasks
         [Required]
         public string OutputPath { get; set; }
 
+        public bool ShadowCopy { get; set; }
+
         [Required]
         public ITaskItem ParsedCppModule { get; set; }
 
         [Required]
         public ITaskItem DocumentedCppModule { get; set; }
+
 
         public override bool Execute()
         {
@@ -62,6 +65,7 @@ namespace SharpGenTools.Sdk.Tasks
             }
 
             docProvider.OutputPath = OutputPath;
+            docProvider.ShadowCopy = ShadowCopy;
 
             docProvider.ApplyDocumentation(CppModule.Read(ParsedCppModule.ItemSpec)).Write(DocumentedCppModule.ItemSpec);
 

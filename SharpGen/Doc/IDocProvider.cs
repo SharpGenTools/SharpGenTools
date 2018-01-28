@@ -46,5 +46,7 @@ namespace SharpGen.Doc
         void End();
 
         string OutputPath { get; set; }
+
+        bool ShadowCopy { get; set; }
     }
 }

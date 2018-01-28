@@ -55,11 +55,7 @@ namespace SharpGen.Doc
 
                     if (cppStruct.IsEmpty)
                         continue;
-
-                    if (cppStruct.Items.Count != docItem.Items.Count)
-                    {
-                        //Logger.Warning("Invalid number of fields in documentation for Struct {0}", cppStruct.Name);
-                    }
+                    
                     var count = Math.Min(cppStruct.Items.Count, docItem.Items.Count);
                     var i = 0;
                     foreach (CppField cppField in cppStruct.Fields)
