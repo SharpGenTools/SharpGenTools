@@ -145,18 +145,28 @@ namespace SharpGen.Transform
             var defines = new List<DefineExtensionRule>();
             var indexFile = 0;
             // Process each config file
+
+            // We have to do these steps first, otherwise we'll get undefined types for types we've mapped, which breaks the mapping.
+            foreach (var configFile in configFiles)
+            {
+                Logger.RunInContext(
+                    configFile.AbsoluteFilePath,
+                    () =>
+                    {
+                        // Update Naming Rules
+                        UpdateNamingRules(configFile);
+
+                        defines.AddRange(ProcessDefines(configFile));
+                    });
+            }
+
             foreach (var configFile in configFiles)
             {
                 if (configFile.IsMappingToProcess)
                 {
                     Logger.Progress(30 + (indexFile*30)/numberOfConfigFilesToParse, "Processing mapping rules [{0}]", configFile.Assembly ?? configFile.Id);
-                    defines.AddRange(ProcessCppModuleWithConfig(cppModule, configFile));
+                    ProcessCppModuleWithConfig(cppModule, configFile);
                     indexFile++;
-                }
-                else
-                {
-                    // Even if we don't need the mappings, we still need to add the defines so they will flow to consuming projects.
-                    defines.AddRange(ProcessDefines(configFile));
                 }
             }
 
@@ -247,7 +257,7 @@ namespace SharpGen.Transform
         /// Process the specified config file.
         /// </summary>
         /// <param name="file">The file.</param>
-        private IEnumerable<DefineExtensionRule> ProcessCppModuleWithConfig(CppModule cppModule, ConfigFile file)
+        private void ProcessCppModuleWithConfig(CppModule cppModule, ConfigFile file)
         {
             Logger.PushLocation(file.AbsoluteFilePath);
             try
@@ -260,9 +270,6 @@ namespace SharpGen.Transform
                 if (assembly != null)
                     Logger.Message("Process rules for assembly [{0}] and namespace [{1}]", file.Assembly, file.Namespace);
 
-                // Update Naming Rules
-                UpdateNamingRules(file);
-
                 var elementFinder = new CppElementFinder(cppModule);
 
                 // Only attach includes when there is a bind to an assembly
@@ -272,16 +279,10 @@ namespace SharpGen.Transform
 
                     ProcessExtensions(elementFinder, file);
                 }
-
-                // Handle defines separately since they do not depend on the included C++
-                // and they need to flow to consuming projects
-                var defines = ProcessDefines(file);
-
-                // Register bindings from <bindings> tag
+                
                 RegisterBindings(file);
 
                 ProcessMappings(elementFinder, file);
-                return defines;
             }
             finally
             {
