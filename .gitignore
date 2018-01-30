@@ -48,3 +48,6 @@ BuildErrors.log
 #ignore certification test results
 Source/CertificationTests/Results/*
 *.tlog
+
+# Documentation
+_build/
