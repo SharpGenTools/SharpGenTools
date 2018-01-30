@@ -6,8 +6,14 @@ SharpGenTools SDK Documentation
    :maxdepth: 2
    :caption: Contents
    
+   release-notes
    getting-started
-   config-spec
+   custom-mapping
+   advanced-mapping
+   naming-rules
+   documentation
+   limitations
+   advanced-configuration
 
 What is SharpGenTools
 =======================
@@ -39,16 +45,7 @@ Pros for CppSharp:
 * More supported C++ features (operator overloading)
 * Better support for custom passes, so may allow more configurability than SharpGenTools.
 
-Installing SharpGenTools
-========================
+Getting started
+===================
+Check out :doc:`getting-started` to get started!.
 
-To use SharpGenTools, you'll want to install the SDK package, as well as the Runtime package. The SDK package provides MSBuild tooling, and the runtime package provides the required support classes for the code generated from the SDK. You can use the following commands from the .NET CLI to install them:
-
-::
-
-   dotnet add package SharpGenTools.Sdk
-   dotnet add package SharpGen.Runtime
-
-.. note::
-
-   These packages are separate so advanced and legacy users, specifically the SharpDX project, can use their own runtime support classes. In nearly all cases, you will want to reference both projects.
