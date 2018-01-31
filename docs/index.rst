@@ -12,8 +12,10 @@ SharpGenTools SDK Documentation
    advanced-mapping
    naming-rules
    documentation
-   limitations
+   shadows
+   native-marshalling
    advanced-configuration
+   limitations
 
 What is SharpGenTools
 =======================

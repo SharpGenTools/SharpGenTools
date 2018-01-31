@@ -7,7 +7,7 @@ Installing SharpGenTools
 
 To use SharpGenTools, you'll want to install the SDK package, as well as the Runtime package. The SDK package provides MSBuild tooling, and the runtime package provides the required support classes for the code generated from the SDK. You can use the following commands from the .NET CLI to install them:
 
-::
+.. code-block:: bash
 
    dotnet add package SharpGenTools.Sdk
    dotnet add package SharpGen.Runtime
@@ -108,4 +108,4 @@ SharpGenTools will now pick up your mapping file and generate C# for the C++ you
 
 .. note::
 
-    The default mapping does not support mapping free functions. To map free functions, see the :doc:`custom-mapping` tutorial.
+    The default mapping does not support mapping free functions. To map free functions, see the :doc:`/custom-mapping` tutorial.
