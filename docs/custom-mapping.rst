@@ -115,12 +115,72 @@ In some C++ libraries such as DirectX, a set of macros define the valid values f
 
     <create-cpp macro="MY_MACRO_OPTIONS_.*" enum="MY_MACRO_OPTIONS" />
 
-This enumeration will be created during the parsing process and then mapped as a C++ enumeration with the default mapping rules.
+As you can see, you can use a regular expression in the ``macro`` attribute to select multiple macros to be members of this enumeration. This enumeration will be created during the parsing process and then mapped as a C++ enumeration with the default mapping rules.
 
 .. _constants:
 
 Macros and GUIDs as Constants
 ==============================
 
+Constants are mapped with the ``<const>`` tag under the ``<extension>`` tag. You can map both macros and GUIDs to constant values in the generated code. All constants need to be attached to a group or other type. Set the ``class`` attribute to the name of the class or type to which the constant should be attached to in the generated code. Set the ``name`` attribute to the name of the generated member in the C# code.
+
+Mapping GUIDs
+----------------
+
+To map a GUID, set the ``from-guid`` attribute on the ``<const>`` tag to the name of the GUID in the C++ code.
+
+Mapping Macros
+----------------
+
+Mapping macros to constants is more interesting. Since C++ macros do not inherently have a type, you gain a lot of control for how the macro is mapped as a constant. Below is a list of the different attributes you use to map macros.
+
+  * ``from-macro``
+
+    * Which macro you are mapping to a constant.
+  * ``type``
+
+    * The C# type of the constant.
+  * ``cpp-type``
+
+    * The C++ type of the constant. This is optional if it is the same as the C# type.
+  * ``cpp-cast``
+  
+    * The type to cast the macro value to in C++. This is only needed if an explicit cast is needed for the literal macro value to be assigned to the C++ type of the constant.
+
+.. _constValueMap:
+
+Constant Value Mapping
+--------------------------
+
+For the ``value`` attribute of the ``<const>`` tag, you can specify any (HTML-escaped) C# expression. The placeholders in the following table allow you to substitute in information about the constant.
+
+============= ================================================================
+Placeholder   Subsititution
+============= ================================================================
+$0            C++ name of the macro or GUID
+$1            Value of the macro or GUID
+$2            C# name of the macro or GUID converted to Pascal Case 
+$3            Namespace declared in ``<namespace>``
+============= ================================================================
+
+.. note::
+
+    The value of a GUID (for the placeholder $1) is the value of the result of a standard ``ToString()`` call on a ``System.Guid`` instance with the value of the mapped GUID.
+
 Removing Elements
 =====================
+
+Sometimes you might want to map many elements in an include file, but not all of them. We supply the ``<remove>`` tag for you to remove items. Just set the attribute that matches the type of element you want to remove (from the table below) to a regular expression that matches all of the elements of that type you want to remove.
+
+=========================== ===============
+Element type to Remove      Attribute Name
+=========================== ===============
+Enum                         ``enum``
+Enum Item                    ``enum-item``
+Interface                    ``interface``
+Method                       ``method``
+Struct                       ``struct``
+Field                        ``field``
+Any other element            ``element``
+Multiple types of elements   ``element``
+=========================== ===============

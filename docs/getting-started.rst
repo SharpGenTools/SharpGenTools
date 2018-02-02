@@ -78,20 +78,18 @@ To include a header, we use the ``<include>`` tag. Below are a few examples:
         <attach>MyFunction</attach>
     </include>
 
-The ``file`` attribute specifies which file to include, and the ``namespace`` attribute specifies which namespace the C# elements generated from the C++ in this file should go in. The ``output`` attribute specifies what folder this include's namespace is output to.
-
-.. note::
-
-    The ``output`` attribute has to be supplied on at least one ``<include>`` element for each sub-namespace. If it is applied multiple times, the last value takes effect.
+The ``file`` attribute specifies which file to include, and the ``namespace`` attribute specifies which namespace the C# elements generated from the C++ in this file should go in. The ``output`` attribute specifies what folder this include's namespace is output to. The ``output`` attribute has to be supplied on at least one ``<include>`` element for each sub-namespace. If it is applied multiple times, the last value takes effect.
 
 Attaching Includes
 ~~~~~~~~~~~~~~~~~~~
 
 You may have noticed above the ``attach`` attribute and the ``<attach>`` elements. These elements specify what C++ elements to actually generate C# interop for. If the ``attach`` attribute is set to ``true``, all C++ elements in that include that SharpGenTools can map will be mapped. Alternatively, you can use ``<attach>`` elements in the include element to specify specific C++ elements to map. If neither is specified, no code is generated for any of the elements defined in that header. This allows you to specify headers needed for compilation even though they may not be needed for the mapping itself.
 
-.. note::
+.. warning::
 
     For the both the ``attach`` attribute and the ``<attach>`` element, the C++ elements must be directly defined in that include file.
+    
+    Additionally, the name in the ``file`` attribute must match case with the first time the header was included, even if the header was first included transitively via a different header. If they don't match, the elements in the header will not be attached to the model.
 
 Adding the Mapping File To the Build
 ======================================
