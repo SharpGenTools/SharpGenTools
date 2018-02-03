@@ -26,7 +26,7 @@ Create a file named ``Mapping.xml`` with the following content:
 .. code-block:: xml
 
     <?xml version="1.0" encoding="utf-8"?>
-    <config id="MyMapping" xmlns:urn="SharpGen.Config">
+    <config id="MyMapping" xmlns="urn:SharpGen.Config">
         <assembly>MyAssembly</assembly>
         <namespace>MyAssembly.Namespace</namespace>
         <depends>SharpGen.Runtime</depends>
