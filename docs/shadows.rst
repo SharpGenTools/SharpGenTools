@@ -1,3 +1,3 @@
 ######################################
-Defining Shadow Classes For Callbacks
+SharpGen Callbacks and Shadows
 ######################################

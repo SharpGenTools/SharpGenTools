@@ -10,6 +10,7 @@ SharpGenTools SDK Documentation
    getting-started
    custom-mapping
    advanced-mapping
+   config-features
    naming-rules
    documentation
    shadows
