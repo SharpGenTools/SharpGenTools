@@ -177,6 +177,7 @@
           Inputs="@(ParsedCppModule)"
           Outputs="@(FullCppModule)">
     <DocumentCppModule
+      DocProviderAssemblyPath="$(SharpGenDocProviderAssemblyPath)"
       ParsedCppModule="@(ParsedCppModule)"
       DocumentedCppModule="@(FullCppModule)"
       OutputPath="$(SharpGenDocumentationOutputDir)"

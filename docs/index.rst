@@ -13,8 +13,8 @@ SharpGenTools SDK Documentation
    config-features
    naming-rules
    documentation
-   shadows
    native-marshalling
+   shadows
    advanced-configuration
    limitations
 

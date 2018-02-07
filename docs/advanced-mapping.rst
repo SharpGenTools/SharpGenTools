@@ -111,7 +111,7 @@ General
             * Do not expand short name rules for the name of this element.
         * ``underscore``
 
-            * Keep the underscore at the end of the final name.
+            * Keep the underscores between each part of the original name if it was ``snake_case``.
 
 
 .. _type-rules:
