@@ -203,7 +203,7 @@ namespace SharpGen.Runtime
         /// <returns>The associated result code</returns>
         public static Result GetResultFromException(Exception ex)
         {
-            return new Result(Marshal.GetHRForException(ex));
+            return new Result(ex.HResult);
         }
 
         /// <summary>

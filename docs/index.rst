@@ -26,7 +26,7 @@ SharpGenTools is a code generator that generates C# for interoperation with C++ 
 Why SharpGenTools?
 ====================
 
-SharpGenTools makes it extremely easy for your C#-C++ interop to have "one source of truth", the C++ header files. Since SharpGenTools generates the C# headers on build by default, it helps ensure that they stay up to date with the matching C++ header files. It also directly integrates into MSBuild, so the user has do to minimal work to integrate it into their project.
+SharpGenTools makes it extremely easy for your C#-C++ interop to have "one source of truth", the C++ header files. Since SharpGenTools generates the C# headers on build by default, it helps ensure that they stay up to date with the matching C++ header files. It also directly integrates into MSBuild, so the user has do to minimal work to integrate it into their project. Also, all of the structures and interfaces are generated as ``partial`` structures/classes/interfaces, so you have the ability to fully customize them to your needs.
 
 SharpGenTools vs CppSharp
 -------------------------
