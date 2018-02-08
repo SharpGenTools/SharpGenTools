@@ -182,6 +182,7 @@
       ParsedCppModule="@(ParsedCppModule)"
       DocumentedCppModule="@(FullCppModule)"
       DocumentationCache="@(SharpGenDocumentationCache)"
+      ShadowCopy="$(ShadowCopyDocumentationOutput)"
     />
   </Target>
 

@@ -28,6 +28,7 @@ namespace SharpGenTools.Sdk.Tasks
         [Required]
         public ITaskItem DocumentedCppModule { get; set; }
 
+        public bool ShadowCopy { get; set; }
 
         public override bool Execute()
         {
@@ -69,14 +70,26 @@ namespace SharpGenTools.Sdk.Tasks
 
             var cache = new DocItemCache();
 
+            var cachePath = ShadowCopy ? Path.GetTempFileName() : DocumentationCache.ItemSpec;
+
             if (File.Exists(DocumentationCache.ItemSpec))
             {
-                cache = DocItemCache.Read(DocumentationCache.ItemSpec);
+                if (ShadowCopy)
+                {
+                    File.Copy(DocumentationCache.ItemSpec, cachePath, true);
+                }
+                cache = DocItemCache.Read(cachePath);
             }
             
             docProvider.ApplyDocumentation(cache, module).Result.Write(DocumentedCppModule.ItemSpec);
 
-            cache.Write(DocumentationCache.ItemSpec);
+            cache.Write(cachePath);
+
+            if (ShadowCopy)
+            {
+                File.Copy(cachePath, DocumentationCache.ItemSpec);
+                File.Delete(cachePath);
+            }
 
             return true;
         }
