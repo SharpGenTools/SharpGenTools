@@ -2,166 +2,115 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace SharpGen.Doc
 {
     public static class DocProviderExtensions
     {
-        public static CppModule ApplyDocumentation(this IDocProvider docProvider, CppModule module)
+        public static async Task<CppModule> ApplyDocumentation(this IDocProvider docProvider,  DocItemCache cache, CppModule module)
         {
-            docProvider.Begin();
+            var documentationTasks = new List<Task>();
 
             foreach (CppInclude cppInclude in module.Includes)
             {
-                foreach (CppEnum cppEnum in cppInclude.Enums)
-                {
-                    DocItem docItem = docProvider.FindDocumentation(cppEnum.Name);
-                    cppEnum.Id = docItem.Id;
-                    cppEnum.Description = docItem.Description;
-                    cppEnum.Remarks = docItem.Remarks;
-
-                    if (cppEnum.IsEmpty)
-                        continue;
-
-                    var count = Math.Min(cppEnum.Items.Count, docItem.Items.Count);
-                    var i = 0;
-                    foreach (CppEnumItem cppEnumItem in cppEnum.EnumItems)
-                    {
-                        cppEnumItem.Id = docItem.Id;
-
-                        // Try to find the matching item
-                        var foundMatch = false;
-                        foreach (var subItem in docItem.Items)
-                        {
-                            if (Utilities.ContainsCppIdentifier(subItem.Term, cppEnumItem.Name))
-                            {
-                                cppEnumItem.Description = subItem.Description;
-                                foundMatch = true;
-                                break;
-                            }
-                        }
-                        if (!foundMatch && i < count)
-                            cppEnumItem.Description = docItem.Items[i].Description;
-                        i++;
-                    }
-                }
-
-                foreach (CppStruct cppStruct in cppInclude.Structs)
-                {
-                    DocItem docItem = docProvider.FindDocumentation(cppStruct.Name);
-                    cppStruct.Id = docItem.Id;
-                    cppStruct.Description = docItem.Description;
-                    cppStruct.Remarks = docItem.Remarks;
-
-                    if (cppStruct.IsEmpty)
-                        continue;
-                    
-                    var count = Math.Min(cppStruct.Items.Count, docItem.Items.Count);
-                    var i = 0;
-                    foreach (CppField cppField in cppStruct.Fields)
-                    {
-                        cppField.Id = docItem.Id;
-
-                        // Try to find the matching item
-                        var foundMatch = false;
-                        foreach (var subItem in docItem.Items)
-                        {
-                            if (Utilities.ContainsCppIdentifier(subItem.Term, cppField.Name))
-                            {
-                                cppField.Description = subItem.Description;
-                                foundMatch = true;
-                                break;
-                            }
-                        }
-                        if (!foundMatch && i < count)
-                            cppField.Description = docItem.Items[i].Description;
-                        i++;
-                    }
-                }
-
-                foreach (CppInterface cppInterface in cppInclude.Interfaces)
-                {
-                    DocItem docItem = docProvider.FindDocumentation(cppInterface.Name);
-                    cppInterface.Id = docItem.Id;
-                    cppInterface.Description = docItem.Description;
-                    cppInterface.Remarks = docItem.Remarks;
-
-                    if (cppInterface.IsEmpty)
-                        continue;
-
-                    foreach (CppMethod cppMethod in cppInterface.Methods)
-                    {
-                        var methodName = cppInterface.Name + "::" + cppMethod.Name;
-                        DocItem methodDocItem = docProvider.FindDocumentation(methodName);
-                        cppMethod.Id = methodDocItem.Id;
-                        cppMethod.Description = methodDocItem.Description;
-                        cppMethod.Remarks = methodDocItem.Remarks;
-                        cppMethod.ReturnValue.Description = methodDocItem.Return;
-
-                        if (cppMethod.IsEmpty)
-                            continue;
-
-                        var count = Math.Min(cppMethod.Items.Count, methodDocItem.Items.Count);
-                        var i = 0;
-                        foreach (CppParameter cppParameter in cppMethod.Parameters)
-                        {
-                            cppParameter.Id = methodDocItem.Id;
-
-                            // Try to find the matching item
-                            var foundMatch = false;
-                            foreach (var subItem in methodDocItem.Items)
-                            {
-                                if (Utilities.ContainsCppIdentifier(subItem.Term, cppParameter.Name))
-                                {
-                                    cppParameter.Description = subItem.Description;
-                                    foundMatch = true;
-                                    break;
-                                }
-                            }
-                            if (!foundMatch && i < count)
-                                cppParameter.Description = methodDocItem.Items[i].Description;
-                            i++;
-                        }
-                    }
-                }
-
-                foreach (CppFunction cppFunction in cppInclude.Functions)
-                {
-                    DocItem docItem = docProvider.FindDocumentation(cppFunction.Name);
-                    cppFunction.Id = docItem.Id;
-                    cppFunction.Description = docItem.Description;
-                    cppFunction.Remarks = docItem.Remarks;
-                    cppFunction.ReturnValue.Description = docItem.Return;
-
-                    if (cppFunction.IsEmpty)
-                        continue;
-
-                    var count = Math.Min(cppFunction.Items.Count, docItem.Items.Count);
-                    var i = 0;
-                    foreach (CppParameter cppParameter in cppFunction.Parameters)
-                    {
-                        cppParameter.Id = docItem.Id;
-
-                        // Try to find the matching item
-                        var foundMatch = false;
-                        foreach (var subItem in docItem.Items)
-                        {
-                            if (Utilities.ContainsCppIdentifier(subItem.Term, cppParameter.Name))
-                            {
-                                cppParameter.Description = subItem.Description;
-                                foundMatch = true;
-                                break;
-                            }
-                        }
-                        if (!foundMatch && i < count)
-                            cppParameter.Description = docItem.Items[i].Description;
-                        i++;
-                    }
-                }
+                documentationTasks.AddRange(cppInclude.Enums.Select(cppEnum => docProvider.DocumentElement(cache, cppEnum)));
+                documentationTasks.AddRange(cppInclude.Structs.Select(cppStruct => docProvider.DocumentElement(cache, cppStruct)));
+                documentationTasks.AddRange(cppInclude.Interfaces.Select(cppInterface => docProvider.DocumentInterface(cache, cppInterface)));
+                documentationTasks.AddRange(cppInclude.Functions.Select(cppFunction => docProvider.DocumentCallable(cache, cppFunction)));
             }
-            docProvider.End();
+
+            await Task.WhenAll(documentationTasks);
 
             return module;
         }
+
+        private static async Task<DocItem> DocumentElement(
+            this IDocProvider docProvider,
+            DocItemCache cache,
+            CppElement element,
+            bool documentInnerElements = true,
+            string name = "")
+        {
+            var docName = name ?? element.Name;
+
+            DocItem cacheEntry = cache.DocItems.FirstOrDefault(item => item.Name == docName);
+            var docItem = cacheEntry ?? await docProvider.FindDocumentationAsync(docName);
+
+            element.Id = docItem.ShortId;
+            element.Description = docItem.Summary;
+            element.Remarks = docItem.Remarks;
+
+            if (cacheEntry == null)
+            {
+                cache.DocItems.Add(docItem);
+            }
+
+            if (element.IsEmpty)
+                return docItem;
+            
+            if (documentInnerElements)
+            {
+                DocumentInnerElements(element.Items, docItem);
+            }
+
+            return docItem;
+        }
+
+        private static async Task DocumentCallable(this IDocProvider docProvider, DocItemCache cache, CppCallable callable, string name = null)
+        {
+            var docItem = await docProvider.DocumentElement(cache, callable, name: name);
+
+            callable.ReturnValue.Description = docItem.Return;
+        }
+
+        private static async Task DocumentInterface(this IDocProvider docProvider, DocItemCache cache, CppInterface cppInterface)
+        {
+            await Task.WhenAll(
+                cppInterface.Methods
+                    .Select(func => docProvider.DocumentCallable(cache, func, name: cppInterface.Name + "::" + func.Name))
+                    .Concat(new[] { docProvider.DocumentElement(cache, cppInterface, documentInnerElements: false) }));
+        }
+
+        private static void DocumentInnerElements(IEnumerable<CppElement> elements, DocItem docItem)
+        {
+            var count = Math.Min(elements.Count(), docItem.Items.Count);
+            var i = 0;
+            foreach (CppElement element in elements)
+            {
+                element.Id = docItem.ShortId;
+
+                // Try to find the matching item
+                var foundMatch = false;
+                foreach (var subItem in docItem.Items)
+                {
+                    if (ContainsCppIdentifier(subItem.Term, element.Name))
+                    {
+                        element.Description = subItem.Description;
+                        foundMatch = true;
+                        break;
+                    }
+                }
+                if (!foundMatch && i < count)
+                    element.Description = docItem.Items[i].Description;
+                i++;
+            }
+        }
+
+		/// <summary>
+		/// Determines whether a string contains a given C++ identifier.
+		/// </summary>
+		/// <param name="str">The string to search.</param>
+		/// <param name="identifier">The C++ identifier to search for.</param>
+		/// <returns></returns>
+		private static bool ContainsCppIdentifier(string str, string identifier)
+		{
+			if (string.IsNullOrEmpty(str))
+				return string.IsNullOrEmpty(identifier);
+
+			return Regex.IsMatch(str, string.Format(@"\b{0}\b", Regex.Escape(identifier)), RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+		}
     }
 }

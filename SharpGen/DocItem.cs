@@ -18,13 +18,78 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System.Collections.Generic;
-using System.Runtime.Serialization;
+using System.IO;
+using System.Xml;
+using System.Xml.Serialization;
 
 namespace SharpGen
 {
+    [XmlRoot("documentation", Namespace = NS)]
+    public class DocItemCache
+    {
+        private const string NS = "urn:SharpGen.DocCache";
+
+        public List<DocItem> DocItems {get; set;} = new List<DocItem>();
+
+        public static DocItemCache Read(string file)
+        {
+            using (var stream = File.OpenRead(file))
+            {
+                return Read(stream);
+            }
+        }
+
+                /// <summary>
+        /// Reads the module from the specified input.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <returns>A C++ module</returns>
+        public static DocItemCache Read(Stream input)
+        {
+            var ds = new XmlSerializer(typeof (DocItemCache));
+
+            DocItemCache module = null;
+            using (XmlReader w = XmlReader.Create(input))
+            {
+                module = ds.Deserialize(w) as DocItemCache;
+            }
+            return module;
+        }
+
+        /// <summary>
+        /// Writes this instance to the specified file.
+        /// </summary>
+        /// <param name="file">The file.</param>
+        public void Write(string file)
+        {
+            using (var output = new FileStream(file, FileMode.Create))
+            {
+                Write(output); 
+            }
+        }
+
+        /// <summary>
+        /// Writes this instance to the specified output.
+        /// </summary>
+        /// <param name="output">The output.</param>
+        public void Write(Stream output)
+        {
+            var ds = new XmlSerializer(typeof (DocItemCache));
+
+            var settings = new XmlWriterSettings {Indent = true};
+            using (XmlWriter w = XmlWriter.Create(output, settings))
+            {
+                var ns = new XmlSerializerNamespaces();
+                ns.Add("", NS);
+                ds.Serialize(w, this, ns);
+            }
+        }
+    }
+
     /// <summary>
     /// Documentation item
     /// </summary>
+    [XmlType("doc-item")]
     public class DocItem
     {
         public DocItem()
@@ -38,24 +103,34 @@ namespace SharpGen
         /// <value>
         /// The short id.
         /// </value>
-        public string Id { get; set; }
+        [XmlAttribute("short-id")]
+        public string ShortId { get; set; }
 
         /// <summary>
-        /// Gets or sets the description.
+        /// Gets or sets the name of the element.
         /// </summary>
-        /// <value>The description.</value>
-        public string Description { get; set; }
+        [XmlAttribute("name")]
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Gets or sets the summary.
+        /// </summary>
+        /// <value>The summary.</value>
+        [XmlElement("summary")]
+        public string Summary { get; set; }
 
         /// <summary>
         /// Gets or sets the remarks.
         /// </summary>
         /// <value>The remarks.</value>
+        [XmlElement("remarks")]
         public string Remarks { get; set; }
 
         /// <summary>
         /// Gets or sets the return.
         /// </summary>
         /// <value>The return.</value>
+        [XmlElement("return")]
         public string Return { get; set; }
 
         /// <summary>
@@ -68,16 +143,19 @@ namespace SharpGen
 	/// <summary>
 	/// Documentation sub-item, used for structure fields, enum items, and function parameters.
 	/// </summary>
+    [XmlType("sub-item")]
 	public class DocSubItem
 	{
 		/// <summary>
 		/// Gets or sets the name of the sub item.
 		/// </summary>
+        [XmlAttribute("term")]
 		public string Term { get; set; }
 
 		/// <summary>
 		/// Gets or sets the description associated with the sub item.
 		/// </summary>
+        [XmlElement("description")]
 		public string Description { get; set; }
 	}
 }

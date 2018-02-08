@@ -10,6 +10,8 @@ using System.Runtime.Loader;
 #endif
 using System.Text;
 using Logger = SharpGen.Logging.Logger;
+using System.IO;
+using SharpGen;
 
 namespace SharpGenTools.Sdk.Tasks
 {
@@ -18,9 +20,7 @@ namespace SharpGenTools.Sdk.Tasks
         public string DocProviderAssemblyPath { get; set; }
 
         [Required]
-        public string OutputPath { get; set; }
-
-        public bool ShadowCopy { get; set; }
+        public ITaskItem DocumentationCache { get; set; }
 
         [Required]
         public ITaskItem ParsedCppModule { get; set; }
@@ -31,6 +31,7 @@ namespace SharpGenTools.Sdk.Tasks
 
         public override bool Execute()
         {
+            BindingRedirectResolution.Enable();
             var logger = new Logger(new MsBuildSharpGenLogger(Log), null);
 
             // Use default MSDN doc provider
@@ -64,10 +65,18 @@ namespace SharpGenTools.Sdk.Tasks
                 }
             }
 
-            docProvider.OutputPath = OutputPath;
-            docProvider.ShadowCopy = ShadowCopy;
+            var module = CppModule.Read(ParsedCppModule.ItemSpec);
 
-            docProvider.ApplyDocumentation(CppModule.Read(ParsedCppModule.ItemSpec)).Write(DocumentedCppModule.ItemSpec);
+            var cache = new DocItemCache();
+
+            if (File.Exists(DocumentationCache.ItemSpec))
+            {
+                cache = DocItemCache.Read(DocumentationCache.ItemSpec);
+            }
+
+            docProvider.ApplyDocumentation(cache, module).Result.Write(DocumentedCppModule.ItemSpec);
+
+            cache.Write(DocumentationCache.ItemSpec);
 
             return true;
         }

@@ -9,6 +9,7 @@ using SharpGen.Logging;
 using System.IO.Compression;
 using Newtonsoft.Json.Linq;
 using MTPS;
+using System.Threading.Tasks;
 
 namespace SharpGen.Doc
 {
@@ -17,10 +18,6 @@ namespace SharpGen.Doc
         private static readonly Regex StripSpace = new Regex(@"[\r\n]+\s+", RegexOptions.Multiline);
         private static readonly Regex BeginWithWhitespace = new Regex(@"^\s+");
         private readonly Dictionary<Regex, string> CommonReplaceRuleMap;
-        private ZipArchive _zipFile;
-        private bool isZipUpdated;
-        private string archiveFullPath;
-        private string shadowCopyFullPath;
 
         public MsdnProvider(Logger logger)
         {
@@ -37,84 +34,7 @@ namespace SharpGen.Doc
             CommonReplaceRuleMap.Add(new Regex(fromNameRegex), toName);
         }
 
-        /// <summary>
-        /// Archive to use to save the documentation
-        /// </summary>
-        private string ArchiveName => "MSDNDoc.zip";
-
-        /// <summary>
-        /// Output path for the archive / Directory
-        /// </summary>
-        public string OutputPath { get; set; }
-
-        /// <summary>
-        /// Shadow copy the archive when running. Defaults to true.
-        /// </summary>
-        public bool ShadowCopy { get; set; } = true;
-
         public Logger Logger { get; private set; }
-
-        /// <summary>
-        /// Begin to request MSDN
-        /// </summary>
-        public void Begin()
-        {
-            var fullPath = Path.Combine((OutputPath ?? "."), ArchiveName);
-
-            var outputDirectory = Path.GetDirectoryName(fullPath);
-
-            if (!Directory.Exists(outputDirectory))
-                Directory.CreateDirectory(outputDirectory);
-
-            archiveFullPath = Path.Combine(outputDirectory, ArchiveName);
-            shadowCopyFullPath = ShadowCopy ? Path.GetTempFileName() : archiveFullPath;
-            OpenArchive();
-        }
-
-        /// <summary>
-        /// End request to MSDN. Archive is saved if any updated occurred between Begin/End.
-        /// </summary>
-        public void End()
-        {
-            CloseArchive();
-        }
-
-        private void OpenArchive()
-        {
-            if (_zipFile == null)
-            {
-                isZipUpdated = false;
-                if (ShadowCopy)
-                {
-                    if (File.Exists(archiveFullPath))
-                    {
-                        File.Copy(archiveFullPath, shadowCopyFullPath, true);
-                    }
-                    _zipFile = ZipFile.Open(shadowCopyFullPath, ZipArchiveMode.Update);
-                }
-                else
-                {
-                    _zipFile = ZipFile.Open(archiveFullPath, ZipArchiveMode.Update);
-                }
-            }
-        }
-
-        private void CloseArchive()
-        {
-            if (_zipFile != null)
-            {
-                _zipFile.Dispose();
-                if (isZipUpdated && ShadowCopy)
-                {
-                    File.Copy(shadowCopyFullPath, archiveFullPath, true);
-                }
-                if (ShadowCopy)
-                {
-                    File.Delete(shadowCopyFullPath); 
-                }
-                _zipFile = null;
-            }
-        }
 
         private int counter;
 
@@ -124,7 +44,7 @@ namespace SharpGen.Doc
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public DocItem FindDocumentation(string name)
+        public async Task<DocItem> FindDocumentationAsync(string name)
         {
             var oldName = name;
             // Regex replacer
@@ -148,59 +68,13 @@ namespace SharpGen.Doc
                 }
             }
 
-            var doc = GetDocumentationFromCacheOrMsdn(name);
+            var doc = await GetDocumentationFromMsdn(name);
             if (doc == null)
             {
-                return new DocItem { Description = "No documentation" };
+                return new DocItem { Summary = "No documentation" };
             }
             return ParseDocumentation(doc);
         }
-
-        /// <summary>
-        /// Handles documentation from zip/directory
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        private string GetDocumentationFromCacheOrMsdn(string name)
-        {
-            var fileName = name.Replace("::", "-") + ".html";
-            counter++;
-
-            string doc;
-
-            OpenArchive();
-
-            var zipEntry = _zipFile.GetEntry(fileName);
-            if (zipEntry != null)
-            {
-                using (var streamInput = zipEntry.Open())
-                using (var reader = new StreamReader(streamInput))
-                {
-                    doc = reader.ReadToEnd();
-                }
-            }
-            else
-            {
-                // Begin update if zip is not updated
-                if (!isZipUpdated)
-                {
-                    isZipUpdated = true;
-                }
-
-                Logger.Progress(20 + (counter / 50) % 10, "Fetching C++ documentation ([{0}]) from MSDN", name);
-
-                doc = GetDocumentationFromMsdn(name);
-
-                var newEntry = _zipFile.CreateEntry(fileName);
-                using (var stream = newEntry.Open())
-                using (var writer = new StreamWriter(stream))
-                {
-                    writer.Write(doc);
-                }
-            }
-            return doc;
-        }
-
 
         private static readonly HashSet<string> HtmlPreserveTags = new HashSet<string>(StringComparer.CurrentCultureIgnoreCase) { "dl", "dt", "dd", "p", "strong", "pre", "em", "code", "ul", "ol", "li", "table", "tr", "th", "td" };
 
@@ -336,7 +210,7 @@ namespace SharpGen.Doc
             var htmlDocument = new HtmlDocument();
             htmlDocument.LoadHtml(documentationToParse);
 
-            var item = new DocItem { Id = htmlDocument.DocumentNode.ChildNodes.FindFirst("id").InnerText };
+            var item = new DocItem { ShortId = htmlDocument.DocumentNode.ChildNodes.FindFirst("id").InnerText };
 
             var element = htmlDocument.GetElementbyId("mainSection");
 
@@ -345,7 +219,7 @@ namespace SharpGen.Doc
                 return item;
 
             // Get description before h3/collasiblearea and table
-            item.Description = GetTextUntilNextHeader(element.FirstChild, false, "table");
+            item.Summary = GetTextUntilNextHeader(element.FirstChild, false, "table");
 
             HtmlNode firstElement = element.ChildNodes.FindFirst("dl");
             if (firstElement != null)
@@ -412,10 +286,10 @@ namespace SharpGen.Doc
         /// </summary>
         /// <param name="name">The name.</param>
         /// <returns></returns>
-        public static string GetDocumentationFromMsdn(string name)
+        public async Task<string> GetDocumentationFromMsdn(string name)
         {
-
-            var shortId = GetShortId(name);
+            Logger.Message($"Fetching documentation from MSDN for {name}");
+            var shortId = await GetShortId(name);
             if (string.IsNullOrEmpty(shortId))
                 return string.Empty;
 
@@ -457,13 +331,13 @@ namespace SharpGen.Doc
 
         private static Regex matchId = new Regex(@"/([a-zA-Z0-9\._\-]+)(\(.+\).*|\.[a-zA-Z]+)?$");
 
-        public static string GetShortId(string name)
+        private async Task<string> GetShortId(string name)
         {
             try
             {
                 var searchUrl = "http://social.msdn.microsoft.com/Search/en-US?query=" + WebUtility.UrlEncode(name) + "&addenglish=1";
 
-                var result = GetFromUrl(searchUrl);
+                var result = await GetFromUrl(searchUrl);
 
                 if (string.IsNullOrEmpty(result))
                     return string.Empty;
@@ -483,14 +357,15 @@ namespace SharpGen.Doc
                         return match.Groups[1].Value;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Warning($"Encountered an error when fetching documentation: {ex.Message}");
             }
 
             return string.Empty;
         }
 
-        internal static string GetFromUrl(string url)
+        private async Task<string> GetFromUrl(string url)
         {
             try
             {
@@ -504,15 +379,15 @@ namespace SharpGen.Doc
                 
                 HttpWebResponse webResponse = null;
                 // Get response for http web request
-                webResponse = (HttpWebResponse)request.GetResponseAsync().Result;
+                webResponse = (HttpWebResponse) await request.GetResponseAsync();
                 using (var responseStream = new StreamReader(webResponse.GetResponseStream()))
                 {
-                    return responseStream.ReadToEnd();
+                    return await responseStream.ReadToEndAsync();
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                Logger.Warning($"Encountered an error when fetching documentation: {ex.Message}");
             }
             return string.Empty;
         }
