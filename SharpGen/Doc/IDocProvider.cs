@@ -17,6 +17,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using System.Threading.Tasks;
+
 namespace SharpGen.Doc
 {
     /// <summary>
@@ -29,24 +31,10 @@ namespace SharpGen.Doc
     public interface IDocProvider
     {
         /// <summary>
-        /// Begins the process of the documentation provider
-        /// </summary>
-        void Begin();
-
-        /// <summary>
         /// Finds the documentation for a particular C++ item.
         /// </summary>
         /// <param name="fullName">The full name. for top level elements (like struct, interfaces, enums, functions), It's the name itself of the element. For interface methods, the name is passed like this "IMyInterface::MyMethod".</param>
         /// <returns></returns>
-        DocItem FindDocumentation(string fullName);
-
-        /// <summary>
-        // Ends the process of the documentation provider
-        /// </summary>
-        void End();
-
-        string OutputPath { get; set; }
-
-        bool ShadowCopy { get; set; }
+        Task<DocItem> FindDocumentationAsync(string fullName);
     }
 }

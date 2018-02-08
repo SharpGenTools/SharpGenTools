@@ -32,6 +32,7 @@ using SharpGen.Transform;
 using SharpGen.CppModel;
 using SharpGen.Doc;
 using System.Xml;
+using System.Threading.Tasks;
 
 namespace SharpGen.Interactive
 {
@@ -99,6 +100,8 @@ namespace SharpGen.Interactive
 
         public GlobalNamespaceProvider GlobalNamespace { get; set; }
         public Dictionary<string, XmlDocument> ExternalDocumentation { get; set; } = new Dictionary<string, XmlDocument>();
+
+        public DocItemCache DocumentationCache {get; set;} = new DocItemCache();
 
         private string _thisAssemblyPath;
         private bool _isAssemblyNew;
@@ -212,7 +215,7 @@ namespace SharpGen.Interactive
 
                     if (IsGeneratingDoc)
                     {
-                        ApplyDocumentation(group);
+                        ApplyDocumentation(DocumentationCache, group);
                     }
                 }
                 else
@@ -393,7 +396,7 @@ namespace SharpGen.Interactive
         /// <summary>
         /// Apply documentation from an external provider. This is optional.
         /// </summary>
-        private CppModule ApplyDocumentation(CppModule group)
+        private Task<CppModule> ApplyDocumentation(DocItemCache cache, CppModule group)
         {
             // Use default MSDN doc provider
             IDocProvider docProvider = new MsdnProvider(Logger);
@@ -422,7 +425,7 @@ namespace SharpGen.Interactive
             }
 
             Logger.Progress(20, "Applying C++ documentation");
-            return docProvider.ApplyDocumentation(group);
+            return docProvider.ApplyDocumentation(cache, group);
         }
     }
 }

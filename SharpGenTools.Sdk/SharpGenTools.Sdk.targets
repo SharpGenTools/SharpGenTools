@@ -16,6 +16,7 @@
     <CppConsumerConfig Include="$(SharpGenIntermediateDir)CppConsumerConfig.xml" />
     <PartialCppModule Include="$(SharpGenIntermediateDir)PartialCppModule.xml" />
     <ParsedCppModule Include="$(SharpGenIntermediateDir)ParsedCpp.xml" />
+    <SharpGenDocumentationCache Include="$(SharpGenDocumentationOutputDir)DocumentationCache.xml" />
     <FullCppModule Condition="'$(SharpGenGenerateDoc)' != 'true'" Include="@(ParsedCppModule)" />
     <FullCppModule Condition="'$(SharpGenGenerateDoc)' == 'true'" Include="$(SharpGenIntermediateDir)CppModel.xml" />
   </ItemGroup>
@@ -174,14 +175,13 @@
   <Target Name="GenerateDocumentation"
           DependsOnTargets="ParseCPlusPlus"
           Condition="'$(SharpGenGenerateDoc)' == 'true' and '@(SharpGenMapping)' != ''"
-          Inputs="@(ParsedCppModule)"
+          Inputs="@(ParsedCppModule);@(SharpGenDocumentationCache);$(SharpGenDocProviderAssemblyPath)"
           Outputs="@(FullCppModule)">
     <DocumentCppModule
       DocProviderAssemblyPath="$(SharpGenDocProviderAssemblyPath)"
       ParsedCppModule="@(ParsedCppModule)"
       DocumentedCppModule="@(FullCppModule)"
-      OutputPath="$(SharpGenDocumentationOutputDir)"
-      ShadowCopy="$(ShadowCopyDocumentationOutput)"
+      DocumentationCache="@(SharpGenDocumentationCache)"
     />
   </Target>
 
