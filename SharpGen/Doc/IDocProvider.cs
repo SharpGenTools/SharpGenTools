@@ -30,6 +30,7 @@ namespace SharpGen.Doc
     /// </summary>
     public interface IDocProvider
     {
+
         /// <summary>
         /// Finds the documentation for a particular C++ item.
         /// </summary>

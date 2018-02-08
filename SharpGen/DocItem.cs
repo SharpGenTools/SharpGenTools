@@ -19,6 +19,7 @@
 // THE SOFTWARE.
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -29,7 +30,25 @@ namespace SharpGen
     {
         private const string NS = "urn:SharpGen.DocCache";
 
-        public List<DocItem> DocItems {get; set;} = new List<DocItem>();
+        private readonly object syncObject = new object();
+
+        public List<DocItem> DocItems { get; set; } = new List<DocItem>();
+
+        public void Add(DocItem item)
+        {
+            lock (syncObject)
+            {
+                DocItems.Add(item);
+            }
+        }
+
+        public DocItem Find(string name)
+        {
+            lock (syncObject)
+            {
+                return DocItems.FirstOrDefault(item => item.Name == name);
+            }
+        }
 
         public static DocItemCache Read(string file)
         {

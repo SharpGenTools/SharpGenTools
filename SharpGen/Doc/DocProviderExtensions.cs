@@ -13,7 +13,6 @@ namespace SharpGen.Doc
         public static async Task<CppModule> ApplyDocumentation(this IDocProvider docProvider,  DocItemCache cache, CppModule module)
         {
             var documentationTasks = new List<Task>();
-
             foreach (CppInclude cppInclude in module.Includes)
             {
                 documentationTasks.AddRange(cppInclude.Enums.Select(cppEnum => docProvider.DocumentElement(cache, cppEnum)));
@@ -32,11 +31,11 @@ namespace SharpGen.Doc
             DocItemCache cache,
             CppElement element,
             bool documentInnerElements = true,
-            string name = "")
+            string name = null)
         {
             var docName = name ?? element.Name;
 
-            DocItem cacheEntry = cache.DocItems.FirstOrDefault(item => item.Name == docName);
+            DocItem cacheEntry = cache.Find(docName);
             var docItem = cacheEntry ?? await docProvider.FindDocumentationAsync(docName);
 
             element.Id = docItem.ShortId;
@@ -45,7 +44,8 @@ namespace SharpGen.Doc
 
             if (cacheEntry == null)
             {
-                cache.DocItems.Add(docItem);
+                docItem.Name = docName;
+                cache.Add(docItem);
             }
 
             if (element.IsEmpty)

@@ -73,7 +73,7 @@ namespace SharpGenTools.Sdk.Tasks
             {
                 cache = DocItemCache.Read(DocumentationCache.ItemSpec);
             }
-
+            
             docProvider.ApplyDocumentation(cache, module).Result.Write(DocumentedCppModule.ItemSpec);
 
             cache.Write(DocumentationCache.ItemSpec);

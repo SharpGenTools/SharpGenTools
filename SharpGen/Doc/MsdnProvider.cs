@@ -6,7 +6,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using HtmlAgilityPack;
 using SharpGen.Logging;
-using System.IO.Compression;
 using Newtonsoft.Json.Linq;
 using MTPS;
 using System.Threading.Tasks;
@@ -18,6 +17,7 @@ namespace SharpGen.Doc
         private static readonly Regex StripSpace = new Regex(@"[\r\n]+\s+", RegexOptions.Multiline);
         private static readonly Regex BeginWithWhitespace = new Regex(@"^\s+");
         private readonly Dictionary<Regex, string> CommonReplaceRuleMap;
+        private int counter;
 
         public MsdnProvider(Logger logger)
         {
@@ -35,9 +35,6 @@ namespace SharpGen.Doc
         }
 
         public Logger Logger { get; private set; }
-
-        private int counter;
-
 
         /// <summary>
         /// Get the documentation for a particular prefix (include name) and a full name item
@@ -71,7 +68,7 @@ namespace SharpGen.Doc
             var doc = await GetDocumentationFromMsdn(name);
             if (doc == null)
             {
-                return new DocItem { Summary = "No documentation" };
+                return new DocItem { Name = name, Summary = "No documentation" };
             }
             return ParseDocumentation(doc);
         }
@@ -288,12 +285,14 @@ namespace SharpGen.Doc
         /// <returns></returns>
         public async Task<string> GetDocumentationFromMsdn(string name)
         {
-            Logger.Message($"Fetching documentation from MSDN for {name}");
+            counter++;
+            Logger.Progress(20 + (counter / 50) % 10, "Fetching C++ documentation ([{0}]) from MSDN", name);
+
             var shortId = await GetShortId(name);
             if (string.IsNullOrEmpty(shortId))
                 return string.Empty;
 
-            var result = GetDocFromMTPS(shortId);
+            var result = await GetDocFromMTPS(shortId);
             if (string.IsNullOrEmpty(result))
                 return string.Empty;
             return "<id>" + shortId + "</id>\r\n" + result;
@@ -301,7 +300,7 @@ namespace SharpGen.Doc
 
         private static ContentServicePortTypeClient proxy;
 
-        public static string GetDocFromMTPS(string shortId)
+        private async Task<string> GetDocFromMTPS(string shortId)
         {
             try
             {
@@ -316,7 +315,7 @@ namespace SharpGen.Doc
                     version = "VS.85",
                     requestedDocuments = new[] { new requestedDocument { type = documentTypes.primary, selector = "Mtps.Xhtml" } }
                 };
-                var response = proxy.GetContent(new appId { value = "Sandcastle" }, request);
+                var response = await Task.Run(() => proxy.GetContent(new appId { value = "Sandcastle" }, request));
                 if (response.primaryDocuments[0].Any != null)
                     return response.primaryDocuments[0].Any.OuterXml;
             }
@@ -329,7 +328,7 @@ namespace SharpGen.Doc
 
 
 
-        private static Regex matchId = new Regex(@"/([a-zA-Z0-9\._\-]+)(\(.+\).*|\.[a-zA-Z]+)?$");
+        private static readonly Regex matchId = new Regex(@"/([a-zA-Z0-9\._\-]+)(\(.+\).*|\.[a-zA-Z]+)?$");
 
         private async Task<string> GetShortId(string name)
         {
@@ -351,15 +350,20 @@ namespace SharpGen.Doc
                     var endJsonSemicolon = resultsText.LastIndexOf(';');
                     var resultsJson = resultsText.Substring(0, endJsonSemicolon);
                     var urlResult = JObject.Parse(resultsJson);
-                    var contentUrl = ((JArray)(urlResult["data"])["results"])[0]["url"].ToString();
+                    var results = urlResult["data"]["results"];
+                    if (!results.HasValues)
+                    {
+                        return string.Empty;
+                    }
+                    var contentUrl = results[0]["url"].ToString();
                     var match = matchId.Match(contentUrl);
                     if (match.Success)
                         return match.Groups[1].Value;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Logger.Warning($"Encountered an error when fetching documentation: {ex.Message}");
+                return string.Empty;
             }
 
             return string.Empty;
@@ -382,12 +386,12 @@ namespace SharpGen.Doc
                 webResponse = (HttpWebResponse) await request.GetResponseAsync();
                 using (var responseStream = new StreamReader(webResponse.GetResponseStream()))
                 {
-                    return await responseStream.ReadToEndAsync();
+                    return responseStream.ReadToEnd();
                 }
             }
             catch (Exception ex)
             {
-                Logger.Warning($"Encountered an error when fetching documentation: {ex.Message}");
+                Console.WriteLine(ex);
             }
             return string.Empty;
         }
