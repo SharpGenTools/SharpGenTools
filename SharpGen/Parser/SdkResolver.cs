@@ -29,7 +29,7 @@ namespace SharpGen.Parser
                     Logger.Message($"Resolving Windows SDK: version {sdkRule.Version}");
                     return ResolveWindowsSdk(sdkRule.Version);
                 default:
-                    Logger.Error("Unknown SDK specified in an SDK rule.");
+                    Logger.Error(LoggingCodes.UnknownSdk, "Unknown SDK specified in an SDK rule.");
                     return Enumerable.Empty<IncludeDirRule>();
             }
         }

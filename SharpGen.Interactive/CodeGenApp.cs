@@ -135,6 +135,11 @@ namespace SharpGen.Interactive
                 Config = ConfigFile.Load(Config, Macros.ToArray(), Logger);
             }
 
+            if (Logger.HasErrors)
+            {
+                Logger.Fatal("Errors loading the config file");
+            }
+
             var latestConfigTime = ConfigFile.GetLatestTimestamp(Config.ConfigFilesLoaded);
             
             _allConfigCheck = Path.Combine(IntermediateOutputPath, Config.Id + "-CodeGen.check");
@@ -419,8 +424,8 @@ namespace SharpGen.Interactive
                 }
                 catch (Exception)
                 {
-                    Logger.Warning("Warning, Unable to locate/load DocProvider Assembly.");
-                    Logger.Warning("Warning, DocProvider was not found from assembly [{0}]", DocProviderAssemblyPath);
+                    Logger.Warning(null, "Warning, Unable to locate/load DocProvider Assembly.");
+                    Logger.Warning(null, "Warning, DocProvider was not found from assembly [{0}]", DocProviderAssemblyPath);
                 }
             }
 

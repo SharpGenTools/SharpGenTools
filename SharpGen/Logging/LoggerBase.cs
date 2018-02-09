@@ -48,7 +48,7 @@ namespace SharpGen.Logging
         /// <param name="message">The message.</param>
         /// <param name="exception">The exception.</param>
         /// <param name="parameters">The parameters.</param>
-        public abstract void Log(LogLevel logLevel, LogLocation logLocation, string context, string message, Exception exception, params object[] parameters);
+        public abstract void Log(LogLevel logLevel, LogLocation logLocation, string context, string code, string message, Exception exception, params object[] parameters);
 
 
         /// <summary>
@@ -113,12 +113,12 @@ namespace SharpGen.Logging
                     string fileName = match.Groups[2].Value;
                     int lineNumber;
                     int.TryParse(match.Groups[3].Value, out lineNumber);
-                    Log( LogLevel.Error, new LogLocation(fileName, lineNumber, 1), methodLocation, "Exception", null);
+                    Log( LogLevel.Error, new LogLocation(fileName, lineNumber, 1), methodLocation, null, "Exception", null);
                 }
                 else
                 {
                     // Escape a line
-                    Log(LogLevel.Error, logLocation, null, line.Replace("{", "{{").Replace("}", "}}"), null);
+                    Log(LogLevel.Error, logLocation, null, null, line.Replace("{", "{{").Replace("}", "}}"), null);
                 }
             }
         }

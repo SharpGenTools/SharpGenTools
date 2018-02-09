@@ -42,6 +42,6 @@ namespace SharpGen.Logging
         /// <param name="message">The message.</param>
         /// <param name="exception">The exception.</param>
         /// <param name="parameters">The parameters.</param>
-        void Log(LogLevel logLevel, LogLocation logLocation, string context, string message, Exception exception, params object[] parameters);
+        void Log(LogLevel logLevel, LogLocation logLocation, string context, string code, string message, Exception exception, params object[] parameters);
     }
 }

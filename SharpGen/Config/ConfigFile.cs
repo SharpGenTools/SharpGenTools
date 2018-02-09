@@ -333,36 +333,40 @@ namespace SharpGen.Config
             // Perform Config Variable substitution
             if (ReplaceVariableRegex.Match(result).Success)
             {
-                result = ReplaceVariableRegex.Replace(result, delegate(Match match)
-                                                                {
-                                                                    string name = match.Groups[1].Value;
-                                                                    string localResult = GetVariable(name, logger);
-                                                                    if (localResult == null)
-                                                                        localResult = Environment.GetEnvironmentVariable(name);
-                                                                    if (localResult == null)
-                                                                    {
-                                                                        logger.Error("Unable to substitute config/environment variable $({0}). Variable is not defined", name);
-                                                                        return "";
-                                                                    }
-                                                                    return localResult;
-                                                                });
+                result = ReplaceVariableRegex.Replace(
+                    result,
+                    match =>
+                    {
+                        string name = match.Groups[1].Value;
+                        string localResult = GetVariable(name, logger);
+                        if (localResult == null)
+                            localResult = Environment.GetEnvironmentVariable(name);
+                        if (localResult == null)
+                        {
+                            logger.Error(LoggingCodes.UnkownVariable, "Unable to substitute config/environment variable $({0}). Variable is not defined", name);
+                            return "";
+                        }
+                        return localResult;
+                    });
             }
 
             // Perform Dynamic Variable substitution
             if (expandDynamicVariable && ReplaceDynamicVariableRegex.Match(result).Success)
             {
-                result = ReplaceDynamicVariableRegex.Replace(result, delegate(Match match)
-                                                                         {
-                                                                             string name = match.Groups[1].Value;
-                                                                             string localResult;
-                                                                             if (!GetRoot().DynamicVariables.TryGetValue(name, out localResult))
-                                                                             {
-                                                                                 logger.Error("Unable to substitute dynamic variable #({0}). Variable is not defined", name);
-                                                                                 return "";
-                                                                             }
-                                                                             localResult = localResult.Trim('"');
-                                                                             return localResult;
-                                                                         });
+                result = ReplaceDynamicVariableRegex.Replace(
+                    result,
+                    match =>
+                    {
+                        string name = match.Groups[1].Value;
+                        string localResult;
+                        if (!GetRoot().DynamicVariables.TryGetValue(name, out localResult))
+                        {
+                            logger.Error(LoggingCodes.UnkownDynamicVariable, "Unable to substitute dynamic variable #({0}). Variable is not defined", name);
+                            return "";
+                        }
+                        localResult = localResult.Trim('"');
+                        return localResult;
+                    });
             }           
             return result;
         }
@@ -446,7 +450,7 @@ namespace SharpGen.Config
             }
             catch (Exception ex)
             {
-                logger.Error("Unable to parse file [{0}]", ex, file);
+                logger.Error(LoggingCodes.UnableToParseConfig, "Unable to parse file [{0}]", ex, file);
             }
             finally
             {
@@ -473,17 +477,15 @@ namespace SharpGen.Config
             foreach (var depend in Depends)
             {
                 if (!GetRoot().MapIdToFile.ContainsKey(depend))
-                    throw new InvalidOperationException("Unable to resolve dependency [" + depend + "] for config file [" + Id + "]");
+                    logger.Error(LoggingCodes.MissingConfigDependency, $"Unable to resolve dependency [{depend}] for config file [{Id}]");
             }
 
             foreach (var includeDir in IncludeDirs)
             {
-
-
                 includeDir.Path = ExpandString(includeDir.Path, false, logger);
 
                 if (!includeDir.Path.StartsWith("=") && !Directory.Exists(includeDir.Path))
-                    throw new DirectoryNotFoundException("Directory [" + includeDir.Path + "] not found in config file [" + Id + "]");
+                    logger.Error(LoggingCodes.IncludeDirectoryNotFound, $"Include directory {includeDir.Path} from config file [{Id}] not found");
             }
 
             // Verify all dependencies

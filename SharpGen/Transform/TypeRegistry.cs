@@ -51,7 +51,7 @@ namespace SharpGen.Transform
                 }
                 if (type == null)
                 {
-                    Logger.Warning("Type [{0}] is not defined", typeName);
+                    Logger.Warning(LoggingCodes.TypeNotDefined, "Type [{0}] is not defined", typeName);
                     cSharpType = new CsUndefinedType { Name = typeName };
                     DefineType(cSharpType);
                     return cSharpType;
@@ -88,29 +88,11 @@ namespace SharpGen.Transform
         /// <param name = "marshalType">The C# marshal type</param>
         public void BindType(string cppName, CsTypeBase type, CsTypeBase marshalType = null)
         {
-            // Check for type replacer
-            if (type.CppElement != null)
-            {
-                var rule = type.CppElement.GetMappingRule();
-                if (rule.Replace != null)
-                {
-                    Logger.Warning("Replace type {0} -> {1}", cppName, rule.Replace);
-
-                    // Remove old type from namespace if any
-                    var oldType = FindBoundType(rule.Replace);
-                    oldType?.Parent?.Remove(oldType);
-
-                    _mapCppNameToCSharpType.Remove(rule.Replace);
-
-                    // Replace the name
-                    cppName = rule.Replace;
-                }
-            }
 
             if (_mapCppNameToCSharpType.ContainsKey(cppName))
             {
                 var old = _mapCppNameToCSharpType[cppName];
-                Logger.Error("Mapping C++ element [{0}] to CSharp type [{1}/{2}] is already mapped to [{3}/{4}]", cppName, type.CppElementName,
+                Logger.Warning(LoggingCodes.DuplicateBinding, "Mapping C++ element [{0}] to CSharp type [{1}/{2}] is already mapped to [{3}/{4}]", cppName, type.CppElementName,
                              type.QualifiedName, old.CSharpType.CppElementName, old.CSharpType.QualifiedName);
             }
             else

@@ -80,7 +80,7 @@ namespace SharpGen.Parser
             {
                 if (_bindings.ContainsKey(bindRule.From))
                 {
-                    Logger.Error("Duplicate type bind specified.");
+                    Logger.Warning(LoggingCodes.DuplicateBinding, "Duplicate type bind specified. First binding takes priority.");
                 }
                 else
                 {
@@ -181,7 +181,7 @@ namespace SharpGen.Parser
             }
             catch (Exception ex)
             {
-                Logger.Error("Unexpected error", ex);
+                Logger.Error(null, "Unexpected error", ex);
             }
             finally
             {
@@ -516,7 +516,7 @@ namespace SharpGen.Parser
             Logger.PushContext("Interface:[{0}]", cppInterface.Name);
 
             if (!IsTypeBinded(xElement))
-                Logger.Error("Binding is missing for interface type [{0}] defined in file [{1}]", cppInterface.Name, _mapIdToXElement[xElement.AttributeValue("file")].AttributeValue("name"));
+                Logger.Error(LoggingCodes.MissingBinding, "Binding is missing for interface type [{0}] defined in file [{1}]", cppInterface.Name, _mapIdToXElement[xElement.AttributeValue("file")].AttributeValue("name"));
 
             // Calculate offset method using inheritance
             var offsetMethod = 0;
@@ -1102,7 +1102,7 @@ namespace SharpGen.Parser
                         outputType = type;
                         break;
                     default:
-                        Logger.Error("Unhandled partial type [{0}] from Fundamental type [{1}]", type, typeName);
+                        Logger.Error(LoggingCodes.UnknownFundamentalType, "Unhandled partial type [{0}] from Fundamental type [{1}]", type, typeName);
                         break;
                 }
             }

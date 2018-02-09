@@ -49,7 +49,7 @@ namespace SharpGen.Interactive
             if (Output == null)
                 return;
 
-            Log(LogLevel.Error, new LogLocation(""), "", "Process stopped. " + reason, null);
+            Log(LogLevel.Error, new LogLocation(""), "", "", "Process stopped. " + reason, null);
             Environment.Exit(exitCode);
         }
 
@@ -62,7 +62,7 @@ namespace SharpGen.Interactive
         /// <param name="message">The message.</param>
         /// <param name="exception">The exception.</param>
         /// <param name="parameters">The parameters.</param>
-        public override void Log(LogLevel logLevel, LogLocation logLocation, string context, string message, Exception exception, params object[] parameters)
+        public override void Log(LogLevel logLevel, LogLocation logLocation, string context, string code, string message, Exception exception, params object[] parameters)
         {
             lock (this)
             {

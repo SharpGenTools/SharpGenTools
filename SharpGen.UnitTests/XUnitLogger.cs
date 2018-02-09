@@ -26,7 +26,7 @@ namespace SharpGen.UnitTests
             Assert.False(failTestOnFatalError, "SharpGen failed to run"); // Fail the test
         }
 
-        public override void Log(LogLevel logLevel, LogLocation logLocation, string context, string message, Exception exception, params object[] parameters)
+        public override void Log(LogLevel logLevel, LogLocation logLocation, string context, string code, string message, Exception exception, params object[] parameters)
         {
             string lineMessage = FormatMessage(logLevel, logLocation, context, message, exception, parameters);
 

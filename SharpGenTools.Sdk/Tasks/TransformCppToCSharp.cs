@@ -81,7 +81,7 @@ namespace SharpGenTools.Sdk.Tasks
 
             SaveDocLinks(docLinker);
 
-            return true;
+            return !Log.HasLoggedErrors;
         }
 
         private void SaveDocLinks(DocumentationLinker docAggregator)

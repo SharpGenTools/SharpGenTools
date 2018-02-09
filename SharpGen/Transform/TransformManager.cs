@@ -371,7 +371,7 @@ namespace SharpGen.Transform
                     defineType = new CsInterface { Name = defineRule.Interface };
                 else
                 {
-                    Logger.Error("Invalid rule [{0}]. Requires one of enum, struct, or interface", defineRule);
+                    Logger.Error(LoggingCodes.MissingElementInRule, "Invalid rule [{0}]. Requires one of enum, struct, or interface", defineRule);
                     continue;
                 }
 
@@ -396,7 +396,7 @@ namespace SharpGen.Transform
                             functionGroup.Visibility = createRule.Visibility.Value;
                     }
                     else
-                        Logger.Error("Invalid rule [{0}]. Requires class", createRule);
+                        Logger.Error(LoggingCodes.MissingElementInRule, "Invalid rule [{0}]. Requires class", createRule);
                 }
                 else if (extensionRule is ConstantRule constantRule)
                 {

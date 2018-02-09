@@ -72,7 +72,7 @@ namespace SharpGen.Transform
 
             if (tag == null || tag.Group == null)
             {
-                Logger.Error("CppFunction [{0}] is not tagged and attached to any Class/FunctionGroup", cppFunction);
+                Logger.Error(LoggingCodes.FunctionNotAttachedToGroup, "CppFunction [{0}] is not tagged and attached to any Class/FunctionGroup", cppFunction);
                 return null;
             }
 
@@ -80,7 +80,7 @@ namespace SharpGen.Transform
 
             if (csClass == null)
             {
-                Logger.Error("CppFunction [{0}] is not attached to a Class/FunctionGroup", cppFunction);
+                Logger.Error(LoggingCodes.FunctionNotAttachedToGroup, "CppFunction [{0}] is not attached to a Class/FunctionGroup", cppFunction);
                 return null;
             }
 
@@ -346,7 +346,7 @@ namespace SharpGen.Transform
             }
             else
             {
-                throw new ArgumentException(string.Format(System.Globalization.CultureInfo.InvariantCulture, "Invalid return type {0} for method {1}", csMethod.ReturnValue.PublicType.QualifiedName, csMethod.CppElement));
+                Logger.Error(LoggingCodes.InvalidMethodReturnType, "Invalid return type {0} for method {1}", csMethod.ReturnValue.PublicType.QualifiedName, csMethod.CppElement);
             }
 
             // Handle Parameters
@@ -398,7 +398,8 @@ namespace SharpGen.Transform
                 }
                 else
                 {
-                    throw new ArgumentException(string.Format(System.Globalization.CultureInfo.InvariantCulture, "Invalid parameter {0} for method {1}", param.PublicType.QualifiedName, csMethod.CppElement));
+                    Logger.Error(LoggingCodes.InvalidMethodParameterType, "Invalid parameter {0} for method {1}", param.PublicType.QualifiedName, csMethod.CppElement);
+                    return;
                 }
 
                 cSharpInteropCalliSignature.ParameterTypes.Add(interopType);

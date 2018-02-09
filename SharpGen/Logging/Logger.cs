@@ -167,7 +167,7 @@ namespace SharpGen.Logging
         /// <param name = "parameters">The parameters.</param>
         public void Message(string message, params object[] parameters)
         {
-            LogRawMessage(LogLevel.Info, message, null, parameters);
+            LogRawMessage(LogLevel.Info, null, message, null, parameters);
         }
 
         /// <summary>
@@ -190,9 +190,9 @@ namespace SharpGen.Logging
         ///   Logs the specified warning.
         /// </summary>
         /// <param name = "message">The message.</param>
-        public void Warning(string message)
+        public void Warning(string code, string message)
         {
-            Warning("{0}", message);
+            Warning(code, "{0}", message);
         }
 
         /// <summary>
@@ -200,9 +200,9 @@ namespace SharpGen.Logging
         /// </summary>
         /// <param name = "message">The message.</param>
         /// <param name = "parameters">The parameters.</param>
-        public void Warning(string message, params object[] parameters)
+        public void Warning(string code, string message, params object[] parameters)
         {
-            LogRawMessage(LogLevel.Warning, message, null, parameters);
+            LogRawMessage(LogLevel.Warning, code, message, null, parameters);
         }
 
         /// <summary>
@@ -211,9 +211,9 @@ namespace SharpGen.Logging
         /// <param name = "message">The message.</param>
         /// <param name = "ex">The ex.</param>
         /// <param name = "parameters">The parameters.</param>
-        public void Error(string message, Exception ex, params object[] parameters)
+        public void Error(string code, string message, Exception ex, params object[] parameters)
         {
-            LogRawMessage(LogLevel.Error, message, ex, parameters);
+            LogRawMessage(LogLevel.Error, code, message, ex, parameters);
             _errorCount++;
         }
 
@@ -221,9 +221,9 @@ namespace SharpGen.Logging
         ///   Logs the specified error.
         /// </summary>
         /// <param name = "message">The message.</param>
-        public void Error(string message)
+        public void Error(string code, string message)
         {
-            Error("{0}", message);
+            Error(code, "{0}", message);
         }
 
         /// <summary>
@@ -231,9 +231,9 @@ namespace SharpGen.Logging
         /// </summary>
         /// <param name = "message">The message.</param>
         /// <param name = "parameters">The parameters.</param>
-        public void Error(string message, params object[] parameters)
+        public void Error(string code, string message, params object[] parameters)
         {
-            Error(message, null, parameters);
+            Error(code, message, null, parameters);
         }
 
         /// <summary>
@@ -244,7 +244,7 @@ namespace SharpGen.Logging
         /// <param name = "parameters">The parameters.</param>
         public void Fatal(string message, Exception ex, params object[] parameters)
         {
-            LogRawMessage(LogLevel.Fatal, message, ex, parameters);
+            LogRawMessage(LogLevel.Fatal, null, message, ex, parameters);
             _errorCount++;
             Exit("A fatal error occured");
         }
@@ -290,14 +290,14 @@ namespace SharpGen.Logging
         /// <param name = "message">The message.</param>
         /// <param name = "exception">The exception.</param>
         /// <param name = "parameters">The parameters.</param>
-        private void LogRawMessage(LogLevel type, string message, Exception exception, params object[] parameters)
+        private void LogRawMessage(LogLevel type, string code, string message, Exception exception, params object[] parameters)
         {
             var logLocation = FileLocationStack.Count > 0 ? FileLocationStack.Peek() : null;
 
             if (LoggerOutput == null)
                 Console.WriteLine("Warning, unable to log error. No LoggerOutput configured");
             else
-                LoggerOutput.Log(type, logLocation, ContextAsText, message, exception, parameters);
+                LoggerOutput.Log(type, logLocation, ContextAsText, code, message, exception, parameters);
         }
     }
 }

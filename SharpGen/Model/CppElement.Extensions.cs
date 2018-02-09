@@ -120,7 +120,6 @@ namespace SharpGen.Model
             if (newRule.Property.HasValue) tag.Property = newRule.Property;
             if (newRule.CustomVtbl.HasValue) tag.CustomVtbl = newRule.CustomVtbl;
             if (newRule.Persist.HasValue) tag.Persist = newRule.Persist;
-            if (newRule.Replace != null) tag.Replace = newRule.Replace;
             if (newRule.MappingName != null)
                 tag.MappingName = RegexRename(patchRegex, element.FullName, newRule.MappingName);
             if (newRule.NamingFlags.HasValue) tag.NamingFlags = newRule.NamingFlags.Value;

@@ -91,7 +91,7 @@ namespace SharpGen.Transform
                     newEnum.UnderlyingType = typeRegistry.ImportType(typeof(int));
                     break;
                 default:
-                    Logger.Error("Invalid type [{0}] for enum [{1}]. Types supported are : int, byte, short", typeName, cppEnum);
+                    Logger.Error(LoggingCodes.InvalidUnderlyingType, "Invalid type [{0}] for enum [{1}]. Types supported are : int, byte, short", typeName, cppEnum);
                     break;
             }
 

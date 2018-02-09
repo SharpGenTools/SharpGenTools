@@ -250,6 +250,7 @@ namespace SharpGen.Transform
                         if ((i + 1) < fieldList.Count)
                         {
                             Logger.Error(
+                                LoggingCodes.ImpossibleAlignment,
                                 "The field [{0}] in structure [{1}] has pointer alignment within a structure that contains an union. An explicit layout cannot be handled on both x86/x64. This structure needs manual layout (remove fields from definition) and write them manually in xml mapping files",
                                 field.CppElementName,
                                 csStruct.CppElementName);

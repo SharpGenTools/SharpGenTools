@@ -34,6 +34,11 @@ namespace SharpGenTools.Sdk.Tasks
             {
                 config = LoadConfig(config);
 
+                if (SharpGenLogger.HasErrors)
+                {
+                    return false;
+                }
+
                 return Execute(config);
             }
             catch (CodeGenFailedException ex)

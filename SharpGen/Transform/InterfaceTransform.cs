@@ -158,7 +158,7 @@ namespace SharpGen.Transform
                     // If Guid == null && BaseRoot != null && BaseRoot is a ComObject
                     // then we probably missed a guid
                     if (rootBase != null && rootBase.QualifiedName == globalNamespace.GetTypeName("ComObject"))
-                        Logger.Warning("cannot find GUID");
+                        Logger.Warning(LoggingCodes.MissingGuidForInterface, "Cannot find GUID");
                 }
                 else
                     interfaceType.Guid = cppGuid.Guid.ToString();
@@ -273,17 +273,13 @@ namespace SharpGen.Transform
                     {
                         var newCsMethod = (CsMethod)method.Clone();
                         var tagForMethod = method.CppElement.GetMappingRule();
-                        bool keepMethodPublic = tagForMethod.IsKeepImplementPublic.HasValue && tagForMethod.IsKeepImplementPublic.Value;
+                        var keepMethodPublic = tagForMethod.IsKeepImplementPublic.HasValue && tagForMethod.IsKeepImplementPublic.Value;
                         if (!keepMethodPublic)
                         {
                             newCsMethod.Visibility = Visibility.Internal;
                             newCsMethod.Name = newCsMethod.Name + "_";
                         }
                         nativeCallback.Add(newCsMethod);
-                    }
-                    else
-                    {
-                        Logger.Warning("Unhandled innerElement {0} for DualCallbackInterface {1}", innerElement, interfaceType.Name);
                     }
                 }
                 nativeCallback.IsCallback = false;

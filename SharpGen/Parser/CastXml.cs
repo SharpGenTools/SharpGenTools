@@ -293,7 +293,7 @@ namespace SharpGen.Parser
                 var subKey = rootKey.OpenSubKey(registryPath);
                 if (subKey == null)
                 {
-                    Logger.Error("Unable to locate key [{0}] in registry", registryPath);
+                    Logger.Error(LoggingCodes.RegistryKeyNotFound, "Unable to locate key [{0}] in registry", registryPath);
                     success = false;
 
                 }
@@ -302,7 +302,7 @@ namespace SharpGen.Parser
             }
             catch (Exception)
             {
-                Logger.Error("Unable to locate key [{0}] in registry", registryPath);
+                Logger.Error(LoggingCodes.RegistryKeyNotFound, "Unable to locate key [{0}] in registry", registryPath);
                 success = false;
             }
             return (path, success);
@@ -366,7 +366,7 @@ namespace SharpGen.Parser
 
                 if (!File.Exists(xmlFile) || Logger.HasErrors)
                 {
-                    Logger.Error("Unable to generate XML file with castxml [{0}]. Check previous errors.", xmlFile);
+                    Logger.Error(LoggingCodes.CastXmlFailed, "Unable to generate XML file with castxml [{0}]. Check previous errors.", xmlFile);
                 }
                 else
                 {
@@ -426,13 +426,13 @@ namespace SharpGen.Parser
                     if (!lineFiltered)
                     {
                         if (MatchError.Match(e.Data).Success)
-                            Logger.Error(errorText);
+                            Logger.Error(LoggingCodes.CastXmlError, errorText);
                         else
-                            Logger.Warning(errorText);
+                            Logger.Warning(LoggingCodes.CastXmlWarning, errorText);
                     }
                     else
                     {
-                        Logger.Warning(errorText);
+                        Logger.Warning(LoggingCodes.CastXmlWarning, errorText);
                     }
                 }
             }
