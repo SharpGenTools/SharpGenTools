@@ -175,7 +175,7 @@
   <Target Name="GenerateDocumentation"
           DependsOnTargets="ParseCPlusPlus"
           Condition="'$(SharpGenGenerateDoc)' == 'true' and '@(SharpGenMapping)' != ''"
-          Inputs="@(ParsedCppModule);@(SharpGenDocumentationCache);$(SharpGenDocProviderAssemblyPath)"
+          Inputs="@(ParsedCppModule);$(SharpGenDocProviderAssemblyPath)"
           Outputs="@(FullCppModule)">
     <DocumentCppModule
       DocProviderAssemblyPath="$(SharpGenDocProviderAssemblyPath)"
