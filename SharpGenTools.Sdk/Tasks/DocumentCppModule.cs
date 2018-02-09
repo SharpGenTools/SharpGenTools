@@ -87,7 +87,7 @@ namespace SharpGenTools.Sdk.Tasks
 
             if (ShadowCopy)
             {
-                File.Copy(cachePath, DocumentationCache.ItemSpec);
+                File.Copy(cachePath, DocumentationCache.ItemSpec, true);
                 File.Delete(cachePath);
             }
 
