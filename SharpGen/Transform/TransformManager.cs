@@ -440,71 +440,86 @@ namespace SharpGen.Transform
             // Perform all mappings from <mappings> tag
             foreach (var configRule in file.Mappings)
             {
+                var ruleUsed = false;
                 if (configRule is MappingRule mappingRule)
                 {
                     if (mappingRule.Enum != null)
-                        elementFinder.ExecuteRule<CppEnum>(mappingRule.Enum, mappingRule);
+                        ruleUsed = elementFinder.ExecuteRule<CppEnum>(mappingRule.Enum, mappingRule);
                     else if (mappingRule.EnumItem != null)
-                        elementFinder.ExecuteRule<CppEnumItem>(mappingRule.EnumItem, mappingRule);
+                        ruleUsed = elementFinder.ExecuteRule<CppEnumItem>(mappingRule.EnumItem, mappingRule);
                     else if (mappingRule.Struct != null)
-                        elementFinder.ExecuteRule<CppStruct>(mappingRule.Struct, mappingRule);
+                        ruleUsed = elementFinder.ExecuteRule<CppStruct>(mappingRule.Struct, mappingRule);
                     else if (mappingRule.Field != null)
-                        elementFinder.ExecuteRule<CppField>(mappingRule.Field, mappingRule);
+                        ruleUsed = elementFinder.ExecuteRule<CppField>(mappingRule.Field, mappingRule);
                     else if (mappingRule.Interface != null)
-                        elementFinder.ExecuteRule<CppInterface>(mappingRule.Interface, mappingRule);
+                        ruleUsed = elementFinder.ExecuteRule<CppInterface>(mappingRule.Interface, mappingRule);
                     else if (mappingRule.Function != null)
-                        elementFinder.ExecuteRule<CppFunction>(mappingRule.Function, mappingRule);
+                        ruleUsed = elementFinder.ExecuteRule<CppFunction>(mappingRule.Function, mappingRule);
                     else if (mappingRule.Method != null)
-                        elementFinder.ExecuteRule<CppMethod>(mappingRule.Method, mappingRule);
+                        ruleUsed = elementFinder.ExecuteRule<CppMethod>(mappingRule.Method, mappingRule);
                     else if (mappingRule.Parameter != null)
-                        elementFinder.ExecuteRule<CppParameter>(mappingRule.Parameter, mappingRule);
+                        ruleUsed = elementFinder.ExecuteRule<CppParameter>(mappingRule.Parameter, mappingRule);
                     else if (mappingRule.Element != null)
-                        elementFinder.ExecuteRule<CppElement>(mappingRule.Element, mappingRule);
+                        ruleUsed = elementFinder.ExecuteRule<CppElement>(mappingRule.Element, mappingRule);
                     else if (mappingRule.DocItem != null)
+                    {
                         docLinker.AddOrUpdateDocLink(mappingRule.DocItem, mappingRule.MappingNameFinal);
+                        ruleUsed = true;
+                    }
                 }
                 else if (configRule is ContextRule contextRule)
                 {
                     HandleContextRule(elementFinder, file, contextRule);
+                    ruleUsed = true;
                 }
                 else if (configRule is RemoveRule removeRule)
                 {
                     if (removeRule.Enum != null)
-                        RemoveElements<CppEnum>(elementFinder, removeRule.Enum);
+                        ruleUsed = RemoveElements<CppEnum>(elementFinder, removeRule.Enum);
                     else if (removeRule.EnumItem != null)
-                        RemoveElements<CppEnumItem>(elementFinder, removeRule.EnumItem);
+                        ruleUsed = RemoveElements<CppEnumItem>(elementFinder, removeRule.EnumItem);
                     else if (removeRule.Struct != null)
-                        RemoveElements<CppStruct>(elementFinder, removeRule.Struct);
+                        ruleUsed = RemoveElements<CppStruct>(elementFinder, removeRule.Struct);
                     else if (removeRule.Field != null)
-                        RemoveElements<CppField>(elementFinder, removeRule.Field);
+                        ruleUsed = RemoveElements<CppField>(elementFinder, removeRule.Field);
                     else if (removeRule.Interface != null)
-                        RemoveElements<CppInterface>(elementFinder, removeRule.Interface);
+                        ruleUsed = RemoveElements<CppInterface>(elementFinder, removeRule.Interface);
                     else if (removeRule.Function != null)
-                        RemoveElements<CppFunction>(elementFinder, removeRule.Function);
+                        ruleUsed = RemoveElements<CppFunction>(elementFinder, removeRule.Function);
                     else if (removeRule.Method != null)
-                        RemoveElements<CppMethod>(elementFinder, removeRule.Method);
+                        ruleUsed = RemoveElements<CppMethod>(elementFinder, removeRule.Method);
                     else if (removeRule.Parameter != null)
-                        RemoveElements<CppParameter>(elementFinder, removeRule.Parameter);
+                        ruleUsed = RemoveElements<CppParameter>(elementFinder, removeRule.Parameter);
                     else if (removeRule.Element != null)
-                        RemoveElements<CppElement>(elementFinder, removeRule.Element);
+                        ruleUsed = RemoveElements<CppElement>(elementFinder, removeRule.Element);
                 }
                 else if (configRule is MoveRule moveRule)
                 {
+                    ruleUsed = true;
                     if (moveRule.Struct != null)
                         StructTransform.MoveStructToInner(moveRule.Struct, moveRule.To);
                     else if (moveRule.Method != null)
                         InterfaceTransform.MoveMethodsToInnerInterface(moveRule.Method, moveRule.To, moveRule.Property, moveRule.Base);
                 }
+
+                if (!ruleUsed)
+                {
+                    Logger.Warning(LoggingCodes.UnusedMappingRule, "Mapping rule [{0}] did not match any elements.", configRule);
+                }
             }
         }
 
-        private static void RemoveElements<T>(CppElementFinder finder, string regex)
+        private static bool RemoveElements<T>(CppElementFinder finder, string regex)
             where T : CppElement
         {
+            var matchedAny = false;
             foreach (var item in finder.Find<T>(regex).ToList())
             {
+                matchedAny = true;
                 item.Parent.Remove(item);
             }
+
+            return matchedAny;
         }
 
         /// <summary>

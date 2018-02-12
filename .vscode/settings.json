@@ -1,3 +1,4 @@
 {
-    "restructuredtext.confPath": "d:\\Source\\SharpTools"
+    "restructuredtext.confPath": "${workspaceRoot}",
+    "restructuredtext.workspaceRoot": "${workspaceRoot}"
 }

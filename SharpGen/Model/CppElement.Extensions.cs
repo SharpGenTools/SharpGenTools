@@ -61,9 +61,11 @@ namespace SharpGen.Model
             return new Regex($"^{friendlyRegex}$");
         }
 
-        public static void ExecuteRule<T>(this CppElementFinder finder, string regex, MappingRule rule) where T : CppElement
+        public static bool ExecuteRule<T>(this CppElementFinder finder, string regex, MappingRule rule) where T : CppElement
         {
             var mode = CppElementFinder.SelectionMode.MatchedElement;
+
+            var matchedAny = false;
 
             if (regex.StartsWith("#"))
             {
@@ -75,8 +77,11 @@ namespace SharpGen.Model
 
             foreach (var item in finder.Find<T>(fullRegex, mode))
             {
+                matchedAny = true;
                 ProcessRule(item, rule, fullRegex);
             }
+
+            return matchedAny;
         }
 
         public static string GetTypeNameWithMapping(this CppElement cppType)

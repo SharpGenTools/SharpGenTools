@@ -438,11 +438,18 @@ namespace SharpGen.Config
         /// <returns>The loaded config</returns>
         private static ConfigFile Load(ConfigFile parent, string file, string[] macros, IEnumerable<KeyValue> variables, Logger logger)
         {
+            if(!File.Exists(file))
+            {
+                logger.Error(LoggingCodes.ConfigNotFound, "Configuration file {0} not found.", file);
+                return null;
+            }
+            
             var deserializer = new XmlSerializer(typeof(ConfigFile));
             ConfigFile config = null;
             try
             {
                 logger.PushLocation(file);
+
                 config = (ConfigFile)deserializer.Deserialize(new StringReader(Preprocessor.Preprocess(File.ReadAllText(file), macros)));
 
                 if (config != null)
