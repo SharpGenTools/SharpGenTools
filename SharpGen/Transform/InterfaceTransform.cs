@@ -64,9 +64,9 @@ namespace SharpGen.Transform
             this.typeRegistry = typeRegistry;
             this.namespaceRegistry = namespaceRegistry;
 
-            DefaultInterfaceCppObject = new CsInterface { Name = globalNamespace.GetTypeName("CppObject") };
-            DefaultCallbackable = new CsInterface { Name = globalNamespace.GetTypeName("ICallbackable") };
-            DefaultComObjectCallback = new CsInterface { Name = globalNamespace.GetTypeName("ComObjectCallback") };
+            DefaultInterfaceCppObject = new CsInterface { Name = globalNamespace.GetTypeName(WellKnownName.CppObject) };
+            DefaultCallbackable = new CsInterface { Name = globalNamespace.GetTypeName(WellKnownName.ICallbackable) };
+            DefaultComObjectCallback = new CsInterface { Name = globalNamespace.GetTypeName(WellKnownName.ComObjectCallback) };
         }
 
         /// <summary>
@@ -151,17 +151,11 @@ namespace SharpGen.Transform
 
                 var finder = new CppElementFinder(cppInterface.ParentInclude);
 
-                // look for GUID only for ComObjects
                 var cppGuid = finder.Find<CppGuid>("IID_" + cppInterface.Name).FirstOrDefault();
-                if (cppGuid == null)
+                if (cppGuid != null)
                 {
-                    // If Guid == null && BaseRoot != null && BaseRoot is a ComObject
-                    // then we probably missed a guid
-                    if (rootBase != null && rootBase.QualifiedName == globalNamespace.GetTypeName("ComObject"))
-                        Logger.Warning(LoggingCodes.MissingGuidForInterface, "Cannot find GUID");
-                }
-                else
                     interfaceType.Guid = cppGuid.Guid.ToString();
+                }                    
             }
 
             // Handle Methods
@@ -251,7 +245,7 @@ namespace SharpGen.Transform
 
                 nativeCallback.Base = interfaceType.Base;
 
-                if ((nativeCallback.Base as CsInterface)?.QualifiedName == globalNamespace.GetTypeName("ComObject"))
+                if ((nativeCallback.Base as CsInterface)?.QualifiedName == globalNamespace.GetTypeName(WellKnownName.ComObject))
                 {
                     nativeCallback.Base = DefaultComObjectCallback;
                 }
@@ -303,7 +297,7 @@ namespace SharpGen.Transform
             // If interface is a callback and parent is ComObject, then remove it
             if (interfaceType.IsCallback)
             {
-                if ((interfaceType.Base as CsInterface)?.QualifiedName == globalNamespace.GetTypeName("ComObject"))
+                if ((interfaceType.Base as CsInterface)?.QualifiedName == globalNamespace.GetTypeName(WellKnownName.ComObject))
                     interfaceType.Base = null;
                 if (interfaceType.Base == null)
                     interfaceType.Base = DefaultCallbackable;
@@ -350,7 +344,7 @@ namespace SharpGen.Transform
                 // Check Getter
                 if (isGet)
                 {
-                    if ((cSharpMethod.ReturnValue.PublicType.Name == globalNamespace.GetTypeName("Result") || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
+                    if ((cSharpMethod.ReturnValue.PublicType.Name == globalNamespace.GetTypeName(WellKnownName.Result) || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
                         parameterList[0].IsOut && !parameterList[0].IsArray)
                     {
                         csProperty.Getter = cSharpMethod;
@@ -373,7 +367,7 @@ namespace SharpGen.Transform
                 else
                 {
                     // Check Setter
-                    if ((cSharpMethod.ReturnValue?.Name == globalNamespace.GetTypeName("Result") || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
+                    if ((cSharpMethod.ReturnValue?.Name == globalNamespace.GetTypeName(WellKnownName.Result) || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
                         (parameterList[0].IsRefIn || parameterList[0].IsIn || parameterList[0].IsRef) && !parameterList[0].IsArray)
                     {
                         csProperty.Setter = cSharpMethod;
@@ -483,7 +477,7 @@ namespace SharpGen.Transform
                 foreach (var csSubParameter in newMethod.Parameters)
                 {
                     if (csSubParameter.IsInInterfaceArrayLike)
-                        csSubParameter.PublicType = new CsInterfaceArray((CsInterface)csSubParameter.PublicType, globalNamespace.GetTypeName("ComArray"));
+                        csSubParameter.PublicType = new CsInterfaceArray((CsInterface)csSubParameter.PublicType, globalNamespace.GetTypeName(WellKnownName.ComArray));
                 }
                 interfaceType.Add(newMethod);
             }

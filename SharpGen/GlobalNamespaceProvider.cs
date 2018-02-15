@@ -17,20 +17,47 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 namespace SharpGen
 {
+    public enum WellKnownName
+    {
+        Result,
+        FunctionCallback,
+        PointerSize,
+        CppObject,
+        ICallbackable,
+        Utilities,
+        ComObjectCallback,
+        ComObject,
+        ComArray,
+    }
+
     /// <summary>
-    /// Global constant.
+    /// Global namespace provider.
     /// </summary>
     public class GlobalNamespaceProvider
     {
-        public string Name { get; }
+        private string Name { get; }
 
         public GlobalNamespaceProvider(string name)
         {
             Name = name;
         }
+        
+        public string GetTypeName(WellKnownName name)
+        {
+            return $"{Name}.{name}";
+        }
 
-        public string GetTypeName(string typeName) => $"{Name}.{typeName}";
+        public QualifiedNameSyntax GetTypeNameSyntax(WellKnownName name)
+        {
+            return SyntaxFactory.QualifiedName(
+                SyntaxFactory.IdentifierName(Name),
+                SyntaxFactory.IdentifierName(name.ToString()));
+        }
     }
 }
