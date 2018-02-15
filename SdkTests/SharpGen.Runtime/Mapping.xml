@@ -211,46 +211,9 @@
     <map doc="FALSE" name="SharpGen.Runtime.Result.False"/>
     <map doc="NULL" name="&lt;c&gt;null&lt;/c&gt;"/>
 
-    <!--
-    // *****************************************************************
-    // Modify all enums
-    // *****************************************************************
-    -->
-    <remove enum-item=".*_FORCE_DWORD" />
-    <remove enum-item=".*_FORCE_UINT" />
-
-    <!--
-    // *****************************************************************
-    // Modify all fields
-    // *****************************************************************
-    -->
-    <map field=".*::(.*)DescW?" name="$1Description" />
-    <map field=".*::(.*)Desc1" name="$1Description1" />
-    <map field=".*::(.*)Desc2" name="$1Description2" />
-
-    <!--
-    // *****************************************************************
-    // Modify all methods
-    // *****************************************************************
-    -->
-    <map method=".*::(.*)DescW?" name="$1Description" />
-    <map method=".*::(.*)Desc1" name="$1Description1" />
-    <map method=".*::(.*)Desc2" name="$1Description2" />
-    <map method=".*GetType" name="GetTypeInfo" />
-
-    <!--
-    // Some global macros are overriding method names
-    -->
-    <map method=".*::GetTextMetricsW" name="GetTextMetrics" />
-    <map method=".*::PreloadTextW" name="PreloadText" />
-    <map method=".*::GetMessageW" name="GetMessage" />
-    <map method=".*::DrawTextW" name="DrawText" />
-    <map method=".*::GetGlyphIndicesW" name="GetGlyphIndices" />
-
     <context>Unknwnbase</context>
     <map interface="IUnknown" name="ComObject" />
     <map method="IUnknown::.*" keep-implement-public="true" />
-    <map param="IUnkown::QueryInterface::riid" attribute="inout" />
     <context-clear/>
 
     <!-- Map IStream -->
