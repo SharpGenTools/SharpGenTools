@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
-#if !NET46
-using System.Runtime.Loader;
-#endif
 
 namespace SharpGenTools.Sdk
 {
@@ -38,21 +35,6 @@ namespace SharpGenTools.Sdk
                     }
                 }
 
-                return null;
-            };
-#else
-            AssemblyLoadContext.Default.Resolving += (context, name) =>
-            {
-                var assemblyPath = typeof(BindingRedirectResolution).GetTypeInfo().Assembly.Location;
-                var fileName = name.Name + ".dll";
-                if (!String.IsNullOrEmpty(assemblyPath))
-                {
-                    var probingPath = Path.Combine(Path.GetDirectoryName(assemblyPath), fileName);
-                    if (File.Exists(probingPath))
-                    {
-                        return context.LoadFromAssemblyPath(probingPath);
-                    }
-                }
                 return null;
             };
 #endif

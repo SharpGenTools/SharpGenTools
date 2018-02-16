@@ -16,7 +16,7 @@ namespace SharpGenTools.Sdk.Tasks
         public string ConsumerBindMappingConfigId { get; set; }
 
         [Required]
-        public ITaskItem FullCppModule { get; set; }
+        public ITaskItem CppModule { get; set; }
 
         [Required]
         public ITaskItem CppConsumerConfigCache { get; set; }
@@ -39,7 +39,7 @@ namespace SharpGenTools.Sdk.Tasks
 
         protected override bool Execute(ConfigFile config)
         {
-            var group = CppModule.Read(FullCppModule.ItemSpec);
+            var group = SharpGen.CppModel.CppModule.Read(CppModule.ItemSpec);
             config.ExpandDynamicVariables(SharpGenLogger, group);
 
             var docLinker = new DocumentationLinker();

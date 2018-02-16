@@ -10,23 +10,22 @@ using Newtonsoft.Json.Linq;
 using MTPS;
 using System.Threading.Tasks;
 
-namespace SharpGen.Doc
+namespace SharpGen.Doc.Msdn
 {
     public class MsdnProvider : IDocProvider
     {
         private static readonly Regex StripSpace = new Regex(@"[\r\n]+\s+", RegexOptions.Multiline);
         private static readonly Regex BeginWithWhitespace = new Regex(@"^\s+");
         private readonly Dictionary<Regex, string> CommonReplaceRuleMap;
-        private int counter;
 
-        public MsdnProvider(Logger logger)
+        public MsdnProvider(Action<string> logCallback)
         {
             CommonReplaceRuleMap = new Dictionary<Regex, string>();
             ReplaceName("W::", @"::");
             ReplaceName("([a-z0-9])A::", @"$1::");
             ReplaceName("W$", @"");
             ReplaceName("^_+", @"");
-            Logger = logger;
+            Log = logCallback;
         }
 
         private void ReplaceName(string fromNameRegex, string toName)
@@ -34,7 +33,7 @@ namespace SharpGen.Doc
             CommonReplaceRuleMap.Add(new Regex(fromNameRegex), toName);
         }
 
-        public Logger Logger { get; private set; }
+        private Action<string> Log { get; }
 
         /// <summary>
         /// Get the documentation for a particular prefix (include name) and a full name item
@@ -285,8 +284,7 @@ namespace SharpGen.Doc
         /// <returns></returns>
         public async Task<string> GetDocumentationFromMsdn(string name)
         {
-            counter++;
-            Logger.Progress(20 + (counter / 50) % 10, "Fetching C++ documentation ([{0}]) from MSDN", name);
+            Log?.Invoke($"Fetching C++ documentation ([{name}]) from MSDN");
 
             var shortId = await GetShortId(name);
             if (string.IsNullOrEmpty(shortId))

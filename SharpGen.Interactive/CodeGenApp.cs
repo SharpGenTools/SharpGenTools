@@ -33,6 +33,7 @@ using SharpGen.CppModel;
 using SharpGen.Doc;
 using System.Xml;
 using System.Threading.Tasks;
+using SharpGen.Doc.Msdn;
 
 namespace SharpGen.Interactive
 {
@@ -404,7 +405,7 @@ namespace SharpGen.Interactive
         private Task<CppModule> ApplyDocumentation(DocItemCache cache, CppModule group)
         {
             // Use default MSDN doc provider
-            IDocProvider docProvider = new MsdnProvider(Logger);
+            IDocProvider docProvider = new MsdnProvider(message => Logger.Progress(30, message));
 
             // Try to load doc provider from an external assembly
             if (DocProviderAssemblyPath != null)

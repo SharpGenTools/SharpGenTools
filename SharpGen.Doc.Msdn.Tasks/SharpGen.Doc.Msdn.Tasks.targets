@@ -1,0 +1,22 @@
+﻿<Project>
+  <ItemGroup>
+    <MsdnDocProvider Include="../tools/netstandard1.3/SharpGen.Doc.Msdn.Tasks.dll" />
+    <MsdnDocumentationCheckFile Include="$(SharpGenIntermediateDir)MsdnDocumentation.checkfile" />
+  </ItemGroup>
+
+  <UsingTask TaskName="MsdnDocTask" AssemblyFile="@(MsdnDocProvider)" />
+  
+  <Target
+    Name="DocumentCppModuleFromMsdn"
+    Inputs="@(ParsedCppModule);@(MsdnDocProvider)"
+    Outputs="@(MsdnDocumentationCheckFile)"
+    DependsOnTargets="ParseCPlusPlus"
+    Condition="'$(SharpGenGenerateDoc)' == 'true' and '@(SharpGenMapping)' != ''" >
+    <MsdnDocTask
+      CppModule="@(ParsedCppModule)"
+      DocumentationCache="@(SharpGenDocumentationCache)"
+      ShadowCopy="$(ShadowCopyDocumentationOutput)"
+    />
+    <Touch Files="@(MsdnDocumentationCheckFile)" AlwaysCreate="True" />
+  </Target>
+</Project>

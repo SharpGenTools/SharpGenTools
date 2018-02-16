@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net46;netstandard1.3</TargetFrameworks>
+    <PackageId>SharpGen.Doc.Msdn.Tasks</PackageId>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <!-- forces SDK to copy dependencies into build output to make packing easier -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <BuildOutputTargetFolder>tools</BuildOutputTargetFolder>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <Description>MSDN Doc Provider for SharpGenTools.Sdk</Description>
+    <SharpGenSdkPackage>true</SharpGenSdkPackage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SharpGen.Doc.Msdn\SharpGen.Doc.Msdn.csproj" />
+    <ProjectReference Include="..\SharpGen\SharpGen.csproj" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.3.409" />
+    <Content Include="**/*.props" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
+    <Content Include="**/*.targets" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\SharpGenTools.Sdk\BindingRedirectResolution.cs" Link="BindingRedirectResolution.cs" />
+  </ItemGroup>
+
+</Project>

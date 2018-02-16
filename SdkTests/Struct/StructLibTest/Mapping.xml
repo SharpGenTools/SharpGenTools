@@ -20,8 +20,8 @@
 
   <mapping>
     <map function="Get.*" dll='"StructLib.dll"' group="StructLibTest.Functions" />
-    <map function="And" dll='"StructLib.dll"' group="StructLibTest.Functions" />
-    <map field="IntToBoolArray::i" type="bool" />
+    <!-- <map function="And" dll='"StructLib.dll"' group="StructLibTest.Functions" /> -->
+    <!-- <map field="IntToBoolArray::i" type="bool" /> -->
   </mapping>
 
   <depends>SharpGen.Runtime</depends>
