@@ -51,3 +51,5 @@ Source/CertificationTests/Results/*
 
 # Documentation
 _build/
+
+.vscode/*
