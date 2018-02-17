@@ -3,6 +3,9 @@
   <PropertyGroup>
     <TargetFramework>netstandard1.1</TargetFramework>
     <RootNamespace>SharpGen.Runtime</RootNamespace>
+    <Description>C# COM Interop classes for use with SharpGenTools generated libraries</Description>
+    <SignAssembly>false</SignAssembly>
+    <SharpGenGenerateDoc>true</SharpGenGenerateDoc>
   </PropertyGroup>
 
   <ItemGroup>

@@ -296,6 +296,13 @@ namespace SharpGen.Interactive
 
             consumerConfig.Bindings.AddRange(bindings);
             consumerConfig.Extension.AddRange(generatedDefines);
+            consumerConfig.Mappings.AddRange(
+                docLinker.GetAllDocLinks().Select(
+                    link => new MappingRule
+                    {
+                        DocItem = link.cppName,
+                        MappingNameFinal = link.cSharpName
+                    }));
 
 
             if (Logger.HasErrors)

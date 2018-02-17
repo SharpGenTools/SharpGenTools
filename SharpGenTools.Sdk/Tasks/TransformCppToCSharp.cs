@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Microsoft.Build.Framework;
 using SharpGen;
@@ -73,6 +74,14 @@ namespace SharpGenTools.Sdk.Tasks
 
             consumerConfig.Bindings.AddRange(bindings);
             consumerConfig.Extension.AddRange(generatedDefines);
+
+            consumerConfig.Mappings.AddRange(
+                docLinker.GetAllDocLinks().Select(
+                    link => new MappingRule
+                    {
+                        DocItem = link.cppName,
+                        MappingNameFinal = link.cSharpName
+                    }));
 
             if (GenerateConsumerConfig)
             {

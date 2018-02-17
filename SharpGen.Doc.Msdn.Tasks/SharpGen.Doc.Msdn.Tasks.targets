@@ -1,22 +1,32 @@
 ﻿<Project>
   <ItemGroup>
-    <MsdnDocProvider Include="../tools/netstandard1.3/SharpGen.Doc.Msdn.Tasks.dll" />
+    <MsdnDocProvider Condition="'$(MSBuildRuntimeType)' == 'Full'" Include="$(MSBuildThisFileDirectory)/../tools/net46/SharpGen.Doc.Msdn.Tasks.dll" />
+    
     <MsdnDocumentationCheckFile Include="$(SharpGenIntermediateDir)MsdnDocumentation.checkfile" />
   </ItemGroup>
 
-  <UsingTask TaskName="MsdnDocTask" AssemblyFile="@(MsdnDocProvider)" />
+  <UsingTask TaskName="MsdnDocTask" AssemblyFile="@(MsdnDocProvider)" Condition="'@(MsdnDocProvider)' != ''" />
   
   <Target
     Name="DocumentCppModuleFromMsdn"
     Inputs="@(ParsedCppModule);@(MsdnDocProvider)"
     Outputs="@(MsdnDocumentationCheckFile)"
     DependsOnTargets="ParseCPlusPlus"
-    Condition="'$(SharpGenGenerateDoc)' == 'true' and '@(SharpGenMapping)' != ''" >
+    Condition="'$(SharpGenGenerateDoc)' == 'true' and '@(SharpGenMapping)' != '' and '$(MSBuildRuntimeType)' == 'Full'" >
     <MsdnDocTask
       CppModule="@(ParsedCppModule)"
       DocumentationCache="@(SharpGenDocumentationCache)"
       ShadowCopy="$(ShadowCopyDocumentationOutput)"
+
     />
     <Touch Files="@(MsdnDocumentationCheckFile)" AlwaysCreate="True" />
+  </Target>
+
+  <Target
+    Name="WarnUnableToFetchFromMsdn"
+    DependsOnTargets="ParseCPlusPlus"
+    Condition="'$(MSBuildRuntimeType)' != 'Full'"
+    >
+    <Warning Text="Unable to fetch documentation from MSDN when MSBuild is not running on .NET Framework." Code="MDP0001" />
   </Target>
 </Project>

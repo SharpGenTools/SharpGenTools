@@ -162,15 +162,6 @@
     <map enum-item="ERROR_(.*)" name-tmp="$1" naming="noexpand"/>
     <context-clear/>
 
-    <!--
-    // *****************************************************************
-    // Global documentation link
-    // *****************************************************************
-    -->
-    <map doc="S_OK" name="SharpGen.Runtime.Result.Ok"/>
-    <map doc="FALSE" name="SharpGen.Runtime.Result.False"/>
-    <map doc="NULL" name="&lt;c&gt;null&lt;/c&gt;"/>
-
     <context>Unknwnbase</context>
     <map interface="IUnknown" callback="true" callback-dual="true" callback-name="ComObject" callback-visibility="public" />
     <map method="IUnknown::.*" keep-implement-public="true" />
