@@ -13,7 +13,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.3.409" />
     <PackageReference Include="Mono.Cecil" Version="0.10.0-beta6" />
     <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.0.1" Condition="'$(TargetFramework)' != 'net46'" NoWarn="NU1605" />
     <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.3.0" Condition="'$(TargetFramework)' == 'net46'" />
@@ -21,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SharpGen\SharpGen.csproj">
+    <ProjectReference Include="..\SharpGen\SharpGen.csproj" >
       <PrivateAssets>all</PrivateAssets>
     </ProjectReference>
     <ProjectReference Include="..\SharpPatch\SharpPatch.csproj">
@@ -31,7 +30,5 @@
 
   <ItemGroup>
     <Content Include="../CastXML/**/*" PackagePath="tools/CastXML/%(RecursiveDir)%(FileName)%(Extension)" />
-    <Content Include="**/*.props" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
-    <Content Include="**/*.targets" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
   </ItemGroup>
 </Project>

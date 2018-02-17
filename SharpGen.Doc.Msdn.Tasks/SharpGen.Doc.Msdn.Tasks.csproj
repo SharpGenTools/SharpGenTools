@@ -13,11 +13,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SharpGen.Doc.Msdn\SharpGen.Doc.Msdn.csproj" />
-    <ProjectReference Include="..\SharpGen\SharpGen.csproj" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.3.409" />
-    <Content Include="**/*.props" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
-    <Content Include="**/*.targets" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
+    <ProjectReference Include="..\SharpGen.Doc.Msdn\SharpGen.Doc.Msdn.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
+    <ProjectReference Include="..\SharpGen\SharpGen.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
