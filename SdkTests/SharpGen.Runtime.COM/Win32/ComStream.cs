@@ -18,24 +18,34 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace SharpGen.Runtime
+using System;
+
+namespace SharpGen.Runtime.Win32
 {
-    /// <summary>
-    /// Internal class used to initialize this assembly.
-    /// </summary>
-    class ModuleInit
+    public partial class ComStream
     {
         /// <summary>
-        /// Initializes this assembly.
+        /// Copies a specified number of bytes from the current seek pointer in the stream to the current seek pointer in another stream.
         /// </summary>
-        /// <remarks>
-        /// This method is called when the assembly is loaded.
-        /// </remarks>
-        [Tag("SharpDX.ModuleInit")]
-        internal static void Setup()
+        /// <param name="streamDest">The stream destination.</param>
+        /// <param name="numberOfBytesToCopy">The number of bytes to copy.</param>
+        /// <param name="bytesWritten">The bytes written.</param>
+        /// <returns>The number of bytes read from this instance</returns>
+        public ulong CopyTo(IStream streamDest, ulong numberOfBytesToCopy, out ulong bytesWritten)
         {
-            // Register automatically Result code for SharpDX
-            ResultDescriptor.RegisterProvider(typeof(Result));
+            CopyTo_(ToIntPtr(streamDest), numberOfBytesToCopy, out bytesWritten);
+            return bytesWritten;
+        }
+
+        /// <summary>
+        /// Gets a com pointer to the underlying <see cref="IStream"/> object.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <returns>A Com pointer</returns>
+        public static IntPtr ToIntPtr(IStream stream)
+        {
+            return ComStreamShadow.ToIntPtr(stream);
         }
     }
 }
+

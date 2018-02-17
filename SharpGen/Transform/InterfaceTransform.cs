@@ -45,7 +45,6 @@ namespace SharpGen.Transform
         private readonly TypeRegistry typeRegistry;
         private readonly NamespaceRegistry namespaceRegistry;
         private readonly CsTypeBase DefaultCallbackable;
-        private readonly CsTypeBase DefaultComObjectCallback;
         private readonly CsTypeBase DefaultInterfaceCppObject;
 
         public InterfaceTransform(
@@ -66,7 +65,6 @@ namespace SharpGen.Transform
 
             DefaultInterfaceCppObject = new CsInterface { Name = globalNamespace.GetTypeName(WellKnownName.CppObject) };
             DefaultCallbackable = new CsInterface { Name = globalNamespace.GetTypeName(WellKnownName.ICallbackable) };
-            DefaultComObjectCallback = new CsInterface { Name = globalNamespace.GetTypeName(WellKnownName.ComObjectCallback) };
         }
 
         /// <summary>
@@ -245,11 +243,6 @@ namespace SharpGen.Transform
 
                 nativeCallback.Base = interfaceType.Base;
 
-                if ((nativeCallback.Base as CsInterface)?.QualifiedName == globalNamespace.GetTypeName(WellKnownName.ComObject))
-                {
-                    nativeCallback.Base = DefaultComObjectCallback;
-                }
-
                 // If Parent is a DualInterface, then inherit from Default Callback
                 if (interfaceType.Base is CsInterface)
                 {
@@ -282,7 +275,6 @@ namespace SharpGen.Transform
             }
             else
             {
-                // If interface is a callback and parent is ComObject, then remove it
                 if (interfaceType.Base is CsInterface parentInterface && parentInterface.IsDualCallback)
                 {
                     interfaceType.Base = parentInterface.GetNativeImplementationOrThis();
@@ -294,11 +286,8 @@ namespace SharpGen.Transform
                 }
             }
 
-            // If interface is a callback and parent is ComObject, then remove it
             if (interfaceType.IsCallback)
             {
-                if ((interfaceType.Base as CsInterface)?.QualifiedName == globalNamespace.GetTypeName(WellKnownName.ComObject))
-                    interfaceType.Base = null;
                 if (interfaceType.Base == null)
                     interfaceType.Base = DefaultCallbackable;
             }

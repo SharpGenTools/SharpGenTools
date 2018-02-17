@@ -21,30 +21,31 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace SharpGen.Runtime
 {
     /// <summary>
-    /// A fast method to pass array of <see cref="ComObject"/> to SharpDX methods.
+    /// A fast method to pass array of <see cref="CppObject"/> to SharpGen methods.
     /// </summary>
     public class ComArray : DisposeBase, IEnumerable
     {
-        protected ComObject[] values;
+        protected CppObject[] values;
         private IntPtr nativeBuffer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ComArray"/> class.
         /// </summary>
         /// <param name="array">The array.</param>
-        public ComArray(params ComObject[] array)
+        public ComArray(params CppObject[] array)
         {
             values = array;
             nativeBuffer = IntPtr.Zero;
             if (values != null)
             {
                 int length = array.Length;
-                values = new ComObject[length];
-                nativeBuffer = Utilities.AllocateMemory(length * Utilities.SizeOf<IntPtr>());
+                values = new CppObject[length];
+                nativeBuffer = Utilities.AllocateMemory(length * Unsafe.SizeOf<IntPtr>());
                 for(int i = 0; i < length; i++)
                     Set(i, array[i]);
             }
@@ -56,8 +57,8 @@ namespace SharpGen.Runtime
         /// <param name="size">The size.</param>
         public ComArray(int size)
         {
-            values = new ComObject[size];
-            nativeBuffer = Utilities.AllocateMemory(size * Utilities.SizeOf<IntPtr>());
+            values = new CppObject[size];
+            nativeBuffer = Utilities.AllocateMemory(size * Unsafe.SizeOf<IntPtr>());
         }
 
         /// <summary>
@@ -87,12 +88,12 @@ namespace SharpGen.Runtime
         /// </summary>
         /// <param name="index">The index.</param>
         /// <returns>A <see cref="ComObject"/></returns>
-        public ComObject Get(int index)
+        public CppObject Get(int index)
         {
             return values[index];
         }
 
-        internal void SetFromNative(int index, ComObject value)
+        internal void SetFromNative(int index, CppObject value)
         {
             values[index] = value;
             unsafe
@@ -106,7 +107,7 @@ namespace SharpGen.Runtime
         /// </summary>
         /// <param name="index">The index.</param>
         /// <param name="value">The value.</param>
-        public void Set(int index, ComObject value)
+        public void Set(int index, CppObject value)
         {
             values[index] = value;
             unsafe
@@ -135,8 +136,8 @@ namespace SharpGen.Runtime
     /// <summary>
     /// A typed version of <see cref="ComArray"/>
     /// </summary>
-    /// <typeparam name="T">Type of the <see cref="ComObject"/></typeparam>
-    public class ComArray<T> : ComArray, IEnumerable<T> where T : ComObject
+    /// <typeparam name="T">Type of the <see cref="CppObject"/></typeparam>
+    public class ComArray<T> : ComArray, IEnumerable<T> where T : CppObject
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="ComArray&lt;T&gt;"/> class.
@@ -171,10 +172,10 @@ namespace SharpGen.Runtime
 
         public new IEnumerator<T> GetEnumerator()
         {
-            return new ArrayEnumerator<T>(values.GetEnumerator());
+            return new ArrayEnumerator(values.GetEnumerator());
         }
 
-        private struct ArrayEnumerator<T1> : IEnumerator<T1> where T1 : ComObject
+        private struct ArrayEnumerator : IEnumerator<T>
         {
             private readonly IEnumerator enumerator;
 
@@ -197,11 +198,11 @@ namespace SharpGen.Runtime
                 enumerator.Reset();
             }
 
-            public T1 Current
+            public T Current
             {
                 get
                 {
-                    return (T1)enumerator.Current;
+                    return (T)enumerator.Current;
                 }
             }
 

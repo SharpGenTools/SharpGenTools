@@ -17,13 +17,36 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-namespace SharpGen.Runtime.IO
+using System;
+using System.Runtime.InteropServices;
+
+namespace SharpGen.Runtime
 {
     /// <summary>
-    /// The <see cref="SharpDX.IO"/> namespace contains helper classes in replacement of some classes in <see cref="System.IO"/> useful under Windows 8 Metro.
+    /// Base interface for Component Object Model (COM).
     /// </summary>
-    [System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    class NamespaceDoc
+    [Shadow(typeof(ComObjectShadow))]
+    [ExcludeFromTypeList]
+    public partial interface IUnknown
     {
+        /// <summary>
+        /// Queries the supported COM interface on this instance.
+        /// </summary>
+        /// <param name="guid">The guid of the interface.</param>
+        /// <param name="comObject">The output COM object reference.</param>
+        /// <returns>If successful, <see cref="Result.Ok"/> </returns>
+        void QueryInterface(Guid riid, out IntPtr vObjectOut);
+
+        /// <summary>
+        /// Increments the reference count for an interface on this instance.
+        /// </summary>
+        /// <returns>The method returns the new reference count.</returns>
+        uint AddRef();
+
+        /// <summary>
+        /// Decrements the reference count for an interface on this instance.
+        /// </summary>
+        /// <returns>The method returns the new reference count.</returns>
+        uint Release();
     }
 }

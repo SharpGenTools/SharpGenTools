@@ -28,32 +28,8 @@ namespace SharpGen.Runtime
     /// </summary>
     public abstract class ComObjectShadow : CppObjectShadow
     {
-        private int count = 1;
         public static Guid IID_IUnknown = new Guid("00000000-0000-0000-C000-000000000046");
-
-        protected int QueryInterfaceImpl(ref Guid guid, out IntPtr output)
-        {
-            var shadow = (ComObjectShadow)Callback.Shadow.FindShadow(guid);
-            if (shadow != null)
-            {
-                shadow.AddRefImpl();
-                output = shadow.NativePointer;
-                return Result.Ok.Code;
-            }
-            output = IntPtr.Zero;
-            return Result.NoInterface.Code;
-        }
-
-        protected virtual int AddRefImpl()
-        {
-            return Interlocked.Increment(ref count);
-        }
-
-        protected virtual int ReleaseImpl()
-        {
-            return Interlocked.Decrement(ref count);
-        }
-
+        
         protected class ComObjectVtbl : CppObjectVtbl
         {
             public ComObjectVtbl(int numberOfCallbackMethods)
@@ -71,43 +47,45 @@ namespace SharpGen.Runtime
             public delegate int QueryInterfaceDelegate(IntPtr thisObject, IntPtr guid, out IntPtr output);
 
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-            public delegate int AddRefDelegate(IntPtr thisObject);
+            public delegate uint AddRefDelegate(IntPtr thisObject);
 
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-            public delegate int ReleaseDelegate(IntPtr thisObject);
+            public delegate uint ReleaseDelegate(IntPtr thisObject);
 
-            protected static int QueryInterfaceImpl(IntPtr thisObject, IntPtr guid, out IntPtr output)
+            protected unsafe static int QueryInterfaceImpl(IntPtr thisObject, IntPtr guid, out IntPtr output)
             {
                 var shadow = ToShadow<ComObjectShadow>(thisObject);
-                if (shadow == null)
+
+                var obj = (IUnknown)shadow.Callback;
+
+                obj.QueryInterface(*(Guid*)guid, out output);
+
+                obj.AddRef();
+
+                if (output == null)
                 {
-                    output = IntPtr.Zero;
                     return Result.NoInterface.Code;
                 }
-                unsafe
-                {
-                    return shadow.QueryInterfaceImpl(ref *((Guid*)guid), out output);
-                }
+
+                return Result.Ok.Code;
             }
 
-            protected static int AddRefImpl(IntPtr thisObject)
+            protected static uint AddRefImpl(IntPtr thisObject)
             {
                 var shadow = ToShadow<ComObjectShadow>(thisObject);
-                // The shadow could be null if it is released explicitly
-                // But we are callbacked by a C++ that want to release it.
-                if (shadow == null)
-                    return 0;
-                return shadow.AddRefImpl();
+
+                var obj = (IUnknown)shadow.Callback;
+
+                return obj.AddRef();
             }
 
-            protected static int ReleaseImpl(IntPtr thisObject)
+            protected static uint ReleaseImpl(IntPtr thisObject)
             {
                 var shadow = ToShadow<ComObjectShadow>(thisObject);
-                // The shadow could be null if it is released explicitly
-                // But we are callbacked by a C++ that want to release it.
-                if (shadow == null)
-                    return 0;
-                return shadow.ReleaseImpl();
+
+                var obj = (IUnknown)shadow.Callback;
+
+                return obj.Release();
             }
         }
     }

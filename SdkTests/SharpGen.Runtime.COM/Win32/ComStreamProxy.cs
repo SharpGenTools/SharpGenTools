@@ -25,7 +25,7 @@ using System.Runtime.InteropServices;
 namespace SharpGen.Runtime.Win32
 {
     [Guid("0000000c-0000-0000-C000-000000000046")]
-    internal class ComStreamProxy : CallbackBase, IStream
+    internal class ComStreamProxy : ComObjectCallbackBase, IStream
     {
         private Stream sourceStream;
         byte[] tempBuffer = new byte[0x1000];
@@ -45,7 +45,7 @@ namespace SharpGen.Runtime.Win32
                 uint count = (uint)sourceStream.Read(tempBuffer, 0, (int)countRead);
                 if (count == 0)
                     return totalRead;
-                Utilities.Write(new IntPtr(totalRead + (byte*)buffer), tempBuffer, 0, (int)count);
+                Utilities.Write(new IntPtr(totalRead + (byte*)buffer), new Span<byte>(tempBuffer), (int)count);
                 numberOfBytesToRead -= count;
                 totalRead += count;
             }
@@ -59,7 +59,7 @@ namespace SharpGen.Runtime.Win32
             while (numberOfBytesToWrite > 0)
             {
                 uint countWrite = (uint)Math.Min(numberOfBytesToWrite, tempBuffer.Length);
-                Utilities.Read(new IntPtr(totalWrite + (byte*)buffer), tempBuffer, 0, (int)countWrite);
+                Utilities.Read(new IntPtr(totalWrite + (byte*)buffer), new Span<byte>(tempBuffer), (int)countWrite);
                 sourceStream.Write(tempBuffer, 0, (int)countWrite);
                 numberOfBytesToWrite -= countWrite;
                 totalWrite += countWrite;
@@ -67,16 +67,16 @@ namespace SharpGen.Runtime.Win32
             return totalWrite;
         }
 
-        public long Seek(long offset, SeekOrigin origin)
+        public ulong Seek(long offset, SeekOrigin origin)
         {
-            return sourceStream.Seek(offset, origin);
+            return (ulong)sourceStream.Seek(offset, origin);
         }
 
-        public void SetSize(long newSize)
+        public void SetSize(ulong newSize)
         {
         }
 
-        public unsafe long CopyTo(IStream streamDest, long numberOfBytesToCopy, out long bytesWritten)
+        public unsafe ulong CopyTo(IStream streamDest, ulong numberOfBytesToCopy, out ulong bytesWritten)
         {
             bytesWritten = 0;
 
@@ -84,13 +84,13 @@ namespace SharpGen.Runtime.Win32
             {
                 while (numberOfBytesToCopy > 0)
                 {
-                    int countCopy = (int)Math.Min(numberOfBytesToCopy, tempBuffer.Length);
+                    int countCopy = (int)Math.Min((long)numberOfBytesToCopy, tempBuffer.Length);
                     int count = sourceStream.Read(tempBuffer, 0, countCopy);
                     if (count == 0)
                         break;
                     streamDest.Write((IntPtr)pBuffer, (uint)count);
-                    numberOfBytesToCopy -= count;
-                    bytesWritten += count;
+                    numberOfBytesToCopy -= (ulong)count;
+                    bytesWritten += (ulong)count;
                 }
             }
             return bytesWritten;
@@ -106,12 +106,12 @@ namespace SharpGen.Runtime.Win32
             throw new NotImplementedException();
         }
 
-        public void LockRegion(long offset, long numberOfBytesToLock, LockType dwLockType)
+        public void LockRegion(ulong offset, ulong numberOfBytesToLock, LockType dwLockType)
         {
             throw new NotImplementedException();
         }
 
-        public void UnlockRegion(long offset, long numberOfBytesToLock, LockType dwLockType)
+        public void UnlockRegion(ulong offset, ulong numberOfBytesToLock, LockType dwLockType)
         {
             throw new NotImplementedException();
         }
@@ -125,7 +125,7 @@ namespace SharpGen.Runtime.Win32
             return new StorageStatistics
                 {
                     Type = 2, // IStream
-                    CbSize = length,
+                    CbSize = (ulong)length,
                     GrfLocksSupported = 2, // exclusive
                     GrfMode = 0x00000002, // read-write
                 };

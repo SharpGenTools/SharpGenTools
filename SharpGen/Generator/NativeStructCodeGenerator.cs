@@ -237,7 +237,7 @@ namespace SharpGen.Generator
                                                         .WithInitializer(EqualsValueClause(
                                                             InvocationExpression(
                                                                 MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                                    globalNamespace.GetTypeNameSyntax(WellKnownName.Utilities),
+                                                                    globalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
                                                                     IdentifierName("StringToHGlobalAnsi")),
                                                                 ArgumentList(SingletonSeparatedList(
                                                                     Argument(
@@ -306,7 +306,7 @@ namespace SharpGen.Generator
                                                 IdentifierName("Zero")),
                                             InvocationExpression(
                                                 MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                    globalNamespace.GetTypeNameSyntax(WellKnownName.Utilities),
+                                                    globalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
                                                     IdentifierName("StringToHGlobal" + (field.IsWideChar ? "Uni" : "Ansi"))),
                                                 ArgumentList(SingletonSeparatedList(
                                                     Argument(

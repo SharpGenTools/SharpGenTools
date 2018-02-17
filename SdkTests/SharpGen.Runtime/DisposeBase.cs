@@ -48,21 +48,16 @@ namespace SharpGen.Runtime
         /// </summary>
         private void CheckAndDispose(bool disposing)
         {
-            // TODO Should we throw an exception if this method is called more than once?
             if (!IsDisposed)
             {
-	            EventHandler<EventArgs> disposingHandlers = Disposing;
-	            if (disposingHandlers != null)
-                    disposingHandlers(this, DisposeEventArgs.Get(disposing));
+                Disposing?.Invoke(this, DisposeEventArgs.Get(disposing));
 
                 Dispose(disposing);
                 GC.SuppressFinalize(this);
 
                 IsDisposed = true;
 
-	            EventHandler<EventArgs> disposedHandlers = Disposed;
-	            if (disposedHandlers != null)
-                    disposedHandlers(this, DisposeEventArgs.Get(disposing));
+                Disposed?.Invoke(this, DisposeEventArgs.Get(disposing));
             }
         }
 

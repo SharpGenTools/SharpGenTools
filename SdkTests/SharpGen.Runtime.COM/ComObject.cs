@@ -102,22 +102,6 @@ namespace SharpGen.Runtime
             return FromPointer<T>(parentPtr);
         }
 
-        ///<summary>
-        /// Query this instance for a particular COM interface support.
-        ///</summary>
-        ///<typeparam name="T">The type of the COM interface to query</typeparam>
-        ///<returns>An instance of the queried interface</returns>
-        /// <exception cref="SharpGenException">If this object doesn't support the interface</exception>
-        /// <msdn-id>ms682521</msdn-id>
-        /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
-        /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
-        internal virtual T QueryInterfaceUnsafe<T>()
-        {
-            IntPtr parentPtr;
-            this.QueryInterface(Utilities.GetGuidFromType(typeof(T)), out parentPtr);
-            return FromPointerUnsafe<T>(parentPtr);
-        }
-
         /// <summary>
         /// Queries a managed object for a particular COM interface support (This method is a shortcut to <see cref="QueryInterface"/>)
         /// </summary>
@@ -149,14 +133,6 @@ namespace SharpGen.Runtime
             using (var tempObject = new ComObject(iunknownPtr))
             {
                 return tempObject.QueryInterface<T>();
-            }
-        }
-
-        internal static T AsUnsafe<T>(IntPtr iunknownPtr)
-        {
-            using (var tempObject = new ComObject(iunknownPtr))
-            {
-                return tempObject.QueryInterfaceUnsafe<T>();
             }
         }
 
@@ -196,7 +172,7 @@ namespace SharpGen.Runtime
             var guid = Utilities.GetGuidFromType(typeof(T));
             IntPtr pointerT;
             var result = (Result)Marshal.QueryInterface(comPointer, ref guid, out pointerT);
-            return (result.Failure) ? null : FromPointerUnsafe<T>(pointerT);
+            return (result.Failure) ? null : FromPointer<T>(pointerT);
         }
 
         ///<summary>

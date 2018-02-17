@@ -24,7 +24,7 @@ namespace SharpGen.Runtime
     /// <summary>
     /// Root class for all Cpp interop object.
     /// </summary>
-    public class CppObject : DisposeBase
+    public class CppObject : DisposeBase, ICallbackable
     {
         /// <summary>
         /// The native pointer
@@ -143,11 +143,6 @@ namespace SharpGen.Runtime
             return (comObjectPtr == IntPtr.Zero) ? null : (T) Activator.CreateInstance(typeof (T), comObjectPtr);
         }
 
-        internal static T FromPointerUnsafe<T>(IntPtr comObjectPtr)
-        {
-            return (comObjectPtr == IntPtr.Zero) ? (T)(object)null : (T)Activator.CreateInstance(typeof(T), comObjectPtr);
-        }
-
         /// <summary>
         /// Return the unmanaged C++ pointer from a <see cref="ICallbackable"/> instance.
         /// </summary>
@@ -169,11 +164,20 @@ namespace SharpGen.Runtime
             var shadowContainer = callback.Shadow;
             if (shadowContainer == null)
             {
-                shadowContainer = new ShadowContainer();
-                shadowContainer.Initialize(callback);
+                shadowContainer = new ShadowContainer(callback);
             }
 
             return shadowContainer.Find(typeof(TCallback));
+        }
+
+        /// <summary>
+        /// Implements <see cref="ICallbackable"/> but it cannot not be set. 
+        /// This is only used to support for interop with unmanaged callback.
+        /// </summary>
+        ShadowContainer ICallbackable.Shadow
+        {
+            get { throw new InvalidOperationException("Invalid access to Callback. This is used internally."); }
+            set { throw new InvalidOperationException("Invalid access to Callback. This is used internally."); }
         }
     }
 }

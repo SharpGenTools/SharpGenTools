@@ -19,6 +19,7 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -30,9 +31,7 @@ namespace SharpGen.Runtime
     /// </summary>
     public sealed class ResultDescriptor
     {
-        private static readonly object LockDescriptor = new object();
-        private static readonly List<Type> RegisteredDescriptorProvider = new List<Type>();
-        private static readonly Dictionary<Result, ResultDescriptor> Descriptors = new Dictionary<Result, ResultDescriptor>();
+        private static readonly ConcurrentDictionary<Result, ResultDescriptor> Descriptors = new ConcurrentDictionary<Result, ResultDescriptor>();
         private const string UnknownText = "Unknown";
 
         /// <summary>
@@ -48,45 +47,41 @@ namespace SharpGen.Runtime
             Module = module;
             NativeApiCode = nativeApiCode;
             ApiCode = apiCode;
-            Description = description;
+            Description = description ?? GetDescriptionFromResultCode(Code) ?? UnknownText;
+
+            Descriptors.TryAdd(code, this);
         }
 
         /// <summary>
         /// Gets the result.
         /// </summary>
-        public Result Result { get; private set; }
+        public Result Result { get; }
 
         /// <summary>
         /// Gets the HRESULT error code.
         /// </summary>
         /// <value>The HRESULT error code.</value>
-        public int Code
-        {
-            get
-            {
-                return Result.Code;
-            }
-        }
+        public int Code => Result.Code;
 
         /// <summary>
-        /// Gets the module (ex: SharpDX.Direct2D1)
+        /// Gets the module
         /// </summary>
-        public string Module { get; private set; }
+        public string Module { get; }
 
         /// <summary>
-        /// Gets the native API code (ex: D2D1_ERR_ ...)
+        /// Gets the native API code
         /// </summary>
-        public string NativeApiCode { get; private set; }
+        public string NativeApiCode { get;  }
 
         /// <summary>
-        /// Gets the API code (ex: DeviceRemoved ...)
+        /// Gets the API code
         /// </summary>
-        public string ApiCode { get; private set; }
+        public string ApiCode { get; }
 
         /// <summary>
         /// Gets the description of the result code if any.
         /// </summary>
-        public string Description { get; set; }
+        public string Description { get; }
 
         /// <summary>
         /// Determines whether the specified <see cref="ResultDescriptor"/> is equal to this instance.
@@ -117,15 +112,15 @@ namespace SharpGen.Runtime
                 return false;
             if (ReferenceEquals(this, obj))
                 return true;
-            if (obj.GetType() != typeof(ResultDescriptor))
-                return false;
-            return Equals((ResultDescriptor)obj);
+            if (obj is ResultDescriptor descriptor)
+                return Equals(descriptor);
+            return false;
         }
 
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            return this.Result.GetHashCode();
+            return Result.GetHashCode();
         }
 
         /// <inheritdoc/>
@@ -193,22 +188,6 @@ namespace SharpGen.Runtime
         }
 
         /// <summary>
-        /// Registers a <see cref="ResultDescriptor"/> provider.
-        /// </summary>
-        /// <param name="descriptorsProviderType">Type of the descriptors provider.</param>
-        /// <remarks>
-        /// Providers are usually registered at module init when SharpDX assemblies are loaded.
-        /// </remarks>
-        public static void RegisterProvider(Type descriptorsProviderType)
-        {
-            lock (LockDescriptor)
-            {
-                if (!RegisteredDescriptorProvider.Contains(descriptorsProviderType))
-                    RegisteredDescriptorProvider.Add(descriptorsProviderType);
-            }
-        }
-
-        /// <summary>
         /// Finds the specified result descriptor.
         /// </summary>
         /// <param name="result">The result code.</param>
@@ -217,73 +196,32 @@ namespace SharpGen.Runtime
         {
             ResultDescriptor descriptor;
 
-            // Check also SharpDX registered result descriptors
-            lock (LockDescriptor)
+            if (!Descriptors.TryGetValue(result, out descriptor))
             {
-                if (RegisteredDescriptorProvider.Count > 0)
-                {
-                    foreach (var type in RegisteredDescriptorProvider)
-                    {
-                        AddDescriptorsFromType(type);
-                    }
-                    RegisteredDescriptorProvider.Clear();
-                }
-                if (!Descriptors.TryGetValue(result, out descriptor))
-                {
-                    descriptor = new ResultDescriptor(result, UnknownText, UnknownText, UnknownText);
-                }
-
-                // If description is null, than we try to add description from Win32 GetDescriptionFromResultCode
-                // Or we use unknown description
-                if (descriptor.Description == null)
-                {
-                    // Check if a Win32 description exist
-                    var description = GetDescriptionFromResultCode(result.Code);
-                    descriptor.Description = description ?? UnknownText;
-                }
+                descriptor = new ResultDescriptor(result, UnknownText, UnknownText, UnknownText);
             }
 
             return descriptor;
         }
 
-        private static void AddDescriptorsFromType(Type type)
-        {
-#if NET40
-            foreach(var field in type.GetTypeInfo().GetFields())
-#else
-            foreach (var field in type.GetTypeInfo().DeclaredFields)
-#endif
-            {
-                if (field.FieldType == typeof(ResultDescriptor) && field.IsPublic && field.IsStatic)
-                {
-                    var descriptor = (ResultDescriptor)field.GetValue(null);
-                    if (!Descriptors.ContainsKey(descriptor.Result))
-                    {
-                        Descriptors.Add(descriptor.Result, descriptor);
-                    }
-                }
-            }
-        }
-
         private static string GetDescriptionFromResultCode(int resultCode)
         {
-            const int FORMAT_MESSAGE_ALLOCATE_BUFFER = 0x00000100;
-            const int FORMAT_MESSAGE_IGNORE_INSERTS = 0x00000200;
-            const int FORMAT_MESSAGE_FROM_SYSTEM = 0x00001000;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                const int FORMAT_MESSAGE_ALLOCATE_BUFFER = 0x00000100;
+                const int FORMAT_MESSAGE_IGNORE_INSERTS = 0x00000200;
+                const int FORMAT_MESSAGE_FROM_SYSTEM = 0x00001000;
 
-            IntPtr buffer = IntPtr.Zero;
-            FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, IntPtr.Zero, resultCode, 0, ref buffer, 0, IntPtr.Zero);
-            var description = Marshal.PtrToStringUni(buffer);
-            Marshal.FreeHGlobal(buffer);
-            return description;
+                var buffer = IntPtr.Zero;
+                FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, IntPtr.Zero, resultCode, 0, ref buffer, 0, IntPtr.Zero);
+                var description = Marshal.PtrToStringUni(buffer);
+                Marshal.FreeHGlobal(buffer);
+                return description; 
+            }
+            return null;
         }
 
-#if WINDOWS_API_SET
-        [DllImport("api-ms-win-core-localization-l1-2-0.dll", EntryPoint = "FormatMessageW")]
-        private static extern uint FormatMessageW(int dwFlags, IntPtr lpSource, int dwMessageId, int dwLanguageId, ref IntPtr lpBuffer, int nSize, IntPtr Arguments);
-#else
         [DllImport("kernel32.dll", EntryPoint = "FormatMessageW")]
         private static extern uint FormatMessageW(int dwFlags, IntPtr lpSource, int dwMessageId, int dwLanguageId, ref IntPtr lpBuffer, int nSize, IntPtr Arguments);
-#endif
     }
 }

@@ -24,9 +24,6 @@ using System.Runtime.InteropServices;
 
 namespace SharpGen.Runtime.Win32
 {
-    /// <summary>
-    /// Internal FontFileEnumerator callback
-    /// </summary>
     internal class ComStreamShadow : ComStreamBaseShadow
     {
         private static readonly ComStreamVtbl Vtbl = new ComStreamVtbl();
@@ -67,12 +64,12 @@ namespace SharpGen.Runtime.Win32
                 {
                     var shadow = ToShadow<ComStreamShadow>(thisPtr);
                     var callback = ((IStream)shadow.Callback);
-                    long position = callback.Seek(offset, origin);
+                    ulong position = callback.Seek(offset, origin);
 
                     // pointer can be null, so we need to test it
                     if (newPosition != IntPtr.Zero)
                     {
-                         *(long*)newPosition = position;
+                         *(ulong*)newPosition = position;
                     }
                 }
                 catch (Exception exception)
@@ -85,8 +82,8 @@ namespace SharpGen.Runtime.Win32
             /// <unmanaged>HRESULT IStream::SetSize([In] ULARGE_INTEGER libNewSize)</unmanaged>	
             /* public SharpDX.Result SetSize(long libNewSize) */
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-            private delegate Result SetSizeDelegate(IntPtr thisPtr, long newSize);
-            private static Result SetSizeImpl(IntPtr thisPtr, long newSize)
+            private delegate Result SetSizeDelegate(IntPtr thisPtr, ulong newSize);
+            private static Result SetSizeImpl(IntPtr thisPtr, ulong newSize)
             {
                 var result = Result.Ok;
                 try
@@ -109,8 +106,8 @@ namespace SharpGen.Runtime.Win32
             /// <unmanaged>HRESULT IStream::CopyTo([In] IStream* pstm,[In] ULARGE_INTEGER cb,[Out, Optional] ULARGE_INTEGER* pcbRead,[Out, Optional] ULARGE_INTEGER* pcbWritten)</unmanaged>	
             /* internal long CopyTo_(System.IntPtr stmRef, long cb, out long cbWrittenRef) */
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-            private delegate int CopyToDelegate(IntPtr thisPtr, IntPtr streamPointer, long numberOfBytes, out long numberOfBytesRead, out long numberOfBytesWritten);
-            private static int CopyToImpl(IntPtr thisPtr, IntPtr streamPointer, long numberOfBytes, out long numberOfBytesRead, out long numberOfBytesWritten)
+            private delegate int CopyToDelegate(IntPtr thisPtr, IntPtr streamPointer, ulong numberOfBytes, out ulong numberOfBytesRead, out ulong numberOfBytesWritten);
+            private static int CopyToImpl(IntPtr thisPtr, IntPtr streamPointer, ulong numberOfBytes, out ulong numberOfBytesRead, out ulong numberOfBytesWritten)
             {
                 numberOfBytesRead = 0;
                 numberOfBytesWritten = 0;
@@ -178,8 +175,8 @@ namespace SharpGen.Runtime.Win32
             /// <unmanaged>HRESULT IStream::LockRegion([In] ULARGE_INTEGER libOffset,[In] ULARGE_INTEGER cb,[In] LOCKTYPE dwLockType)</unmanaged>	
             /* public SharpDX.Result LockRegion(long libOffset, long cb, SharpDX.Win32.LockType dwLockType) */
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-            private delegate Result LockRegionDelegate(IntPtr thisPtr, long offset, long numberOfBytes, LockType lockType);
-            private static Result LockRegionImpl(IntPtr thisPtr, long offset, long numberOfBytes, LockType lockType)
+            private delegate Result LockRegionDelegate(IntPtr thisPtr, ulong offset, ulong numberOfBytes, LockType lockType);
+            private static Result LockRegionImpl(IntPtr thisPtr, ulong offset, ulong numberOfBytes, LockType lockType)
             {
                 var result = Result.Ok;
                 try
@@ -203,8 +200,8 @@ namespace SharpGen.Runtime.Win32
             /// <unmanaged>HRESULT IStream::UnlockRegion([In] ULARGE_INTEGER libOffset,[In] ULARGE_INTEGER cb,[In] LOCKTYPE dwLockType)</unmanaged>	
             /* public SharpDX.Result UnlockRegion(long libOffset, long cb, SharpDX.Win32.LockType dwLockType) */
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-            private delegate Result UnlockRegionDelegate(IntPtr thisPtr, long offset, long numberOfBytes, LockType lockType);
-            private static Result UnlockRegionImpl(IntPtr thisPtr, long offset, long numberOfBytes, LockType lockType)
+            private delegate Result UnlockRegionDelegate(IntPtr thisPtr, ulong offset, ulong numberOfBytes, LockType lockType);
+            private static Result UnlockRegionImpl(IntPtr thisPtr, ulong offset, ulong numberOfBytes, LockType lockType)
             {
                 var result = Result.Ok;
                 try

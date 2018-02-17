@@ -33,13 +33,13 @@ namespace SharpGen.Runtime.Diagnostics
         /// Initializes a new instance of the <see cref="ObjectReference"/> class.
         /// </summary>
         /// <param name="creationTime">The creation time.</param>
-        /// <param name="comObject">The com object to track.</param>
+        /// <param name="cppObject">The com object to track.</param>
         /// <param name="stackTrace">The stack trace.</param>
-        public ObjectReference(DateTime creationTime, ComObject comObject, string stackTrace)
+        public ObjectReference(DateTime creationTime, CppObject cppObject, string stackTrace)
         {
             CreationTime = creationTime;
             // Creates a long week reference to the ComObject
-            Object = new WeakReference(comObject, true);
+            Object = new WeakReference(cppObject, true);
             StackTrace = stackTrace;
         }
 
@@ -47,25 +47,25 @@ namespace SharpGen.Runtime.Diagnostics
         /// Gets the time the object was created.
         /// </summary>
         /// <value>The creation time.</value>
-        public DateTime CreationTime { get; private set; }
+        public DateTime CreationTime { get; }
 
         /// <summary>
         /// Gets a weak reference to the tracked object.
         /// </summary>
         /// <value>The weak reference to the tracked object.</value>
-        public WeakReference Object { get; private set; }
+        public WeakReference Object { get; }
 
         /// <summary>
         /// Gets the stack trace when the track object was created.
         /// </summary>
         /// <value>The stack trace.</value>
-        public string StackTrace { get; private set; }
+        public string StackTrace { get; }
 
         /// <summary>
         /// Gets a value indicating whether the tracked object is alive.
         /// </summary>
         /// <value><c>true</c> if tracked object is alive; otherwise, <c>false</c>.</value>
-        public bool IsAlive { get { return Object.IsAlive; } }
+        public bool IsAlive => Object.IsAlive;
 
         /// <summary>
         /// Returns a <see cref="System.String"/> that represents this instance.
@@ -75,12 +75,12 @@ namespace SharpGen.Runtime.Diagnostics
         /// </returns>
         public override string ToString()
         {
-            var comObject = Object.Target as ComObject;
-            if (comObject == null)
+            var cppObject = Object.Target as CppObject;
+            if (cppObject == null)
                 return "";
 
             var builder = new StringBuilder();
-            builder.AppendFormat(CultureInfo.InvariantCulture, "Active COM Object: [0x{0:X}] Class: [{1}] Time [{2}] Stack:\r\n{3}", comObject.NativePointer.ToInt64(), comObject.GetType().FullName, CreationTime, StackTrace).AppendLine();
+            builder.AppendFormat(CultureInfo.InvariantCulture, "Active C++ Object: [0x{0:X}] Class: [{1}] Time [{2}] Stack:\r\n{3}", cppObject.NativePointer.ToInt64(), cppObject.GetType().FullName, CreationTime, StackTrace).AppendLine();
             return builder.ToString();
         }
     }

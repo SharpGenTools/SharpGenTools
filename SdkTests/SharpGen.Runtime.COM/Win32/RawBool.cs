@@ -21,7 +21,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace SharpGen.Runtime.Mathematics.Interop
+namespace SharpGen.Runtime.Win32
 {
     /// <summary>
     /// A boolean value stored on 4 bytes (instead of 1 in .NET).

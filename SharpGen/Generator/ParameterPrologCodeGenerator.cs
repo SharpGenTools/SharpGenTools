@@ -353,7 +353,7 @@ namespace SharpGen.Generator
                                     EqualsValueClause(
                                         InvocationExpression(
                                             MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                globalNamespace.GetTypeNameSyntax(WellKnownName.Utilities),
+                                                globalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
                                                 IdentifierName("StringToHGlobalAnsi")),
                                             ArgumentList(
                                                 SingletonSeparatedList(

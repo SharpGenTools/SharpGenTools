@@ -23,6 +23,11 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SharpGen
 {
+    public enum BuiltinType
+    {
+        Marshal
+    }
+
     public enum WellKnownName
     {
         Result,
@@ -31,8 +36,6 @@ namespace SharpGen
         CppObject,
         ICallbackable,
         Utilities,
-        ComObjectCallback,
-        ComObject,
         ComArray,
     }
 
@@ -58,6 +61,17 @@ namespace SharpGen
             return SyntaxFactory.QualifiedName(
                 SyntaxFactory.IdentifierName(Name),
                 SyntaxFactory.IdentifierName(name.ToString()));
+        }
+
+        public NameSyntax GetTypeNameSyntax(BuiltinType type)
+        {
+            switch (type)
+            {
+                case BuiltinType.Marshal:
+                    return SyntaxFactory.ParseName("System.Runtime.InteropServices.Marshal");
+                default:
+                    return null;
+            }
         }
     }
 }

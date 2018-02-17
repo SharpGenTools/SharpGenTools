@@ -30,13 +30,13 @@ namespace SharpGen.Runtime.Win32
         /// <param name="offset">The offset.</param>
         /// <param name="origin">The origin.</param>
         /// <returns>The offset of the seek pointer from the beginning of the stream.</returns>
-        long Seek(long offset, SeekOrigin origin);
+        ulong Seek(long offset, SeekOrigin origin);
 
         /// <summary>
         /// Changes the size of the stream object.
         /// </summary>
         /// <param name="newSize">The new size.</param>
-        void SetSize(long newSize);
+        void SetSize(ulong newSize);
 
         /// <summary>
         /// Copies a specified number of bytes from the current seek pointer in the stream to the current seek pointer in another stream.
@@ -45,7 +45,7 @@ namespace SharpGen.Runtime.Win32
         /// <param name="numberOfBytesToCopy">The number of bytes to copy.</param>
         /// <param name="bytesWritten">The number of bytes written.</param>
         /// <returns>The number of bytes read</returns>
-        long CopyTo(IStream streamDest, long numberOfBytesToCopy, out long bytesWritten);
+        ulong CopyTo(IStream streamDest, ulong numberOfBytesToCopy, out ulong bytesWritten);
 
         /// <summary>
         /// Commit method ensures that any changes made to a stream object open in transacted mode are reflected in the parent storage. If the stream object is open in direct mode, Commit has no effect other than flushing all memory buffers to the next-level storage object. The COM compound file implementation of streams does not support opening streams in transacted mode.
@@ -64,7 +64,7 @@ namespace SharpGen.Runtime.Win32
         /// <param name="offset">The offset.</param>
         /// <param name="numberOfBytesToLock">The number of bytes to lock.</param>
         /// <param name="dwLockType">Type of the dw lock.</param>
-        void LockRegion(long offset, long numberOfBytesToLock, LockType dwLockType);
+        void LockRegion(ulong offset, ulong numberOfBytesToLock, LockType dwLockType);
 
         /// <summary>
         /// Unlocks access to a specified range of bytes in the stream.
@@ -72,7 +72,7 @@ namespace SharpGen.Runtime.Win32
         /// <param name="offset">The offset.</param>
         /// <param name="numberOfBytesToLock">The number of bytes to lock.</param>
         /// <param name="dwLockType">Type of the dw lock.</param>
-        void UnlockRegion(long offset, long numberOfBytesToLock, LockType dwLockType);
+        void UnlockRegion(ulong offset, ulong numberOfBytesToLock, LockType dwLockType);
 
         /// <summary>
         /// Gets the statistics.

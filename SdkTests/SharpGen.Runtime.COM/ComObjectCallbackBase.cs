@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2010-2014 SharpDX - Alexandre Mutel
+// Copyright (c) 2010-2014 SharpDX - Alexandre Mutel
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -17,19 +17,21 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System.Runtime.InteropServices;
+using System;
+using System.Threading;
 
 namespace SharpGen.Runtime
 {
     /// <summary>
-    /// IInspectable used for a C# callback object exposed as WinRT Component.
+    /// Default implementation for <see cref="IUnknown"/> for C# callbacks.
     /// </summary>
-    /// <msdn-id>br205821</msdn-id>
-    /// <unamanaged>IInspectable</unamanaged>
-    /// <unmanaged-short>IInspectable</unmanaged-short>	
-    [Guid("AF86E2E0-B12D-4c6a-9C5A-D7AA65101E90")]
-    [ShadowAttribute(typeof(InspectableShadow))]
-    public interface IInspectable : ICallbackable
+    public class ComObjectCallbackBase : CallbackBase, IUnknown
     {
-    };
+        public void QueryInterface(Guid riid, out IntPtr vObjectOut)
+        {
+            var callbackable = (ICallbackable)this;
+
+            vObjectOut = callbackable.Shadow.Find(riid);
+        }
+    }
 }

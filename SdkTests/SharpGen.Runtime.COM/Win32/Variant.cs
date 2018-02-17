@@ -21,7 +21,6 @@ using System;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Reflection;
-using SharpGen.Runtime.Mathematics.Interop;
 
 namespace SharpGen.Runtime.Win32
 {
@@ -94,7 +93,7 @@ namespace SharpGen.Runtime.Win32
                                     var buffer = new byte[(int)variantValue.recordValue.RecordInfo];
                                     if (buffer.Length > 0)
                                     {
-                                        Utilities.Read(variantValue.recordValue.RecordPointer, buffer, 0, buffer.Length);
+                                        Utilities.Read(variantValue.recordValue.RecordPointer, new Span<byte>(buffer), buffer.Length);
                                     }
                                     return buffer;
                                 }
@@ -124,7 +123,6 @@ namespace SharpGen.Runtime.Win32
                                 return variantValue.doubleValue;
                             case VariantElementType.BinaryString:
                                 throw new NotSupportedException();
-                                //return Marshal.PtrToStringBSTR(variantValue.pointerValue);
                             case VariantElementType.StringPointer:
                                 return Marshal.PtrToStringAnsi(variantValue.pointerValue);
                             case VariantElementType.WStringPointer:
@@ -141,84 +139,82 @@ namespace SharpGen.Runtime.Win32
                                 return null;
                         }
                     case VariantType.Vector:
-                        int size = (int)variantValue.recordValue.RecordInfo;
+                        var size = (int)variantValue.recordValue.RecordInfo;
                         switch (ElementType)
                         {
                             case VariantElementType.Bool:
+                                unsafe
                                 {
-                                    var array = new RawBool[size];
-                                    Utilities.Read(variantValue.recordValue.RecordPointer, array, 0, size);
-                                    return Utilities.ConvertToBoolArray(array);
+                                    var array = stackalloc RawBool[size];
+                                    var span = new Span<RawBool>(array, size);
+                                    Utilities.Read(variantValue.recordValue.RecordPointer, span, size);
+                                    return RawBoolHelpers.ConvertToBoolArray(span);
                                 }
                             case VariantElementType.Byte:
                                 {
                                     var array = new sbyte[size];
-                                    Utilities.Read(variantValue.recordValue.RecordPointer, array, 0, size);
+                                    Utilities.Read(variantValue.recordValue.RecordPointer, new Span<sbyte>(array), size);
                                     return array;
                                 }
                             case VariantElementType.UByte:
                                 {
                                     var array = new byte[size];
-                                    Utilities.Read(variantValue.recordValue.RecordPointer, array, 0, size);
+                                    Utilities.Read(variantValue.recordValue.RecordPointer, new Span<byte>(array), size);
                                     return array;
                                 }
                             case VariantElementType.UShort:
                                 {
                                     var array = new ushort[size];
-                                    Utilities.Read(variantValue.recordValue.RecordPointer, array, 0, size);
+                                    Utilities.Read(variantValue.recordValue.RecordPointer, new Span<ushort>(array), size);
                                     return array;
                                 }
                             case VariantElementType.Short:
                                 {
                                     var array = new short[size];
-                                    Utilities.Read(variantValue.recordValue.RecordPointer, array, 0, size);
+                                    Utilities.Read(variantValue.recordValue.RecordPointer, new Span<short>(array), size);
                                     return array;
                                 }
                             case VariantElementType.UInt:
                             case VariantElementType.UInt1:
                                 {
                                     var array = new uint[size];
-                                    Utilities.Read(variantValue.recordValue.RecordPointer, array, 0, size);
+                                    Utilities.Read(variantValue.recordValue.RecordPointer, new Span<uint>(array), size);
                                     return array;
                                 }
                             case VariantElementType.Int:
                             case VariantElementType.Int1:
                                 {
                                     var array = new int[size];
-                                    Utilities.Read(variantValue.recordValue.RecordPointer, array, 0, size);
+                                    Utilities.Read(variantValue.recordValue.RecordPointer, new Span<int>(array), size);
                                     return array;
                                 }
                             case VariantElementType.ULong:
                                 {
                                     var array = new ulong[size];
-                                    Utilities.Read(variantValue.recordValue.RecordPointer, array, 0, size);
+                                    Utilities.Read(variantValue.recordValue.RecordPointer, new Span<ulong>(array), size);
                                     return array;
                                 }
                             case VariantElementType.Long:
                                 {
                                     var array = new long[size];
-                                    Utilities.Read(variantValue.recordValue.RecordPointer, array, 0, size);
+                                    Utilities.Read(variantValue.recordValue.RecordPointer, new Span<long>(array), size);
                                     return array;
                                 }
                             case VariantElementType.Float:
                                 {
                                     var array = new float[size];
-                                    Utilities.Read(variantValue.recordValue.RecordPointer, array, 0, size);
+                                    Utilities.Read(variantValue.recordValue.RecordPointer, new Span<float>(array), size);
                                     return array;
                                 }
                             case VariantElementType.Double:
                                 {
                                     var array = new double[size];
-                                    Utilities.Read(variantValue.recordValue.RecordPointer, array, 0, size);
+                                    Utilities.Read(variantValue.recordValue.RecordPointer, new Span<double>(array), size);
                                     return array;
                                 }
                             case VariantElementType.BinaryString:
                                 {
                                     throw new NotSupportedException();
-                                    //var array = new string[size];
-                                    //for (int i = 0; i < size; i++)
-                                    //    array[i] = Marshal.PtrToStringBSTR(((IntPtr*)variantValue.recordValue.RecordPointer)[i]);
-                                    //return array;
                                 }
                             case VariantElementType.StringPointer:
                                 {
@@ -246,7 +242,7 @@ namespace SharpGen.Runtime.Win32
                             case VariantElementType.Pointer:
                                 {
                                     var array = new IntPtr[size];
-                                    Utilities.Read(variantValue.recordValue.RecordPointer, array, 0, size);
+                                    Utilities.Read(variantValue.recordValue.RecordPointer, new Span<IntPtr>(array), size);
                                     return array;
                                 }
                             case VariantElementType.FileTime:
@@ -345,22 +341,22 @@ namespace SharpGen.Runtime.Win32
                         return;
                     }
                 }
-                else if (value is ComObject)
+                else if (value is ComObject obj)
                 {
                     ElementType = VariantElementType.ComUnknown;
-                    variantValue.pointerValue = ((ComObject)value).NativePointer;
+                    variantValue.pointerValue = obj.NativePointer;
                     return;
                 }
-                else if (value is DateTime)
+                else if (value is DateTime dateTime)
                 {
                     ElementType = VariantElementType.FileTime;
-                    variantValue.longValue = ((DateTime)value).ToFileTime();
+                    variantValue.longValue = dateTime.ToFileTime();
                     return;
                 }
-                else if (value is string)
+                else if (value is string str)
                 {
                     ElementType = VariantElementType.WStringPointer;
-                    variantValue.pointerValue = Marshal.StringToCoTaskMemUni((string)value);
+                    variantValue.pointerValue = Marshal.StringToCoTaskMemUni(str);
                     return;
                 }
                 throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, "Type [{0}] is not handled", type.Name));

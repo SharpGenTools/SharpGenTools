@@ -27,6 +27,8 @@ namespace SharpGen.Runtime
     /// </summary>
     public abstract class CallbackBase : DisposeBase, ICallbackable
     {
+        private int refCount = 1;
+
         /// <summary>
         /// Releases unmanaged and - optionally - managed resources
         /// </summary>
@@ -35,12 +37,47 @@ namespace SharpGen.Runtime
         {
             if (disposing)
             {
-                var callback = ((ICallbackable) this);
-                if (callback.Shadow != null)
+                Release();
+            }
+        }
+
+        public uint AddRef()
+        {
+            var old = refCount;
+            while (true)
+            {
+                if (old == 0)
                 {
-                    callback.Shadow.Dispose();
-                    callback.Shadow = null;
+                    throw new ObjectDisposedException("Cannot add a reference to a nonreferenced item");
                 }
+                var current = Interlocked.CompareExchange(ref refCount, old + 1, old);
+                if (current == old)
+                {
+                    return (uint)(old + 1);
+                }
+                old = current;
+            }
+        }
+
+        public uint Release()
+        {
+            var old = refCount;
+            while (true)
+            {
+                var current = Interlocked.CompareExchange(ref refCount, old - 1, old);
+
+                if (current == old)
+                {
+                    if (old == 1)
+                    {
+                        // Dispose native resources
+                        var callback = ((ICallbackable)this);
+                        callback.Shadow.Dispose();
+                        callback.Shadow = null;
+                    }
+                    return (uint)(old - 1);
+                }
+                old = current;
             }
         }
 
