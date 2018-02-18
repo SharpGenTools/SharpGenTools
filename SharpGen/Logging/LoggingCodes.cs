@@ -30,21 +30,19 @@ namespace SharpGen.Logging
 
         public const string FunctionNotAttachedToGroup = "SG0012";
 
-        public const string MissingGuidForInterface = "SG0013";
+        public const string TypeNotDefined = "SG0013";
 
-        public const string TypeNotDefined = "SG0014";
+        public const string DuplicateBinding = "SG0014";
 
-        public const string DuplicateBinding = "SG0015";
+        public const string InvalidUnderlyingType = "SG0015";
 
-        public const string InvalidUnderlyingType = "SG0016";
+        public const string MissingBinding = "SG0016";
 
-        public const string MissingBinding = "SG0017";
+        public const string UnknownFundamentalType = "SG0017";
 
-        public const string UnknownFundamentalType = "SG0018";
+        public const string ImpossibleAlignment = "SG0018";
 
-        public const string ImpossibleAlignment = "SG0019";
-
-        public const string UnusedMappingRule = "SG0020";
+        public const string UnusedMappingRule = "SG0019";
 
         public const string CastXmlError = "CX0001";
 

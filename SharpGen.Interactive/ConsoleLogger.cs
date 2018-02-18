@@ -75,7 +75,7 @@ namespace SharpGen.Interactive
                 Output.Flush();
 
                 if (exception != null)
-                    LogException(logLocation, exception);
+                    Output.WriteLine(exception.ToString());
             }
         }
     }
