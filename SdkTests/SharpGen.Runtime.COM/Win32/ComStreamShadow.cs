@@ -26,8 +26,7 @@ namespace SharpGen.Runtime.Win32
 {
     internal class ComStreamShadow : ComStreamBaseShadow
     {
-        private static readonly ComStreamVtbl Vtbl = new ComStreamVtbl();
-        protected override CppObjectVtbl GetVtbl { get { return Vtbl; } }
+        protected override CppObjectVtbl Vtbl { get; } = new ComStreamVtbl();
 
         /// <summary>
         /// Callbacks to pointer.

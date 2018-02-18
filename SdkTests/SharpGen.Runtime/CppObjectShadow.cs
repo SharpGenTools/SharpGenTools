@@ -35,7 +35,7 @@ namespace SharpGen.Runtime
         /// <summary>
         /// Gets the VTBL associated with this shadow instance.
         /// </summary>
-        protected abstract CppObjectVtbl GetVtbl { get; }
+        protected abstract CppObjectVtbl Vtbl { get; }
 
         /// <summary>
         /// Initializes the specified shadow instance from a vtbl and a callback.
@@ -43,13 +43,13 @@ namespace SharpGen.Runtime
         /// <param name="callbackInstance">The callback.</param>
         public unsafe virtual void Initialize(ICallbackable callbackInstance)
         {
-            this.Callback = callbackInstance;
+            Callback = callbackInstance;
 
             // Allocate ptr to vtbl + ptr to callback together
             NativePointer = Marshal.AllocHGlobal(IntPtr.Size * 2);
 
             var handle = GCHandle.Alloc(this);
-            Marshal.WriteIntPtr(NativePointer, GetVtbl.Pointer);
+            Marshal.WriteIntPtr(NativePointer, Vtbl.Pointer);
 
             *((IntPtr*) NativePointer + 1) = GCHandle.ToIntPtr(handle);
         }
@@ -69,7 +69,7 @@ namespace SharpGen.Runtime
             base.Dispose(disposing);
         }
 
-        protected internal static T ToShadow<T>(IntPtr thisPtr) where T : CppObjectShadow
+        protected static T ToShadow<T>(IntPtr thisPtr) where T : CppObjectShadow
         {
             unsafe
             {

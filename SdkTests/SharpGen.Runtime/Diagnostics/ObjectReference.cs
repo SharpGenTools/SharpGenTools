@@ -38,7 +38,7 @@ namespace SharpGen.Runtime.Diagnostics
         public ObjectReference(DateTime creationTime, CppObject cppObject, string stackTrace)
         {
             CreationTime = creationTime;
-            // Creates a long week reference to the ComObject
+            // Creates a long weak reference to the ComObject
             Object = new WeakReference(cppObject, true);
             StackTrace = stackTrace;
         }

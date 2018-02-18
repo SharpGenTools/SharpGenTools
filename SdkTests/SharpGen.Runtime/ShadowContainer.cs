@@ -157,8 +157,7 @@ namespace SharpGen.Runtime
             guidToShadow.TryGetValue(guidType, out CppObjectShadow shadow);
             return shadow;
         }
-
-        // The bulk of the clean-up code is implemented in Dispose(bool)
+        
         protected override void Dispose(bool disposing)
         {
             if (disposing)

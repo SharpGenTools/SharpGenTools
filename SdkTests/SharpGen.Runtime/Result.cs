@@ -179,7 +179,7 @@ namespace SharpGen.Runtime
         /// </returns>
         public override string ToString()
         {
-            return string.Format(System.Globalization.CultureInfo.InvariantCulture, "HRESULT = 0x{0:X}", _code);
+            return $"Result: {Code}";
         }
 
         /// <summary>
@@ -187,7 +187,7 @@ namespace SharpGen.Runtime
         /// </summary>
         public void CheckError()
         {
-            if (_code < 0)
+            if (Failure)
             {
                 throw new SharpGenException(this);
             }

@@ -45,7 +45,7 @@ namespace SharpGen.Transform
         private readonly TypeRegistry typeRegistry;
         private readonly NamespaceRegistry namespaceRegistry;
         private readonly CsTypeBase DefaultCallbackable;
-        private readonly CsTypeBase DefaultInterfaceCppObject;
+        private readonly CsTypeBase CppObjectType;
 
         public InterfaceTransform(
             NamingRulesManager namingRules,
@@ -63,7 +63,7 @@ namespace SharpGen.Transform
             this.typeRegistry = typeRegistry;
             this.namespaceRegistry = namespaceRegistry;
 
-            DefaultInterfaceCppObject = new CsInterface { Name = globalNamespace.GetTypeName(WellKnownName.CppObject) };
+            CppObjectType = new CsInterface { Name = globalNamespace.GetTypeName(WellKnownName.CppObject) };
             DefaultCallbackable = new CsInterface { Name = globalNamespace.GetTypeName(WellKnownName.ICallbackable) };
         }
 
@@ -136,7 +136,7 @@ namespace SharpGen.Transform
             else
             {
                 if (!interfaceType.IsCallback)
-                    interfaceType.Base = DefaultInterfaceCppObject;
+                    interfaceType.Base = CppObjectType;
             }
 
             // Warning, if Guid is null we need to recover it from a declared GUID
@@ -204,7 +204,7 @@ namespace SharpGen.Transform
                             {
                                 Name = innerInterfaceName,
                                 PropertyAccessName = keyValuePair.Value.PropertyAccessName,
-                                Base = parentCsInterface ?? DefaultInterfaceCppObject
+                                Base = parentCsInterface ?? CppObjectType
                             };
 
                             // Add inner interface to root interface
@@ -222,7 +222,7 @@ namespace SharpGen.Transform
                 }
             }
 
-            // If interfaceType is DualCallback, then need to generate a default implentation
+            // If interfaceType is DualCallback, then need to generate a default implementation
             if (interfaceType.IsDualCallback)
             {
                 var tagForInterface = cppInterface.GetMappingRule();
@@ -241,14 +241,12 @@ namespace SharpGen.Transform
                         nativeCallback.Name = tagForInterface.NativeCallbackName;
                 }
 
-                nativeCallback.Base = interfaceType.Base;
+                nativeCallback.Base = interfaceType.Base ?? CppObjectType;
 
                 // If Parent is a DualInterface, then inherit from Default Callback
-                if (interfaceType.Base is CsInterface)
+                if (interfaceType.Base is CsInterface baseInterface && baseInterface.IsDualCallback)
                 {
-                    var parentInterface = interfaceType.Base as CsInterface;
-                    if (parentInterface.IsDualCallback)
-                        nativeCallback.Base = parentInterface.GetNativeImplementationOrThis();
+                    nativeCallback.Base = baseInterface.GetNativeImplementationOrThis();
                 }
 
                 nativeCallback.IBase = interfaceType;

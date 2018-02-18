@@ -17,6 +17,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using SharpGen.Runtime.Diagnostics;
 using System;
 
 namespace SharpGen.Runtime
@@ -94,31 +95,12 @@ namespace SharpGen.Runtime
         }
 
         /// <summary>
-        /// Initializes this instance with a pointer from a temporary object and set the pointer of the temporary  
-        /// object to IntPtr.Zero.
-        /// </summary>
-        /// <param name="temp">The instance to get the NativePointer.</param>
-        protected void FromTemp(CppObject temp)
-        {
-            NativePointer = temp.NativePointer;
-            temp.NativePointer = IntPtr.Zero;
-        }
-
-        /// <summary>
-        /// Initializes this instance with a pointer from a temporary object and set the pointer of the temporary  
-        /// object to IntPtr.Zero.
-        /// </summary>
-        /// <param name="temp">The instance to get the NativePointer.</param>
-        protected void FromTemp(IntPtr temp)
-        {
-            NativePointer = temp;
-        }
-
-        /// <summary>
         /// Method called when <see cref="NativePointer"/> is going to be update.
         /// </summary>
         protected virtual void NativePointerUpdating()
         {
+            if (Configuration.EnableObjectTracking)
+                ObjectTracker.UnTrack(this);
         }
 
         /// <summary>
@@ -126,6 +108,8 @@ namespace SharpGen.Runtime
         /// </summary>
         protected virtual void NativePointerUpdated(IntPtr oldNativePointer)
         {
+            if (Configuration.EnableObjectTracking)
+                ObjectTracker.Track(this);
         }
 
         protected override void Dispose(bool disposing)

@@ -26,7 +26,7 @@ namespace SharpGen.Runtime
     /// <summary>
     /// Root IUnknown class to interop with COM object
     /// </summary>
-    public partial class ComObject : CppObject, IUnknown
+    public partial class ComObject
     {
         /// <summary>
         /// Logs a warning of a possible memory leak when <see cref="Configuration.EnableObjectTracking" /> is enabled.
@@ -235,18 +235,6 @@ namespace SharpGen.Runtime
             }
 
             base.Dispose(disposing);
-        }
-
-        protected override void NativePointerUpdating()
-        {
-            if (Configuration.EnableObjectTracking)
-                ObjectTracker.UnTrack(this);
-        }
-
-        protected override void NativePointerUpdated(IntPtr oldNativePointer)
-        {
-            if (Configuration.EnableObjectTracking)
-                ObjectTracker.Track(this);
         }
     }
 }

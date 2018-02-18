@@ -55,7 +55,7 @@ namespace SharpGen.Runtime.Diagnostics
     {
         private static Dictionary<IntPtr, List<ObjectReference>> processGlobalObjectReferences;
 
-        private static ThreadLocal<Dictionary<IntPtr, List<ObjectReference>>> threadStaticObjectReferences = new ThreadLocal<Dictionary<IntPtr, List<ObjectReference>>>();
+        private static readonly ThreadLocal<Dictionary<IntPtr, List<ObjectReference>>> threadStaticObjectReferences = new ThreadLocal<Dictionary<IntPtr, List<ObjectReference>>>();
 
         /// <summary>
         /// Occurs when a CppObject is tracked.
@@ -70,7 +70,7 @@ namespace SharpGen.Runtime.Diagnostics
         /// <summary>
         /// Function which provides stack trace for object tracking.
         /// </summary>
-        public static Func<string> StackTraceProvider = GetStackTrace;
+        public static Func<string> StackTraceProvider { get; set; } = GetStackTrace;
 
         private static Dictionary<IntPtr, List<ObjectReference>> ObjectReferences
         {
@@ -81,14 +81,14 @@ namespace SharpGen.Runtime.Diagnostics
                 if (Configuration.UseThreadStaticObjectTracking)
                 {
                     if (threadStaticObjectReferences == null)
-                        threadStaticObjectReferences.Value = new Dictionary<IntPtr, List<ObjectReference>>(EqualityComparer.DefaultIntPtr);
+                        threadStaticObjectReferences.Value = new Dictionary<IntPtr, List<ObjectReference>>();
 
                     objectReferences = threadStaticObjectReferences.Value;
                 }
                 else
                 {
                     if (processGlobalObjectReferences == null)
-                        processGlobalObjectReferences = new Dictionary<IntPtr, List<ObjectReference>>(EqualityComparer.DefaultIntPtr);
+                        processGlobalObjectReferences = new Dictionary<IntPtr, List<ObjectReference>>();
 
                     objectReferences = processGlobalObjectReferences;
                 }

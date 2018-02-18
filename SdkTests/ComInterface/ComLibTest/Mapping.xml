@@ -38,6 +38,7 @@
   </bindings>
 
   <mapping>
+    <map interface="IInterface" callback="true" callback-dual="true" callback-name="CppImplementation" callback-visibility="public" />
     <map function="CreateInstance" dll='"ComLib.dll"' group="ComLibTest.Functions" />
   </mapping>
 

@@ -27,21 +27,10 @@ namespace SharpGen.Runtime
     /// </summary>
     public class InspectableShadow : ComObjectShadow
     {
-        private static readonly InspectableProviderVtbl Vtbl = new InspectableProviderVtbl();
 
-        /// <summary>
-        /// Return a pointer to the unmanaged version of this callback.
-        /// </summary>
-        /// <param name="callback">The callback.</param>
-        /// <returns>A pointer to a shadow c++ callback</returns>
-        public static IntPtr ToIntPtr(IInspectable callback)
+        protected class InspectableVtbl : ComObjectVtbl
         {
-            return ToCallbackPtr<IInspectable>(callback);
-        }
-
-        protected class InspectableProviderVtbl : ComObjectVtbl
-        {
-            public InspectableProviderVtbl()
+            public InspectableVtbl()
                 : base(3)
             {
                 unsafe
@@ -73,8 +62,7 @@ namespace SharpGen.Runtime
                     iids = (IntPtr*)Marshal.AllocCoTaskMem(IntPtr.Size * countGuids);
                     *iidCount = countGuids;
 
-                    for (int i = 0; i < countGuids; i++)
-                        iids[i] = container.Guids[i];
+                    Utilities.CopyMemory((IntPtr)iids, new Span<IntPtr>(container.Guids));
                 }
                 catch (Exception exception)
                 {
@@ -137,9 +125,6 @@ namespace SharpGen.Runtime
 
         }
 
-        protected override CppObjectVtbl GetVtbl
-        {
-            get { return Vtbl; }
-        }
+        protected override CppObjectVtbl Vtbl { get; } = new InspectableVtbl();
     }
 }

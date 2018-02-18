@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -26,21 +27,33 @@ namespace SharpGen.Runtime
     /// <summary>
     /// A COM Interface Callback
     /// </summary>
-    public abstract class ComObjectShadow : CppObjectShadow
+    public class ComObjectShadow : CppObjectShadow
     {
-        public static Guid IID_IUnknown = new Guid("00000000-0000-0000-C000-000000000046");
-        
+        private Result QueryInterface(Guid guid, out IntPtr output)
+        {
+            output = Callback.Shadow.Find(guid);
+
+            if (output == null)
+            {
+                return Result.NoInterface.Code;
+            }
+
+            ((IUnknown)Callback).AddRef();
+
+            return Result.Ok.Code;
+
+        }
+
+        protected override CppObjectVtbl Vtbl { get; } = new ComObjectVtbl(0);
+
         protected class ComObjectVtbl : CppObjectVtbl
         {
             public ComObjectVtbl(int numberOfCallbackMethods)
                 : base(numberOfCallbackMethods + 3)
             {
-                unsafe
-                {
-                    AddMethod(new QueryInterfaceDelegate(QueryInterfaceImpl));
-                    AddMethod(new AddRefDelegate(AddRefImpl));
-                    AddMethod(new ReleaseDelegate(ReleaseImpl));
-                }
+                AddMethod(new QueryInterfaceDelegate(QueryInterfaceImpl));
+                AddMethod(new AddRefDelegate(AddRefImpl));
+                AddMethod(new ReleaseDelegate(ReleaseImpl));
             }
 
             [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -56,18 +69,7 @@ namespace SharpGen.Runtime
             {
                 var shadow = ToShadow<ComObjectShadow>(thisObject);
 
-                var obj = (IUnknown)shadow.Callback;
-
-                obj.QueryInterface(*(Guid*)guid, out output);
-
-                obj.AddRef();
-
-                if (output == null)
-                {
-                    return Result.NoInterface.Code;
-                }
-
-                return Result.Ok.Code;
+                return shadow.QueryInterface(*(Guid*)guid, out output).Code;
             }
 
             protected static uint AddRefImpl(IntPtr thisObject)

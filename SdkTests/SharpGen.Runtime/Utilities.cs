@@ -55,6 +55,25 @@ namespace SharpGen.Runtime
         }
 
         /// <summary>
+        /// Native memcpy.
+        /// </summary>
+        /// <param name="dest">The destination memory location.</param>
+        /// <param name="src">The source memory location.</param>
+        /// <param name="sizeInBytesToCopy">The byte count.</param>
+        public static void CopyMemory<T>(IntPtr dest, Span<T> src)
+            where T : struct
+        {
+            unsafe
+            {
+                var byteSpan = src.AsBytes();
+                fixed (void* source = &byteSpan[0])
+                {
+                    Unsafe.CopyBlockUnaligned((void*)dest, source, (uint)byteSpan.Length);
+                }
+            }
+        }
+
+        /// <summary>
         /// Clears the memory.
         /// </summary>
         /// <param name="dest">The dest.</param>
