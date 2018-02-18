@@ -1,0 +1,41 @@
+<Project>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.3.409" PrivateAssets="all" />
+    <Content Include="**/*.props" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
+    <Content Include="**/*.targets" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Update="*">
+        <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
+    <!--
+    The include needs to happen after output has been copied to build output folder
+    but before NuGet generates a nuspec.
+    -->
+    
+    <ItemGroup>
+      <ReferencedAssemblies Include="bin\$(Configuration)\**\*.dll" />
+      <_PackageFiles Include="@(ReferencedAssemblies)">
+        <PackagePath>tools\%(RecursiveDir)%(FileName)%(Extension)</PackagePath>
+        <Visible>false</Visible>
+        <BuildAction>None</BuildAction>
+      </_PackageFiles>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="PackDummyLibFile" BeforeTargets="GenerateNuspec">
+    <Touch Files="$(BaseIntermediateOutputPath)$(Configuration)/_._" AlwaysCreate="true" />
+
+    <ItemGroup>
+      <_PackageFiles Include="$(BaseIntermediateOutputPath)$(Configuration)/_._">
+        <PackagePath>lib/netstandard1.1</PackagePath>
+        <Visible>false</Visible>
+        <BuildAction>None</BuildAction>
+      </_PackageFiles>
+    </ItemGroup>
+  </Target>
+</Project>

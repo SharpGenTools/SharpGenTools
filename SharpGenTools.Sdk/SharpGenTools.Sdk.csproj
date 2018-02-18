@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.5;net46</TargetFrameworks>
+    <TargetFrameworks>net46;netstandard1.3</TargetFrameworks>
     <PackageId>SharpGenTools.Sdk</PackageId>
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <!-- forces SDK to copy dependencies into build output to make packing easier -->
@@ -9,22 +9,16 @@
     <BuildOutputTargetFolder>tools</BuildOutputTargetFolder>
     <DevelopmentDependency>true</DevelopmentDependency>
     <Description>MSBuild tooling for SharpGen and SharpPatch. Tooling for generating efficient C# code from C++ and COM headers.</Description>
+    <SharpGenSdkPackage>true</SharpGenSdkPackage>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.3.409" />
     <PackageReference Include="Mono.Cecil" Version="0.10.0-beta6" />
-    <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.0.1" Condition="'$(TargetFramework)' == 'netstandard1.5'" NoWarn="NU1605" />
-    <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.3.0" Condition="'$(TargetFramework)' == 'net46'" />
     <PackageReference Include="System.Xml.XmlDocument" Version="4.3.0" />
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" Condition="'$(TargetFramework)' == 'netstandard1.5'" />
-    <PackageReference Update="*">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SharpGen\SharpGen.csproj">
+    <ProjectReference Include="..\SharpGen\SharpGen.csproj" >
       <PrivateAssets>all</PrivateAssets>
     </ProjectReference>
     <ProjectReference Include="..\SharpPatch\SharpPatch.csproj">
@@ -33,24 +27,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="_._" PackagePath="lib/netstandard1.0;lib/net40" />
     <Content Include="../CastXML/**/*" PackagePath="tools/CastXML/%(RecursiveDir)%(FileName)%(Extension)" />
-    <Content Include="**/*.props" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
-    <Content Include="**/*.targets" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
   </ItemGroup>
-
-  <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
-    <!--
-    The include needs to happen after output has been copied to build output folder
-    but before NuGet generates a nuspec.
-    -->
-    <ItemGroup>
-      <ReferencedAssemblies Include="bin\$(Configuration)\**\*.dll" />
-      <_PackageFiles Include="@(ReferencedAssemblies)">
-        <PackagePath>tools\%(RecursiveDir)%(FileName)%(Extension)</PackagePath>
-        <Visible>false</Visible>
-        <BuildAction>Content</BuildAction>
-      </_PackageFiles>
-    </ItemGroup>
-  </Target>
 </Project>

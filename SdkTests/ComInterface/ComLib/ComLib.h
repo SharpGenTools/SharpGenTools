@@ -7,9 +7,14 @@ struct MyValue {
 	double J;
 };
 
-struct IComInterface : public IUnknown
+struct IInterface
 {
 	virtual MyValue __stdcall GetValue() = 0;
 };
 
-extern "C" COMLIB_API IComInterface* __stdcall CreateInstance(void);
+struct IInterface2 : public IInterface
+{
+	virtual MyValue __stdcall GetValue2() = 0;
+};
+
+extern "C" COMLIB_API IInterface2* __stdcall CreateInstance(void);

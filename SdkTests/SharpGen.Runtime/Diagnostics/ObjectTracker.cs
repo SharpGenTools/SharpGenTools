@@ -23,24 +23,25 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 
 namespace SharpGen.Runtime.Diagnostics
 {
     /// <summary>
-    /// Event args for <see cref="ComObject"/> used by <see cref="ObjectTracker"/>.
+    /// Event args for <see cref="CppObject"/> used by <see cref="ObjectTracker"/>.
     /// </summary>
-    public class ComObjectEventArgs : EventArgs
+    public class CppObjectEventArgs : EventArgs
     {
         /// <summary>
         /// The object being tracked/untracked.
         /// </summary>
-        public ComObject Object;
+        public CppObject Object { get; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ComObjectEventArgs"/> class.
+        /// Initializes a new instance of the <see cref="CppObjectEventArgs"/> class.
         /// </summary>
         /// <param name="o">The o.</param>
-        public ComObjectEventArgs(ComObject o)
+        public CppObjectEventArgs(CppObject o)
         {
             Object = o;
         }
@@ -53,24 +54,23 @@ namespace SharpGen.Runtime.Diagnostics
     public static class ObjectTracker
     {
         private static Dictionary<IntPtr, List<ObjectReference>> processGlobalObjectReferences;
-        
-        [ThreadStatic] 
-        private static Dictionary<IntPtr, List<ObjectReference>> threadStaticObjectReferences;
+
+        private static readonly ThreadLocal<Dictionary<IntPtr, List<ObjectReference>>> threadStaticObjectReferences = new ThreadLocal<Dictionary<IntPtr, List<ObjectReference>>>();
 
         /// <summary>
-        /// Occurs when a ComObject is tracked.
+        /// Occurs when a CppObject is tracked.
         /// </summary>
-        public static event EventHandler<ComObjectEventArgs> Tracked;
+        public static event EventHandler<CppObjectEventArgs> Tracked;
 
         /// <summary>
-        /// Occurs when a ComObject is untracked.
+        /// Occurs when a CppObject is untracked.
         /// </summary>
-        public static event EventHandler<ComObjectEventArgs> UnTracked;
+        public static event EventHandler<CppObjectEventArgs> UnTracked;
 
         /// <summary>
         /// Function which provides stack trace for object tracking.
         /// </summary>
-        public static Func<string> StackTraceProvider = GetStackTrace;
+        public static Func<string> StackTraceProvider { get; set; } = GetStackTrace;
 
         private static Dictionary<IntPtr, List<ObjectReference>> ObjectReferences
         {
@@ -81,14 +81,14 @@ namespace SharpGen.Runtime.Diagnostics
                 if (Configuration.UseThreadStaticObjectTracking)
                 {
                     if (threadStaticObjectReferences == null)
-                        threadStaticObjectReferences = new Dictionary<IntPtr, List<ObjectReference>>(EqualityComparer.DefaultIntPtr);
+                        threadStaticObjectReferences.Value = new Dictionary<IntPtr, List<ObjectReference>>();
 
-                    objectReferences = threadStaticObjectReferences;
+                    objectReferences = threadStaticObjectReferences.Value;
                 }
                 else
                 {
                     if (processGlobalObjectReferences == null)
-                        processGlobalObjectReferences = new Dictionary<IntPtr, List<ObjectReference>>(EqualityComparer.DefaultIntPtr);
+                        processGlobalObjectReferences = new Dictionary<IntPtr, List<ObjectReference>>();
 
                     objectReferences = processGlobalObjectReferences;
                 }
@@ -117,40 +117,40 @@ namespace SharpGen.Runtime.Diagnostics
         }
 
         /// <summary>
-        /// Tracks the specified COM object.
+        /// Tracks the specified C++ object.
         /// </summary>
-        /// <param name="comObject">The COM object.</param>
-        public static void Track(ComObject comObject)
+        /// <param name="cppObject">The C++ object.</param>
+        public static void Track(CppObject cppObject)
         {
-            if (comObject == null || comObject.NativePointer == IntPtr.Zero)
+            if (cppObject == null || cppObject.NativePointer == IntPtr.Zero)
                 return;
             lock (ObjectReferences)
             {
-                if (!ObjectReferences.TryGetValue(comObject.NativePointer, out List<ObjectReference> referenceList))
+                if (!ObjectReferences.TryGetValue(cppObject.NativePointer, out List<ObjectReference> referenceList))
                 {
                     referenceList = new List<ObjectReference>();
-                    ObjectReferences.Add(comObject.NativePointer, referenceList);
+                    ObjectReferences.Add(cppObject.NativePointer, referenceList);
                 }
 
-                referenceList.Add(new ObjectReference(DateTime.Now, comObject, StackTraceProvider != null ? StackTraceProvider() : String.Empty));
+                referenceList.Add(new ObjectReference(DateTime.Now, cppObject, StackTraceProvider != null ? StackTraceProvider() : String.Empty));
 
                 // Fire Tracked event.
-                OnTracked(comObject);
+                OnTracked(cppObject);
             }
         }
 
         /// <summary>
-        /// Finds a list of object reference from a specified COM object pointer.
+        /// Finds a list of object reference from a specified C++ object pointer.
         /// </summary>
-        /// <param name="comObjectPtr">The COM object pointer.</param>
+        /// <param name="comObjectPtr">The C++ object pointer.</param>
         /// <returns>A list of object reference</returns>
-        public static List<ObjectReference> Find(IntPtr comObjectPtr)
+        public static List<ObjectReference> Find(IntPtr objPtr)
         {
             lock (ObjectReferences)
             {
                 List<ObjectReference> referenceList;
                 // Object is already tracked
-                if (ObjectReferences.TryGetValue(comObjectPtr, out referenceList))
+                if (ObjectReferences.TryGetValue(objPtr, out referenceList))
                     return new List<ObjectReference>(referenceList);
             }
             return new List<ObjectReference>();
@@ -159,17 +159,17 @@ namespace SharpGen.Runtime.Diagnostics
         /// <summary>
         /// Finds the object reference for a specific COM object.
         /// </summary>
-        /// <param name="comObject">The COM object.</param>
+        /// <param name="cppObject">The COM object.</param>
         /// <returns>An object reference</returns>
-        public static ObjectReference Find(ComObject comObject)
+        public static ObjectReference Find(CppObject cppObject)
         {
             lock (ObjectReferences)
             {
-                if (ObjectReferences.TryGetValue(comObject.NativePointer, out List<ObjectReference> referenceList))
+                if (ObjectReferences.TryGetValue(cppObject.NativePointer, out List<ObjectReference> referenceList))
                 {
                     foreach (var objectReference in referenceList)
                     {
-                        if (ReferenceEquals(objectReference.Object.Target, comObject))
+                        if (ReferenceEquals(objectReference.Object.Target, cppObject))
                             return objectReference;
                     }
                 }
@@ -180,32 +180,32 @@ namespace SharpGen.Runtime.Diagnostics
         /// <summary>
         /// Untracks the specified COM object.
         /// </summary>
-        /// <param name="comObject">The COM object.</param>
-        public static void UnTrack(ComObject comObject)
+        /// <param name="cppObject">The COM object.</param>
+        public static void UnTrack(CppObject cppObject)
         {
-            if (comObject == null || comObject.NativePointer == IntPtr.Zero)
+            if (cppObject == null || cppObject.NativePointer == IntPtr.Zero)
                 return;
 
             lock (ObjectReferences)
             {
                 List<ObjectReference> referenceList;
                 // Object is already tracked
-                if (ObjectReferences.TryGetValue(comObject.NativePointer, out referenceList))
+                if (ObjectReferences.TryGetValue(cppObject.NativePointer, out referenceList))
                 {
                     for (int i = referenceList.Count-1; i >=0; i--)
                     {
                         var objectReference = referenceList[i];
-                        if (ReferenceEquals(objectReference.Object.Target, comObject))
+                        if (ReferenceEquals(objectReference.Object.Target, cppObject))
                             referenceList.RemoveAt(i);
                         else if (!objectReference.IsAlive)
                             referenceList.RemoveAt(i);
                     }
                     // Remove empty list
                     if (referenceList.Count == 0)
-                        ObjectReferences.Remove(comObject.NativePointer);
+                        ObjectReferences.Remove(cppObject.NativePointer);
 
                     // Fire UnTracked event
-                    OnUnTracked(comObject);
+                    OnUnTracked(cppObject);
                 }
             }
         }
@@ -231,7 +231,7 @@ namespace SharpGen.Runtime.Diagnostics
         }
 
         /// <summary>
-        /// Reports all COM object that are active and not yet disposed.
+        /// Reports all C++ objects that are active and not yet disposed.
         /// </summary>
         public static string ReportActiveObjects()
         {
@@ -274,14 +274,14 @@ namespace SharpGen.Runtime.Diagnostics
             return text.ToString();
         }
 
-        private static void OnTracked(ComObject obj)
+        private static void OnTracked(CppObject obj)
         {
-            Tracked?.Invoke(null, new ComObjectEventArgs(obj));
+            Tracked?.Invoke(null, new CppObjectEventArgs(obj));
         }
 
-        private static void OnUnTracked(ComObject obj)
+        private static void OnUnTracked(CppObject obj)
         {
-            UnTracked?.Invoke(null, new ComObjectEventArgs(obj));
+            UnTracked?.Invoke(null, new CppObjectEventArgs(obj));
         }
 
         private class GetStackTraceException : Exception

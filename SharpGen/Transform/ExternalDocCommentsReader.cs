@@ -10,7 +10,7 @@ namespace SharpGen.Transform
     {
         public string GetCodeCommentsXPath(CsBase element)
         {
-            return $"/comments/comment[@id='{element.CppElementName ?? element.QualifiedName}']";
+            return $"/comments/comment[@id='{GetExternalDocCommentId(element)}']";
         }
 
         public ExternalDocCommentsReader(Dictionary<string, XmlDocument> externalCommentsDocuments)
@@ -22,14 +22,23 @@ namespace SharpGen.Transform
 
         public string GetDocumentWithExternalComments(CsBase element)
         {
+            string externalDocCommentId = GetExternalDocCommentId(element);
             foreach (var document in ExternalCommentsDocuments)
             {
-                if (document.Value.SelectSingleNode(GetCodeCommentsXPath(element)) != null)
+                foreach (XmlNode node in document.Value.ChildNodes)
                 {
-                    return document.Key;
+                    if (node.Name == "comment" && node.Attributes["id"].Value == externalDocCommentId)
+                    {
+                        return document.Key;
+                    }
                 }
             }
             return null;
+        }
+
+        private static string GetExternalDocCommentId(CsBase element)
+        {
+            return element.CppElementName ?? element.QualifiedName;
         }
     }
 }

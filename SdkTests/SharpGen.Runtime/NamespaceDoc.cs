@@ -20,7 +20,7 @@
 namespace SharpGen.Runtime
 {
     /// <summary>
-    /// The <see cref="SharpDX"/> namespace contains fundamental classes used by SharpDX.
+    /// The <see cref="SharpGen.Runtime"/> namespace contains fundamental classes used at runtime by the SharpGen code generator.
     /// </summary>
     [System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     class NamespaceDoc

@@ -2,7 +2,6 @@
 
 namespace SharpGenTools.Sdk
 {
-    [Serializable]
     internal class CodeGenFailedException : Exception
     {
         public CodeGenFailedException()
@@ -10,10 +9,6 @@ namespace SharpGenTools.Sdk
         }
 
         public CodeGenFailedException(string message) : base(message)
-        {
-        }
-
-        public CodeGenFailedException(string message, Exception innerException) : base(message, innerException)
         {
         }
     }

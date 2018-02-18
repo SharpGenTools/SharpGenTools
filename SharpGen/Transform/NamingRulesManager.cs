@@ -34,12 +34,12 @@ namespace SharpGen.Transform
     /// </summary>
     public class NamingRulesManager
     {
-        private readonly List<ShortNameMapper> _expandShortName = new List<ShortNameMapper>();
+        private readonly SortedSet<ShortNameMapper> _expandShortName = new SortedSet<ShortNameMapper>();
 
         /// <summary>
         /// The recorded names, a list of previous name and new name.
         /// </summary>
-        public readonly List<(string originalName, string finalName)> RecordNames = new List<(string, string)>();
+        public List<(string originalName, string finalName)> RecordNames { get; } = new List<(string, string)>();
 
         /// <summary>
         /// Adds the short name rule.
@@ -49,8 +49,6 @@ namespace SharpGen.Transform
         public void AddShortNameRule(string regexShortName, string expandedName)
         {
             _expandShortName.Add(new ShortNameMapper(regexShortName, expandedName));
-            // Not efficient, but we order from longest to shortest regex
-            _expandShortName.Sort((left, right) => -left.Regex.ToString().Length.CompareTo(right.Regex.ToString().Length));
         }
 
         /// <summary>
@@ -308,7 +306,7 @@ namespace SharpGen.Transform
             return CSharpKeywords.Contains(name);
         }
 
-        private class ShortNameMapper
+        private class ShortNameMapper : IComparable<ShortNameMapper>, IComparable
         {
             public ShortNameMapper(string regex, string replace)
             {
@@ -322,6 +320,16 @@ namespace SharpGen.Transform
             public string Replace;
 
             public bool HasRegexReplace;
+
+            public int CompareTo(ShortNameMapper other)
+            {
+                return -Regex.ToString().Length.CompareTo(other.Regex.ToString().Length);
+            }
+
+            public int CompareTo(object obj)
+            {
+                return obj is ShortNameMapper mapper ? CompareTo(mapper) : throw new InvalidOperationException();
+            }
         }
 
         /// <summary>

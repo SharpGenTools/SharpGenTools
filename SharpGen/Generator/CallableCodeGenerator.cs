@@ -86,7 +86,7 @@ namespace SharpGen.Generator
             // Return
             if (csElement.HasPublicReturnType)
             {
-                if ((csElement.ReturnValue.PublicType.Name == globalNamespace.GetTypeName("Result")) && csElement.CheckReturnType)
+                if ((csElement.ReturnValue.PublicType.Name == globalNamespace.GetTypeName(WellKnownName.Result)) && csElement.CheckReturnType)
                 {
                     statements.Add(ExpressionStatement(
                         InvocationExpression(

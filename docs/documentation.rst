@@ -28,6 +28,9 @@ Sometimes you're mapping an already documented library, and you don't want to ha
     :start-line: 19
     :code: csharp
 
-You can reference the SharpGen package on NuGet to get a reference to the assembly. Once you've built an assembly with your Doc Provider, set the ``SharpGenGenerateDoc`` property to ``true`` and the ``SharpGenDocProviderAssemblyPath`` property to the path to the assembly.
+You can reference the SharpGen package on NuGet to get a reference to the assembly. To enable installed doc providers, set the ``$(SharpGenGenerateDoc)`` property to ``true``. By default, SharpGenTools.Sdk does not ship with any doc providers.
 
-By default, SharpGen has a built in MSDN Doc Provider that fetches documentation from the MSDN documentation service. To use this, just set ``SharpGenGenerateDoc`` to ``true``.
+Doc Providers MSBuild Integration
+=====================================
+
+To integrate into MSBuild, you need to create an MSBuild task. The MSDN Doc Provider task project in the main repository (SharpGen.Doc.Msdn.Tasks), is a great example of how to create your own doc provider and hook it into the build process. If you are going to publicly publish the doc provider task, please make the task share the same condition statement as the one in SharpGen.Doc.Msdn.Tasks so users can easily enable the provider in a standard way.

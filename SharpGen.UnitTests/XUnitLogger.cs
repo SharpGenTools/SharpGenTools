@@ -33,7 +33,7 @@ namespace SharpGen.UnitTests
             output.WriteLine(lineMessage);
 
             if (exception != null)
-                LogException(logLocation, exception);
+                output.WriteLine(exception.ToString());
         }
     }
 }

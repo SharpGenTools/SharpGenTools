@@ -21,6 +21,8 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Reflection;
+using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace SharpGen.Runtime
 {
@@ -35,82 +37,36 @@ namespace SharpGen.Runtime
         private static readonly Dictionary<Type, List<Type>> typeToShadowTypes = new Dictionary<Type, List<Type>>();
 
         private IntPtr guidPtr;
-        public IntPtr[] Guids { get; private set; }
+        public IntPtr[] Guids { get; }
 
-        internal void Initialize(ICallbackable callbackable)
+        internal ShadowContainer(ICallbackable callbackable)
         {
             callbackable.Shadow = this;
 
             var type = callbackable.GetType();
-            List<Type> slimInterfaces;
 
-            // Cache reflection on COM interface inheritance
-            lock (typeToShadowTypes)
+            var guidList = new List<Guid>();
+
+            var shadowedInterfaces = GetUninheritedShadowedInterfaces(type);
+
+            // Associate all shadows with their interfaces.
+            foreach (var item in shadowedInterfaces)
             {
-                if (!typeToShadowTypes.TryGetValue(type, out slimInterfaces))
-                {
-#if NET40
-                    var interfaces = type.GetTypeInfo().GetInterfaces();
-#else
-                    var interfaces = type.GetTypeInfo().ImplementedInterfaces;
-#endif
-                    slimInterfaces = new List<Type>();
-                    slimInterfaces.AddRange(interfaces);
-                    typeToShadowTypes.Add(type, slimInterfaces);
-
-                    // First pass to identify most detailed interfaces
-                    foreach (var item in interfaces)
-                    {
-                        // Only process interfaces that are using shadow
-                        var shadowAttribute = ShadowAttribute.Get(item);
-                        if (shadowAttribute == null)
-                        {
-                            slimInterfaces.Remove(item);
-                            continue;
-                        }
-
-                        // Keep only final interfaces and not intermediate.
-#if NET40
-                        var inheritList = item.GetTypeInfo().GetInterfaces();
-#else
-                        var inheritList = item.GetTypeInfo().ImplementedInterfaces;
-#endif
-                        foreach (var inheritInterface in inheritList)
-                        {
-                            slimInterfaces.Remove(inheritInterface);
-                        }
-                    }
-                }
-            }
-
-            CppObjectShadow iunknownShadow = null;
-
-            // Second pass to instantiate shadow
-            foreach (var item in slimInterfaces)
-            {
-                // Only process interfaces that are using shadow
                 var shadowAttribute = ShadowAttribute.Get(item);
 
                 // Initialize the shadow with the callback
                 var shadow = (CppObjectShadow)Activator.CreateInstance(shadowAttribute.Type);
                 shadow.Initialize(callbackable);
 
-                // Take the first shadow as the main IUnknown
-                if (iunknownShadow == null)
+                guidToShadow.Add(Utilities.GetGuidFromType(item), shadow);
+                if (item.GetTypeInfo().GetCustomAttribute<ExcludeFromTypeListAttribute>() != null)
                 {
-                    iunknownShadow = shadow;
-                    // Add IUnknown as a supported interface
-                    guidToShadow.Add(ComObjectShadow.IID_IUnknown, iunknownShadow);
+                    guidList.Add(Utilities.GetGuidFromType(item));
                 }
 
-                guidToShadow.Add(Utilities.GetGuidFromType(item), shadow);
-
                 // Associate also inherited interface to this shadow
-#if NET40
-                var inheritList = item.GetTypeInfo().GetInterfaces();
-#else
                 var inheritList = item.GetTypeInfo().ImplementedInterfaces;
-#endif
+
                 foreach (var inheritInterface in inheritList)
                 {
                     var inheritShadowAttribute = ShadowAttribute.Get(inheritInterface);
@@ -119,29 +75,23 @@ namespace SharpGen.Runtime
 
                     // Use same shadow as derived
                     guidToShadow.Add(Utilities.GetGuidFromType(inheritInterface), shadow);
+                    if (inheritInterface.GetTypeInfo().GetCustomAttribute<ExcludeFromTypeListAttribute>() != null)
+                    {
+                        guidList.Add(Utilities.GetGuidFromType(item));
+                    }
                 }
             }
 
-            // Precalculate the list of GUID without IUnknown and IInspectable
-            // Used for WinRT 
-            int countGuids = 0;
-            foreach (var guidKey in guidToShadow.Keys)
-            {
-                if (guidKey != Utilities.GetGuidFromType(typeof(IInspectable)) && guidKey != Utilities.GetGuidFromType(typeof(IUnknown)))
-                    countGuids++;
-            }
+            var guidCount = guidList.Count;
 
-            guidPtr = Marshal.AllocHGlobal(Utilities.SizeOf<Guid>() * countGuids);
-            Guids = new IntPtr[countGuids];
-            int i = 0;
+            guidPtr = Marshal.AllocHGlobal(Unsafe.SizeOf<Guid>() * guidCount);
+
             unsafe
             {
-                var pGuid = (Guid*) guidPtr;
-                foreach (var guidKey in guidToShadow.Keys)
+                var i = 0;
+                var pGuid = (Guid*)guidPtr;
+                foreach (var guidKey in guidList)
                 {
-                    if (guidKey == Utilities.GetGuidFromType(typeof(IInspectable)) || guidKey == Utilities.GetGuidFromType(typeof(IUnknown)))
-                        continue;
-
                     pGuid[i] = guidKey;
                     // Store the pointer
                     Guids[i] = new IntPtr(pGuid + i);
@@ -150,25 +100,64 @@ namespace SharpGen.Runtime
             }
         }
 
-        internal IntPtr Find(Type type)
+        /// <summary>
+        /// Gets a list of interfaces implemented by <paramref name="type"/> that aren't inherited by any other shadowed interfaces.
+        /// </summary>
+        /// <param name="type">The type for which to get the list.</param>
+        /// <returns>The interface list.</returns>
+        private static List<Type> GetUninheritedShadowedInterfaces(Type type)
+        {
+            // Cache reflection on interface inheritance
+            lock (typeToShadowTypes)
+            {
+                if (!typeToShadowTypes.TryGetValue(type, out List<Type> cachedInterfaces))
+                {
+                    var interfaces = type.GetTypeInfo().ImplementedInterfaces.ToList();
+                    interfaces = new List<Type>();
+                    interfaces.AddRange(interfaces);
+                    typeToShadowTypes.Add(type, interfaces);
+
+                    // First pass to identify most detailed interfaces
+                    foreach (var item in interfaces)
+                    {
+                        // Only process interfaces that are using shadow
+                        var shadowAttribute = ShadowAttribute.Get(item);
+                        if (shadowAttribute == null)
+                        {
+                            interfaces.Remove(item);
+                            continue;
+                        }
+
+                        // Keep only final interfaces and not intermediate.
+                        var inheritList = item.GetTypeInfo().ImplementedInterfaces;
+                        foreach (var inheritInterface in inheritList)
+                        {
+                            interfaces.Remove(inheritInterface);
+                        }
+                    }
+                    return interfaces;
+                }
+                return cachedInterfaces;
+            }
+        }
+
+        public IntPtr Find(Type type)
         {
             return Find(Utilities.GetGuidFromType(type));
         }
 
-        internal IntPtr Find(Guid guidType)
+        public IntPtr Find(Guid guidType)
         {
             var shadow = FindShadow(guidType);
             return (shadow == null) ? IntPtr.Zero : shadow.NativePointer;
         }
 
-        internal CppObjectShadow FindShadow(Guid guidType)
+        public CppObjectShadow FindShadow(Guid guidType)
         {
-            CppObjectShadow shadow;
-            guidToShadow.TryGetValue(guidType, out shadow);
+            guidToShadow.TryGetValue(guidType, out CppObjectShadow shadow);
             return shadow;
         }
-
-        // The bulk of the clean-up code is implemented in Dispose(bool)
+        
         protected override void Dispose(bool disposing)
         {
             if (disposing)

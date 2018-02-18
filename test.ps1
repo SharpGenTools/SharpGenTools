@@ -10,12 +10,18 @@ popd
 
 if(Test-Path -Path SdkTests/RestoredPackages/sharpgentools.sdk){
     rm -r -Force SdkTests/RestoredPackages/sharpgentools.sdk
-    rm -r -Force SdkTests/RestoredPackages/sharpgen.runtime -ErrorAction SilentlyContinue
 }
+
+if(Test-Path -Path SdkTests/RestoredPackages/sharpgen.doc.msdn.tasks){
+    rm -r -Force SdkTests/RestoredPackages/sharpgen.doc.msdn.tasks
+}
+
+rm -r -Force SdkTests/RestoredPackages/sharpgen.runtime -ErrorAction SilentlyContinue
 
 mkdir SdkTests/LocalPackages -ErrorAction SilentlyContinue
 rm SdkTests/LocalPackages/*.nupkg
 cp SharpGenTools.Sdk/bin/Release/*.nupkg SdkTests/LocalPackages/
+cp SharpGen.Doc.Msdn.Tasks/bin/Release/*.nupkg SdkTests/LocalPackages/
 
 pushd .\SdkTests
     msbuild /t:Restore /v:minimal

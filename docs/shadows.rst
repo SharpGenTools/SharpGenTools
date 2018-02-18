@@ -8,7 +8,7 @@ SharpGenTools has support as part of the SharpGen.Runtime package for inheriting
 
     SharpGen does not currently generate method signatures for callback interfaces by default. You will have to specify the method signatures in another file defining the interface.
 
-To declare the shadow type for a callback, put the ``SharpGen.Runtime.ShadowAttribute`` attribute on the interface type. The parameter is a ``typeof(MyInterfaceShadow)`` expression where the type is the shadow type. For an example, look at the code in ``ComStreamBaseShadow.cs`` in the ``SharpGen.Runtime`` folder.
+To declare the shadow type for a callback, put the ``SharpGen.Runtime.ShadowAttribute`` attribute on the interface type. The parameter is a ``typeof(MyInterfaceShadow)`` expression where the type is the shadow type. For an example, look at the code in ``ComStreamBaseShadow.cs`` in the ``SharpGen.Runtime.COM`` folder.
 
 Shadow Objects
 ==============

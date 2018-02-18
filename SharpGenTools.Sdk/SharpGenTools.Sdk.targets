@@ -10,15 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' == 'Full'" Include="$(MSBuildThisFileDirectory)/../tools/net46/SharpGenTools.Sdk.dll" />
-    <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'" Include="$(MSBuildThisFileDirectory)/../tools/netstandard1.5/SharpGenTools.Sdk.dll" />
+    <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'" Include="$(MSBuildThisFileDirectory)/../tools/netstandard1.3/SharpGenTools.Sdk.dll" />
+    <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' != 'Core'" Include="$(MSBuildThisFileDirectory)/../tools/net46/SharpGenTools.Sdk.dll" />
     <SharpGenSdkCheckFile Include="$(SharpGenIntermediateDir)Sdk.checkfile" />
     <CppConsumerConfig Include="$(SharpGenIntermediateDir)CppConsumerConfig.xml" />
     <PartialCppModule Include="$(SharpGenIntermediateDir)PartialCppModule.xml" />
     <ParsedCppModule Include="$(SharpGenIntermediateDir)ParsedCpp.xml" />
     <SharpGenDocumentationCache Include="$(SharpGenDocumentationOutputDir)DocumentationCache.xml" />
-    <FullCppModule Condition="'$(SharpGenGenerateDoc)' != 'true'" Include="@(ParsedCppModule)" />
-    <FullCppModule Condition="'$(SharpGenGenerateDoc)' == 'true'" Include="$(SharpGenIntermediateDir)CppModel.xml" />
   </ItemGroup>
 
   <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="SharpPatch" />
@@ -26,7 +24,6 @@
   <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="GenerateHeaders" />
   <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="GenerateExtensionHeaders" />
   <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="ParseCPlusPlus" />
-  <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="DocumentCppModule" />
   <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="TransformCppToCSharp" />
   <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="GenerateCSharp" />
   <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="GetGeneratedCSharpFiles" />
@@ -172,20 +169,6 @@
     />
   </Target>
 
-  <Target Name="GenerateDocumentation"
-          DependsOnTargets="ParseCPlusPlus"
-          Condition="'$(SharpGenGenerateDoc)' == 'true' and '@(SharpGenMapping)' != ''"
-          Inputs="@(ParsedCppModule);$(SharpGenDocProviderAssemblyPath)"
-          Outputs="@(FullCppModule)">
-    <DocumentCppModule
-      DocProviderAssemblyPath="$(SharpGenDocProviderAssemblyPath)"
-      ParsedCppModule="@(ParsedCppModule)"
-      DocumentedCppModule="@(FullCppModule)"
-      DocumentationCache="@(SharpGenDocumentationCache)"
-      ShadowCopy="$(ShadowCopyDocumentationOutput)"
-    />
-  </Target>
-
   <ItemGroup>
     <CSharpModel Include="$(SharpGenIntermediateDir)CSharpModel.xml" />
     <DocLinksCache Include="$(SharpGenIntermediateDir)DocLinks.csv" />
@@ -193,8 +176,8 @@
   
   <Target
     Name="MapCppToCSharp"
-    DependsOnTargets="ParseCPlusPlus;GenerateDocumentation"
-    Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping);@(FullCppModule);@(CppConsumerConfig);@(SharpGenConsumerMapping)"
+    DependsOnTargets="ParseCPlusPlus;$(DocProviderTargets)"
+    Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping);@(ParsedCppModule);@(CppConsumerConfig);@(SharpGenConsumerMapping)"
     Outputs="@(CSharpModel);@(DocLinksCache);@(SharpGenConsumerBindMapping)"
     Condition="'@(SharpGenMapping)' != ''">
     <TransformCppToCSharp
@@ -202,7 +185,7 @@
       Macros="$(SharpGenMacros)"
       GenerateConsumerConfig="$(SharpGenGenerateConsumerBindMapping)"
       ConsumerBindMappingConfigId="$(SharpGenConsumerBindMappingConfigId)"
-      FullCppModule="@(FullCppModule)"
+      CppModule="@(ParsedCppModule)"
       CppConsumerConfigCache="@(CppConsumerConfig)"
       OutputPath="$(SharpGenIntermediateDir)"
       ForceGenerator="$(NewSdkAssembly)"

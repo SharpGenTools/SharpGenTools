@@ -64,7 +64,6 @@ namespace SharpGen.Model
         public override int Size => _Size_;
 
         [DataMember(Name = "Size")]
-        [Browsable(false)]
         public int _Size_ { get; set; }
         
         /// <summary>

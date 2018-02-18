@@ -211,7 +211,7 @@ namespace SharpGen.Generator
                     (ExpressionSyntax)IdentifierName(param.TempName)
                     : PrefixUnaryExpression(SyntaxKind.AddressOfExpression, IdentifierName(param.TempName));
             }
-            if (param.PublicType.QualifiedName == globalNamespace.GetTypeName("PointerSize"))
+            if (param.PublicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.PointerSize))
             {
                 return CastExpression(
                     PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),

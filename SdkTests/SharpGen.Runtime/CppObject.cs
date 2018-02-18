@@ -17,6 +17,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+using SharpGen.Runtime.Diagnostics;
 using System;
 
 namespace SharpGen.Runtime
@@ -24,7 +25,7 @@ namespace SharpGen.Runtime
     /// <summary>
     /// Root class for all Cpp interop object.
     /// </summary>
-    public class CppObject : DisposeBase
+    public class CppObject : DisposeBase, ICallbackable
     {
         /// <summary>
         /// The native pointer
@@ -94,31 +95,12 @@ namespace SharpGen.Runtime
         }
 
         /// <summary>
-        /// Initializes this instance with a pointer from a temporary object and set the pointer of the temporary  
-        /// object to IntPtr.Zero.
-        /// </summary>
-        /// <param name="temp">The instance to get the NativePointer.</param>
-        protected void FromTemp(CppObject temp)
-        {
-            NativePointer = temp.NativePointer;
-            temp.NativePointer = IntPtr.Zero;
-        }
-
-        /// <summary>
-        /// Initializes this instance with a pointer from a temporary object and set the pointer of the temporary  
-        /// object to IntPtr.Zero.
-        /// </summary>
-        /// <param name="temp">The instance to get the NativePointer.</param>
-        protected void FromTemp(IntPtr temp)
-        {
-            NativePointer = temp;
-        }
-
-        /// <summary>
         /// Method called when <see cref="NativePointer"/> is going to be update.
         /// </summary>
         protected virtual void NativePointerUpdating()
         {
+            if (Configuration.EnableObjectTracking)
+                ObjectTracker.UnTrack(this);
         }
 
         /// <summary>
@@ -126,6 +108,8 @@ namespace SharpGen.Runtime
         /// </summary>
         protected virtual void NativePointerUpdated(IntPtr oldNativePointer)
         {
+            if (Configuration.EnableObjectTracking)
+                ObjectTracker.Track(this);
         }
 
         protected override void Dispose(bool disposing)
@@ -133,19 +117,14 @@ namespace SharpGen.Runtime
         }
 
         /// <summary>
-        /// Instantiate a ComObject from a native pointer.
+        /// Instantiate a CppObject from a native pointer.
         /// </summary>
-        /// <typeparam name="T">The ComObject class that will be returned</typeparam>
-        /// <param name="comObjectPtr">The native pointer to a com object.</param>
+        /// <typeparam name="T">The CppObject class that will be returned</typeparam>
+        /// <param name="cppObjectPtr">The native pointer to a com object.</param>
         /// <returns>An instance of T binded to the native pointer</returns>
         public static T FromPointer<T>(IntPtr comObjectPtr) where T : CppObject
         {
             return (comObjectPtr == IntPtr.Zero) ? null : (T) Activator.CreateInstance(typeof (T), comObjectPtr);
-        }
-
-        internal static T FromPointerUnsafe<T>(IntPtr comObjectPtr)
-        {
-            return (comObjectPtr == IntPtr.Zero) ? (T)(object)null : (T)Activator.CreateInstance(typeof(T), comObjectPtr);
         }
 
         /// <summary>
@@ -169,11 +148,20 @@ namespace SharpGen.Runtime
             var shadowContainer = callback.Shadow;
             if (shadowContainer == null)
             {
-                shadowContainer = new ShadowContainer();
-                shadowContainer.Initialize(callback);
+                shadowContainer = new ShadowContainer(callback);
             }
 
             return shadowContainer.Find(typeof(TCallback));
+        }
+
+        /// <summary>
+        /// Implements <see cref="ICallbackable"/> but it cannot not be set. 
+        /// This is only used to support for interop with unmanaged callback.
+        /// </summary>
+        ShadowContainer ICallbackable.Shadow
+        {
+            get { throw new InvalidOperationException("Invalid access to Callback. This is used internally."); }
+            set { throw new InvalidOperationException("Invalid access to Callback. This is used internally."); }
         }
     }
 }

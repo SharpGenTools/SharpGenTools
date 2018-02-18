@@ -206,7 +206,7 @@ Interfaces
     * ``callback``
 
         * Generate this interface as a callback interface. See :doc:`/shadows` for details. 
-    * ``dual-callback``
+    * ``callback-dual``
 
         * Generate this interface as a callback interface, but also generate a default implementation for C++ instances of the interface. See :doc:`/shadows` for details. 
     * ``callback-visibility``

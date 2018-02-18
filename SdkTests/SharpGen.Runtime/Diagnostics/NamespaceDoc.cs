@@ -20,7 +20,7 @@
 namespace SharpGen.Runtime.Diagnostics
 {
     /// <summary>
-    /// The <see cref="SharpDX.Diagnostics"/> namespace contains classes to help to diagnostic of COM object lifecycles Dispose and Release methods.
+    /// The <see cref="SharpDX.Diagnostics"/> namespace contains classes to help to diagnostic of C++ object lifecycles Dispose and Release methods.
     /// </summary>
     [System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     class NamespaceDoc

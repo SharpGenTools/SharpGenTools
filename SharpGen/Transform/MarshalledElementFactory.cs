@@ -187,7 +187,7 @@ namespace SharpGen.Transform
                 if (isTypeUsedInStruct)
                 {
                     // Special case for Size type, as it is default marshal to IntPtr for method parameter
-                    if (publicType.QualifiedName == globalNamespace.GetTypeName("PointerSize"))
+                    if (publicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.PointerSize))
                         marshalType = null;
                 }
             }

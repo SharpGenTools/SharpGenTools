@@ -45,8 +45,7 @@ namespace SharpGen.Transform
         private readonly TypeRegistry typeRegistry;
         private readonly NamespaceRegistry namespaceRegistry;
         private readonly CsTypeBase DefaultCallbackable;
-        private readonly CsTypeBase DefaultComObjectCallback;
-        private readonly CsTypeBase DefaultInterfaceCppObject;
+        private readonly CsTypeBase CppObjectType;
 
         public InterfaceTransform(
             NamingRulesManager namingRules,
@@ -64,9 +63,8 @@ namespace SharpGen.Transform
             this.typeRegistry = typeRegistry;
             this.namespaceRegistry = namespaceRegistry;
 
-            DefaultInterfaceCppObject = new CsInterface { Name = globalNamespace.GetTypeName("CppObject") };
-            DefaultCallbackable = new CsInterface { Name = globalNamespace.GetTypeName("ICallbackable") };
-            DefaultComObjectCallback = new CsInterface { Name = globalNamespace.GetTypeName("ComObjectCallback") };
+            CppObjectType = new CsInterface { Name = globalNamespace.GetTypeName(WellKnownName.CppObject) };
+            DefaultCallbackable = new CsInterface { Name = globalNamespace.GetTypeName(WellKnownName.ICallbackable) };
         }
 
         /// <summary>
@@ -138,7 +136,7 @@ namespace SharpGen.Transform
             else
             {
                 if (!interfaceType.IsCallback)
-                    interfaceType.Base = DefaultInterfaceCppObject;
+                    interfaceType.Base = CppObjectType;
             }
 
             // Warning, if Guid is null we need to recover it from a declared GUID
@@ -151,17 +149,11 @@ namespace SharpGen.Transform
 
                 var finder = new CppElementFinder(cppInterface.ParentInclude);
 
-                // look for GUID only for ComObjects
                 var cppGuid = finder.Find<CppGuid>("IID_" + cppInterface.Name).FirstOrDefault();
-                if (cppGuid == null)
+                if (cppGuid != null)
                 {
-                    // If Guid == null && BaseRoot != null && BaseRoot is a ComObject
-                    // then we probably missed a guid
-                    if (rootBase != null && rootBase.QualifiedName == globalNamespace.GetTypeName("ComObject"))
-                        Logger.Warning(LoggingCodes.MissingGuidForInterface, "Cannot find GUID");
-                }
-                else
                     interfaceType.Guid = cppGuid.Guid.ToString();
+                }                    
             }
 
             // Handle Methods
@@ -175,7 +167,7 @@ namespace SharpGen.Transform
 
                 MethodTransformer.Process(cSharpMethod);
 
-                // Add specialized method for ComArray
+                // Add specialized method overloads
                 DuplicateMethodSpecial(interfaceType, cSharpMethod, intPtrType);
             }
 
@@ -212,7 +204,7 @@ namespace SharpGen.Transform
                             {
                                 Name = innerInterfaceName,
                                 PropertyAccessName = keyValuePair.Value.PropertyAccessName,
-                                Base = parentCsInterface ?? DefaultInterfaceCppObject
+                                Base = parentCsInterface ?? CppObjectType
                             };
 
                             // Add inner interface to root interface
@@ -230,7 +222,7 @@ namespace SharpGen.Transform
                 }
             }
 
-            // If interfaceType is DualCallback, then need to generate a default implentation
+            // If interfaceType is DualCallback, then need to generate a default implementation
             if (interfaceType.IsDualCallback)
             {
                 var tagForInterface = cppInterface.GetMappingRule();
@@ -249,19 +241,12 @@ namespace SharpGen.Transform
                         nativeCallback.Name = tagForInterface.NativeCallbackName;
                 }
 
-                nativeCallback.Base = interfaceType.Base;
-
-                if ((nativeCallback.Base as CsInterface)?.QualifiedName == globalNamespace.GetTypeName("ComObject"))
-                {
-                    nativeCallback.Base = DefaultComObjectCallback;
-                }
+                nativeCallback.Base = interfaceType.Base ?? CppObjectType;
 
                 // If Parent is a DualInterface, then inherit from Default Callback
-                if (interfaceType.Base is CsInterface)
+                if (interfaceType.Base is CsInterface baseInterface && baseInterface.IsDualCallback)
                 {
-                    var parentInterface = interfaceType.Base as CsInterface;
-                    if (parentInterface.IsDualCallback)
-                        nativeCallback.Base = parentInterface.GetNativeImplementationOrThis();
+                    nativeCallback.Base = baseInterface.GetNativeImplementationOrThis();
                 }
 
                 nativeCallback.IBase = interfaceType;
@@ -288,7 +273,6 @@ namespace SharpGen.Transform
             }
             else
             {
-                // If interface is a callback and parent is ComObject, then remove it
                 if (interfaceType.Base is CsInterface parentInterface && parentInterface.IsDualCallback)
                 {
                     interfaceType.Base = parentInterface.GetNativeImplementationOrThis();
@@ -300,11 +284,8 @@ namespace SharpGen.Transform
                 }
             }
 
-            // If interface is a callback and parent is ComObject, then remove it
             if (interfaceType.IsCallback)
             {
-                if ((interfaceType.Base as CsInterface)?.QualifiedName == globalNamespace.GetTypeName("ComObject"))
-                    interfaceType.Base = null;
                 if (interfaceType.Base == null)
                     interfaceType.Base = DefaultCallbackable;
             }
@@ -350,7 +331,7 @@ namespace SharpGen.Transform
                 // Check Getter
                 if (isGet)
                 {
-                    if ((cSharpMethod.ReturnValue.PublicType.Name == globalNamespace.GetTypeName("Result") || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
+                    if ((cSharpMethod.ReturnValue.PublicType.Name == globalNamespace.GetTypeName(WellKnownName.Result) || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
                         parameterList[0].IsOut && !parameterList[0].IsArray)
                     {
                         csProperty.Getter = cSharpMethod;
@@ -373,7 +354,7 @@ namespace SharpGen.Transform
                 else
                 {
                     // Check Setter
-                    if ((cSharpMethod.ReturnValue?.Name == globalNamespace.GetTypeName("Result") || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
+                    if ((cSharpMethod.ReturnValue?.Name == globalNamespace.GetTypeName(WellKnownName.Result) || !cSharpMethod.HasReturnType) && parameterCount == 1 &&
                         (parameterList[0].IsRefIn || parameterList[0].IsIn || parameterList[0].IsRef) && !parameterList[0].IsArray)
                     {
                         csProperty.Setter = cSharpMethod;
@@ -465,30 +446,30 @@ namespace SharpGen.Transform
 
         private void DuplicateMethodSpecial(CsInterface interfaceType, CsMethod csMethod, CsTypeBase intPtrType)
         {
-            bool hasComArrayLike = false;
+            bool hasInterfaceArrayLike = false;
             foreach (var csParameter in csMethod.Parameters)
             {
                 if (csParameter.IsInInterfaceArrayLike)
                 {
-                    hasComArrayLike = true;
+                    hasInterfaceArrayLike = true;
                     break;
                 }
             }
 
-            // Look for at least one parameter ComArray candidate
-            if (hasComArrayLike)
+            // Look for at least one parameter InterfaceArray candidate
+            if (hasInterfaceArrayLike)
             {
                 // Create a new method and transforms all array of CppObject to InterfaceArray<CppObject>
                 var newMethod = (CsMethod)csMethod.Clone();
                 foreach (var csSubParameter in newMethod.Parameters)
                 {
                     if (csSubParameter.IsInInterfaceArrayLike)
-                        csSubParameter.PublicType = new CsInterfaceArray((CsInterface)csSubParameter.PublicType, globalNamespace.GetTypeName("ComArray"));
+                        csSubParameter.PublicType = new CsInterfaceArray((CsInterface)csSubParameter.PublicType, globalNamespace.GetTypeName(WellKnownName.ComArray));
                 }
                 interfaceType.Add(newMethod);
             }
 
-            if (hasComArrayLike || csMethod.RequestRawPtr)
+            if (hasInterfaceArrayLike || csMethod.RequestRawPtr)
             {
                 // Create private method with raw pointers for arrays, with all arrays as pure IntPtr
                 // In order to be able to generate method taking single element

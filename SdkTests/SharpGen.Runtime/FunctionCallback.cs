@@ -27,7 +27,7 @@ namespace SharpGen.Runtime
     /// FunctionCallback
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    internal class FunctionCallback
+    public class FunctionCallback
     {
         public IntPtr Pointer;
 

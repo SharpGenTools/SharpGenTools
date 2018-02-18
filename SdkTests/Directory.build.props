@@ -6,12 +6,11 @@
         <RestoreSources>https://api.nuget.org/v3/index.json;$(MSBuildThisFileDirectory)LocalPackages</RestoreSources>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <SharpGenRoslynCodeGen>true</SharpGenRoslynCodeGen>
+        <LocalPackageVersion Condition="'$(APPVEYOR_REPO_TAG_NAME)' == ''">$(VersionPrefix)-$(VersionSuffix)</LocalPackageVersion> 
+        <LocalPackageVersion Condition="'$(APPVEYOR_REPO_TAG_NAME)' != ''">$(APPVEYOR_REPO_TAG_NAME)</LocalPackageVersion> 
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="SharpGenTools.Sdk" Version="$(VersionPrefix)-$(VersionSuffix)" Condition="'$(APPVEYOR_REPO_TAG_NAME)' == ''">
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-        <PackageReference Include="SharpGenTools.Sdk" Version="$(APPVEYOR_REPO_TAG_NAME)" Condition="'$(APPVEYOR_REPO_TAG_NAME)' != ''">
+        <PackageReference Include="SharpGenTools.Sdk" Version="$(LocalPackageVersion)">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
     </ItemGroup>

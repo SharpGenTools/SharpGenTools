@@ -30,8 +30,6 @@ namespace SharpGen.Logging
     /// </summary>
     public abstract class LoggerBase : ILogger
     {
-        private static Regex regex = new Regex(@"^\s*at\s+([^\)]+)\)\s+in\s+(.*):line\s+(\d+)");
-
         /// <summary>
         /// Exits the process with the specified reason.
         /// </summary>
@@ -70,57 +68,9 @@ namespace SharpGen.Logging
 
             // Write log parsable by Visual Studio
             var levelName = Enum.GetName(typeof (LogLevel), logLevel).ToLower();
-            lineMessage.AppendFormat("{0}:{1}", levelName == "fatal" ? "error:fatal":levelName , FormatMessage(context, message, parameters));
+            lineMessage.AppendFormat("{0}:{1}{2}", levelName , (context != null) ? $" in {context} " : "", message != null ? string.Format(message, parameters) : "");
 
             return lineMessage.ToString();
-        }
-
-        /// <summary>
-        /// Formats the message.
-        /// </summary>
-        /// <param name="context">The context.</param>
-        /// <param name="message">The message.</param>
-        /// <param name="parameters">The parameters.</param>
-        /// <returns></returns>
-        public static string FormatMessage(string context, string message, params object[] parameters)
-        {
-            var lineMessage = new StringBuilder();
-
-            // Write log parsable by Visual Studio
-            lineMessage.AppendFormat("{0}{1}", (context != null) ? " in " + context + " " : "", message != null ? string.Format(message, parameters) : "");
-
-            return lineMessage.ToString();
-        }
-
-        /// <summary>
-        /// Logs an exception.
-        /// </summary>
-        /// <param name="logLocation">The log location.</param>
-        /// <param name="ex">The exception to log.</param>
-        protected void LogException(LogLocation logLocation, Exception ex)
-        {
-            // Print friendly error parsable by Visual Studio in order to display them in the Error List
-            var reader = new StringReader(ex.ToString());
-
-            // And write the exception parsable by Visual Studio
-            string line;
-            while ((line = reader.ReadLine()) != null)
-            {
-                Match match = regex.Match(line);
-                if (match.Success)
-                {
-                    string methodLocation = match.Groups[1].Value;
-                    string fileName = match.Groups[2].Value;
-                    int lineNumber;
-                    int.TryParse(match.Groups[3].Value, out lineNumber);
-                    Log( LogLevel.Error, new LogLocation(fileName, lineNumber, 1), methodLocation, null, "Exception", null);
-                }
-                else
-                {
-                    // Escape a line
-                    Log(LogLevel.Error, logLocation, null, null, line.Replace("{", "{{").Replace("}", "}}"), null);
-                }
-            }
         }
     }
 }

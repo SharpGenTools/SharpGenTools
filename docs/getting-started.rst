@@ -12,6 +12,8 @@ To use SharpGenTools, you'll want to install the SDK package, as well as the Run
    dotnet add package SharpGenTools.Sdk
    dotnet add package SharpGen.Runtime
 
+If you want the support classes for COM libraries, you should also install the ``SharpGen.Runtime.COM`` package.
+
 .. note::
 
    These packages are separate so advanced and legacy users, specifically the SharpDX project, can use their own runtime support classes. In nearly all cases, you will want to reference both projects.

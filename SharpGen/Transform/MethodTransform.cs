@@ -155,7 +155,7 @@ namespace SharpGen.Transform
 
             // Hide return type only if it is a HRESULT and AlwaysReturnHResult is false
             if (method.CheckReturnType && method.ReturnValue.PublicType != null &&
-                method.ReturnValue.PublicType.QualifiedName == globalNamespace.GetTypeName("Result"))
+                method.ReturnValue.PublicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.Result))
             {
                 method.HideReturnType = !method.AlwaysReturnHResult;
             }
@@ -245,7 +245,7 @@ namespace SharpGen.Transform
                         {
                             var fundamentalType = (publicType as CsFundamentalType)?.Type;
                             parameterAttribute = fundamentalType == typeof(IntPtr)
-                                                || publicType.Name == globalNamespace.GetTypeName("FunctionCallback")
+                                                || publicType.Name == globalNamespace.GetTypeName(WellKnownName.FunctionCallback)
                                                 || fundamentalType == typeof(string)
                                                      ? CsParameterAttribute.In
                                                      : CsParameterAttribute.RefIn;
@@ -332,9 +332,9 @@ namespace SharpGen.Transform
                 {
                     // Patch for Mono bug with structs marshalling and calli.
                     var returnQualifiedName = csMethod.ReturnValue.PublicType.QualifiedName;
-                    if (returnQualifiedName == globalNamespace.GetTypeName("Result"))
+                    if (returnQualifiedName == globalNamespace.GetTypeName(WellKnownName.Result))
                         cSharpInteropCalliSignature.ReturnType = typeof(int);
-                    else if (returnQualifiedName == globalNamespace.GetTypeName("PointerSize"))
+                    else if (returnQualifiedName == globalNamespace.GetTypeName(WellKnownName.PointerSize))
                         cSharpInteropCalliSignature.ReturnType = typeof(void*);
                     else
                         cSharpInteropCalliSignature.ReturnType = csMethod.ReturnValue.PublicType.QualifiedName;
@@ -355,7 +355,7 @@ namespace SharpGen.Transform
                 InteropType interopType;
                 var publicName = param.PublicType.QualifiedName;
                 // Patch for Mono bug with structs marshalling and calli.
-                if (publicName == globalNamespace.GetTypeName("PointerSize"))
+                if (publicName == globalNamespace.GetTypeName(WellKnownName.PointerSize))
                 {
                     interopType = typeof(void*);
                 }

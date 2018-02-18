@@ -194,9 +194,7 @@ namespace SharpGen.Generator
                                                 IdentifierName($"_{field.Name}")),
                                             InvocationExpression(
                                                 MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                        IdentifierName(globalNamespace.Name),
-                                                        IdentifierName("Utilities")),
+                                                    globalNamespace.GetTypeNameSyntax(WellKnownName.Utilities),
                                                     IdentifierName("ConvertToIntArray")),
                                                 ArgumentList(SeparatedList(new[]
                                                 {
@@ -239,9 +237,7 @@ namespace SharpGen.Generator
                                                         .WithInitializer(EqualsValueClause(
                                                             InvocationExpression(
                                                                 MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                                        IdentifierName(globalNamespace.Name),
-                                                                        IdentifierName("Utilities")),
+                                                                    globalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
                                                                     IdentifierName("StringToHGlobalAnsi")),
                                                                 ArgumentList(SingletonSeparatedList(
                                                                     Argument(
@@ -260,9 +256,7 @@ namespace SharpGen.Generator
                                                                 IdentifierName(field.Name))))))),
                                             ExpressionStatement(InvocationExpression(
                                                 MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                                        IdentifierName(globalNamespace.Name),
-                                                                        IdentifierName("Utilities")),
+                                                    globalNamespace.GetTypeNameSyntax(WellKnownName.Utilities),
                                                     IdentifierName("CopyMemory")),
                                                 ArgumentList(
                                                     SeparatedList(
@@ -312,9 +306,7 @@ namespace SharpGen.Generator
                                                 IdentifierName("Zero")),
                                             InvocationExpression(
                                                 MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                        IdentifierName(globalNamespace.Name),
-                                                        IdentifierName("Utilities")),
+                                                    globalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
                                                     IdentifierName("StringToHGlobal" + (field.IsWideChar ? "Uni" : "Ansi"))),
                                                 ArgumentList(SingletonSeparatedList(
                                                     Argument(
@@ -433,9 +425,7 @@ namespace SharpGen.Generator
                                                 IdentifierName($"_{field.Name}")),
                                             InvocationExpression(
                                                 MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                        IdentifierName(globalNamespace.Name),
-                                                        IdentifierName("Utilities")),
+                                                    globalNamespace.GetTypeNameSyntax(WellKnownName.Utilities),
                                                     IdentifierName("ConvertToBoolArray")),
                                                 ArgumentList(SeparatedList(new[]
                                                 {
@@ -480,9 +470,7 @@ namespace SharpGen.Generator
                                                     IdentifierName(field.Name)),
                                                 InvocationExpression(
                                                     MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                            IdentifierName(globalNamespace.Name),
-                                                            IdentifierName("Utilities")),
+                                                        globalNamespace.GetTypeNameSyntax(WellKnownName.Utilities),
                                                         IdentifierName("PtrToStringUni")),
                                                     ArgumentList(SeparatedList(new[]
                                                     {
@@ -510,9 +498,7 @@ namespace SharpGen.Generator
                                                     IdentifierName(field.Name)),
                                                 InvocationExpression(
                                                     MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                            IdentifierName(globalNamespace.Name),
-                                                            IdentifierName("Utilities")),
+                                                        globalNamespace.GetTypeNameSyntax(WellKnownName.Utilities),
                                                         IdentifierName("PtrToStringAnsi")),
                                                     ArgumentList(SeparatedList(new[]
                                                     {
@@ -658,9 +644,7 @@ namespace SharpGen.Generator
                 ExpressionStatement(
                     InvocationExpression(
                         MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                IdentifierName(globalNamespace.Name),
-                                IdentifierName("Utilities")),
+                            globalNamespace.GetTypeNameSyntax(WellKnownName.Utilities),
                             IdentifierName("CopyMemory")),
                         ArgumentList(
                             SeparatedList(
@@ -701,9 +685,7 @@ namespace SharpGen.Generator
                 ExpressionStatement(
                     InvocationExpression(
                         MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                IdentifierName(globalNamespace.Name),
-                                IdentifierName("Utilities")),
+                            globalNamespace.GetTypeNameSyntax(WellKnownName.Utilities),
                             IdentifierName("CopyMemory")),
                         ArgumentList(
                             SeparatedList(
