@@ -167,7 +167,7 @@ namespace SharpGen.Transform
 
                 MethodTransformer.Process(cSharpMethod);
 
-                // Add specialized method for ComArray
+                // Add specialized method overloads
                 DuplicateMethodSpecial(interfaceType, cSharpMethod, intPtrType);
             }
 
@@ -446,18 +446,18 @@ namespace SharpGen.Transform
 
         private void DuplicateMethodSpecial(CsInterface interfaceType, CsMethod csMethod, CsTypeBase intPtrType)
         {
-            bool hasComArrayLike = false;
+            bool hasInterfaceArrayLike = false;
             foreach (var csParameter in csMethod.Parameters)
             {
                 if (csParameter.IsInInterfaceArrayLike)
                 {
-                    hasComArrayLike = true;
+                    hasInterfaceArrayLike = true;
                     break;
                 }
             }
 
-            // Look for at least one parameter ComArray candidate
-            if (hasComArrayLike)
+            // Look for at least one parameter InterfaceArray candidate
+            if (hasInterfaceArrayLike)
             {
                 // Create a new method and transforms all array of CppObject to InterfaceArray<CppObject>
                 var newMethod = (CsMethod)csMethod.Clone();
@@ -469,7 +469,7 @@ namespace SharpGen.Transform
                 interfaceType.Add(newMethod);
             }
 
-            if (hasComArrayLike || csMethod.RequestRawPtr)
+            if (hasInterfaceArrayLike || csMethod.RequestRawPtr)
             {
                 // Create private method with raw pointers for arrays, with all arrays as pure IntPtr
                 // In order to be able to generate method taking single element
