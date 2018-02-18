@@ -250,7 +250,6 @@
 
   <Target
     Name="GenerateConsumerBindMappingFile"
-    DependsOnTargets="MapCppToCSharp"
     Outputs="@(SharpGenConsumerBindMappingFile)"
     Condition="'@(SharpGenMapping)' != ''"
   />

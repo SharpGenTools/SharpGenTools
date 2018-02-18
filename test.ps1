@@ -41,6 +41,10 @@ pushd .\SdkTests
         cp bin/Release/*.nupkg ../LocalPackages
     popd
 
+    pushd "SharpGen.Runtime.COM"
+        msbuild /t:Pack /p:Configuration=Release /v:minimal
+    popd
+
     pushd ComInterface
         pushd ComLibTest
             dotnet test --no-build --no-restore -c Release

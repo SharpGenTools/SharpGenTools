@@ -14,6 +14,7 @@ test_script:
 artifacts:
   - path: 'Sharp*\**\Sharp*.nupkg'
   - path: 'SdkTests\SharpGen.Runtime\**\*.nupkg'
+  - path: 'SdkTests\SharpGen.Runtime.COM\**\*.nupkg'
 
 deploy:
 - provider: NuGet
