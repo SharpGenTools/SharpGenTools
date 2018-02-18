@@ -273,15 +273,14 @@ namespace SharpGen.Transform
             }
             else
             {
-                if (interfaceType.Base is CsInterface parentInterface && parentInterface.IsDualCallback)
+                var parentInterface = interfaceType.Base as CsInterface;
+                if (!interfaceType.IsCallback && parentInterface != null && parentInterface.IsDualCallback)
                 {
                     interfaceType.Base = parentInterface.GetNativeImplementationOrThis();
                 }
-                else
-                {
-                    // Refactor Properties
-                    CreateProperties(generatedMethods);
-                }
+                
+                // Refactor Properties
+                CreateProperties(generatedMethods);
             }
 
             if (interfaceType.IsCallback)

@@ -34,7 +34,7 @@ namespace SharpGen.Transform
     /// </summary>
     public class NamingRulesManager
     {
-        private readonly SortedSet<ShortNameMapper> _expandShortName = new SortedSet<ShortNameMapper>();
+        private readonly List<ShortNameMapper> _expandShortName = new List<ShortNameMapper>();
 
         /// <summary>
         /// The recorded names, a list of previous name and new name.
@@ -49,6 +49,7 @@ namespace SharpGen.Transform
         public void AddShortNameRule(string regexShortName, string expandedName)
         {
             _expandShortName.Add(new ShortNameMapper(regexShortName, expandedName));
+            _expandShortName.Sort();
         }
 
         /// <summary>

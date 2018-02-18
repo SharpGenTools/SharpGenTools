@@ -153,12 +153,19 @@ namespace SharpGen.Transform
             // Get the inferred return type
             method.ReturnValue = factory.Create<CsReturnValue>(cppMethod.ReturnValue);
 
+            if (method.ReturnValue.PublicType is CsInterface iface && iface.IsCallback)
+            {
+                method.ReturnValue.PublicType = iface.GetNativeImplementationOrThis();
+            }
+
             // Hide return type only if it is a HRESULT and AlwaysReturnHResult is false
             if (method.CheckReturnType && method.ReturnValue.PublicType != null &&
                 method.ReturnValue.PublicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.Result))
             {
                 method.HideReturnType = !method.AlwaysReturnHResult;
             }
+
+            bool internalizedMethod = false;
 
             // Iterates on parameters to convert them to C# parameters
             foreach (var cppParameter in cppMethod.Parameters)
@@ -220,10 +227,11 @@ namespace SharpGen.Transform
                                 // By default, set the Visibility to internal for methods using callbacks
                                 // as we need to provide user method. Don't do this on functions as they
                                 // are already hidden by the container
-                                if (!(method is CsFunction))
+                                if (!(method is CsFunction) && !internalizedMethod)
                                 {
                                     method.Visibility = Visibility.Internal;
                                     method.Name = method.Name + "_";
+                                    internalizedMethod = true;
                                 }
                             }
                         }
