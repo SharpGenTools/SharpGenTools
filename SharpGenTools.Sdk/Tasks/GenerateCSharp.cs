@@ -65,7 +65,7 @@ namespace SharpGenTools.Sdk.Tasks
 
             var generator = new RoslynGenerator(
                 new Logger(new MsBuildSharpGenLogger(Log), null),
-                new GlobalNamespaceProvider(GlobalNamespace),
+                globalNamespace,
                 new CachedDocumentationLinker(DocLinkCache.ItemSpec),
                 new ExternalDocCommentsReader(documentationFiles));
 
