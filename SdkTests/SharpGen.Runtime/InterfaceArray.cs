@@ -29,17 +29,17 @@ namespace SharpGen.Runtime
     /// A fast method to pass array of <see cref="CppObject"/>-derived objects to SharpGen methods.
     /// </summary>
     /// <typeparam name="T">Type of the <see cref="CppObject"/></typeparam>
-    public class ComArray<T>: DisposeBase, IEnumerable<T>
+    public class InterfaceArray<T>: DisposeBase, IEnumerable<T>
         where T : CppObject
     {
         protected T[] values;
         private IntPtr nativeBuffer;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ComArray"/> class.
+        /// Initializes a new instance of the <see cref="InterfaceArray"/> class.
         /// </summary>
         /// <param name="array">The array.</param>
-        public ComArray(params T[] array)
+        public InterfaceArray(params T[] array)
         {
             values = array;
             nativeBuffer = IntPtr.Zero;
@@ -47,20 +47,20 @@ namespace SharpGen.Runtime
             {
                 var length = array.Length;
                 values = new T[length];
-                nativeBuffer = Utilities.AllocateMemory(length * Unsafe.SizeOf<IntPtr>());
+                nativeBuffer = MemoryHelpers.AllocateMemory(length * Unsafe.SizeOf<IntPtr>());
                 for (int i = 0; i < length; i++)
                     Set(i, array[i]);
             }
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ComArray"/> class.
+        /// Initializes a new instance of the <see cref="InterfaceArray"/> class.
         /// </summary>
         /// <param name="size">The size.</param>
-        public ComArray(int size)
+        public InterfaceArray(int size)
         {
             values = new T[size];
-            nativeBuffer = Utilities.AllocateMemory(size * Unsafe.SizeOf<IntPtr>());
+            nativeBuffer = MemoryHelpers.AllocateMemory(size * Unsafe.SizeOf<IntPtr>());
         }
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace SharpGen.Runtime
             {
                 values = null;
             }
-            Utilities.FreeMemory(nativeBuffer);
+            MemoryHelpers.FreeMemory(nativeBuffer);
             nativeBuffer = IntPtr.Zero;
         }
 

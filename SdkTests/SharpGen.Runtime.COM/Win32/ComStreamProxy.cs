@@ -45,7 +45,7 @@ namespace SharpGen.Runtime.Win32
                 uint count = (uint)sourceStream.Read(tempBuffer, 0, (int)countRead);
                 if (count == 0)
                     return totalRead;
-                Utilities.Write(new IntPtr(totalRead + (byte*)buffer), new Span<byte>(tempBuffer), (int)count);
+                MemoryHelpers.Write(new IntPtr(totalRead + (byte*)buffer), new Span<byte>(tempBuffer), (int)count);
                 numberOfBytesToRead -= count;
                 totalRead += count;
             }
@@ -59,7 +59,7 @@ namespace SharpGen.Runtime.Win32
             while (numberOfBytesToWrite > 0)
             {
                 uint countWrite = (uint)Math.Min(numberOfBytesToWrite, tempBuffer.Length);
-                Utilities.Read(new IntPtr(totalWrite + (byte*)buffer), new Span<byte>(tempBuffer), (int)countWrite);
+                MemoryHelpers.Read(new IntPtr(totalWrite + (byte*)buffer), new Span<byte>(tempBuffer), (int)countWrite);
                 sourceStream.Write(tempBuffer, 0, (int)countWrite);
                 numberOfBytesToWrite -= countWrite;
                 totalWrite += countWrite;

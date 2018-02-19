@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2010-2014 SharpDX - Alexandre Mutel
+// Copyright (c) 2010-2014 SharpDX - Alexandre Mutel
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,16 +38,36 @@ namespace SharpGen.Runtime
     /// <summary>
     /// Utility class.
     /// </summary>
-    public static class Utilities
+    public static class StringHelpers
     {
         /// <summary>
-        /// Gets the <see cref="System.Guid"/> from a type.
+        /// Converts a pointer to a null-terminating string up to maxLength characters to a .Net string.
         /// </summary>
-        /// <param name="type">The type.</param>
-        /// <returns>The guid associated with this type.</returns>
-        public static Guid GetGuidFromType(Type type)
+        /// <param name="pointer">The pointer to an ANSI null string.</param>
+        /// <param name="maxLength">Maximum length of the string.</param>
+        /// <returns>The converted string.</returns>
+        public static string PtrToStringAnsi(IntPtr pointer, int maxLength)
         {
-            return type.GetTypeInfo().GUID;
+            string managedString = Marshal.PtrToStringAnsi(pointer); // copy null-terminating unmanaged text from pointer to a managed string
+            if (managedString != null && managedString.Length > maxLength)
+                managedString = managedString.Substring(0, maxLength);
+
+            return managedString;
+        }
+
+        /// <summary>
+        /// Converts a pointer to a null-terminating string up to maxLength characters to a .Net string.
+        /// </summary>
+        /// <param name="pointer">The pointer to an Unicode null string.</param>
+        /// <param name="maxLength">Maximum length of the string.</param>
+        /// <returns>The converted string.</returns>
+        public static string PtrToStringUni(IntPtr pointer, int maxLength)
+        {
+            string managedString = Marshal.PtrToStringUni(pointer); // copy null-terminating unmanaged text from pointer to a managed string
+            if (managedString != null && managedString.Length > maxLength)
+                managedString = managedString.Substring(0, maxLength);
+
+            return managedString;
         }
     }
 }

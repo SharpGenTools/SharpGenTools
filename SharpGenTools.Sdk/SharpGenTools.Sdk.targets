@@ -190,6 +190,7 @@
       OutputPath="$(SharpGenIntermediateDir)"
       ForceGenerator="$(NewSdkAssembly)"
       GlobalNamespace="$(SharpGenGlobalNamespace)"
+      GlobalNamespaceOverrides="@(SharpGenGlobalNamespaceOverrides)"
       CSharpModel="@(CSharpModel)"
       DocLinksCache="@(DocLinksCache)"
     />
@@ -220,6 +221,7 @@
       GeneratedCodeFolder="$(SharpGenGeneratedCodeFolder)"
       IncludeAssemblyNameFolder="$(SharpGenIncludeAssemblyNameFolder)"
       GlobalNamespace="$(SharpGenGlobalNamespace)"
+      GlobalNamespaceOverrides="@(SharpGenGlobalNamespaceOverrides)"
       DocLinkCache="@(DocLinksCache)"
       ExternalDocumentation="@(SharpGenExternalDocs)"
     />
