@@ -58,10 +58,10 @@ namespace SharpGen.Runtime
                 var shadow = (CppObjectShadow)Activator.CreateInstance(shadowAttribute.Type);
                 shadow.Initialize(callbackable);
 
-                guidToShadow.Add(Utilities.GetGuidFromType(item), shadow);
+                guidToShadow.Add(item.GetTypeInfo().GUID, shadow);
                 if (item.GetTypeInfo().GetCustomAttribute<ExcludeFromTypeListAttribute>() != null)
                 {
-                    guidList.Add(Utilities.GetGuidFromType(item));
+                    guidList.Add(item.GetTypeInfo().GUID);
                 }
 
                 // Associate also inherited interface to this shadow
@@ -74,10 +74,10 @@ namespace SharpGen.Runtime
                         continue;
 
                     // Use same shadow as derived
-                    guidToShadow.Add(Utilities.GetGuidFromType(inheritInterface), shadow);
+                    guidToShadow.Add(inheritInterface.GetTypeInfo().GUID, shadow);
                     if (inheritInterface.GetTypeInfo().GetCustomAttribute<ExcludeFromTypeListAttribute>() != null)
                     {
-                        guidList.Add(Utilities.GetGuidFromType(item));
+                        guidList.Add(inheritInterface.GetTypeInfo().GUID);
                     }
                 }
             }
@@ -143,7 +143,7 @@ namespace SharpGen.Runtime
 
         public IntPtr Find(Type type)
         {
-            return Find(Utilities.GetGuidFromType(type));
+            return Find(type.GetTypeInfo().GUID);
         }
 
         public IntPtr Find(Guid guidType)

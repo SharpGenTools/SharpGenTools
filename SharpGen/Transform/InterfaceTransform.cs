@@ -463,7 +463,7 @@ namespace SharpGen.Transform
                 foreach (var csSubParameter in newMethod.Parameters)
                 {
                     if (csSubParameter.IsInInterfaceArrayLike)
-                        csSubParameter.PublicType = new CsInterfaceArray((CsInterface)csSubParameter.PublicType, globalNamespace.GetTypeName(WellKnownName.ComArray));
+                        csSubParameter.PublicType = new CsInterfaceArray((CsInterface)csSubParameter.PublicType, globalNamespace.GetTypeName(WellKnownName.InterfaceArray));
                 }
                 interfaceType.Add(newMethod);
             }

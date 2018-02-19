@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2010-2014 SharpDX - Alexandre Mutel
+// Copyright (c) 2010-2014 SharpDX - Alexandre Mutel
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,16 +38,31 @@ namespace SharpGen.Runtime
     /// <summary>
     /// Utility class.
     /// </summary>
-    public static class Utilities
+    public static class BooleanHelpers
     {
         /// <summary>
-        /// Gets the <see cref="System.Guid"/> from a type.
+        /// Converts bool array to integer pointers array.
         /// </summary>
-        /// <param name="type">The type.</param>
-        /// <returns>The guid associated with this type.</returns>
-        public static Guid GetGuidFromType(Type type)
+        /// <param name="array">The bool array.</param>
+        /// <param name="dest">The destination array of int pointers.</param>
+        public unsafe static void ConvertToIntArray(bool[] array, int* dest)
         {
-            return type.GetTypeInfo().GUID;
+            for (int i = 0; i < array.Length; i++)
+                dest[i] = array[i] ? 1 : 0;
+        }
+
+        /// <summary>
+        /// Converts integer pointer array to bool array.
+        /// </summary>
+        /// <param name="array">The array of integer pointers.</param>
+        /// <param name="length">Array size.</param>
+        /// <returns>Converted array of bool.</returns>
+        public static unsafe bool[] ConvertToBoolArray(int* array, int length)
+        {
+            var temp = new bool[length];
+            for(int i = 0; i < temp.Length; i++)
+                temp[i] = array[i] != 0;
+            return temp;
         }
     }
 }

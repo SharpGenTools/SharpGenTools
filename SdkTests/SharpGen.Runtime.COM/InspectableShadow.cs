@@ -62,7 +62,7 @@ namespace SharpGen.Runtime
                     iids = (IntPtr*)Marshal.AllocCoTaskMem(IntPtr.Size * countGuids);
                     *iidCount = countGuids;
 
-                    Utilities.CopyMemory((IntPtr)iids, new Span<IntPtr>(container.Guids));
+                    MemoryHelpers.CopyMemory((IntPtr)iids, new Span<IntPtr>(container.Guids));
                 }
                 catch (Exception exception)
                 {

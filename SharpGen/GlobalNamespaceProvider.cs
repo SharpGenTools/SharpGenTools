@@ -20,6 +20,7 @@
 
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Collections.Generic;
 
 namespace SharpGen
 {
@@ -35,8 +36,10 @@ namespace SharpGen
         PointerSize,
         CppObject,
         ICallbackable,
-        Utilities,
-        ComArray,
+        BooleanHelpers,
+        MemoryHelpers,
+        StringHelpers,
+        InterfaceArray,
     }
 
     /// <summary>
@@ -44,23 +47,30 @@ namespace SharpGen
     /// </summary>
     public class GlobalNamespaceProvider
     {
+        private readonly Dictionary<WellKnownName, string> overrides = new Dictionary<WellKnownName, string>();
+
         private string Name { get; }
 
         public GlobalNamespaceProvider(string name)
         {
             Name = name;
         }
+
+        private string GetLocalName(WellKnownName name)
+        {
+            return overrides.TryGetValue(name, out var overridenName) ? overridenName : name.ToString();
+        }
         
         public string GetTypeName(WellKnownName name)
         {
-            return $"{Name}.{name}";
+            return $"{Name}.{GetLocalName(name)}";
         }
 
         public QualifiedNameSyntax GetTypeNameSyntax(WellKnownName name)
         {
             return SyntaxFactory.QualifiedName(
                 SyntaxFactory.IdentifierName(Name),
-                SyntaxFactory.IdentifierName(name.ToString()));
+                SyntaxFactory.IdentifierName(GetLocalName(name)));
         }
 
         public NameSyntax GetTypeNameSyntax(BuiltinType type)
@@ -72,6 +82,11 @@ namespace SharpGen
                 default:
                     return null;
             }
+        }
+
+        public void OverrideName(WellKnownName wellKnownName, string name)
+        {
+            overrides[wellKnownName] = name;
         }
     }
 }

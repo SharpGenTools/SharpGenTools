@@ -30,6 +30,8 @@ namespace SharpGenTools.Sdk.Tasks
         [Required]
         public string GlobalNamespace { get; set; }
 
+        public ITaskItem[] GlobalNamespaceOverrides { get; set; }
+
         [Required]
         public ITaskItem CSharpModel { get; set; }
 
@@ -47,9 +49,21 @@ namespace SharpGenTools.Sdk.Tasks
             var typeRegistry = new TypeRegistry(SharpGenLogger, docLinker);
             var namingRules = new NamingRulesManager();
 
+            var globalNamespace = new GlobalNamespaceProvider(GlobalNamespace);
+
+            foreach (var nameOverride in GlobalNamespaceOverrides ?? Enumerable.Empty<ITaskItem>())
+            {
+                var wellKnownName = nameOverride.ItemSpec;
+                var overridenName = nameOverride.GetMetadata("Override");
+                if (overridenName != null && Enum.TryParse(wellKnownName, out WellKnownName name))
+                {
+                    globalNamespace.OverrideName(name, overridenName);
+                }
+            }
+
             // Run the main mapping process
             var transformer = new TransformManager(
-                new GlobalNamespaceProvider(GlobalNamespace),
+                globalNamespace,
                 namingRules,
                 SharpGenLogger,
                 typeRegistry,

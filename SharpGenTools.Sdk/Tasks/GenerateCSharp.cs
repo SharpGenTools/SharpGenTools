@@ -33,6 +33,8 @@ namespace SharpGenTools.Sdk.Tasks
         [Required]
         public string GlobalNamespace { get; set; }
 
+        public ITaskItem[] GlobalNamespaceOverrides { get; set; }
+
         public ITaskItem[] ExternalDocumentation { get; set; }
 
         public override bool Execute()
@@ -46,6 +48,18 @@ namespace SharpGenTools.Sdk.Tasks
                     var xml = new XmlDocument();
                     xml.Load(stream);
                     documentationFiles.Add(file.ItemSpec, xml);
+                }
+            }
+
+            var globalNamespace = new GlobalNamespaceProvider(GlobalNamespace);
+
+            foreach (var nameOverride in GlobalNamespaceOverrides ?? Enumerable.Empty<ITaskItem>())
+            {
+                var wellKnownName = nameOverride.ItemSpec;
+                var overridenName = nameOverride.GetMetadata("Override");
+                if (overridenName != null && Enum.TryParse(wellKnownName, out WellKnownName name))
+                {
+                    globalNamespace.OverrideName(name, overridenName);
                 }
             }
 
