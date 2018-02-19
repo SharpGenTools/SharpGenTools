@@ -10,7 +10,6 @@
     <PackageProjectUrl>https://github.com/jkoritzinsky/SharpGenTools</PackageProjectUrl>
     <Tags>SharpGen;CodeGen;CPlusPlus;COM</Tags>
     <RepositoryUrl>https://github.com/jkoritzinsky/SharpGenTools</RepositoryUrl>
-    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)/SharpGenTools.snk</AssemblyOriginatorKeyFile>
     <LangVersion>7.2</LangVersion>
   </PropertyGroup>
 </Project>
