@@ -165,8 +165,6 @@ namespace SharpGen.Transform
                 method.HideReturnType = !method.AlwaysReturnHResult;
             }
 
-            bool internalizedMethod = false;
-
             // Iterates on parameters to convert them to C# parameters
             foreach (var cppParameter in cppMethod.Parameters)
             {
@@ -218,21 +216,6 @@ namespace SharpGen.Transform
                             if (hasArray)
                             {
                                 isOptional = true;
-                            }
-
-                            // If Interface is a callback, use IntPtr as a public marshalling type
-                            if (publicInterface.IsCallback)
-                            {
-                                publicType = typeRegistry.ImportType(typeof(IntPtr));
-                                // By default, set the Visibility to internal for methods using callbacks
-                                // as we need to provide user method. Don't do this on functions as they
-                                // are already hidden by the container
-                                if (!(method is CsFunction) && !internalizedMethod)
-                                {
-                                    method.Visibility = Visibility.Internal;
-                                    method.Name = method.Name + "_";
-                                    internalizedMethod = true;
-                                }
                             }
                         }
                         else if ((cppAttribute & ParamAttribute.Out) != 0)

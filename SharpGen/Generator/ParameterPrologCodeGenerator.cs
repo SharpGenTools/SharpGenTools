@@ -229,23 +229,21 @@ namespace SharpGen.Generator
                                     IdentifierName("IntPtr"))),
                             SingletonSeparatedList(
                                 VariableDeclarator(csElement.TempName))));
-                    if (csElement.IsIn)
-                    {
-                        yield return ExpressionStatement(
-                            AssignmentExpression(
-                                SyntaxKind.SimpleAssignmentExpression,
-                                IdentifierName(csElement.TempName),
-                                CastExpression(
-                                    PointerType(
-                                        QualifiedName(
-                                            IdentifierName("System"),
-                                            IdentifierName("IntPtr"))),
-                                    LiteralExpression(
-                                        SyntaxKind.NumericLiteralExpression,
-                                        Literal(0)))));
-                        yield return GenerateNullCheckIfNeeded(csElement, false,
-                            Block(
-                            new StatementSyntax[] {
+                    yield return ExpressionStatement(
+                        AssignmentExpression(
+                            SyntaxKind.SimpleAssignmentExpression,
+                            IdentifierName(csElement.TempName),
+                            CastExpression(
+                                PointerType(
+                                    QualifiedName(
+                                        IdentifierName("System"),
+                                        IdentifierName("IntPtr"))),
+                                LiteralExpression(
+                                    SyntaxKind.NumericLiteralExpression,
+                                    Literal(0)))));
+                    yield return GenerateNullCheckIfNeeded(csElement, false,
+                        Block(
+                        new StatementSyntax[] {
                                 LocalDeclarationStatement(
                                     VariableDeclaration(
                                         PointerType(
@@ -284,59 +282,28 @@ namespace SharpGen.Generator
                                                     SingletonSeparatedList(
                                                         Argument(
                                                             IdentifierName("i"))))),
-                                            BinaryExpression(
-                                                SyntaxKind.CoalesceExpression,
-                                                ConditionalAccessExpression(
-                                                    ElementAccessExpression(
-                                                        IdentifierName(csElement.Name),
-                                                        BracketedArgumentList(
-                                                            SingletonSeparatedList(
-                                                                Argument(
-                                                                    IdentifierName("i"))))),
-                                                    MemberBindingExpression(
-                                                        IdentifierName("NativePointer"))),
+                                            InvocationExpression(
                                                 MemberAccessExpression(
                                                     SyntaxKind.SimpleMemberAccessExpression,
-                                                    MemberAccessExpression(
-                                                        SyntaxKind.SimpleMemberAccessExpression,
-                                                        IdentifierName("System"),
-                                                        IdentifierName("IntPtr")),
-                                                    IdentifierName("Zero"))))),
+                                                    globalNamespace.GetTypeNameSyntax(WellKnownName.CppObject),
+                                                    GenericName(
+                                                        Identifier("ToCallbackPtr"))
+                                                    .WithTypeArgumentList(
+                                                        TypeArgumentList(
+                                                            SingletonSeparatedList<TypeSyntax>(
+                                                                IdentifierName(csElement.PublicType.QualifiedName))))),
+                                                ArgumentList(
+                                                    SingletonSeparatedList(
+                                                        Argument(
+                                                            ElementAccessExpression(
+                                                                IdentifierName(csElement.Name),
+                                                                BracketedArgumentList(
+                                                                    SingletonSeparatedList(
+                                                                        Argument(
+                                                                            IdentifierName("i")))))))))
+                                        )),
                                     "i")
-                            }));
-                    }
-                    else
-                    {
-                        yield return LocalDeclarationStatement(
-                            VariableDeclaration(
-                                PointerType(
-                                    QualifiedName(
-                                        IdentifierName("System"),
-                                        IdentifierName("IntPtr"))),
-                                SingletonSeparatedList(
-                                    VariableDeclarator(
-                                        Identifier($"{csElement.TempName}_"))
-                                    .WithInitializer(
-                                        EqualsValueClause(
-                                            StackAllocArrayCreationExpression(
-                                                ArrayType(
-                                                    QualifiedName(
-                                                        IdentifierName("System"),
-                                                        IdentifierName("IntPtr")),
-                                                    SingletonList(
-                                                            ArrayRankSpecifier(
-                                                                SingletonSeparatedList<ExpressionSyntax>(
-                                                                    MemberAccessExpression(
-                                                                        SyntaxKind.SimpleMemberAccessExpression,
-                                                                        IdentifierName(csElement.Name),
-                                                                        IdentifierName("Length"))))))))))));
-                        yield return ExpressionStatement(
-                            AssignmentExpression(
-                                SyntaxKind.SimpleAssignmentExpression,
-                                IdentifierName(csElement.TempName),
-                                IdentifierName($"{csElement.TempName}_")));
-
-                    }
+                        }));
                 }
             }
             // handle string parameters

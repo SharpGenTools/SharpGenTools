@@ -141,8 +141,8 @@ namespace SharpGen.Runtime
                 return IntPtr.Zero;
 
             // If callback is CppObject
-            if (callback is CppObject)
-                return ((CppObject)callback).NativePointer;
+            if (callback is CppObject cpp)
+                return cpp.NativePointer;
 
             // Setup the shadow container in order to support multiple inheritance
             var shadowContainer = callback.Shadow;
@@ -153,6 +153,17 @@ namespace SharpGen.Runtime
 
             return shadowContainer.Find(typeof(TCallback));
         }
+
+        /// <summary>
+        /// Return the unmanaged C++ pointer from a <see cref="CppObject"/> instance.
+        /// </summary>
+        /// <typeparam name="TCallback">The type of the callback.</typeparam>
+        /// <param name="obj">The object.</param>
+        /// <returns>A pointer to the unmanaged C++ object of the callback</returns>
+        /// <remarks>This method is meant as a fast-path for codegen to use to reduce the number of casts.</remarks>
+        public static IntPtr ToCallbackPtr<TCallback>(CppObject obj)
+            where TCallback : ICallbackable
+            => obj?.NativePointer ?? IntPtr.Zero;
 
         /// <summary>
         /// Implements <see cref="ICallbackable"/> but it cannot not be set. 

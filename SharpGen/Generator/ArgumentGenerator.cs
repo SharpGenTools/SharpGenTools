@@ -99,7 +99,7 @@ namespace SharpGen.Generator
                 }
                 else if (param.IsArray)
                 {
-                    return param.IsInterfaceArray ? IdentifierName(param.Name) : IdentifierName(param.TempName);
+                    return IdentifierName(param.TempName);
                 }
                 else if (param.IsFixed && !param.HasNativeValueType)
                 {
@@ -167,18 +167,19 @@ namespace SharpGen.Generator
                         PredefinedType(
                             Token(SyntaxKind.VoidKeyword))),
                     ParenthesizedExpression(
-                        BinaryExpression(
-                            SyntaxKind.CoalesceExpression,
-                            ConditionalAccessExpression(
-                                IdentifierName(param.Name),
-                                MemberBindingExpression(
-                                    IdentifierName("NativePointer"))),
-                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                MemberAccessExpression(
-                                    SyntaxKind.SimpleMemberAccessExpression,
-                                    IdentifierName("System"),
-                                    IdentifierName("IntPtr")),
-                                IdentifierName("Zero")))));
+                        InvocationExpression(
+                            MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                globalNamespace.GetTypeNameSyntax(WellKnownName.CppObject),
+                                GenericName(
+                                    Identifier("ToCallbackPtr"))
+                                .WithTypeArgumentList(
+                                    TypeArgumentList(
+                                        SingletonSeparatedList<TypeSyntax>(
+                                            IdentifierName(param.PublicType.QualifiedName))))),
+                            ArgumentList(
+                                SingletonSeparatedList(
+                                    Argument(IdentifierName(param.Name)))))));
             }
             if (param.IsArray)
             {

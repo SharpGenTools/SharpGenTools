@@ -121,7 +121,7 @@ namespace SharpGen.Model
         {
             get
             {
-                return IsArray && IsInterface && !IsOut;
+                return IsArray && PublicType is CsInterface iface && !iface.IsCallback && !IsOut;
             }
         }
 
