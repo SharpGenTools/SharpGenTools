@@ -16,7 +16,4 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.0" />
     <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.0" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\SharpGen.Runtime\SharpGen.Runtime.csproj" />
-  </ItemGroup>
 </Project>

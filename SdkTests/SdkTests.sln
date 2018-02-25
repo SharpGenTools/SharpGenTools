@@ -2,8 +2,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpGen.Runtime", "SharpGen.Runtime\SharpGen.Runtime.csproj", "{068FAC43-D2BE-472F-8D61-66227591FFC7}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ComInterface", "ComInterface", "{2904D94B-16A0-4656-AFEA-808309FD417C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ComLib", "ComInterface\ComLib\ComLib.vcxproj", "{3A9E105C-78C8-4A36-9084-C74DF90D165B}"
@@ -34,18 +32,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|x64.Build.0 = Debug|Any CPU
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Debug|x86.Build.0 = Debug|Any CPU
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|x64.ActiveCfg = Debug|Any CPU
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|x64.Build.0 = Debug|Any CPU
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|x86.ActiveCfg = Release|Any CPU
-		{068FAC43-D2BE-472F-8D61-66227591FFC7}.Release|x86.Build.0 = Release|Any CPU
 		{3A9E105C-78C8-4A36-9084-C74DF90D165B}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{3A9E105C-78C8-4A36-9084-C74DF90D165B}.Debug|Any CPU.Build.0 = Debug|x64
 		{3A9E105C-78C8-4A36-9084-C74DF90D165B}.Debug|x64.ActiveCfg = Debug|x64

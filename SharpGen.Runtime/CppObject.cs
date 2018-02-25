@@ -30,7 +30,7 @@ namespace SharpGen.Runtime
         /// <summary>
         /// The native pointer
         /// </summary>
-        protected internal unsafe void* _nativePointer;
+        protected unsafe void* _nativePointer;
 
         /// <summary>
         /// Gets or sets a custom user tag object to associate with this instance..

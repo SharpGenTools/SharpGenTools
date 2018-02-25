@@ -23,7 +23,6 @@
 <config id="sharpgen-runtime-com" xmlns="urn:SharpGen.Config">
   <namespace>SharpGen.Runtime</namespace>
   <assembly>SharpGen.Runtime.COM</assembly>
-  <depends>SharpGen.Runtime</depends>
 
 
   <sdk name="WindowsSdk" version="10.0.15063.0" />
@@ -131,9 +130,6 @@
     <!-- Win32 structures -->
     <bind from="DISPPARAMS" to="System.Runtime.InteropServices.ComTypes.DISPPARAMS"/>
     <bind from="EXCEPINFO" to="System.Runtime.InteropServices.ComTypes.EXCEPINFO"/>
-
-    <!-- Root IUnknown interface -->
-
 
     <!-- COM interfaces not directly used -->
     <bind from="ITypeInfo" to="SharpGen.Runtime.ComObject" />

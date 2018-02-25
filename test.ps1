@@ -16,12 +16,15 @@ if(Test-Path -Path SdkTests/RestoredPackages/sharpgen.doc.msdn.tasks){
     rm -r -Force SdkTests/RestoredPackages/sharpgen.doc.msdn.tasks
 }
 
-rm -r -Force SdkTests/RestoredPackages/sharpgen.runtime -ErrorAction SilentlyContinue
+if(Test-Path -Path SdkTests/RestoredPackages/sharpgen.runtime){
+    rm -r -Force SdkTests/RestoredPackages/sharpgen.runtime
+}
 
 mkdir SdkTests/LocalPackages -ErrorAction SilentlyContinue
 rm SdkTests/LocalPackages/*.nupkg
 cp SharpGenTools.Sdk/bin/Release/*.nupkg SdkTests/LocalPackages/
 cp SharpGen.Doc.Msdn.Tasks/bin/Release/*.nupkg SdkTests/LocalPackages/
+cp SharpGen.Runtime/bin/Release/*.nupkg SdkTests/LocalPackages/
 
 pushd .\SdkTests
     msbuild /t:Restore /v:minimal
@@ -36,11 +39,6 @@ pushd .\SdkTests
         exit 1
     }
 
-    pushd SharpGen.Runtime
-        msbuild /t:Pack /p:Configuration=Release /v:minimal
-        cp bin/Release/*.nupkg ../LocalPackages
-    popd
-
     pushd "SharpGen.Runtime.COM"
         msbuild /t:Pack /p:Configuration=Release /v:minimal
     popd
@@ -52,18 +50,6 @@ pushd .\SdkTests
                 exit 1
             }
         popd
-
-        msbuild ComLibTest.Package/ComLibTest.Package.csproj /t:Restore /v:minimal
-
-        if ($LastExitCode -ne 0) {
-            exit 1
-        }
-
-        msbuild ComLibTest.Package/ComLibTest.Package.csproj /p:Configuration=Release /v:minimal
-
-        if ($LastExitCode -ne 0) {
-            exit 1
-        }
     popd
 
 popd

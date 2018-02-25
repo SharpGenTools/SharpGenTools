@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config id="SharpGen.Runtime" xmlns="urn:SharpGen.Config">
+  <extension>
+    <define struct="SharpGen.Runtime.Result" sizeof="4" />
+    <define struct="SharpGen.Runtime.FunctionCallback" sizeof="8" />
+    <define struct="SharpGen.Runtime.PointerSize" sizeof="8" />
+  </extension>
+  <bindings>
+    <!-- Primitive bindings -->
+    <bind from="void" to="System.Void" />
+    <bind from="int" to="System.Int32" />
+    <bind from="unsigned int" to="System.UInt32" />
+    <bind from="short" to="System.Int16" />
+    <bind from="unsigned short" to="System.UInt16" />
+    <bind from="unsigned char" to="System.Byte" />
+    <bind from="longlong" to="System.Int64" />
+    <bind from="unsigned longlong" to="System.UInt64" />
+    <bind from="float" to="System.Single" />
+    <bind from="double" to="System.Double" />
+    <bind from="bool" to="System.Boolean" marshal="System.Byte" />
+    <bind from="__function__stdcall" to="SharpGen.Runtime.FunctionCallback" />
+    <bind from="GUID" to="System.Guid" />
+  </bindings>  
+
+  <!-- global doc mappings -->
+  <mapping>
+    <map doc="S_OK" name="SharpGen.Runtime.Result.Ok"/>
+    <map doc="FALSE" name="SharpGen.Runtime.Result.False"/>
+    <map doc="NULL" name="&lt;c&gt;null&lt;/c&gt;"/>
+  </mapping>
+</config>

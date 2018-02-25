@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../SharpGen.Runtime/SharpGen.Runtime.csproj" />
     <SharpGenMapping Include="Mapping.xml" />
     <PackageReference Include="System.Memory" Version="4.4.0-preview2-25405-01" />
     <PackageReference Include="SharpGen.Doc.Msdn.Tasks" Version="$(LocalPackageVersion)">

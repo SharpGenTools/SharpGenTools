@@ -13,5 +13,6 @@
         <PackageReference Include="SharpGenTools.Sdk" Version="$(LocalPackageVersion)">
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
+        <PackageReference Include="SharpGen.Runtime" Version="$(LocalPackageVersion)" />
     </ItemGroup>
 </Project>
