@@ -162,6 +162,16 @@ namespace SharpGen.Transform
 
             foreach (var configFile in configFiles)
             {
+                Logger.RunInContext(
+                    configFile.AbsoluteFilePath,
+                    () =>
+                    {
+                        RegisterBindings(configFile);
+                    });
+            }
+
+            foreach (var configFile in configFiles)
+            {
                 if (configFile.IsMappingToProcess)
                 {
                     Logger.Progress(30 + (indexFile*30)/numberOfConfigFilesToParse, "Processing mapping rules [{0}]", configFile.Assembly ?? configFile.Id);
@@ -279,8 +289,6 @@ namespace SharpGen.Transform
 
                     ProcessExtensions(elementFinder, file);
                 }
-                
-                RegisterBindings(file);
 
                 ProcessMappings(elementFinder, file);
             }
@@ -804,15 +812,15 @@ namespace SharpGen.Transform
         public (IEnumerable<BindRule> bindings, IEnumerable<DefineExtensionRule> defines) GenerateTypeBindingsForConsumers()
         {
             return (from record in typeRegistry.GetTypeBindings()
-                   select new BindRule(record.CppType, record.CSharpType.QualifiedName),
+                   select new BindRule(record.CppType, record.CSharpType.QualifiedName, record.MarshalType?.QualifiedName),
                    GenerateDefinesForMappedTypes());
         }
 
         private IEnumerable<DefineExtensionRule> GenerateDefinesForMappedTypes()
         {
-            foreach (var mapping in typeRegistry.GetTypeBindings())
+            foreach (var (_, CSharpType, _) in typeRegistry.GetTypeBindings())
             {
-                switch (mapping.CSharpType)
+                switch (CSharpType)
                 {
                     case CsEnum csEnum:
                         yield return new DefineExtensionRule

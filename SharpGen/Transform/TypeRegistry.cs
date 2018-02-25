@@ -128,10 +128,10 @@ namespace SharpGen.Transform
             return typeMap.MarshalType;
         }
 
-        public IEnumerable<(string CppType, CsTypeBase CSharpType)> GetTypeBindings()
+        public IEnumerable<(string CppType, CsTypeBase CSharpType, CsTypeBase MarshalType)> GetTypeBindings()
         {
             return from record in _mapCppNameToCSharpType
-                   select (record.Key, record.Value.CSharpType);
+                   select (record.Key, record.Value.CSharpType, record.Value.MarshalType);
         }
     }
 }

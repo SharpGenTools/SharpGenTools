@@ -80,7 +80,7 @@ namespace SharpGen.Parser
             {
                 if (_bindings.ContainsKey(bindRule.From))
                 {
-                    Logger.Warning(LoggingCodes.DuplicateBinding, "Duplicate type bind specified. First binding takes priority.");
+                    Logger.Warning(LoggingCodes.DuplicateBinding, $"Duplicate type bind for [{bindRule.From}] specified. First binding takes priority.");
                 }
                 else
                 {
