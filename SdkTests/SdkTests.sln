@@ -20,8 +20,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StructLibTest", "Struct\Str
 		{13530E13-A3B9-4D6C-A652-A343F44D9497} = {13530E13-A3B9-4D6C-A652-A343F44D9497}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpGen.Runtime.COM", "SharpGen.Runtime.COM\SharpGen.Runtime.COM.csproj", "{6BDACF13-8B28-4C47-B8AC-284FDB3173A1}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -80,18 +78,6 @@ Global
 		{6CD1F3CF-F99A-4493-9475-AB03B6EA7F27}.Release|x64.Build.0 = Release|Any CPU
 		{6CD1F3CF-F99A-4493-9475-AB03B6EA7F27}.Release|x86.ActiveCfg = Release|Any CPU
 		{6CD1F3CF-F99A-4493-9475-AB03B6EA7F27}.Release|x86.Build.0 = Release|Any CPU
-		{6BDACF13-8B28-4C47-B8AC-284FDB3173A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6BDACF13-8B28-4C47-B8AC-284FDB3173A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6BDACF13-8B28-4C47-B8AC-284FDB3173A1}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{6BDACF13-8B28-4C47-B8AC-284FDB3173A1}.Debug|x64.Build.0 = Debug|Any CPU
-		{6BDACF13-8B28-4C47-B8AC-284FDB3173A1}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{6BDACF13-8B28-4C47-B8AC-284FDB3173A1}.Debug|x86.Build.0 = Debug|Any CPU
-		{6BDACF13-8B28-4C47-B8AC-284FDB3173A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6BDACF13-8B28-4C47-B8AC-284FDB3173A1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6BDACF13-8B28-4C47-B8AC-284FDB3173A1}.Release|x64.ActiveCfg = Release|Any CPU
-		{6BDACF13-8B28-4C47-B8AC-284FDB3173A1}.Release|x64.Build.0 = Release|Any CPU
-		{6BDACF13-8B28-4C47-B8AC-284FDB3173A1}.Release|x86.ActiveCfg = Release|Any CPU
-		{6BDACF13-8B28-4C47-B8AC-284FDB3173A1}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

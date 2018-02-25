@@ -39,10 +39,6 @@ pushd .\SdkTests
         exit 1
     }
 
-    pushd "SharpGen.Runtime.COM"
-        msbuild /t:Pack /p:Configuration=Release /v:minimal
-    popd
-
     pushd ComInterface
         pushd ComLibTest
             dotnet test --no-build --no-restore -c Release
