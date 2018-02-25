@@ -1,4 +1,4 @@
-1﻿<Project>
+<Project>
   <PropertyGroup>
     <VersionPrefix Condition="'$(APPVEYOR_REPO_TAG_NAME)' != ''">$(APPVEYOR_REPO_TAG_NAME)</VersionPrefix>
     <VersionPrefix Condition="'$(VersionPrefix)' == ''">1.0.1</VersionPrefix>
