@@ -28,6 +28,12 @@ namespace SharpGen.Runtime
     public class CppObject : DisposeBase, ICallbackable
     {
         /// <summary>
+        /// Logs a warning of a possible memory leak when <see cref="Configuration.EnableObjectTracking" /> is enabled.
+        /// Default uses <see cref="System.Diagnostics.Debug"/>.
+        /// </summary>
+        public static Action<string> LogMemoryLeakWarning = (warning) => System.Diagnostics.Debug.WriteLine(warning);
+
+        /// <summary>
         /// The native pointer
         /// </summary>
         protected unsafe void* _nativePointer;
@@ -113,7 +119,31 @@ namespace SharpGen.Runtime
         }
 
         protected override void Dispose(bool disposing)
-        {            
+        {
+            if (NativePointer != IntPtr.Zero)
+            {
+                // If object is disposed by the finalizer, emits a warning
+                if(!disposing && Configuration.EnableTrackingReleaseOnFinalizer)
+                {
+                    if(!Configuration.EnableReleaseOnFinalizer)
+                    {
+                        var objectReference = ObjectTracker.Find(this);
+                        LogMemoryLeakWarning?.Invoke(string.Format("Warning: Live CppObject released on finalizer [0x{0:X}], potential memory leak: {1}", NativePointer.ToInt64(), objectReference));
+                    }
+                }
+
+                if (Configuration.EnableObjectTracking)
+                {
+                    ObjectTracker.UnTrack(this);
+                }
+
+                unsafe
+                {
+                    // Set pointer to null (using protected members in order to avoid callbacks.
+                    _nativePointer = (void*)0;
+                }
+            }
+
         }
 
         /// <summary>
