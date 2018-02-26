@@ -12,7 +12,6 @@
     <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\SharpGen.Runtime\SharpGen.Runtime.csproj" />
     <SharpGenMapping Include="Mapping.xml" />
   </ItemGroup>
 </Project>

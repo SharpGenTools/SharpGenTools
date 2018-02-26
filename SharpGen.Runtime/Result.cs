@@ -23,7 +23,7 @@ using System.Runtime.InteropServices;
 namespace SharpGen.Runtime
 {
     /// <summary>
-    /// Result structure for COM methods.
+    /// Result structure.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     public readonly struct Result : IEquatable<Result>
