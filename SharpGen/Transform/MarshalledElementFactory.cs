@@ -37,11 +37,10 @@ namespace SharpGen.Transform
             {
                 CppElement = marshallable,
                 IsArray = marshallable.IsArray,
-                ArrayDimension = marshallable.ArrayDimension,
-                // TODO: handle multidimension
                 HasPointer = !string.IsNullOrEmpty(marshallable.Pointer) && (marshallable.Pointer.Contains("*") || marshallable.Pointer.Contains("&")),
             };
 
+            // TODO: handle multidimensional arrays
             // Calculate ArrayDimension
             int arrayDimensionValue = 0;
             if (marshallable.IsArray)
@@ -153,7 +152,7 @@ namespace SharpGen.Transform
                 marshalType is CsFundamentalType marshalFundamental && IsIntegerFundamentalType(marshalFundamental)
                 && publicType is CsFundamentalType publicFundamental && publicFundamental.Type == typeof(bool);
 
-            // Default IntPtr type for pointer, unless modified by specialized type (like char* map to string)
+            // Always marshal pointers as IntPtr, and present void* elements as IntPtr.
             if (csMarshallable.HasPointer)
             {
                 marshalType = typeRegistry.ImportType(typeof(IntPtr));
@@ -161,17 +160,6 @@ namespace SharpGen.Transform
                 if (publicTypeName == "void")
                 {
                     publicType = typeRegistry.ImportType(typeof(IntPtr));
-                }
-
-                switch (publicTypeName)
-                {
-                    case "char":
-                        publicType = typeRegistry.ImportType(typeof(string));
-                        break;
-                    case "wchar_t":
-                        publicType = typeRegistry.ImportType(typeof(string));
-                        csMarshallable.IsWideChar = true;
-                        break;
                 }
             }
 
@@ -216,6 +204,9 @@ namespace SharpGen.Transform
                 // Special case for Size type, as it is default marshal to IntPtr for method parameter
                 field.MarshalType = field.PublicType;
             }
+
+            field.IsBitField = cppField.IsBitField;
+
             return field;
         }
 

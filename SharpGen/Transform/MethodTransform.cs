@@ -168,7 +168,6 @@ namespace SharpGen.Transform
             // Iterates on parameters to convert them to C# parameters
             foreach (var cppParameter in cppMethod.Parameters)
             {
-
                 var paramMethod = factory.Create(cppParameter);
 
                 paramMethod.Name = NamingRules.Rename(cppParameter);
