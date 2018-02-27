@@ -165,13 +165,14 @@ namespace SharpGen.UnitTests.Mapping
                 {
                     new Config.DefineExtensionRule
                     {
-                        Interface = "Imported.Return",
-                        NativeImplementation = "Imported.ReturnNative"
+                        Interface = "Imported.Param",
+                        NativeImplementation = "Imported.ParamNative"
                     }
                 },
                 Bindings =
                 {
-                    new Config.BindRule("ReturnInterface", "Imported.Return")
+                    new Config.BindRule("int", "System.Int32"),
+                    new Config.BindRule("Param", "Imported.Param")
                 }
             };
 
@@ -181,14 +182,22 @@ namespace SharpGen.UnitTests.Mapping
                 TotalMethodCount = 1
             };
 
-            iface.Add(new CppMethod
+            var method = new CppMethod
             {
                 Name = "method",
                 ReturnValue = new CppReturnValue
                 {
-                    TypeName = "ReturnInterface"
+                    TypeName = "int"
                 }
+            };
+
+            method.Add(new CppParameter
+            {
+                Name = "param",
+                TypeName = "Param"
             });
+
+            iface.Add(method);
 
             var include = new CppInclude
             {
@@ -202,13 +211,13 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(module, config);
 
-            Assert.Single(solution.EnumerateDescendants().OfType<CsReturnValue>());
+            Assert.Single(solution.EnumerateDescendants().OfType<CsParameter>());
 
-            var returnValue = solution.EnumerateDescendants().OfType<CsReturnValue>().First();
+            var param = solution.EnumerateDescendants().OfType<CsParameter>().First();
 
-            Assert.IsType<CsInterface>(returnValue.PublicType);
+            Assert.IsType<CsInterface>(param.PublicType);
 
-            Assert.NotNull(((CsInterface)returnValue.PublicType).NativeImplementation);
+            Assert.NotNull(((CsInterface)param.PublicType).NativeImplementation);
         }
     }
 }
