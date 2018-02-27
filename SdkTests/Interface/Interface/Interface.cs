@@ -1,12 +1,12 @@
 using System;
 using Xunit;
 
-namespace ComLibTest
+namespace Interface
 {
-    public class ComLib
+    public class InterfaceTests
     {
         [Fact]
-        public void Test1()
+        public void BasicMethodCall()
         {
             using (var inst = Functions.CreateInstance())
             {

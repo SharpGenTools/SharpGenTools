@@ -1,18 +1,4 @@
 <Project>
-  <Import Project="../Directory.build.props" />
-    <PropertyGroup>
-        <RestorePackagesPath>$(MSBuildThisFileDirectory)RestoredPackages/</RestorePackagesPath>
-        <RestoreNoCache>true</RestoreNoCache>
-        <RestoreSources>https://api.nuget.org/v3/index.json;$(MSBuildThisFileDirectory)LocalPackages</RestoreSources>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <SharpGenRoslynCodeGen>true</SharpGenRoslynCodeGen>
-        <LocalPackageVersion Condition="'$(APPVEYOR_REPO_TAG_NAME)' == ''">$(VersionPrefix)-$(VersionSuffix)</LocalPackageVersion> 
-        <LocalPackageVersion Condition="'$(APPVEYOR_REPO_TAG_NAME)' != ''">$(APPVEYOR_REPO_TAG_NAME)</LocalPackageVersion> 
-    </PropertyGroup>
-    <ItemGroup>
-        <PackageReference Include="SharpGenTools.Sdk" Version="$(LocalPackageVersion)">
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-        <PackageReference Include="SharpGen.Runtime" Version="$(LocalPackageVersion)" />
-    </ItemGroup>
+  <Import Project="$(MSBuildThisFileDirectory)../Directory.build.props" />
+  <Import Project="$(MSBuildThisFileDirectory)Managed.props"  Condition="'$(MSBuildProjectExtension)' == '.csproj'" />
 </Project>

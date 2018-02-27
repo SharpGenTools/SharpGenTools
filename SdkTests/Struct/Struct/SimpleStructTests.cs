@@ -1,7 +1,7 @@
 using System;
 using Xunit;
 
-namespace StructLibTest
+namespace Struct
 {
     public class SimpleStructTests
     {

@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<config id="Struct" xmlns="urn:SharpGen.Config">
+  <namespace>Struct</namespace>
+  <assembly>Struct</assembly>
+
+  <sdk name="StdLib" />
+  
+  <include-dir>$(THIS_CONFIG_PATH)\..\StructNative</include-dir>
+  <include file="StructNative.h">
+    <attach>SimpleStruct</attach>
+    <attach>GetSimpleStruct</attach>
+  </include>
+
+  <extension>
+    <create class="Struct.Functions" visibility="public static" />
+  </extension>
+
+  <bindings>
+  </bindings>
+
+  <mapping>
+    <map function="Get.*" dll='"StructNative.dll"' group="Struct.Functions" />
+    <!-- <map function="And" dll='"StructNative.dll"' group="Struct.Functions" /> -->
+    <!-- <map field="IntToBoolArray::i" type="bool" /> -->
+  </mapping>
+
+  <depends>SharpGen.Runtime</depends>
+</config>

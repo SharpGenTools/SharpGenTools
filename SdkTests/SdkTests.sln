@@ -2,20 +2,20 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ComInterface", "ComInterface", "{2904D94B-16A0-4656-AFEA-808309FD417C}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Interface", "Interface", "{2904D94B-16A0-4656-AFEA-808309FD417C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ComLib", "ComInterface\ComLib\ComLib.vcxproj", "{3A9E105C-78C8-4A36-9084-C74DF90D165B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InterfaceNative", "Interface\InterfaceNative\InterfaceNative.vcxproj", "{3A9E105C-78C8-4A36-9084-C74DF90D165B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ComLibTest", "ComInterface\ComLibTest\ComLibTest.csproj", "{22B82EB1-040E-41F6-A342-B0BF5F4E1DD1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Interface", "Interface\Interface\Interface.csproj", "{22B82EB1-040E-41F6-A342-B0BF5F4E1DD1}"
 	ProjectSection(ProjectDependencies) = postProject
 		{3A9E105C-78C8-4A36-9084-C74DF90D165B} = {3A9E105C-78C8-4A36-9084-C74DF90D165B}
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Struct", "Struct", "{42A2B127-779B-4F4A-8C52-81F4E8687B44}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StructLib", "Struct\StructLib\StructLib.vcxproj", "{13530E13-A3B9-4D6C-A652-A343F44D9497}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StructNative", "Struct\StructNative\StructNative.vcxproj", "{13530E13-A3B9-4D6C-A652-A343F44D9497}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StructLibTest", "Struct\StructLibTest\StructLibTest.csproj", "{6CD1F3CF-F99A-4493-9475-AB03B6EA7F27}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Struct", "Struct\Struct\Struct.csproj", "{6CD1F3CF-F99A-4493-9475-AB03B6EA7F27}"
 	ProjectSection(ProjectDependencies) = postProject
 		{13530E13-A3B9-4D6C-A652-A343F44D9497} = {13530E13-A3B9-4D6C-A652-A343F44D9497}
 	EndProjectSection
