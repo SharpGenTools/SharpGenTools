@@ -19,6 +19,22 @@ namespace SharpGen.UnitTests.Mapping
 
         protected (CsSolution Solution, IEnumerable<DefineExtensionRule> Defines) MapModel(CppModule module, ConfigFile config)
         {
+            var transformer = CreateTransformer();
+
+            return transformer.Transform(module, ConfigFile.Load(config, new string[0], Logger), null);
+        }
+
+        protected (IEnumerable<BindRule> bindings, IEnumerable<DefineExtensionRule> defines) GetConsumerBindings(CppModule module, ConfigFile config)
+        {
+            var transformer = CreateTransformer();
+
+            transformer.Transform(module, ConfigFile.Load(config, new string[0], Logger), null);
+
+            return transformer.GenerateTypeBindingsForConsumers();
+        }
+
+        private TransformManager CreateTransformer()
+        {
             var docLinker = new DocumentationLinker();
             var typeRegistry = new TypeRegistry(Logger, docLinker);
             var namingRules = new NamingRulesManager();
@@ -35,8 +51,7 @@ namespace SharpGen.UnitTests.Mapping
             {
                 ForceGenerator = true
             };
-
-            return transformer.Transform(module, ConfigFile.Load(config, new string[0], Logger), null);
+            return transformer;
         }
     }
 }
