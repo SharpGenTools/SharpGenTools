@@ -197,7 +197,6 @@ namespace SharpGen.Transform
                 }
                 else
                 {
-                    // Patch for Mono bug with structs marshalling and calli.
                     var returnQualifiedName = csMethod.ReturnValue.PublicType.QualifiedName;
                     if (returnQualifiedName == globalNamespace.GetTypeName(WellKnownName.Result))
                         cSharpInteropCalliSignature.ReturnType = typeof(int);
@@ -221,7 +220,6 @@ namespace SharpGen.Transform
             {
                 InteropType interopType;
                 var publicName = param.PublicType.QualifiedName;
-                // Patch for Mono bug with structs marshalling and calli.
                 if (publicName == globalNamespace.GetTypeName(WellKnownName.PointerSize))
                 {
                     interopType = typeof(void*);
@@ -233,7 +231,6 @@ namespace SharpGen.Transform
                 else if (param.MarshalType is CsFundamentalType marshalFundamental)
                 {
                     var type = marshalFundamental.Type;
-                    // Patch for Mono bug with structs marshalling and calli.
                     if (type == typeof(IntPtr))
                         type = typeof(void*);
                     interopType = type;
@@ -241,7 +238,6 @@ namespace SharpGen.Transform
                 else if (param.PublicType is CsFundamentalType publicFundamental)
                 {
                     var type = publicFundamental.Type;
-                    // Patch for Mono bug with structs marshalling and calli.
                     if (type == typeof(IntPtr))
                         type = typeof(void*);
                     interopType = type;

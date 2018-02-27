@@ -134,7 +134,7 @@ namespace SharpGen.Transform
                             logger.Fatal($"No struct processor processed {csStruct.QualifiedName}. Cannot continue processing");
                         }
                         
-                        // If referenced structure has a specialized marshalling, then specify marshalling
+                        // If referenced structure has a specialized marshalling, then use the structure's built-in marshalling
                         if (csStruct.HasMarshalType && !csMarshallable.HasPointer)
                         {
                             marshalType = publicType;
@@ -198,11 +198,6 @@ namespace SharpGen.Transform
             if (field.HasPointer && field.PublicType != typeRegistry.ImportType(typeof(string)))
             {
                 field.PublicType = typeRegistry.ImportType(typeof(IntPtr));
-            }
-            else if (field.PublicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.PointerSize))
-            {
-                // Special case for Size type, as it is default marshal to IntPtr for method parameter
-                field.MarshalType = field.PublicType;
             }
 
             field.IsBitField = cppField.IsBitField;
