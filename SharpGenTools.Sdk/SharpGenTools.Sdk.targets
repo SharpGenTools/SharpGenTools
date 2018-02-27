@@ -199,7 +199,9 @@
   <Target
     Name="GetGeneratedCSharpFiles"
     DependsOnTargets="MapCppToCSharp"
-    Condition="'@(SharpGenMapping)' != ''">
+    Condition="'@(SharpGenMapping)' != ''"
+    Inputs="@(CSharpModel)"
+    Outputs="$(SharpGenIntermediateDir)ForceNotUpToDate">
     <GetGeneratedCSharpFiles
       Model="@(CSharpModel)"
       OutputDirectory="$(SharpGenOutputDirectory)"
@@ -238,7 +240,9 @@
   <Target
     Name="AddGeneratedCSharpFilesToCompilation"
     DependsOnTargets="RemoveGeneratedCSharpFiles;GenerateCSharp"
-    BeforeTargets="CoreCompile">
+    BeforeTargets="CoreCompile"
+    Inputs="@(GeneratedCSharpFiles)"
+    Outputs="$(SharpGenIntermediateDir)ForceNotUpToDate">
     <ItemGroup>
       <Compile Include="@(GeneratedCSharpFiles)" Condition="'%(GeneratedCSharpFiles.Assembly)' == '$(AssemblyName)'" />
     </ItemGroup>
