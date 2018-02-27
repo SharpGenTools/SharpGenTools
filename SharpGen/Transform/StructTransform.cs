@@ -160,7 +160,7 @@ namespace SharpGen.Transform
                     var cppField = (CppField)currentStruct.Items[fieldIndex];
                     Logger.RunInContext(cppField.ToString(), () =>
                     {
-                        var fieldStruct = factory.Create<CsField>(cppField, true);
+                        var fieldStruct = factory.Create(cppField);
                         csStruct.Add(fieldStruct);
 
                         // Get name

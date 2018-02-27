@@ -40,8 +40,7 @@ namespace SharpGen.Model
         [DataMember]
         public bool HasPointer { get; set; }
 
-        [DataMember]
-        public bool HasMarshalType { get; set; }
+        public bool HasMarshalType => PublicType != MarshalType || IsArray;
 
         [DataMember]
         public bool IsArray { get; set; }

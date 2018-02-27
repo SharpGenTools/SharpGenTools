@@ -29,7 +29,7 @@ namespace SharpGen.UnitTests
             typeRegistry.BindType("bool", typeRegistry.ImportType(typeof(bool)), typeRegistry.ImportType(typeof(int)));
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
 
-            var csMarshallable = marshalledElementFactory.Create<CsMarshalBase>(cppMarshallable);
+            var csMarshallable = marshalledElementFactory.Create(cppMarshallable);
             Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csMarshallable.MarshalType);
         }
     }
