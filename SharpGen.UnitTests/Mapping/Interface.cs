@@ -79,5 +79,136 @@ namespace SharpGen.UnitTests.Mapping
 
             Assert.Equal(typeof(int), ((CsFundamentalType)method.ReturnValue.PublicType).Type);
         }
+
+        [Fact]
+        public void DualCallbackFlowsNativeImplementation()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(Simple),
+                Assembly = nameof(Simple),
+                Namespace = nameof(Simple),
+                Includes =
+                {
+                    new Config.IncludeRule
+                    {
+                        File = "interface.h",
+                        Attach = true,
+                        Namespace = nameof(Simple)
+                    }
+                },
+                Bindings =
+                {
+                    new Config.BindRule("int", "System.Int32")
+                },
+                Mappings =
+                {
+                    new Config.MappingRule
+                    {
+                        Interface = "Interface",
+                        IsCallbackInterface = true,
+                        IsDualCallbackInterface = true
+                    }
+                }
+            };
+
+            var iface = new CppInterface
+            {
+                Name = "Interface",
+                TotalMethodCount = 1
+            };
+
+            iface.Add(new CppMethod
+            {
+                Name = "method",
+                ReturnValue = new CppReturnValue
+                {
+                    TypeName = "int"
+                }
+            });
+
+            var include = new CppInclude
+            {
+                Name = "interface"
+            };
+
+            include.Add(iface);
+
+            var module = new CppModule();
+            module.Add(include);
+
+            var (_, defines) = GetConsumerBindings(module, config);
+
+            var interfaceDefine = defines.First(define => define.Interface == "Simple.Interface");
+
+            Assert.Equal("Simple.InterfaceNative", interfaceDefine.NativeImplementation);
+        }
+
+        [Fact]
+        public void DefineWithNativeImplementationDefinesNativeImplementationType()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(Simple),
+                Assembly = nameof(Simple),
+                Namespace = nameof(Simple),
+                Includes =
+                {
+                    new Config.IncludeRule
+                    {
+                        File = "interface.h",
+                        Attach = true,
+                        Namespace = nameof(Simple)
+                    }
+                },
+                Extension =
+                {
+                    new Config.DefineExtensionRule
+                    {
+                        Interface = "Imported.Return",
+                        NativeImplementation = "Imported.ReturnNative"
+                    }
+                },
+                Bindings =
+                {
+                    new Config.BindRule("ReturnInterface", "Imported.Return")
+                }
+            };
+
+            var iface = new CppInterface
+            {
+                Name = "Interface",
+                TotalMethodCount = 1
+            };
+
+            iface.Add(new CppMethod
+            {
+                Name = "method",
+                ReturnValue = new CppReturnValue
+                {
+                    TypeName = "ReturnInterface"
+                }
+            });
+
+            var include = new CppInclude
+            {
+                Name = "interface"
+            };
+
+            include.Add(iface);
+
+            var module = new CppModule();
+            module.Add(include);
+
+            var (solution, _) = MapModel(module, config);
+
+            Assert.Single(solution.EnumerateDescendants().OfType<CsReturnValue>());
+
+            var returnValue = solution.EnumerateDescendants().OfType<CsReturnValue>().First();
+
+            Assert.IsType<CsInterface>(returnValue.PublicType);
+
+            Assert.NotNull(((CsInterface)returnValue.PublicType).NativeImplementation);
+        }
     }
 }

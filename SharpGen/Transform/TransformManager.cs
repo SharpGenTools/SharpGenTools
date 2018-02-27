@@ -376,7 +376,15 @@ namespace SharpGen.Transform
                         newStruct.Align = defineRule.Align.Value;
                 }
                 else if (defineRule.Interface != null)
-                    defineType = new CsInterface { Name = defineRule.Interface };
+                {
+                    var iface =  new CsInterface { Name = defineRule.Interface };
+                    if (defineRule.NativeImplementation != null)
+                    {
+                        iface.NativeImplementation = new CsInterface { Name = defineRule.NativeImplementation };
+                        typeRegistry.DefineType(iface.NativeImplementation);
+                    }
+                    defineType = iface;
+                }
                 else
                 {
                     Logger.Error(LoggingCodes.MissingElementInRule, "Invalid rule [{0}]. Requires one of enum, struct, or interface", defineRule);
@@ -844,7 +852,8 @@ namespace SharpGen.Transform
                     case CsInterface csInterface:
                         yield return new DefineExtensionRule
                         {
-                            Interface = csInterface.QualifiedName
+                            Interface = csInterface.QualifiedName,
+                            NativeImplementation = csInterface.NativeImplementation?.QualifiedName
                         };
                         break;
                 }

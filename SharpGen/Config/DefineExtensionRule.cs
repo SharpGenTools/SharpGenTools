@@ -46,6 +46,9 @@ namespace SharpGen.Config
         [XmlAttribute("interface")]
         public string Interface { get; set; }
 
+        [XmlAttribute("native")]
+        public string NativeImplementation { get; set; }
+
         [XmlAttribute("underlying")]
         public string UnderlyingType { get; set; }
 
