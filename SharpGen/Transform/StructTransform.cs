@@ -167,8 +167,8 @@ namespace SharpGen.Transform
                         csField.Name = NamingRules.Rename(cppField);
 
                         var fieldHasMarshalType = csField.PublicType != csField.MarshalType
-                        || (csField.PublicType is CsStruct fieldStruct && fieldStruct.HasMarshalType)
-                        || csField.IsArray;
+                            || (csField.PublicType is CsStruct fieldStruct && fieldStruct.HasMarshalType)
+                            || csField.IsArray;
 
                         // BoolToInt doesn't generate native Marshaling although they have a different marshaller
                         if (!csField.IsBoolToInt && fieldHasMarshalType)

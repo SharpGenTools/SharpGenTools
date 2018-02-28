@@ -93,8 +93,8 @@ namespace SharpGen.Transform
                     // Else get the typeName
                     if (publicType == null)
                     {
-                        // Try to get a declared struct
-                        // If it fails, then this struct is unknown
+                        // Try to get a declared type
+                        // If it fails, then this type is unknown
                         publicType = typeRegistry.FindBoundType(publicTypeName);
                         if (publicType == null)
                         {
@@ -212,15 +212,15 @@ namespace SharpGen.Transform
             var cppAttribute = cppParameter.Attribute;
             var paramRule = cppParameter.GetMappingRule();
 
-            bool hasArray = cppParameter.IsArray || ((cppAttribute & ParamAttribute.Buffer) != 0);
-            bool hasParams = (cppAttribute & ParamAttribute.Params) == ParamAttribute.Params;
-            bool isOptional = (cppAttribute & ParamAttribute.Optional) != 0;
-            bool hasPointer = param.HasPointer;
+            var hasArray = cppParameter.IsArray || ((cppAttribute & ParamAttribute.Buffer) != 0);
+            var hasParams = (cppAttribute & ParamAttribute.Params) == ParamAttribute.Params;
+            var isOptional = (cppAttribute & ParamAttribute.Optional) != 0;
+            var hasPointer = param.HasPointer;
 
             var publicType = param.PublicType;
             var marshalType = param.MarshalType;
 
-            CsParameterAttribute parameterAttribute = CsParameterAttribute.In;
+            var parameterAttribute = CsParameterAttribute.In;
 
             if (hasArray)
             {
@@ -240,7 +240,7 @@ namespace SharpGen.Transform
                 if (publicType is CsInterface publicInterface)
                 {
                     // Force Interface** to be ParamAttribute.Out when None
-                    if (cppAttribute == ParamAttribute.In)
+                    if (cppAttribute == ParamAttribute.In || cppAttribute == ParamAttribute.None)
                     {
                         if (cppParameter.Pointer == "**")
                             cppAttribute = ParamAttribute.Out;
@@ -261,9 +261,9 @@ namespace SharpGen.Transform
                 }
                 else
                 {
-                    // If a pointer to array of bool are handle as array of int
+                    // If a pointer to array of bool are handle as array of underlying integer type
                     if (param.IsBoolToInt && (cppAttribute & ParamAttribute.Buffer) != 0)
-                        publicType = typeRegistry.ImportType(typeof(int));
+                        publicType = param.MarshalType;
 
                     if ((cppAttribute & ParamAttribute.In) != 0)
                     {
@@ -320,7 +320,6 @@ namespace SharpGen.Transform
             param.Attribute = parameterAttribute;
             param.IsArray = hasArray;
             param.HasParams = hasParams;
-            param.HasPointer = hasPointer;
             param.PublicType = publicType ?? throw new ArgumentException("Public type cannot be null");
             param.MarshalType = marshalType;
             param.IsOptional = isOptional;

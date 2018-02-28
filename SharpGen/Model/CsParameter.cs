@@ -34,16 +34,6 @@ namespace SharpGen.Model
         public CsParameter()
         {
         }
-
-        public override CppElement CppElement
-        {
-            get => base.CppElement;
-            set
-            {
-                base.CppElement = value;
-                NativeParamAttribute = ((CppParameter)value).Attribute;
-            }
-        }
         
         [DataMember]
         public CsParameterAttribute Attribute { get; set; }
@@ -68,6 +58,9 @@ namespace SharpGen.Model
         [DataMember]
         public string DefaultValue { get; set; }
 
+        [DataMember]
+        public bool ForcePassByValue { get; set; }
+
         private const int SizeOfLimit = 16;
 
         protected override void UpdateFromMappingRule(MappingRule tag)
@@ -75,8 +68,18 @@ namespace SharpGen.Model
             base.UpdateFromMappingRule(tag);
             if (tag.ParameterUsedAsReturnType.HasValue)
                 IsUsedAsReturnType = tag.ParameterUsedAsReturnType.Value;
-            if (tag.ParameterAttribute.HasValue && (tag.ParameterAttribute.Value & ParamAttribute.Fast) != 0)
-                IsFast = true;
+            if (tag.ParameterAttribute.HasValue)
+            {
+                if((tag.ParameterAttribute.Value & ParamAttribute.Fast) != 0)
+                {
+                    IsFast = true;
+                }
+
+                if((tag.ParameterAttribute.Value & ParamAttribute.Value) != 0)
+                {
+                    ForcePassByValue = true;
+                }
+            }
 
             DefaultValue = tag.DefaultValue;
         }
@@ -184,14 +187,12 @@ namespace SharpGen.Model
             get { return IsRefIn && IsValueType && !IsArray && IsOptional; }
         }
 
-        public ParamAttribute NativeParamAttribute { get; set; }
-
         public bool IsRefInValueTypeByValue
         {
             get
             {
                 return IsRefIn && IsValueType && !IsArray
-                       && ((PublicType.Size <= SizeOfLimit && !HasNativeValueType) || (NativeParamAttribute & ParamAttribute.Value) != 0);
+                       && ((PublicType.Size <= SizeOfLimit && !HasNativeValueType) || ForcePassByValue);
             }
         }
 

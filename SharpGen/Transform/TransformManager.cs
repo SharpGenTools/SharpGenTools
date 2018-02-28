@@ -142,7 +142,7 @@ namespace SharpGen.Transform
                 Name = cppModule.Name
             };
 
-            foreach (var include in cppModule.Includes.Where(cppInclude => _includesToProcess.Contains(cppInclude.Name)))
+            foreach (var include in cppModule.Includes.Where(cppInclude => _includesToProcess.Contains(cppInclude.Name)).ToArray())
             {
                 moduleToTransform.Add(include);
             }
