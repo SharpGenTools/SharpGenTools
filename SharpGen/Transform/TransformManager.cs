@@ -120,67 +120,58 @@ namespace SharpGen.Transform
         /// </summary>
         /// <param name="cppModule">The C++ module.</param>
         /// <param name="config">The root config file.</param>
-        /// <param name="checkFilesPath">The path to place check files in.</param>
-        /// <returns>Any rules that must flow to consuming projects.</returns>
-        private List<DefineExtensionRule> Init(CppModule cppModule, ConfigFile config, string checkFilesPath)
+        /// <returns>The module to transform after mapping rules have been applied.</returns>
+        private CppModule MapModule(CppModule cppModule, IEnumerable<ConfigFile> configFiles)
         {
-            var configFiles = config.ConfigFilesLoaded;
+            var numberOfConfigFilesToParse = configFiles.Count();
 
-            // Compute dependencies first
-            // In order to calculate which assembly we need to process
-            foreach (var configFile in configFiles)
-                ComputeDependencies(configFile);
-
-            // Check which assembly to update
-            foreach (var assembly in assemblyManager.Assemblies)
-                CheckAssemblyUpdate(assembly, checkFilesPath);
-
-
-            var numberOfConfigFilesToParse = 0;
-            // If we don't need to process it, skip it silently
-            foreach (var configFile in configFiles)
-                if (configFile.IsMappingToProcess)
-                    numberOfConfigFilesToParse++;
-
-            var defines = new List<DefineExtensionRule>();
             var indexFile = 0;
             // Process each config file
 
-            // We have to do these steps first, otherwise we'll get undefined types for types we've mapped, which breaks the mapping.
             foreach (var configFile in configFiles)
             {
-                Logger.RunInContext(
-                    configFile.AbsoluteFilePath,
-                    () =>
-                    {
-                        // Update Naming Rules
-                        UpdateNamingRules(configFile);
-
-                        defines.AddRange(ProcessDefines(configFile));
-                    });
-            }
-
-            foreach (var configFile in configFiles)
-            {
-                Logger.RunInContext(
-                    configFile.AbsoluteFilePath,
-                    () =>
-                    {
-                        RegisterBindings(configFile);
-                    });
-            }
-
-            foreach (var configFile in configFiles)
-            {
-                if (configFile.IsMappingToProcess)
-                {
-                    Logger.Progress(30 + (indexFile*30)/numberOfConfigFilesToParse, "Processing mapping rules [{0}]", configFile.Assembly ?? configFile.Id);
+                    Logger.Progress(30 + (indexFile * 30) / numberOfConfigFilesToParse, "Processing mapping rules [{0}]", configFile.Assembly ?? configFile.Id);
                     ProcessCppModuleWithConfig(cppModule, configFile);
                     indexFile++;
+            }
+
+            // Strip out includes we aren't processing from transformation
+
+            var moduleToTransform = new CppModule
+            {
+                Name = cppModule.Name
+            };
+
+            foreach (var include in cppModule.Includes.Where(cppInclude => _includesToProcess.Contains(cppInclude.Name)))
+            {
+                moduleToTransform.Add(include);
+            }
+
+            return moduleToTransform;
+        }
+
+        private Dictionary<string, CheckFileNode> CheckIfUpdated(IEnumerable<ConfigFile> configFiles, string checkFilesPath)
+        {
+            var checkFileNodes = new Dictionary<string, CheckFileNode>();
+            // Compute assembly dependencies first
+            // In order to calculate which assembly we need to process
+            foreach (var configFile in configFiles)
+            {
+                if (!string.IsNullOrEmpty(configFile.Assembly))
+                {
+                    if (!checkFileNodes.TryGetValue(configFile.Assembly, out var checkFileNode))
+                    {
+                        checkFileNode = new CheckFileNode(configFile.Assembly);
+                        checkFileNodes[configFile.Assembly] = checkFileNode;
+                    }
+                    ComputeDependencies(checkFileNode, configFile);
                 }
             }
 
-            return defines;
+            // Check which assembly to update
+            foreach (var checkFileNode in checkFileNodes.Values)
+                CheckIfNodeUpToDate(checkFileNode, checkFilesPath);
+            return checkFileNodes;
         }
 
         /// <summary>
@@ -197,70 +188,62 @@ namespace SharpGen.Transform
         /// Computes assembly dependencies from a config file.
         /// </summary>
         /// <param name="file">The file.</param>
-        private void ComputeDependencies(ConfigFile file)
+        private void ComputeDependencies(CheckFileNode checkFileNode, ConfigFile file)
         {
-            if (string.IsNullOrEmpty(file.Assembly))
-                return;
-
-            var assembly = assemblyManager.GetOrCreateAssembly(file.Assembly);
-
             // Review all includes file
             foreach (var includeRule in file.Includes)
             {
-                if (includeRule.Attach.HasValue && includeRule.Attach.Value)
-                    // Link this assembly to its config file (for dependency checking)
-                    assembly.AddLinkedConfigFile(file);
-                else if (includeRule.AttachTypes.Count > 0)
-                    // Link this assembly to its config file (for dependency checking)
-                    assembly.AddLinkedConfigFile(file);
+                if (includeRule.Attach.HasValue && includeRule.Attach.Value || includeRule.AttachTypes.Any())
+                    // Link this assembly to its config file (for checking checkfiles)
+                    checkFileNode.AddLinkedConfigFile(file);
             }
 
             // Add link to extensions if any
             if (file.Extension.Count > 0)
-                assembly.AddLinkedConfigFile(file);
+                checkFileNode.AddLinkedConfigFile(file);
 
             // Find all dependencies from all linked config files
             var dependencyList = new List<ConfigFile>();
-            foreach (var linkedConfigFile in assembly.ConfigFilesLinked)
+            foreach (var linkedConfigFile in checkFileNode.ConfigFilesLinked)
                 linkedConfigFile.FindAllDependencies(dependencyList);
 
             // Add full dependency for this assembly from all config files
             foreach (var linkedConfigFile in dependencyList)
-                assembly.AddLinkedConfigFile(linkedConfigFile);
+                checkFileNode.AddLinkedConfigFile(linkedConfigFile);
         }
 
         /// <summary>
         /// Checks the assembly is up to date relative to its config dependencies.
         /// </summary>
-        /// <param name="assembly">The assembly.</param>
+        /// <param name="checkFilesNode">The assembly.</param>
         /// <param name="checkFilesPath">The path to where the check file is located.</param>
-        private void CheckAssemblyUpdate(CsAssembly assembly, string checkFilesPath)
+        private void CheckIfNodeUpToDate(CheckFileNode checkFilesNode, string checkFilesPath)
         {
-            var maxUpdateTime = ConfigFile.GetLatestTimestamp(assembly.ConfigFilesLinked);
+            var maxUpdateTime = ConfigFile.GetLatestTimestamp(checkFilesNode.ConfigFilesLinked);
 
-            if (checkFilesPath != null && File.Exists(Path.Combine(checkFilesPath, assembly.CheckFileName)))
+            if (checkFilesPath != null && File.Exists(Path.Combine(checkFilesPath, checkFilesNode.CheckFileName)))
             {
-                if (maxUpdateTime > File.GetLastWriteTime(Path.Combine(checkFilesPath, assembly.CheckFileName)))
-                    assembly.NeedsToBeUpdated = true;
+                if (maxUpdateTime > File.GetLastWriteTime(Path.Combine(checkFilesPath, checkFilesNode.CheckFileName)))
+                    checkFilesNode.NeedsToBeUpdated = true;
             }
             else
             {
-                assembly.NeedsToBeUpdated = true;
+                checkFilesNode.NeedsToBeUpdated = true;
             }
 
             // Force generate
             if (ForceGenerator)
-                assembly.NeedsToBeUpdated = true;
+                checkFilesNode.NeedsToBeUpdated = true;
 
-            if (assembly.NeedsToBeUpdated)
+            if (checkFilesNode.NeedsToBeUpdated)
             {
-                foreach (var linkedConfigFile in assembly.ConfigFilesLinked)
-                    linkedConfigFile.IsMappingToProcess = true;
+                foreach (var linkedConfigFile in checkFilesNode.ConfigFilesLinked)
+                    linkedConfigFile.ProcessMappings = true;
             }
-            string updateForMessage = (assembly.NeedsToBeUpdated) ? "Config changed. Need to update from" : "Config unchanged. No need to update from";
+            string updateForMessage = (checkFilesNode.NeedsToBeUpdated) ? "Config changed. Need to update from" : "Config unchanged. No need to update from";
 
-            Logger.Message("Process assembly [{0}] => {1} dependencies: [{2}]", assembly.QualifiedName, updateForMessage,
-                           string.Join(",", assembly.ConfigFilesLinked));
+            Logger.Message("Process assembly [{0}] => {1} dependencies: [{2}]", checkFilesNode.Name, updateForMessage,
+                           string.Join(",", checkFilesNode.ConfigFilesLinked));
         }
 
         /// <summary>
@@ -318,9 +301,8 @@ namespace SharpGen.Transform
             }
         }
 
-        private IEnumerable<DefineExtensionRule> ProcessDefines(ConfigFile file)
+        private void ProcessDefines(ConfigFile file)
         {
-            var defines = new List<DefineExtensionRule>();
             foreach (var defineRule in file.Extension.OfType<DefineExtensionRule>())
             {
                 CsTypeBase defineType = null;
@@ -393,9 +375,7 @@ namespace SharpGen.Transform
 
                 // Define this type
                 typeRegistry.DefineType(defineType);
-                defines.Add(defineRule);
             }
-            return defines;
         }
 
         private void ProcessExtensions(CppElementFinder elementFinder, ConfigFile file)
@@ -432,8 +412,8 @@ namespace SharpGen.Transform
             {
                 if (includeRule.Attach.HasValue && includeRule.Attach.Value)
                 {
-                    // include will be processed
-                    MapIncludeToNamespace(includeRule.Id, file.Assembly, includeRule.Namespace ?? file.Namespace, includeRule.Output);
+                    AddIncludeToProcess(includeRule.Id);
+                    namespaceRegistry.MapIncludeToNamespace(includeRule.Id, file.Assembly, includeRule.Namespace ?? file.Namespace, includeRule.Output);
                 }
                 else
                 {
@@ -448,7 +428,10 @@ namespace SharpGen.Transform
 
             // Add extensions if any
             if (file.Extension.Count > 0)
-                MapIncludeToNamespace(file.ExtensionId, file.Assembly, file.Namespace);
+            {
+                AddIncludeToProcess(file.ExtensionId);
+                namespaceRegistry.MapIncludeToNamespace(file.ExtensionId, file.Assembly, file.Namespace, null);
+            }
         }
 
         private void ProcessMappings(CppElementFinder elementFinder, ConfigFile file)
@@ -591,6 +574,33 @@ namespace SharpGen.Transform
             }
         }
 
+        private void Init(IEnumerable<ConfigFile> configFiles)
+        {
+            // We have to do these steps first, otherwise we'll get undefined types for types we've mapped, which breaks the mapping.
+            foreach (var configFile in configFiles)
+            {
+                Logger.RunInContext(
+                    configFile.AbsoluteFilePath,
+                    () =>
+                    {
+                        // Update Naming Rules
+                        UpdateNamingRules(configFile);
+
+                        ProcessDefines(configFile);
+                    });
+            }
+
+            foreach (var configFile in configFiles)
+            {
+                Logger.RunInContext(
+                    configFile.AbsoluteFilePath,
+                    () =>
+                    {
+                        RegisterBindings(configFile);
+                    });
+            }
+        }
+
         /// <summary>
         ///   Maps all C++ types to C#
         /// </summary>
@@ -599,14 +609,18 @@ namespace SharpGen.Transform
         /// <param name="checkFilesPath">The path for the check files.</param>
         public (CsSolution solution, IEnumerable<DefineExtensionRule> consumerExtensions) Transform(CppModule cppModule, ConfigFile configFile, string checkFilesPath)
         {
-            var consumerDefines = Init(cppModule, configFile, checkFilesPath);
+            var checkFileNodes = CheckIfUpdated(configFile.ConfigFilesLoaded, checkFilesPath);
+            var moduleToTransform = MapModule(cppModule, configFile.ConfigFilesLoaded.Where(cfg => cfg.ProcessMappings));
+
+            Init(configFile.ConfigFilesLoaded);
+
             var selectedCSharpType = new List<CsBase>();
 
             // Prepare transform by defining/registering all types to process
-            selectedCSharpType.AddRange(PrepareTransform(cppModule, EnumTransform));
-            selectedCSharpType.AddRange(PrepareTransform(cppModule, StructTransform));
-            selectedCSharpType.AddRange(PrepareTransform(cppModule, InterfaceTransform));
-            selectedCSharpType.AddRange(PrepareTransform<CppFunction, CsFunction>(cppModule, FunctionTransform));
+            selectedCSharpType.AddRange(PrepareTransform(moduleToTransform, EnumTransform));
+            selectedCSharpType.AddRange(PrepareTransform(moduleToTransform, StructTransform));
+            selectedCSharpType.AddRange(PrepareTransform(moduleToTransform, InterfaceTransform));
+            selectedCSharpType.AddRange(PrepareTransform<CppFunction, CsFunction>(moduleToTransform, FunctionTransform));
 
             // Transform all types
             Logger.Progress(65, "Transforming enums...");
@@ -628,9 +642,14 @@ namespace SharpGen.Transform
                         constantManager.AttachConstants(cSharpFunctionGroup);
                 }
                 solution.Add(cSharpAssembly);
+
+                if (checkFileNodes.TryGetValue(cSharpAssembly.Name, out var node))
+                {
+                    cSharpAssembly.NeedsToBeUpdated = node.NeedsToBeUpdated;
+                }
             }
 
-            return (solution, consumerDefines);
+            return (solution, configFile.ConfigFilesLoaded.SelectMany(file => file.Extension.OfType<DefineExtensionRule>()));
         }
 
         /// <summary>
@@ -645,7 +664,7 @@ namespace SharpGen.Transform
         {
             var csElements = new List<TCsElement>();
             // Predefine all structs, typedefs and interfaces
-            foreach (var cppInclude in cppModule.Includes.Where(cppInclude => _includesToProcess.Contains(cppInclude.Name)))
+            foreach (var cppInclude in cppModule.Includes)
             {
                 foreach (var cppItem in cppInclude.Iterate<TCppElement>())
                 {
@@ -736,20 +755,6 @@ namespace SharpGen.Transform
                 constantRule.Value,
                 constantRule.Visibility,
                 nameSpace);
-        }
-
-        /// <summary>
-        /// Maps a particular C++ include to a C# namespace.
-        /// </summary>
-        /// <param name="includeName">Name of the include.</param>
-        /// <param name="assemblyName">Name of the assembly.</param>
-        /// <param name="nameSpace">The name space.</param>
-        /// <param name="outputDirectory">The output directory.</param>
-        private void MapIncludeToNamespace(string includeName, string assemblyName, string nameSpace, string outputDirectory = null)
-        {
-            AddIncludeToProcess(includeName);
-
-            namespaceRegistry.MapIncludeToNamespace(includeName, assemblyName, nameSpace, outputDirectory);
         }
 
         /// <summary>

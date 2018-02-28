@@ -193,7 +193,7 @@ namespace SharpGen.Config
         /// 	<c>true</c> if this instance is mapping to process; otherwise, <c>false</c>.
         /// </value>
         [XmlIgnore]
-        public bool IsMappingToProcess { get; set; }
+        public bool ProcessMappings { get; set; }
 
         /// <summary>
         /// Indicates whether the current object is equal to another object of the same type.
