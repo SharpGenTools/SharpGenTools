@@ -43,8 +43,9 @@ namespace SharpGen.Transform
         private readonly NamespaceRegistry namespaceRegistry;
         private readonly PropertyBuilder propertyBuilder;
         private readonly MethodOverloadBuilder methodOverloadBuilder;
-        private readonly CsTypeBase DefaultCallbackable;
-        private readonly CsTypeBase CppObjectType;
+
+        private readonly CsInterface DefaultCallbackable;
+        private readonly CsInterface CppObjectType;
 
         public InterfaceTransform(
             NamingRulesManager namingRules,
@@ -130,11 +131,11 @@ namespace SharpGen.Transform
             var baseType = typeRegistry.FindBoundType(cppInterface.Base);
             if (baseType != null)
             {
-                interfaceType.Base = baseType;
+                interfaceType.Base = (CsInterface)baseType;
 
                 // Process base if it's not mapped already
-                if (baseType is CsInterface parentInterface && !parentInterface.IsFullyMapped)
-                    Process(parentInterface);
+                if (!interfaceType.Base.IsFullyMapped)
+                    Process(interfaceType.Base);
             }
             else
             {
@@ -165,12 +166,12 @@ namespace SharpGen.Transform
             }
             else
             {
-                var parentInterface = interfaceType.Base as CsInterface;
-                if (!interfaceType.IsCallback && parentInterface != null && parentInterface.IsDualCallback)
+                if (!interfaceType.IsCallback && interfaceType.Base != null && interfaceType.Base.IsDualCallback)
                 {
-                    interfaceType.Base = parentInterface.GetNativeImplementationOrThis();
+                    interfaceType.Base = interfaceType.Base.GetNativeImplementationOrThis();
                 }
-
+                
+                // Refactor Properties
                 CreateProperties(generatedMethods);
             }
 
@@ -295,6 +296,7 @@ namespace SharpGen.Transform
                     nativeCallback.Add(newCsMethod);
                 }
             }
+            
             nativeCallback.IsCallback = false;
             nativeCallback.IsDualCallback = true;
             return nativeCallback;

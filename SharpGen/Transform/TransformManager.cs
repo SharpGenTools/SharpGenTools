@@ -362,7 +362,9 @@ namespace SharpGen.Transform
                     var iface =  new CsInterface { Name = defineRule.Interface };
                     if (defineRule.NativeImplementation != null)
                     {
-                        iface.NativeImplementation = new CsInterface { Name = defineRule.NativeImplementation };
+                        iface.NativeImplementation = new CsInterface { Name = defineRule.NativeImplementation, IsDualCallback = true };
+                        iface.IsCallback = true;
+                        iface.IsDualCallback = true;
                         typeRegistry.DefineType(iface.NativeImplementation);
                     }
                     defineType = iface;
