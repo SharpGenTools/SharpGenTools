@@ -70,7 +70,7 @@ namespace SharpGen.Model
         /// Class Parent inheritance
         /// </summary>
         [DataMember]
-        public CsTypeBase Base { get; set; }
+        public CsInterface Base { get; set; }
 
         /// <summary>
         /// Interface Parent inheritance

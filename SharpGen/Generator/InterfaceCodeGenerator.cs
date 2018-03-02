@@ -73,7 +73,7 @@ namespace SharpGen.Generator
                 baseList = BaseList();
                 if (csElement.Base != null)
                 {
-                    baseList = baseList.AddTypes(SimpleBaseType(ParseTypeName(csElement.Base.QualifiedName)));
+                    baseList = baseList.AddTypes(SimpleBaseType(ParseTypeName(csElement.Base.GetNativeImplementationOrThis().QualifiedName)));
                 }
                 if (csElement.IBase != null)
                 {

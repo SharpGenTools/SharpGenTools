@@ -44,8 +44,8 @@ namespace SharpGen.Transform
         private readonly GlobalNamespaceProvider globalNamespace;
         private readonly TypeRegistry typeRegistry;
         private readonly NamespaceRegistry namespaceRegistry;
-        private readonly CsTypeBase DefaultCallbackable;
-        private readonly CsTypeBase CppObjectType;
+        private readonly CsInterface DefaultCallbackable;
+        private readonly CsInterface CppObjectType;
 
         public InterfaceTransform(
             NamingRulesManager namingRules,
@@ -127,7 +127,7 @@ namespace SharpGen.Transform
             var parentType = typeRegistry.FindBoundType(cppInterface.Base);
             if (parentType != null)
             {
-                interfaceType.Base = parentType;
+                interfaceType.Base = (CsInterface)parentType;
 
                 // Process base if it's not mapped already
                 if (parentType is CsInterface parentInterface  && !parentInterface.IsFullyMapped)
