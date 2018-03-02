@@ -274,6 +274,7 @@ namespace SharpGen.Interactive
             var docLinker = new DocumentationLinker();
             var typeRegistry = new TypeRegistry(Logger, docLinker);
             var namingRules = new NamingRulesManager();
+            var assemblyManager = new AssemblyManager();
 
             // Run the main mapping process
             var transformer = new TransformManager(
@@ -283,7 +284,7 @@ namespace SharpGen.Interactive
                 typeRegistry,
                 docLinker,
                 new ConstantManager(namingRules, docLinker),
-                new AssemblyManager())
+                assemblyManager)
             {
                 ForceGenerator = _isAssemblyNew
             };
@@ -308,11 +309,75 @@ namespace SharpGen.Interactive
             if (Logger.HasErrors)
                 Logger.Fatal("Executing mapping rules failed");
 
-            transformer.PrintStatistics();
+            PrintStatistics(assemblyManager);
 
             DumpRenames(transformer);
 
             return (docLinker, solution);
+        }
+
+        private void PrintStatistics(AssemblyManager assemblyManager)
+        {
+            var globalStats = new Dictionary<string, int>
+            {
+                ["interfaces"] = 0,
+                ["methods"] = 0,
+                ["parameters"] = 0,
+                ["enums"] = 0,
+                ["structs"] = 0,
+                ["fields"] = 0,
+                ["enumitems"] = 0,
+                ["functions"] = 0
+            };
+
+            foreach (var assembly in assemblyManager.Assemblies)
+            {
+                var stats = globalStats.ToDictionary(globalStat => globalStat.Key, globalStat => 0);
+
+                foreach (var nameSpace in assembly.Items)
+                {
+                    // Enums, Structs, Interface, FunctionGroup
+                    foreach (var item in nameSpace.Items)
+                    {
+                        if (item is CsInterface) stats["interfaces"]++;
+                        else if (item is CsStruct) stats["structs"]++;
+                        else if (item is CsEnum) stats["enums"]++;
+
+                        foreach (var subitem in item.Items)
+                        {
+                            if (subitem is CsFunction)
+                            {
+                                stats["functions"]++;
+                                stats["parameters"] += subitem.Items.Count;
+                            }
+                            else if (subitem is CsMethod)
+                            {
+                                stats["methods"]++;
+                                stats["parameters"] += subitem.Items.Count;
+                            }
+                            else if (subitem is CsEnumItem)
+                            {
+                                stats["enumitems"]++;
+                            }
+                            else if (subitem is CsField)
+                            {
+                                stats["fields"]++;
+                            }
+                        }
+                    }
+
+                    foreach (var stat in stats) globalStats[stat.Key] += stat.Value;
+                }
+
+                Logger.Message("Assembly [{0}] Statistics", assembly.QualifiedName);
+                foreach (var stat in stats)
+                    Logger.Message("\tNumber of {0} : {1}", stat.Key, stat.Value);
+            }
+            Logger.Message("\n");
+
+            Logger.Message("Global Statistics:");
+            foreach (var stat in globalStats)
+                Logger.Message("\tNumber of {0} : {1}", stat.Key, stat.Value);
         }
 
         private void DumpRenames(TransformManager transformer)
