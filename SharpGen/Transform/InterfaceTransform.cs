@@ -105,6 +105,11 @@ namespace SharpGen.Transform
 
             typeRegistry.BindType(cppInterface.Name, cSharpInterface);
 
+            foreach (var cppMethod in cppInterface.Methods)
+            {
+                cSharpInterface.Add(MethodPreparer.Prepare(cppMethod));
+            }
+
             return cSharpInterface;
         }
 
@@ -141,13 +146,9 @@ namespace SharpGen.Transform
             FindGuidForInterface(interfaceType);
 
             // Handle Methods
-            var generatedMethods = new List<CsMethod>();
-            foreach (var cppMethod in cppInterface.Methods)
+            var generatedMethods = interfaceType.Methods.ToList();
+            foreach (var cSharpMethod in generatedMethods)
             {
-                var cSharpMethod = MethodPreparer.Prepare(cppMethod);
-                generatedMethods.Add(cSharpMethod);
-                interfaceType.Add(cSharpMethod);
-
                 MethodTransformer.Process(cSharpMethod);
 
                 // Add specialized method overloads
