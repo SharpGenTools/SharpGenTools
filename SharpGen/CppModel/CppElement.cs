@@ -200,16 +200,6 @@ namespace SharpGen.CppModel
             return Rule ?? new MappingRule();
         }
 
-        public static string ShortName<T>() where T : CppElement
-        {
-            var type = typeof (T);
-            var tagname = type.Name;
-            var attribute = type.GetTypeInfo().GetCustomAttributes<DataContractAttribute>(false).FirstOrDefault();
-            if (attribute != null)
-                tagname = attribute.Name;
-            return tagname;
-        }
-
         /// <summary>
         ///   Add an inner element to this CppElement
         /// </summary>
