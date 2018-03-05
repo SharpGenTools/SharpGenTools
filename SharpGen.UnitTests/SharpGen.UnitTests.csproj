@@ -6,6 +6,8 @@
 
   <ItemGroup>
     <ProjectReference Include="../SharpGen/SharpGen.csproj" />
+    <PackageReference Include="FakeItEasy" Version="4.5.1" />
+    <PackageReference Include="FakeItEasy.Analyzer.CSharp" Version="4.5.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
     <PackageReference Include="xunit" Version="2.3.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.0" />
