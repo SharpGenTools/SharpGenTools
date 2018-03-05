@@ -3,6 +3,12 @@ if ($LastExitCode -ne 0) {
     exit 1
 }
 
+dotnet test SharpGen.Runtime.UnitTests/SharpGen.Runtime.UnitTests.csproj
+if ($LastExitCode -ne 0) {
+    exit 1
+}
+
+
 $localPackagesFolder = "SdkTests/LocalPackages"
 $restorePackagesFolder = "SdkTests/RestoredPackages"
 $sdkPackages = "SharpGenTools.Sdk", "SharpGen.Doc.Msdn.Tasks", "SharpGen.Runtime"
