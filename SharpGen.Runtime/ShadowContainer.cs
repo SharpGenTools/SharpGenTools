@@ -113,9 +113,9 @@ namespace SharpGen.Runtime
                 if (!typeToShadowTypes.TryGetValue(type, out List<Type> cachedInterfaces))
                 {
                     var interfaces = type.GetTypeInfo().ImplementedInterfaces.ToList();
-                    interfaces = new List<Type>();
-                    interfaces.AddRange(interfaces);
                     typeToShadowTypes.Add(type, interfaces);
+
+                    var interfacesToRemove = new List<Type>();
 
                     // First pass to identify most detailed interfaces
                     foreach (var item in interfaces)
@@ -124,7 +124,7 @@ namespace SharpGen.Runtime
                         var shadowAttribute = ShadowAttribute.Get(item);
                         if (shadowAttribute == null)
                         {
-                            interfaces.Remove(item);
+                            interfacesToRemove.Add(item);
                             continue;
                         }
 
@@ -132,8 +132,13 @@ namespace SharpGen.Runtime
                         var inheritList = item.GetTypeInfo().ImplementedInterfaces;
                         foreach (var inheritInterface in inheritList)
                         {
-                            interfaces.Remove(inheritInterface);
+                            interfacesToRemove.Add(inheritInterface);
                         }
+                    }
+
+                    foreach (var toRemove in interfacesToRemove)
+                    {
+                        interfaces.Remove(toRemove);
                     }
                     return interfaces;
                 }

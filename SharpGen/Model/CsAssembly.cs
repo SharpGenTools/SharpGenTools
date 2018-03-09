@@ -36,12 +36,9 @@ namespace SharpGen.Model
     [DataContract(Name = "Assembly")]
     public class CsAssembly : CsBase
     {
-        private List<ConfigFile> _configFilesLinked;
-
         public CsAssembly()
         {
             Interop = new InteropManager();
-            _configFilesLinked = new List<ConfigFile>();
         }
 
         /// <summary>
@@ -64,25 +61,6 @@ namespace SharpGen.Model
         [DataMember]
         public bool NeedsToBeUpdated { get; set; }
         
-        /// <summary>
-        /// Gets config files linked to this assembly
-        /// </summary>
-        /// <value>The config files linked to this assembly.</value>
-        public IReadOnlyList<ConfigFile> ConfigFilesLinked => _configFilesLinked;
-
-        /// <summary>
-        /// Adds linked config file to this instance.
-        /// </summary>
-        /// <param name="configFileToAdd">The config file to add.</param>
-        public void AddLinkedConfigFile(ConfigFile configFileToAdd)
-        {
-            foreach (var configFile in _configFilesLinked)
-                if (configFile.Id == configFileToAdd.Id)
-                    return;
-
-            _configFilesLinked.Add(configFileToAdd);
-        }
-
         /// <summary>
         /// Gets the name of the check file for this assembly.
         /// </summary>

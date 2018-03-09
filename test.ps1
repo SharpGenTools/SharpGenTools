@@ -1,51 +1,56 @@
-$env:Path += ";C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\"
-
-pushd SharpGen.UnitTests
-    dotnet xunit
-    if ($LastExitCode -ne 0) {
-        exit 1
-    }
-popd
-
-
-if(Test-Path -Path SdkTests/RestoredPackages/sharpgentools.sdk){
-    rm -r -Force SdkTests/RestoredPackages/sharpgentools.sdk
+dotnet test SharpGen.UnitTests/SharpGen.UnitTests.csproj
+if ($LastExitCode -ne 0) {
+    exit 1
 }
 
-if(Test-Path -Path SdkTests/RestoredPackages/sharpgen.doc.msdn.tasks){
-    rm -r -Force SdkTests/RestoredPackages/sharpgen.doc.msdn.tasks
+dotnet test SharpGen.Runtime.UnitTests/SharpGen.Runtime.UnitTests.csproj
+if ($LastExitCode -ne 0) {
+    exit 1
 }
 
-if(Test-Path -Path SdkTests/RestoredPackages/sharpgen.runtime){
-    rm -r -Force SdkTests/RestoredPackages/sharpgen.runtime
+
+$localPackagesFolder = "SdkTests/LocalPackages"
+$restorePackagesFolder = "SdkTests/RestoredPackages"
+$sdkPackages = "SharpGenTools.Sdk", "SharpGen.Doc.Msdn.Tasks", "SharpGen.Runtime"
+
+if (!(Test-Path -Path $localPackagesFolder)) {
+    mkdir $localPackagesFolder
 }
 
-mkdir SdkTests/LocalPackages -ErrorAction SilentlyContinue
-rm SdkTests/LocalPackages/*.nupkg
-cp SharpGenTools.Sdk/bin/Release/*.nupkg SdkTests/LocalPackages/
-cp SharpGen.Doc.Msdn.Tasks/bin/Release/*.nupkg SdkTests/LocalPackages/
-cp SharpGen.Runtime/bin/Release/*.nupkg SdkTests/LocalPackages/
+Remove-Item SdkTests/LocalPackages/*.nupkg
 
-pushd .\SdkTests
-    msbuild /t:Restore /v:minimal
+foreach ($sdkPackage in $sdkPackages) {
+    Copy-Item $sdkPackage/bin/Release/*.nupkg $localPackagesFolder
+}
 
-    if ($LastExitCode -ne 0) {
-        exit 1
+if (!(Test-Path -Path $restorePackagesFolder)) {
+    mkdir $restorePackagesFolder
+}
+
+foreach ($sdkPackage in $sdkPackages) {
+    $restoreFolderName = $sdkPackage.ToLower()
+    $restorePath = "$restorePackagesFolder/$restoreFolderName"
+    if (Test-Path -Path $restorePath) {
+        Remove-Item -Recurse -Force $restorePath
     }
+}
 
-    msbuild /p:Configuration=Release /m /v:n
+ # Add directory to path for sn executable
+ $env:Path += ";C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\"
 
-    if ($LastExitCode -ne 0) {
-        exit 1
+msbuild ./SdkTests/SdkTests.sln /restore /p:Configuration=Release /m /v:n
+
+if ($LastExitCode -ne 0) {
+    exit 1
+}
+
+$infrastructure = ".vs", "LocalPackages", "RestoredPackages", "x64"
+
+foreach($test in Get-ChildItem -Path SdkTests -Directory -Name) {
+    if ($infrastructure -notcontains $test) {
+        dotnet test ./SdkTests/$test/$test/$test.csproj --no-build --no-restore -c Release
+        if ($LastExitCode -ne 0) {
+            exit 1
+        }
     }
-
-    pushd ComInterface
-        pushd ComLibTest
-            dotnet test --no-build --no-restore -c Release
-            if ($LastExitCode -ne 0) {
-                exit 1
-            }
-        popd
-    popd
-
-popd
+}

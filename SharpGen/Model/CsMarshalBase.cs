@@ -26,13 +26,13 @@ namespace SharpGen.Model
     public class CsMarshalBase : CsBase
     {
         /// <summary>
-        ///   Public type used for interface
+        ///   Public type used for element.
         /// </summary>
         [DataMember]
         public CsTypeBase PublicType { get; set; }
 
         /// <summary>
-        ///   Internal type used for marshalling. If null, then use instead public type.
+        ///   Internal type used for marshalling to native. If null, then use instead public type.
         /// </summary>
         [DataMember]
         public CsTypeBase MarshalType { get; set; }
@@ -41,16 +41,10 @@ namespace SharpGen.Model
         public bool HasPointer { get; set; }
 
         [DataMember]
-        public bool HasMarshalType { get; set; }
-
-        [DataMember]
         public bool IsArray { get; set; }
 
         [DataMember]
         public int ArrayDimensionValue { get; set; }
-
-        [DataMember]
-        public string ArrayDimension { get; set; }
 
         [DataMember]
         public bool IsWideChar { get; set; }

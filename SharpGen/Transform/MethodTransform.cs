@@ -151,7 +151,7 @@ namespace SharpGen.Transform
                 cppMethod.ReturnValue.Rule = new MappingRule { MappingType = methodRule.MappingType };
 
             // Get the inferred return type
-            method.ReturnValue = factory.Create<CsReturnValue>(cppMethod.ReturnValue);
+            method.ReturnValue = factory.Create(cppMethod.ReturnValue);
 
             if (method.ReturnValue.PublicType is CsInterface iface && iface.IsCallback)
             {
@@ -168,133 +168,9 @@ namespace SharpGen.Transform
             // Iterates on parameters to convert them to C# parameters
             foreach (var cppParameter in cppMethod.Parameters)
             {
-                var cppAttribute = cppParameter.Attribute;
-                var paramRule = cppParameter.GetMappingRule();
-
-                bool hasArray = cppParameter.IsArray || ((cppAttribute & ParamAttribute.Buffer) != 0);
-                bool hasParams = (cppAttribute & ParamAttribute.Params) == ParamAttribute.Params;
-                bool isOptional = (cppAttribute & ParamAttribute.Optional) != 0;
-
-                var paramMethod = factory.Create<CsParameter>(cppParameter);
+                var paramMethod = factory.Create(cppParameter);
 
                 paramMethod.Name = NamingRules.Rename(cppParameter);
-
-                bool hasPointer = paramMethod.HasPointer;
-
-                var publicType = paramMethod.PublicType;
-                var marshalType = paramMethod.MarshalType;
-
-                CsParameterAttribute parameterAttribute = CsParameterAttribute.In;
-
-                if (hasArray)
-                    hasPointer = true;
-
-                // --------------------------------------------------------------------------------
-                // Pointer - Handle special cases
-                // --------------------------------------------------------------------------------
-                if (hasPointer)
-                {
-                    marshalType = typeRegistry.ImportType(typeof(IntPtr));
-
-                    // --------------------------------------------------------------------------------
-                    // Handling Parameter Interface
-                    // --------------------------------------------------------------------------------
-                    if (publicType is CsInterface publicInterface)
-                    {
-                        // Force Interface** to be ParamAttribute.Out when None
-                        if (cppAttribute == ParamAttribute.In)
-                        {
-                            if (cppParameter.Pointer == "**")
-                                cppAttribute = ParamAttribute.Out;
-                        }
-
-                        if ((cppAttribute & ParamAttribute.In) != 0 || (cppAttribute & ParamAttribute.InOut) != 0)
-                        {
-                            parameterAttribute = CsParameterAttribute.In;
-
-                            // Force all array of interface to support null
-                            if (hasArray)
-                            {
-                                isOptional = true;
-                            }
-                        }
-                        else if ((cppAttribute & ParamAttribute.Out) != 0)
-                            parameterAttribute = CsParameterAttribute.Out;
-                    }
-                    else
-                    {
-                        // If a pointer to array of bool are handle as array of int
-                        if (paramMethod.IsBoolToInt && (cppAttribute & ParamAttribute.Buffer) != 0)
-                            publicType = typeRegistry.ImportType(typeof(int));
-
-                        // --------------------------------------------------------------------------------
-                        // Handling Parameter Interface
-                        // --------------------------------------------------------------------------------
-
-
-                        if ((cppAttribute & ParamAttribute.In) != 0)
-                        {
-                            var fundamentalType = (publicType as CsFundamentalType)?.Type;
-                            parameterAttribute = fundamentalType == typeof(IntPtr)
-                                                || publicType.Name == globalNamespace.GetTypeName(WellKnownName.FunctionCallback)
-                                                || fundamentalType == typeof(string)
-                                                     ? CsParameterAttribute.In
-                                                     : CsParameterAttribute.RefIn;
-                        }
-                        else if ((cppAttribute & ParamAttribute.InOut) != 0)
-                        {
-                            if ((cppAttribute & ParamAttribute.Optional) != 0)
-                            {
-                                publicType = typeRegistry.ImportType(typeof(IntPtr));
-                                parameterAttribute = CsParameterAttribute.In;
-                            }
-                            else
-                            {
-                                parameterAttribute = CsParameterAttribute.Ref;
-                            }
-
-                        }
-                        else if ((cppAttribute & ParamAttribute.Out) != 0)
-                            parameterAttribute = CsParameterAttribute.Out;
-
-                        // Handle void* with Buffer attribute
-                        if (cppParameter.GetTypeNameWithMapping() == "void" && (cppAttribute & ParamAttribute.Buffer) != 0)
-                        {
-                            hasArray = false;
-                            parameterAttribute = CsParameterAttribute.In;
-                        }
-                        else if (publicType is CsFundamentalType fundamental && fundamental.Type == typeof(string)
-                            && (cppAttribute & ParamAttribute.Out) != 0)
-                        {
-                            publicType = typeRegistry.ImportType(typeof(IntPtr));
-                            parameterAttribute = CsParameterAttribute.In;
-                            hasArray = false;
-                        }
-                        else if (publicType is CsStruct structType &&
-                                 (parameterAttribute == CsParameterAttribute.Out || hasArray || parameterAttribute == CsParameterAttribute.RefIn || parameterAttribute == CsParameterAttribute.Ref))
-                        {
-                            // Set MarshalledToNative on structure to generate proper marshalling
-                            structType.MarshalledToNative = true;
-                        }
-                    }
-                }
-                else if (publicType is CsStruct structType && parameterAttribute != CsParameterAttribute.Out)
-                {
-                    structType.MarshalledToNative = true;
-                }
-
-                paramMethod.HasPointer = hasPointer;
-                paramMethod.Attribute = parameterAttribute;
-                paramMethod.IsArray = hasArray;
-                paramMethod.HasParams = hasParams;
-                paramMethod.HasPointer = hasPointer;
-                paramMethod.PublicType = publicType ?? throw new ArgumentException("Public type cannot be null");
-                paramMethod.MarshalType = marshalType;
-                paramMethod.IsOptional = isOptional;
-
-                // Force IsString to be only string (due to Buffer attribute)
-                if (paramMethod.IsString)
-                    paramMethod.IsArray = false;
 
                 method.Add(paramMethod);
             }
@@ -321,7 +197,6 @@ namespace SharpGen.Transform
                 }
                 else
                 {
-                    // Patch for Mono bug with structs marshalling and calli.
                     var returnQualifiedName = csMethod.ReturnValue.PublicType.QualifiedName;
                     if (returnQualifiedName == globalNamespace.GetTypeName(WellKnownName.Result))
                         cSharpInteropCalliSignature.ReturnType = typeof(int);
@@ -345,7 +220,6 @@ namespace SharpGen.Transform
             {
                 InteropType interopType;
                 var publicName = param.PublicType.QualifiedName;
-                // Patch for Mono bug with structs marshalling and calli.
                 if (publicName == globalNamespace.GetTypeName(WellKnownName.PointerSize))
                 {
                     interopType = typeof(void*);
@@ -357,7 +231,6 @@ namespace SharpGen.Transform
                 else if (param.MarshalType is CsFundamentalType marshalFundamental)
                 {
                     var type = marshalFundamental.Type;
-                    // Patch for Mono bug with structs marshalling and calli.
                     if (type == typeof(IntPtr))
                         type = typeof(void*);
                     interopType = type;
@@ -365,7 +238,6 @@ namespace SharpGen.Transform
                 else if (param.PublicType is CsFundamentalType publicFundamental)
                 {
                     var type = publicFundamental.Type;
-                    // Patch for Mono bug with structs marshalling and calli.
                     if (type == typeof(IntPtr))
                         type = typeof(void*);
                     interopType = type;

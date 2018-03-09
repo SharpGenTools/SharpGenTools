@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <AssemblyOriginatorKeyFile>Interface.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+</Project>

@@ -1,4 +1,5 @@
-﻿using SharpGen.CppModel;
+﻿using SharpGen.Config;
+using SharpGen.CppModel;
 using SharpGen.Logging;
 using SharpGen.Model;
 using System;
@@ -27,9 +28,8 @@ namespace SharpGen.Transform
         /// </summary>
         /// <typeparam name="T">The C# type to return</typeparam>
         /// <param name="marshallable">The marshallable element to create the C# type from.</param>
-        /// <param name="isTypeUsedInStruct">if set to <c>true</c> this type is used in a struct declaration.</param>
         /// <returns>An instantiated C# type</returns>
-        public T Create<T>(CppMarshallable marshallable, bool isTypeUsedInStruct = false) where T : CsMarshalBase, new()
+        private T CreateCore<T>(CppMarshallable marshallable) where T : CsMarshalBase, new()
         {
             CsTypeBase publicType = null;
             CsTypeBase marshalType = null;
@@ -37,11 +37,10 @@ namespace SharpGen.Transform
             {
                 CppElement = marshallable,
                 IsArray = marshallable.IsArray,
-                ArrayDimension = marshallable.ArrayDimension,
-                // TODO: handle multidimension
                 HasPointer = !string.IsNullOrEmpty(marshallable.Pointer) && (marshallable.Pointer.Contains("*") || marshallable.Pointer.Contains("&")),
             };
 
+            // TODO: handle multidimensional arrays
             // Calculate ArrayDimension
             int arrayDimensionValue = 0;
             if (marshallable.IsArray)
@@ -94,8 +93,8 @@ namespace SharpGen.Transform
                     // Else get the typeName
                     if (publicType == null)
                     {
-                        // Try to get a declared struct
-                        // If it fails, then this struct is unknown
+                        // Try to get a declared type
+                        // If it fails, then this type is unknown
                         publicType = typeRegistry.FindBoundType(publicTypeName);
                         if (publicType == null)
                         {
@@ -135,7 +134,7 @@ namespace SharpGen.Transform
                             logger.Fatal($"No struct processor processed {csStruct.QualifiedName}. Cannot continue processing");
                         }
                         
-                        // If referenced structure has a specialized marshalling, then specify marshalling
+                        // If referenced structure has a specialized marshalling, then use the structure's built-in marshalling
                         if (csStruct.HasMarshalType && !csMarshallable.HasPointer)
                         {
                             marshalType = publicType;
@@ -153,50 +152,19 @@ namespace SharpGen.Transform
                 marshalType is CsFundamentalType marshalFundamental && IsIntegerFundamentalType(marshalFundamental)
                 && publicType is CsFundamentalType publicFundamental && publicFundamental.Type == typeof(bool);
 
-            // Default IntPtr type for pointer, unless modified by specialized type (like char* map to string)
+            // Always marshal pointers as IntPtr, and present void* elements as IntPtr.
             if (csMarshallable.HasPointer)
             {
                 marshalType = typeRegistry.ImportType(typeof(IntPtr));
-                if (isTypeUsedInStruct)
+                
+                if (publicTypeName == "void")
                 {
                     publicType = typeRegistry.ImportType(typeof(IntPtr));
-                }
-                else
-                {
-                    if (publicTypeName == "void")
-                        publicType = typeRegistry.ImportType(typeof(IntPtr));
-
-                    marshalType = typeRegistry.ImportType(typeof(IntPtr));
-                }
-
-                switch (publicTypeName)
-                {
-                    case "char":
-                        publicType = typeRegistry.ImportType(typeof(string));
-                        marshalType = typeRegistry.ImportType(typeof(IntPtr));
-                        break;
-                    case "wchar_t":
-                        publicType = typeRegistry.ImportType(typeof(string));
-                        marshalType = typeRegistry.ImportType(typeof(IntPtr));
-                        csMarshallable.IsWideChar = true;
-                        break;
-                }
-            }
-            else
-            {
-                if (isTypeUsedInStruct)
-                {
-                    // Special case for Size type, as it is default marshal to IntPtr for method parameter
-                    if (publicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.PointerSize))
-                        marshalType = null;
                 }
             }
 
             csMarshallable.PublicType = publicType;
-            csMarshallable.HasMarshalType = (marshalType != null || marshallable.IsArray);
-            if (marshalType == null)
-                marshalType = publicType;
-            csMarshallable.MarshalType = marshalType;
+            csMarshallable.MarshalType = marshalType ?? publicType;
 
             return csMarshallable;
         }
@@ -211,6 +179,157 @@ namespace SharpGen.Transform
                 || marshalType.Type == typeof(ushort)
                 || marshalType.Type == typeof(sbyte)
                 || marshalType.Type == typeof(ulong);
+        }
+
+        public CsMarshalBase Create(CppMarshallable cppMarshallable)
+        {
+            return CreateCore<CsMarshalBase>(cppMarshallable);
+        }
+
+        public CsReturnValue Create(CppReturnValue cppReturnValue)
+        {
+            return CreateCore<CsReturnValue>(cppReturnValue);
+        }
+
+        public CsField Create(CppField cppField)
+        {
+            var field = CreateCore<CsField>(cppField);
+
+            if (field.HasPointer && field.PublicType != typeRegistry.ImportType(typeof(string)))
+            {
+                field.PublicType = typeRegistry.ImportType(typeof(IntPtr));
+            }
+
+            field.IsBitField = cppField.IsBitField;
+
+            return field;
+        }
+
+        public CsParameter Create(CppParameter cppParameter)
+        {
+            var param = CreateCore<CsParameter>(cppParameter);
+
+            var cppAttribute = cppParameter.Attribute;
+            var paramRule = cppParameter.GetMappingRule();
+
+            var hasArray = cppParameter.IsArray || ((cppAttribute & ParamAttribute.Buffer) != 0);
+            var hasParams = (cppAttribute & ParamAttribute.Params) == ParamAttribute.Params;
+            var isOptional = (cppAttribute & ParamAttribute.Optional) != 0;
+            var hasPointer = param.HasPointer;
+
+            var publicType = param.PublicType;
+            var marshalType = param.MarshalType;
+
+            var parameterAttribute = CsParameterAttribute.In;
+
+            if (hasArray)
+            {
+                hasPointer = true;
+            }
+
+            // --------------------------------------------------------------------------------
+            // Pointer - Handle special cases
+            // --------------------------------------------------------------------------------
+            if (hasPointer)
+            {
+                marshalType = typeRegistry.ImportType(typeof(IntPtr));
+
+                // --------------------------------------------------------------------------------
+                // Handling Parameter Interface
+                // --------------------------------------------------------------------------------
+                if (publicType is CsInterface publicInterface)
+                {
+                    // Force Interface** to be ParamAttribute.Out when None
+                    if (cppAttribute == ParamAttribute.In || cppAttribute == ParamAttribute.None)
+                    {
+                        if (cppParameter.Pointer == "**")
+                            cppAttribute = ParamAttribute.Out;
+                    }
+
+                    if ((cppAttribute & ParamAttribute.In) != 0 || (cppAttribute & ParamAttribute.InOut) != 0)
+                    {
+                        parameterAttribute = CsParameterAttribute.In;
+
+                        // Force all array of interface to support null
+                        if (hasArray)
+                        {
+                            isOptional = true;
+                        }
+                    }
+                    else if ((cppAttribute & ParamAttribute.Out) != 0)
+                        parameterAttribute = CsParameterAttribute.Out;
+                }
+                else
+                {
+                    // If a pointer to array of bool are handle as array of underlying integer type
+                    if (param.IsBoolToInt && (cppAttribute & ParamAttribute.Buffer) != 0)
+                        publicType = param.MarshalType;
+
+                    if ((cppAttribute & ParamAttribute.In) != 0)
+                    {
+                        var fundamentalType = (publicType as CsFundamentalType)?.Type;
+                        parameterAttribute = fundamentalType == typeof(IntPtr)
+                                            || publicType.Name == globalNamespace.GetTypeName(WellKnownName.FunctionCallback)
+                                            || fundamentalType == typeof(string)
+                                                    ? CsParameterAttribute.In
+                                                    : CsParameterAttribute.RefIn;
+                    }
+                    else if ((cppAttribute & ParamAttribute.InOut) != 0)
+                    {
+                        if ((cppAttribute & ParamAttribute.Optional) != 0)
+                        {
+                            publicType = typeRegistry.ImportType(typeof(IntPtr));
+                            parameterAttribute = CsParameterAttribute.In;
+                        }
+                        else
+                        {
+                            parameterAttribute = CsParameterAttribute.Ref;
+                        }
+
+                    }
+                    else if ((cppAttribute & ParamAttribute.Out) != 0)
+                        parameterAttribute = CsParameterAttribute.Out;
+
+                    // Handle void* with Buffer attribute
+                    if (cppParameter.GetTypeNameWithMapping() == "void" && (cppAttribute & ParamAttribute.Buffer) != 0)
+                    {
+                        hasArray = false;
+                        parameterAttribute = CsParameterAttribute.In;
+                    }
+                    else if (publicType is CsFundamentalType fundamental && fundamental.Type == typeof(string)
+                        && (cppAttribute & ParamAttribute.Out) != 0)
+                    {
+                        publicType = typeRegistry.ImportType(typeof(IntPtr));
+                        parameterAttribute = CsParameterAttribute.In;
+                        hasArray = false;
+                    }
+                    else if (publicType is CsStruct structType &&
+                                (parameterAttribute == CsParameterAttribute.Out || hasArray || parameterAttribute == CsParameterAttribute.RefIn || parameterAttribute == CsParameterAttribute.Ref))
+                    {
+                        // Set MarshalledToNative on structure to generate proper marshalling
+                        structType.MarshalledToNative = true;
+                    }
+                }
+            }
+            else if (publicType is CsStruct structType && parameterAttribute != CsParameterAttribute.Out)
+            {
+                structType.MarshalledToNative = true;
+            }
+
+            param.HasPointer = hasPointer;
+            param.Attribute = parameterAttribute;
+            param.IsArray = hasArray;
+            param.HasParams = hasParams;
+            param.PublicType = publicType ?? throw new ArgumentException("Public type cannot be null");
+            param.MarshalType = marshalType;
+            param.IsOptional = isOptional;
+
+            // Force IsString to be only string (due to Buffer attribute)
+            if (param.IsString)
+            {
+                param.IsArray = false;
+            }
+            return param;
         }
     }
 }

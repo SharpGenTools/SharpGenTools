@@ -93,7 +93,7 @@ namespace SharpGen.Transform
         /// <param name="fieldName">Name of the field.</param>
         /// <param name="value">The value of this constant.</param>
         /// <returns>The C# variable declared.</returns>
-        public CsVariable AddConstantToCSharpType(CppElement cppElement, string csClassName, string typeName, string fieldName, string value)
+        private CsVariable AddConstantToCSharpType(CppElement cppElement, string csClassName, string typeName, string fieldName, string value)
         {
             if (!_mapConstantToCSharpType.TryGetValue(csClassName, out List<CsVariable> constantDefinitions))
             {

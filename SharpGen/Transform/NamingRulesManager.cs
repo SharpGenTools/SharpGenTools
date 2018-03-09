@@ -39,7 +39,7 @@ namespace SharpGen.Transform
         /// <summary>
         /// The recorded names, a list of previous name and new name.
         /// </summary>
-        public List<(string originalName, string finalName)> RecordNames { get; } = new List<(string, string)>();
+        public List<(string originalName, string finalName)> RecordedRenames { get; } = new List<(string, string)>();
 
         /// <summary>
         /// Adds the short name rule.
@@ -150,18 +150,6 @@ namespace SharpGen.Transform
         }
 
         /// <summary>
-        /// Dump the names changes as a comma separated list of [FromName,ToName]
-        /// </summary>
-        /// <param name="writer">Text output of the dump</param>
-        public void DumpRenames(TextWriter writer)
-        {
-            foreach (var (originalName, finalName) in RecordNames)
-            {
-                writer.WriteLine("{0},{1}", originalName, finalName);
-            }
-        }
-
-        /// <summary>
         /// Record the name source and the modified name.
         /// </summary>
         /// <param name="fromElement">The element to rename</param>
@@ -169,7 +157,7 @@ namespace SharpGen.Transform
         /// <returns>The new name</returns>
         private string RecordRename(CppElement fromElement, string toName)
         {
-            RecordNames.Add((fromElement.FullName, toName));
+            RecordedRenames.Add((fromElement.FullName, toName));
             return toName;
         }
 

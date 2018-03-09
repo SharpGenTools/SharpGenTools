@@ -160,14 +160,18 @@ namespace SharpGen.Transform
                     var cppField = (CppField)currentStruct.Items[fieldIndex];
                     Logger.RunInContext(cppField.ToString(), () =>
                     {
-                        var fieldStruct = factory.Create<CsField>(cppField, true);
-                        csStruct.Add(fieldStruct);
+                        var csField = factory.Create(cppField);
+                        csStruct.Add(csField);
 
                         // Get name
-                        fieldStruct.Name = NamingRules.Rename(cppField);
+                        csField.Name = NamingRules.Rename(cppField);
+
+                        var fieldHasMarshalType = csField.PublicType != csField.MarshalType
+                            || (csField.PublicType is CsStruct fieldStruct && fieldStruct.HasMarshalType)
+                            || csField.IsArray;
 
                         // BoolToInt doesn't generate native Marshaling although they have a different marshaller
-                        if (!fieldStruct.IsBoolToInt && fieldStruct.HasMarshalType)
+                        if (!csField.IsBoolToInt && fieldHasMarshalType)
                             hasMarshalType = true;
 
 
@@ -181,7 +185,7 @@ namespace SharpGen.Transform
                         }
 
                         currentFieldAbsoluteOffset += previousFieldSize;
-                        var fieldAlignment = (fieldStruct.MarshalType ?? fieldStruct.PublicType).CalculateAlignment();
+                        var fieldAlignment = (csField.MarshalType ?? csField.PublicType).CalculateAlignment();
 
                         // If field alignment is < 0, then we have a pointer somewhere so we can't align
                         if (fieldAlignment > 0)
@@ -195,8 +199,7 @@ namespace SharpGen.Transform
                         }
 
                         // Get correct offset (for handling union)
-                        fieldStruct.Offset = currentFieldAbsoluteOffset;
-                        fieldStruct.IsBitField = cppField.IsBitField;
+                        csField.Offset = currentFieldAbsoluteOffset;
 
                         // Handle bit fields : calculate BitOffset and BitMask for this field
                         if (previousFieldOffsetIndex != cppField.Offset)
@@ -207,8 +210,8 @@ namespace SharpGen.Transform
                         {
                             int lastCumulatedBitOffset = cumulatedBitOffset;
                             cumulatedBitOffset += cppField.BitOffset;
-                            fieldStruct.BitMask = ((1 << cppField.BitOffset) - 1);
-                            fieldStruct.BitOffset = lastCumulatedBitOffset;
+                            csField.BitMask = ((1 << cppField.BitOffset) - 1);
+                            csField.BitOffset = lastCumulatedBitOffset;
                         }
 
 
@@ -220,14 +223,14 @@ namespace SharpGen.Transform
                             {
                                 maxSizeOfField = 0;
                             }
-                            maxSizeOfField = fieldStruct.Size > maxSizeOfField ? fieldStruct.Size : maxSizeOfField;
+                            maxSizeOfField = csField.Size > maxSizeOfField ? csField.Size : maxSizeOfField;
                             isInUnion = true;
                             csStruct.ExplicitLayout = true;
                             previousFieldSize = 0;
                         }
                         else
                         {
-                            previousFieldSize = fieldStruct.Size;
+                            previousFieldSize = csField.Size;
                         }
                         previousFieldOffsetIndex = cppField.Offset;
                     });
