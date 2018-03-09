@@ -25,6 +25,15 @@ public:
 	{
 		return value;
 	}
+
+	void __stdcall AddToThis(IInterface2* interfaces[], int numInstances) override
+	{
+		for (int i = 0; i < numInstances; ++i)
+		{
+			value.I += interfaces[i]->GetValue2().I;
+			value.J += interfaces[i]->GetValue2().J;
+		}
+	}
 };
 
 extern "C" __declspec(dllexport) IInterface2 * __stdcall CreateInstance(void)

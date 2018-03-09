@@ -13,6 +13,7 @@ struct IInterface
 struct IInterface2 : public IInterface
 {
 	virtual MyValue __stdcall GetValue2() = 0;
+	virtual void __stdcall AddToThis(IInterface2* interfaces[], int numInstances) = 0;
 };
 
 extern "C" __declspec(dllexport) IInterface2* __stdcall CreateInstance(void);

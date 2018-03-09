@@ -1,4 +1,5 @@
 using System;
+using SharpGen.Runtime;
 using Xunit;
 
 namespace Interface
@@ -43,5 +44,13 @@ namespace Interface
             }
         }
         
+        [Fact]
+        public void InterfaceArray()
+        {
+            using (var inst = Functions.CreateInstance())
+            {
+                inst.AddToThis(new InterfaceArray<NativeInterface2>(), 0);
+            }
+        }
     }
 }
