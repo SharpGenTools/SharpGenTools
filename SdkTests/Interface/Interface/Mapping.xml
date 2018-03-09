@@ -16,8 +16,12 @@
   </bindings>
 
   <mapping>
-    <map interface="IInterface" callback="true" callback-dual="true" callback-name="CppImplementation" callback-visibility="public" />
+    <map interface="IInterface" callback="true" callback-dual="true" callback-name="CppImplementation" name="NativeInterface" callback-visibility="public" />
+    <map method="IInterface:.*" keep-implement-public="true" />
+    <map interface="IInterface2" name="NativeInterface2" />
     <map function="CreateInstance" dll='"InterfaceNative.dll"' group="Interface.Functions" />
+    <map function="CreateInstance2" dll='"InterfaceNative.dll"' group="Interface.Functions" />
+    <map function="CloneInstance" dll='"InterfaceNative.dll"' group="Interface.Functions" />
   </mapping>
 
   <depends>SharpGen.Runtime</depends>

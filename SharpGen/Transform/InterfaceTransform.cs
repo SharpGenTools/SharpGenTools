@@ -163,6 +163,7 @@ namespace SharpGen.Transform
             {
                 var nativeCallback = CreateNativeCallbackType(interfaceType);
                 interfaceType.Parent.Add(nativeCallback);
+                CreateProperties(nativeCallback.Methods);
             }
             else
             {
@@ -170,10 +171,10 @@ namespace SharpGen.Transform
                 {
                     interfaceType.Base = interfaceType.Base.GetNativeImplementationOrThis();
                 }
-                
-                // Refactor Properties
-                CreateProperties(generatedMethods);
             }
+
+            CreateProperties(generatedMethods);
+
 
             if (interfaceType.IsCallback)
             {

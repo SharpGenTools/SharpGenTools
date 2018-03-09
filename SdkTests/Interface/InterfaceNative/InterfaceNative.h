@@ -16,3 +16,7 @@ struct IInterface2 : public IInterface
 };
 
 extern "C" __declspec(dllexport) IInterface2* __stdcall CreateInstance(void);
+
+extern "C" __declspec(dllexport) IInterface* __stdcall CreateInstance2(int i, double j);
+
+extern "C" __declspec(dllexport) bool __stdcall CloneInstance(IInterface* interface, IInterface** cloned);
