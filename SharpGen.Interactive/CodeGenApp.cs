@@ -385,7 +385,10 @@ namespace SharpGen.Interactive
             using (var renameLog = File.Open(Path.Combine(IntermediateOutputPath, "SharpGen_rename.log"), FileMode.OpenOrCreate, FileAccess.Write))
             using (var fileWriter = new StreamWriter(renameLog))
             {
-                transformer.NamingRules.DumpRenames(fileWriter);
+                foreach (var (originalName, finalName) in transformer.NamingRules.RecordedRenames)
+                {
+                    fileWriter.WriteLine("{0},{1}", originalName, finalName);
+                }
             }
         }
 

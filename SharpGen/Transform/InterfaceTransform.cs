@@ -303,33 +303,12 @@ namespace SharpGen.Transform
         }
 
         /// <summary>
-        /// Creates C# properties for method that respect the following convention:
-        /// TODO describe the convention to create properties from methods here.
+        /// Creates C# properties for the given set of methods.
         /// </summary>
         /// <param name="methods">The methods.</param>
         private void CreateProperties(IEnumerable<CsMethod> methods)
         {
-            var cSharpProperties = new Dictionary<string, CsProperty>();
-
-            foreach (var cSharpMethod in methods)
-            {
-                var (name, _) = propertyBuilder.GetPropertySpec(cSharpMethod);
-                if (cSharpProperties.TryGetValue(name, out var prop))
-                {
-                    if (!propertyBuilder.UpdateOrMarkPropertyInvalid(cSharpMethod, prop))
-                    {
-                        cSharpProperties.Remove(name);
-                    }
-                }
-                else
-                {
-                    var createdProp = propertyBuilder.CreateProperty(cSharpMethod);
-                    if (createdProp != null)
-                    {
-                        cSharpProperties.Add(name, createdProp);
-                    }
-                }
-            }
+            var cSharpProperties = propertyBuilder.CreateProperties(methods);
 
             // Add the property to the parentContainer
             foreach (var property in cSharpProperties.Values)

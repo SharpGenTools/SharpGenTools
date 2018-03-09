@@ -23,120 +23,97 @@ namespace SharpGen.Transform
         {
             this.globalNamespace = globalNamespace;
         }
-        
-        public CsProperty CreateProperty(CsMethod csMethod)
-        {
-            var (propertyName, _) = GetPropertySpec(csMethod);
-            var prop = new CsProperty(propertyName);
 
-            if (UpdateOrMarkPropertyInvalid(csMethod, prop))
-            {
-                return prop;
-            }
-            return null;
+        public Dictionary<string, CsProperty> CreateProperties(IEnumerable<CsMethod> methods)
+        {
+            return methods
+                .Where(method => GetPropertySpec(method).PropertyMethod != null)
+                .GroupBy(method => GetPropertySpec(method).PropertyName)
+                .Select(group => (group.Key, Property: CreatePropertyFromMethodGroup(group)))
+                .Where(group => group.Property != null)
+                .ToDictionary(group => group.Key, group => group.Property);
         }
 
-        public bool UpdateOrMarkPropertyInvalid(CsMethod csMethod, CsProperty partiallyBuiltProperty)
+        private CsProperty CreatePropertyFromMethodGroup(IGrouping<string, CsMethod> group)
         {
-            var (propertyName, propertyMethodType) = GetPropertySpec(csMethod);
-
-            if (propertyMethodType == null)
-                return false;
-
-            var parameterList = csMethod.Parameters;
-            int parameterCount = csMethod.Parameters.Count;
-
-            CsProperty csProperty = partiallyBuiltProperty;
-
-            if (partiallyBuiltProperty == null)
+            var getters = group.Where(method => GetPropertySpec(method).PropertyMethod == PropertyMethod.Getter).ToList();
+            var setters = group.Where(method => GetPropertySpec(method).PropertyMethod == PropertyMethod.Setter).ToList();
+            if (getters.Count == 0 && setters.Count == 0)
             {
-                csProperty = new CsProperty(propertyName);
+                return null;
+            }
+            if (getters.Count > 1 || setters.Count > 1)
+            {
+                return null;
             }
 
-            // If the property has already a getter and a setter, this must be an error, remove the property
-            // (Should never happen, unless there are some polymorphism on the interface's methods)
-            if (csProperty.Getter != null && csProperty.Setter != null)
+            var getter = getters.Count == 0 ? null : getters[0];
+            var setter = setters.Count == 0 ? null : setters[0];
+
+            var getterValid = ValidateGetter(getter);
+            var setterValid = ValidateSetter(setter);
+
+            if (!getterValid || !setterValid)
+            {
+                return null;
+            }
+
+            var isParamGetter = getterValid && getter != null && getter.Parameters.Count == 1;
+            var getterPropType = isParamGetter ? getter.Parameters[0].PublicType : getter?.ReturnValue.PublicType;
+            var setterPropType = setter?.Parameters[0].PublicType;
+
+            var typesMatch = getterPropType == null || setterPropType == null || getterPropType == setterPropType;
+
+            if (!typesMatch)
+            {
+                return null;
+            }
+
+            return new CsProperty(group.Key)
+            {
+                Getter = getter,
+                Setter = setter,
+                PublicType = getterPropType ?? setterPropType,
+                IsPropertyParam = isParamGetter
+            };
+        }
+
+        private bool ValidateGetter(CsMethod getter)
+        {
+            if (getter == null)
             {
                 return true;
             }
 
-            // Check Getter
-            if (propertyMethodType == PropertyMethod.Getter)
+            if ((getter.ReturnValue.PublicType.Name == globalNamespace.GetTypeName(WellKnownName.Result) || !getter.HasReturnType)
+                && getter.Parameters.Count == 1
+                && getter.Parameters[0].IsOut && !getter.Parameters[0].IsArray)
             {
-                if ((csMethod.ReturnValue.PublicType.Name == globalNamespace.GetTypeName(WellKnownName.Result) || !csMethod.HasReturnType) && parameterCount == 1 &&
-                    parameterList[0].IsOut && !parameterList[0].IsArray)
-                {
-                    csProperty.Getter = csMethod;
-                    csProperty.PublicType = parameterList[0].PublicType;
-                    csProperty.IsPropertyParam = true;
-                }
-                else if (parameterCount == 0 && csMethod.HasReturnType)
-                {
-                    csProperty.Getter = csMethod;
-                    csProperty.PublicType = csProperty.Getter.ReturnValue.PublicType;
-                }
-                else
-                {
-                    // If there is a getter, but the setter is not valid, then remove the getter
-                    if (csProperty.Setter != null)
-                        return true;
-                    return false;
-                }
+                return true;
             }
-            else
+            else if (getter.Parameters.Count == 0 && getter.HasReturnType)
             {
-                // Check Setter
-                if ((csMethod.ReturnValue?.Name == globalNamespace.GetTypeName(WellKnownName.Result) || !csMethod.HasReturnType) && parameterCount == 1 &&
-                    (parameterList[0].IsRefIn || parameterList[0].IsIn || parameterList[0].IsRef) && !parameterList[0].IsArray)
-                {
-                    csProperty.Setter = csMethod;
-                    csProperty.PublicType = parameterList[0].PublicType;
-                }
-                else if (parameterCount == 1 && !csMethod.HasReturnType)
-                {
-                    csProperty.Setter = csMethod;
-                    csProperty.PublicType = csProperty.Setter.ReturnValue.PublicType;
-                }
-                else
-                {
-                    // If there is a getter, but the setter is not valid, then remove the getter
-                    if (csProperty.Getter != null)
-                        return true;
-                    return false;
-                }
+                return true;
             }
-
-            // Check when Setter and Getter together that they have the same return type
-            if (csProperty.Setter != null && csProperty.Getter != null)
-            {
-                bool removeProperty = false;
-
-                if (csProperty.IsPropertyParam)
-                {
-                    var getterParameter = csProperty.Getter.Parameters.First();
-                    var setterParameter = csProperty.Setter.Parameters.First();
-                    if (getterParameter.PublicType.QualifiedName != setterParameter.PublicType.QualifiedName)
-                    {
-                        removeProperty = true;
-                    }
-                }
-                else
-                {
-                    var getterType = csProperty.Getter.ReturnValue;
-                    var setterType = csProperty.Setter.Parameters.First();
-                    if (getterType.PublicType.QualifiedName != setterType.PublicType.QualifiedName)
-                        removeProperty = true;
-                }
-                if (removeProperty)
-                {
-                    return true;
-                }
-            }
-
             return false;
         }
 
-        public (string name, PropertyMethod? propMethod) GetPropertySpec(CsMethod csMethod)
+        private bool ValidateSetter(CsMethod setter)
+        {
+            if (setter == null)
+            {
+                return true;
+            }
+
+            return (setter.ReturnValue?.Name == globalNamespace.GetTypeName(WellKnownName.Result) || !setter.HasReturnType)
+                && setter.Parameters.Count == 1
+                && (setter.Parameters[0].IsRefIn
+                    || setter.Parameters[0].IsIn
+                    || setter.Parameters[0].IsRef)
+                && !setter.Parameters[0].IsArray;
+        }
+        
+        private (string PropertyName, PropertyMethod? PropertyMethod) GetPropertySpec(CsMethod csMethod)
         {
             var isIs = csMethod.Name.StartsWith("Is");
             var isGet = csMethod.Name.StartsWith("Get") || isIs;
@@ -148,10 +125,10 @@ namespace SharpGen.Transform
 
         public void AttachPropertyToParent(CsProperty property)
         {
-            var getterOrSetter = property.Getter ?? property.Setter;
+            var underlyingMethod = property.Getter ?? property.Setter;
 
-            // Associate the property with the Getter element
-            property.CppElement = getterOrSetter.CppElement;
+            // Associate the property with the underlying method's C++ element.
+            property.CppElement = underlyingMethod.CppElement;
 
             // If We have a getter, then we need to modify the documentation in order to print that we have Gets and Sets.
             if (property.Getter != null && property.Setter != null && !string.IsNullOrEmpty(property.Description))
@@ -159,10 +136,10 @@ namespace SharpGen.Transform
                 property.Description = MatchGet.Replace(property.Description, "$1$2 or sets");
             }
 
-            var parent = getterOrSetter.Parent;
+            var parent = underlyingMethod.Parent;
 
             // If mapping rule disallows properties, don't attach the property to the model.
-            if ((property.Getter != null && !property.Getter.AllowProperty) || (property.Setter != null && !property.Setter.AllowProperty))
+            if ((property.Getter?.AllowProperty == false) || (property.Setter?.AllowProperty == false))
                 return;
 
             // Update visibility for getter and setter (set to internal)
