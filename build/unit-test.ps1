@@ -6,8 +6,21 @@ function Test
 {
     Param([string] $project, [bool] $collectCoverage)
 
-    $dotnetExe = & where.exe dotnet
+    $dotnetPaths = & where.exe dotnet
 
+    $dotnetExe = $null
+
+    if ($dotnetPaths -eq $null) {
+        Write-Error "Unable to locate the .NET SDK"
+        return $false
+    }
+    elseif ($dotnetPaths -is [array]) {
+        $dotnetExe = $dotnetPaths[0]
+    }
+    else {
+        $dotnetExe = $dotnetPaths
+    }
+    
     $arguments = @("test", "$project/$project.csproj", "--no-build", "--no-restore")
 
     $filters = @("+[SharpGen]*", "+[SharpGen.Runtime]*")
