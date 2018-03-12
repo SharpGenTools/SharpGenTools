@@ -3,6 +3,7 @@ image: Visual Studio 2017
 before_build:
 - cmd: choco install opencover.portable
 - cmd: choco install codecov
+- cmd: OpenCover.Console -version
 environment:
   CLI_VERSION: 2.0.0
   MYGET_API_KEY:
