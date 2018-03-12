@@ -1,5 +1,5 @@
 Param(
-    [bool] $RunOpenCover = $true
+    [bool] $RunOpenCover = $true,
     [string] $Configuration = "Debug"
 )
 
