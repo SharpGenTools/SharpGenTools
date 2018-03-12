@@ -4,7 +4,6 @@ before_build:
 - cmd: choco install opencover.portable
 - cmd: choco install codecov
 - ps: $env:Path = "C:/ProgramData/chocolatey/bin;$env:Path"
-- ps: OpenCover.Console -version
 environment:
   CLI_VERSION: 2.0.0
   MYGET_API_KEY:
