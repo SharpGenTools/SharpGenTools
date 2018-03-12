@@ -27,6 +27,6 @@ if ($RunOpenCover) {
 }
 else {
     msbuild ./SdkTests/SdkTests.sln /restore /m /v:n | Write-Host
-    return $LastErrorCode -eq 0
+    return $LastExitCode -eq 0
 }
  

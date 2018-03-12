@@ -31,7 +31,7 @@ function Test
     }
     else {
         dotnet test "$project/$project.csproj" --no-build --no-restore -c $Configuration | Write-Host
-        return $LastErrorCode -eq 0
+        return $LastExitCode -eq 0
     }
 
 }
