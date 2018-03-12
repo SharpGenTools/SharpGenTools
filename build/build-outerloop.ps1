@@ -26,7 +26,7 @@ if ($RunOpenCover) {
     return (./build/Run-OpenCover $msbuildExe $msbuildParameters $coverageFilter)
 }
 else {
-    msbuild ./SdkTests/SdkTests.sln /restore /m /v:n
+    msbuild ./SdkTests/SdkTests.sln /restore /m /v:n | Write-Host
     return $LastErrorCode -eq 0
 }
  
