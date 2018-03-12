@@ -2,7 +2,7 @@ Param(
     [string] $Configuration = "Debug"
 )
 
-dotnet build -c $Configuration
+msbuild /p:Configuration=$Configuration
 
 if ($LastExitCode -ne 0) {
     exit 1
