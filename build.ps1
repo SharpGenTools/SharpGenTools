@@ -2,7 +2,7 @@ Param(
     [string] $Configuration = "Debug"
 )
 
-msbuild /p:Configuration=$Configuration
+msbuild /restore /p:Configuration=$Configuration
 
 if ($LastExitCode -ne 0) {
     exit 1
