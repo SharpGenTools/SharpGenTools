@@ -53,3 +53,7 @@ Source/CertificationTests/Results/*
 _build/
 
 .vscode/*
+
+# Scripted Code Coverage
+coverage.xml
+CoverageReport/*

@@ -1,56 +1,37 @@
-dotnet test SharpGen.UnitTests/SharpGen.UnitTests.csproj
-if ($LastExitCode -ne 0) {
+Param(
+    [string] $Configuration = "Debug"
+)
+
+if (Test-Path -Path "coverage.xml") {
+    Remove-Item "coverage.xml"
+}
+
+$RunCodeCoverage = ($Configuration -eq "Debug")
+
+Write-Debug "Running Unit Tests"
+if (!(./build/unit-test $RunCodeCoverage)) {
+    Write-Error "Unit Tests Failed"
     exit 1
 }
 
-dotnet test SharpGen.Runtime.UnitTests/SharpGen.Runtime.UnitTests.csproj
-if ($LastExitCode -ne 0) {
+Write-Debug "Deploying test packages"
+if(!(./build/deploy-test-packages $Configuration)) {
+    Write-Error "Failed to deploy test packages"
     exit 1
 }
 
-
-$localPackagesFolder = "SdkTests/LocalPackages"
-$restorePackagesFolder = "SdkTests/RestoredPackages"
-$sdkPackages = "SharpGenTools.Sdk", "SharpGen.Doc.Msdn.Tasks", "SharpGen.Runtime"
-
-if (!(Test-Path -Path $localPackagesFolder)) {
-    mkdir $localPackagesFolder
-}
-
-Remove-Item SdkTests/LocalPackages/*.nupkg
-
-foreach ($sdkPackage in $sdkPackages) {
-    Copy-Item $sdkPackage/bin/Release/*.nupkg $localPackagesFolder
-}
-
-if (!(Test-Path -Path $restorePackagesFolder)) {
-    mkdir $restorePackagesFolder
-}
-
-foreach ($sdkPackage in $sdkPackages) {
-    $restoreFolderName = $sdkPackage.ToLower()
-    $restorePath = "$restorePackagesFolder/$restoreFolderName"
-    if (Test-Path -Path $restorePath) {
-        Remove-Item -Recurse -Force $restorePath
-    }
-}
-
- # Add directory to path for sn executable
- $env:Path += ";C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\"
-
-msbuild ./SdkTests/SdkTests.sln /restore /p:Configuration=Release /m /v:n
-
-if ($LastExitCode -ne 0) {
+Write-Debug "Building outerloop tests"
+if(!(./build/build-outerloop $RunCodeCoverage)) {
+    Write-Error "Failed to build outerloop tests"
     exit 1
 }
 
-$infrastructure = ".vs", "LocalPackages", "RestoredPackages", "x64"
+Write-Debug "Running outerloop tests"
+if(!(./build/run-outerloop-tests)) {
+    Write-Error "Outerloop tests failed"
+    exit 1
+}
 
-foreach($test in Get-ChildItem -Path SdkTests -Directory -Name) {
-    if ($infrastructure -notcontains $test) {
-        dotnet test ./SdkTests/$test/$test/$test.csproj --no-build --no-restore -c Release
-        if ($LastExitCode -ne 0) {
-            exit 1
-        }
-    }
+if ($RunCodeCoverage -and $env:CI) {
+    ./build/upload-coverage.ps1
 }
