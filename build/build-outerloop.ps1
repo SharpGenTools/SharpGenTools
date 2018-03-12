@@ -26,7 +26,7 @@ if ($RunOpenCover) {
     return (./build/Run-OpenCover $msbuildExe $msbuildParameters $coverageFilter)
 }
 else {
-    $tests = Start-Process -FilePath $msBuildExe -ArgumentList $msbuildParameters -WorkingDirectory $pwd.Path -PassThru -NoNewWindow -Wait
-    return $tests.ExitCode -eq 0
+    msbuild ./SdkTests/SdkTests.sln /restore /m /v:n
+    return $LastErrorCode -eq 0
 }
  
