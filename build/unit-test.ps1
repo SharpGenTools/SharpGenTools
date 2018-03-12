@@ -29,7 +29,7 @@ function Test
         return ./build/Run-OpenCover -executable $dotnetExe -arguments $arguments -filters $filters 
     }
     else {
-        dotnet test "$project/project.csproj" --no-build --no-restore | Write-Host
+        dotnet test "$project/$project.csproj" --no-build --no-restore | Write-Host
         return $LastErrorCode -eq 0
     }
 
