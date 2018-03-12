@@ -1,5 +1,6 @@
 Param(
     [bool] $RunOpenCover = $true
+    [string] $Configuration = "Debug"
 )
 
 function Test
@@ -21,7 +22,7 @@ function Test
         $dotnetExe = $dotnetPaths
     }
     
-    $arguments = @("test", "$project/$project.csproj", "--no-build", "--no-restore")
+    $arguments = @("test", "$project/$project.csproj", "--no-build", "--no-restore", "-c $Configuration")
 
     $filters = @("+[SharpGen]*", "+[SharpGen.Runtime]*")
 
@@ -29,7 +30,7 @@ function Test
         return ./build/Run-OpenCover -executable $dotnetExe -arguments $arguments -filters $filters 
     }
     else {
-        dotnet test "$project/$project.csproj" --no-build --no-restore | Write-Host
+        dotnet test "$project/$project.csproj" --no-build --no-restore -c $Configuration | Write-Host
         return $LastErrorCode -eq 0
     }
 

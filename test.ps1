@@ -9,7 +9,7 @@ if (Test-Path -Path "coverage.xml") {
 $RunCodeCoverage = ($Configuration -eq "Debug")
 
 Write-Debug "Running Unit Tests"
-if (!(./build/unit-test $RunCodeCoverage)) {
+if (!(./build/unit-test $RunCodeCoverage $Configuration)) {
     Write-Error "Unit Tests Failed"
     exit 1
 }
