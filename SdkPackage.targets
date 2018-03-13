@@ -19,7 +19,8 @@
     
     <ItemGroup>
       <ReferencedAssemblies Include="bin\$(Configuration)\**\*.dll" />
-      <_PackageFiles Include="@(ReferencedAssemblies)" Condition="'%(FileName)' != '$(AssemblyName)'">
+      <ReferencedAssemblyPdbs Include="bin\$(Configuration)\**\*.pdb" Condition="'$(Configuration)' == 'Debug'" />
+      <_PackageFiles Include="@(ReferencedAssemblies);@(ReferencedAssemblyPdbs)" Condition="'%(FileName)' != '$(AssemblyName)'">
         <PackagePath>tools\%(RecursiveDir)%(FileName)%(Extension)</PackagePath>
         <Visible>false</Visible>
         <BuildAction>None</BuildAction>
