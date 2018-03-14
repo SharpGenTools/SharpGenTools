@@ -21,8 +21,8 @@ Code-gen tools forked from SharpDX and independently mantained.
 * SharpGenTools.Sdk
   * MSBuild tooling to integrate SharpGen and SharpPatch directly into projects
 * SharpGen.Interactive
-  * Legacy command line front-end for SharpGen with Windows Forms progress dialog
-  * The original SharpGen application
+  * Legacy command line front-end for SharpGen with Avalonia progress-dialog
+  * Xplat version of original SharpGen application
 * SharpPatch.Cli
   * Legacy command line front-end for SharpPatch
   * The original SharpCli application
