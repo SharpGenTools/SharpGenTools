@@ -1,0 +1,8 @@
+*.sln
+*.vcxproj
+*.vcxproj.filters
+CMakeFiles/*
+CMakeCache.txt
+*.cmake
+generate.stamp
+generate.stamp.depend

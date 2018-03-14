@@ -1,10 +1,10 @@
 <Project>
   <Target Name="LayoutNative" AfterTargets="Build" Condition="'$(SdkTestNative)' != ''">
     <ItemGroup>
-      <SdkTestNativeFiles Include="$(MSBuildThisFileDirectory)\x64\$(Configuration)\$(SdkTestNative).*" />
+      <SdkTestNativeFiles Include="$(MSBuildThisFileDirectory)\Native\$(SdkTestNative)\Debug\$(SdkTestNative).*" />
     </ItemGroup>
     <Copy
-      DestinationFolder="$(MSBuildProjectDirectory)\$(OutputPath)"
+      DestinationFolder="$(OutputPath)"
       SourceFiles="@(SdkTestNativeFiles)"
     />
     <Message Text="Copied Native Test Dependencies" />
