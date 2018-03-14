@@ -51,7 +51,6 @@ namespace SharpGen.Interactive
                 .UsePlatformDetect()
                 .LogToDebug();
 
-
         /// <summary>
         /// Print usages the error.
         /// </summary>
@@ -64,10 +63,6 @@ namespace SharpGen.Interactive
             Console.WriteLine("Use SharpGen --help' for more information.");
             Environment.Exit(1);
         }
-
-
-
-
 
         /// <summary>
         /// Parses the command line arguments.

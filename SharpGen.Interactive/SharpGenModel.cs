@@ -47,7 +47,11 @@ namespace SharpGen.Interactive
         public double CurrentProgress
         {
             get { return progress; }
-            set { progress = value; RaisePropertyChanged(); }
+            set
+            {
+                progress = value;
+                RaisePropertyChanged();
+            }
         }
 
         private string message;
@@ -55,8 +59,11 @@ namespace SharpGen.Interactive
         public string ProgressMessage
         {
             get { return message; }
-            set { message = value; RaisePropertyChanged(); }
+            set
+            {
+                message = value;
+                RaisePropertyChanged();
+            }
         }
-
     }
 }
