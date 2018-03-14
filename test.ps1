@@ -20,6 +20,12 @@ if(!(./build/deploy-test-packages $Configuration)) {
     exit 1
 }
 
+Write-Debug "Building outerloop native libraries"
+if(!(./build/build-outerloop-native)) {
+    Write-Error "Failed to build outerloop native projects"
+    exit 1
+}
+
 Write-Debug "Building outerloop tests"
 if(!(./build/build-outerloop $RunCodeCoverage)) {
     Write-Error "Failed to build outerloop tests"

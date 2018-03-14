@@ -1,68 +1,74 @@
-// Copyright (c) 2010-2014 SharpDX - Alexandre Mutel
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-using System;
-using System.Threading;
-using System.Windows.Forms;
-using SharpGen.Logging;
+﻿using System;
+using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Logging.Serilog;
 using Mono.Options;
+using SharpGen.Logging;
 
 namespace SharpGen.Interactive
 {
-    /// <summary>
-    /// Main program for CodeGen
-    /// </summary>
-    internal static class Program
+    class Program
     {
-        private static CodeGenApp _codeGenApp;
-        private static ProgressForm _progressForm;
+        static void Main(string[] args)
+        {
+            var appBuilder = BuildAvaloniaApp().SetupWithoutStarting();
+            var model = new SharpGenModel();
+            var logger = new Logger(new ConsoleLogger(), new SharpGenModel.ProgressReporter(model));
+            var codeGenApp = new CodeGenApp(logger)
+            {
+                GlobalNamespace = new GlobalNamespaceProvider("SharpGen.Runtime")
+            };
+            ParseArguments(args, codeGenApp);
+            var window = new ProgressView(new SharpGenModel());
+            window.Show();
+
+            Task.Run(() =>
+            {
+                if (codeGenApp.Init())
+                {
+                    try
+                    {
+                        logger.Progress(0, "Starting code generation...");
+
+                        codeGenApp.Run();
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Fatal("Unexpected exception", ex);
+                    }
+                    finally
+                    {
+                        Application.Current.Exit();
+                    }
+                }
+            });
+
+            appBuilder.Instance.Run(window);
+        }
+
+        public static AppBuilder BuildAvaloniaApp()
+            => AppBuilder.Configure<App>()
+                .UsePlatformDetect()
+                .LogToDebug();
 
         /// <summary>
-        /// Runs code generation asynchronously.
+        /// Print usages the error.
         /// </summary>
-        public static void RunAsync(Logger logger)
+        /// <param name="error">The error.</param>
+        /// <param name="parameters">The parameters.</param>
+        private static void UsageError(string error, params object[] parameters)
         {
-            try
-            {
-                logger.Progress(0, "Starting code generation...");
-
-                _codeGenApp.Run();
-            }
-            catch(Exception ex)
-            {
-                logger.Fatal("Unexpected exception", ex);
-            }
-            finally
-            {
-                if(_progressForm != null)
-                {
-                    MethodInvoker methodInvoker = delegate() { _progressForm.Shutdown(); };
-                    _progressForm.Invoke(methodInvoker);
-                }
-            }
+            Console.Write("SharpGen: ");
+            Console.WriteLine(error, parameters);
+            Console.WriteLine("Use SharpGen --help' for more information.");
+            Environment.Exit(1);
         }
 
         /// <summary>
         /// Parses the command line arguments.
         /// </summary>
         /// <param name="args">The args.</param>
-        public static void ParseArguments(string[] args, CodeGenApp app)
+        private static void ParseArguments(string[] args, CodeGenApp app)
         {
             var showHelp = false;
 
@@ -100,69 +106,6 @@ namespace SharpGen.Interactive
 
             if (app.ConfigRootPath == null)
                 UsageError("Missing config.xml. A config.xml must be specified");
-        }
-
-        /// <summary>
-        /// Print usages the error.
-        /// </summary>
-        /// <param name="error">The error.</param>
-        /// <param name="parameters">The parameters.</param>
-        private static void UsageError(string error, params object[] parameters)
-        {
-            Console.Write("SharpGen: ");
-            Console.WriteLine(error, parameters);
-            Console.WriteLine("Use SharpGen --help' for more information.");
-            Environment.Exit(1);
-        }
-
-        /// <summary>
-        /// Main SharpGen
-        /// </summary>
-        /// <param name="args">Command line args.</param>
-        [STAThread]
-        public static void Main(string[] args)
-        {
-            _progressForm = new ProgressForm();
-            var logger = new Logger(new ConsoleLogger(), _progressForm);
-            try
-            {
-                _codeGenApp = new CodeGenApp(logger)
-                {
-                    GlobalNamespace = new GlobalNamespaceProvider("SharpDX") // Fall back to SharpDX for now
-                };
-                ParseArguments(args, _codeGenApp);
-
-                if(_codeGenApp.Init())
-                {
-                    if(Environment.GetEnvironmentVariable("SharpDXBuildNoWindow") == null)
-                    {
-                        Application.EnableVisualStyles();
-                        Application.SetCompatibleTextRenderingDefault(false);
-
-                        _progressForm.Show();
-
-                        var runningThread = new Thread(() => RunAsync(logger)) {IsBackground = true};
-                        runningThread.Start();
-
-                        Application.Run(_progressForm);
-                    }
-                    else
-                    {
-                        RunAsync(logger);
-                    }
-
-                }
-                else
-                {
-                    logger.Message("Latest code generation is up to date. No need to run code generation");
-                }
-
-            }
-            catch(Exception ex)
-            {
-                logger.Fatal("Unexpected exception", ex);
-            }
-            Environment.Exit(0);
         }
     }
 }

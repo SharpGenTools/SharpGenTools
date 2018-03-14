@@ -5,7 +5,7 @@
 
   <sdk name="StdLib" />
   
-  <include-dir>$(THIS_CONFIG_PATH)\..\StructNative</include-dir>
+  <include-dir>$(THIS_CONFIG_PATH)\..\Native\Struct</include-dir>
   <include file="StructNative.h">
     <attach>SimpleStruct</attach>
     <attach>GetSimpleStruct</attach>

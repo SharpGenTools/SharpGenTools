@@ -6,7 +6,7 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LocalPackageVersion Condition="'$(APPVEYOR_REPO_TAG_NAME)' == ''">$(VersionPrefix)-$(VersionSuffix)</LocalPackageVersion> 
         <LocalPackageVersion Condition="'$(APPVEYOR_REPO_TAG_NAME)' != ''">$(APPVEYOR_REPO_TAG_NAME)</LocalPackageVersion> 
-        <SdkTestNative>$(MSBuildProjectName)Native</SdkTestNative>
+        <SdkTestNative>$(MSBuildProjectName)</SdkTestNative>
     </PropertyGroup>
     
     <ItemGroup>

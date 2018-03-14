@@ -477,6 +477,8 @@ namespace SharpGen.Interactive
         /// <summary>
         /// Apply documentation from an external provider. This is optional.
         /// </summary>
+        /// <param name="cache">The cache of doc items.</param>
+        /// <param name="group">The module to document.</param>
         private Task<CppModule> ApplyDocumentation(DocItemCache cache, CppModule group)
         {
             // Use default MSDN doc provider

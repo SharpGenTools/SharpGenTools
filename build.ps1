@@ -2,7 +2,7 @@ Param(
     [string] $Configuration = "Debug"
 )
 
-msbuild /restore /p:Configuration=$Configuration /m /v:m
+dotnet build -c $Configuration
 
 if ($LastExitCode -ne 0) {
     exit 1

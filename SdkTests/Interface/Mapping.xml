@@ -5,7 +5,7 @@
 
   <sdk name="StdLib" />
 
-  <include-dir>$(THIS_CONFIG_PATH)\..\InterfaceNative</include-dir>
+  <include-dir>$(THIS_CONFIG_PATH)\..\Native\Interface</include-dir>
   <include file="InterfaceNative.h" attach="true" />
 
   <extension>

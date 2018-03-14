@@ -1,0 +1,5 @@
+cmake_minimum_required (VERSION 3.0)
+project (StructNative)
+set(LIB_TYPE SHARED)
+set(SOURCES StructNative.cpp dllmain.cpp)
+add_library(StructNative ${LIB_TYPE} ${SOURCES})

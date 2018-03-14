@@ -7,20 +7,7 @@ function Test
 {
     Param([string] $project, [bool] $collectCoverage)
 
-    $dotnetPaths = & where.exe dotnet
-
-    $dotnetExe = $null
-
-    if ($dotnetPaths -eq $null) {
-        Write-Error "Unable to locate the .NET SDK"
-        return $false
-    }
-    elseif ($dotnetPaths -is [array]) {
-        $dotnetExe = $dotnetPaths[0]
-    }
-    else {
-        $dotnetExe = $dotnetPaths
-    }
+    $dotnetExe = ./build/find-exe "dotnet"
     
     $arguments = @("test", "$project/$project.csproj", "--no-build", "--no-restore", "-c $Configuration")
 
