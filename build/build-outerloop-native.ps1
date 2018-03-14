@@ -1,15 +1,22 @@
-cmake SdkTests/Native -A x64 | Write-Host
+Push-Location SdkTests/Native
 
-if ($LastExitCode -ne 0) {
-    Write-Error "Failed to generate native projects"
-    return $false
+try {
+    cmake -A x64 | Write-Host
+
+    if ($LastExitCode -ne 0) {
+        Write-Error "Failed to generate native projects"
+        return $false
+    }
+
+    cmake --build . | Write-Host
+
+    if ($LastExitCode -ne 0) {
+        Write-Error "Failed to build native projects"
+        return $false
+    }
 }
-
-cmake --build SdkTests/Native | Write-Host
-
-if ($LastExitCode -ne 0) {
-    Write-Error "Failed to build native projects"
-    return $false
+finally {
+    Pop-Location
 }
 
 return $true
