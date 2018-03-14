@@ -1,0 +1,5 @@
+cmake_minimum_required (VERSION 3.0)
+project (InterfaceNative)
+set(LIB_TYPE SHARED)
+set(SOURCES InterfaceNative.cpp dllmain.cpp)
+add_library(InterfaceNative ${LIB_TYPE} ${SOURCES})
