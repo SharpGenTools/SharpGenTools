@@ -6,10 +6,7 @@
   <sdk name="StdLib" />
   
   <include-dir>$(THIS_CONFIG_PATH)\..\Native\Struct</include-dir>
-  <include file="StructNative.h">
-    <attach>SimpleStruct</attach>
-    <attach>GetSimpleStruct</attach>
-  </include>
+  <include file="StructNative.h" attach="true" />
 
   <extension>
     <create class="Struct.Functions" visibility="public static" />
@@ -20,8 +17,7 @@
 
   <mapping>
     <map function="Get.*" dll='"StructNative.dll"' group="Struct.Functions" />
-    <!-- <map function="And" dll='"StructNative.dll"' group="Struct.Functions" /> -->
-    <!-- <map field="IntToBoolArray::i" type="bool" /> -->
+    <map function="ForceMarshalTo" dll='"StructNative.dll"' group="Struct.Functions" />
   </mapping>
 
   <depends>SharpGen.Runtime</depends>
