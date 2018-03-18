@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
     <Compile Update="**\*.xaml.cs">
@@ -25,10 +26,5 @@
   <ItemGroup>
     <ProjectReference Include="..\SharpGen.Doc.Msdn\SharpGen.Doc.Msdn.csproj" />
     <ProjectReference Include="..\SharpGen\SharpGen.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Update="ProgressView.xaml.cs">
-      <DependentUpon>ProgressView.xaml</DependentUpon>
-    </Compile>
   </ItemGroup>
 </Project>
