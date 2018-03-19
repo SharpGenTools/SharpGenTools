@@ -26,7 +26,8 @@ namespace SharpGen
 {
     public enum BuiltinType
     {
-        Marshal
+        Marshal,
+        Math
     }
 
     /// <summary> Types the SharpGen generator assumes are present in the SharpGen global namespace. </summary>
@@ -93,6 +94,8 @@ namespace SharpGen
             {
                 case BuiltinType.Marshal:
                     return SyntaxFactory.ParseName("System.Runtime.InteropServices.Marshal");
+                case BuiltinType.Math:
+                    return SyntaxFactory.ParseName("System.Math");
                 default:
                     return null;
             }

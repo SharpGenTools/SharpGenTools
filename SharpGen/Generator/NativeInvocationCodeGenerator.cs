@@ -75,9 +75,19 @@ namespace SharpGen.Generator
 
             if (callable.IsReturnStructLarge)
             {
-                arguments.Add(Argument(CastExpression(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
-                                        PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
-                                            IdentifierName("__result__")))));
+                if (callable.ReturnValue.PublicType is CsStruct returnStruct && returnStruct.HasMarshalType)
+                {
+                    arguments.Add(Argument(CastExpression(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
+                        PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
+                            IdentifierName("__result__native")))));
+                }
+                else
+                {
+                    arguments.Add(Argument(CastExpression(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
+                        PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
+                            IdentifierName("__result__")))));
+                }
+               
             }
 
             arguments.AddRange(callable.Parameters.Select(param => Generators.Argument.GenerateCode(param)));

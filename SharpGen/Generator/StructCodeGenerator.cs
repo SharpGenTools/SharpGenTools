@@ -33,7 +33,10 @@ namespace SharpGen.Generator
                                 AttributeArgument(ParseName($"System.Runtime.InteropServices.LayoutKind.{layoutKind}")),
                                 AttributeArgument(
                                     LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.Align)))
-                                    .WithNameEquals(NameEquals(IdentifierName("Pack")))
+                                    .WithNameEquals(NameEquals(IdentifierName("Pack"))),
+                                AttributeArgument(
+                                    ParseName("System.Runtime.InteropServices.CharSet.Unicode")
+                                ).WithNameEquals(NameEquals(IdentifierName("CharSet")))
                             }
                         )
                     )

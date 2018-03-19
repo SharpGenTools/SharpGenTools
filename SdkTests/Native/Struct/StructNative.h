@@ -37,6 +37,16 @@ struct Utf16Test
 	wchar_t* LargeString;
 };
 
+static_assert(sizeof(wchar_t) == 2, "Wide character isn't wide.");
+
 STRUCTLIB_FUNC(SimpleStruct) GetSimpleStruct();
 
-STRUCTLIB_FUNC(void) ForceMarshalTo(StructWithArray, TestUnion, BitField, AsciiTest, Utf16Test);
+STRUCTLIB_FUNC(StructWithArray) PassThroughArray(StructWithArray param);
+
+STRUCTLIB_FUNC(TestUnion) PassThroughUnion(TestUnion param);
+
+STRUCTLIB_FUNC(BitField) PassThroughBitfield(BitField param);
+
+STRUCTLIB_FUNC(AsciiTest) PassThroughAscii(AsciiTest param);
+
+STRUCTLIB_FUNC(Utf16Test) PassThroughUtf(Utf16Test param);

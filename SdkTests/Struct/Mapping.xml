@@ -17,7 +17,7 @@
 
   <mapping>
     <map function="Get.*" dll='"StructNative.dll"' group="Struct.Functions" />
-    <map function="ForceMarshalTo" dll='"StructNative.dll"' group="Struct.Functions" />
+    <map function="PassThrough(.*)" dll='"StructNative.dll"' group="Struct.Functions" name="PassThrough" />
   </mapping>
 
   <depends>SharpGen.Runtime</depends>

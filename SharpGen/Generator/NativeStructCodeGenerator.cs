@@ -28,7 +28,10 @@ namespace SharpGen.Generator
                                 AttributeArgument(ParseName($"System.Runtime.InteropServices.LayoutKind.{layoutKind}")),
                                 AttributeArgument(
                                     LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.Align)))
-                                    .WithNameEquals(NameEquals(IdentifierName("Pack")))
+                                    .WithNameEquals(NameEquals(IdentifierName("Pack"))),
+                                AttributeArgument(
+                                    ParseName("System.Runtime.InteropServices.CharSet.Unicode")
+                                ).WithNameEquals(NameEquals(IdentifierName("CharSet")))
                        }
                    )
                )
@@ -264,11 +267,24 @@ namespace SharpGen.Generator
                                                         {
                                                                 Argument(CastExpression(ParseTypeName("System.IntPtr"), IdentifierName("__ptr"))),
                                                                 Argument(IdentifierName($"{field.Name}_")),
-                                                                Argument(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                                        ThisExpression(),
-                                                                        IdentifierName(field.Name)),
-                                                                    IdentifierName("Length")))
+                                                                Argument(
+                                                                    InvocationExpression(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                                                    globalNamespace.GetTypeNameSyntax(BuiltinType.Math),
+                                                                    IdentifierName("Min")),
+                                                                    ArgumentList(
+                                                                        SeparatedList(
+                                                                            new []
+                                                                            {
+                                                                                Argument(
+                                                                                    BinaryExpression(SyntaxKind.CoalesceExpression,
+                                                                                        ConditionalAccessExpression(
+                                                                                            IdentifierName(field.Name),
+                                                                                            MemberBindingExpression(IdentifierName("Length"))),
+                                                                                        LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)))),
+                                                                                Argument(LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(field.ArrayDimensionValue)))
+                                                                            }
+                                                                        )
+                                                                )))
                                                         }
                                                         )
                                                     )))),
@@ -292,27 +308,15 @@ namespace SharpGen.Generator
                                     MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                         IdentifierName("@ref"),
                                         IdentifierName(field.Name)),
-                                    ConditionalExpression(
-                                            BinaryExpression(SyntaxKind.EqualsExpression,
-                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                ThisExpression(),
-                                                IdentifierName(field.Name)),
-                                            LiteralExpression(SyntaxKind.NullLiteralExpression)
-                                            ),
-                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                    InvocationExpression(
+                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                            globalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
+                                            IdentifierName("StringToHGlobal" + (field.IsWideChar ? "Uni" : "Ansi"))),
+                                        ArgumentList(SingletonSeparatedList(
+                                            Argument(
                                                 MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                    IdentifierName("System"),
-                                                    IdentifierName("IntPtr")),
-                                                IdentifierName("Zero")),
-                                            InvocationExpression(
-                                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                    globalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
-                                                    IdentifierName("StringToHGlobal" + (field.IsWideChar ? "Uni" : "Ansi"))),
-                                                ArgumentList(SingletonSeparatedList(
-                                                    Argument(
-                                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                            ThisExpression(),
-                                                            IdentifierName(field.Name)))))))));
+                                                    ThisExpression(),
+                                                    IdentifierName(field.Name))))))));
                             }
                             else if (field.PublicType is CsStruct structType && structType.HasMarshalType)
                             {
@@ -693,12 +697,28 @@ namespace SharpGen.Generator
                                 {
                                     Argument(CastExpression(ParseTypeName("System.IntPtr"), IdentifierName("__ptr"))),
                                     Argument(CastExpression(ParseTypeName("System.IntPtr"), IdentifierName("__psrc"))),
-                                    Argument(BinaryExpression(SyntaxKind.MultiplyExpression,
-                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                IdentifierName(field.Name),
-                                                IdentifierName("Length")),
-                                            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(2))
-                                        ))
+                                    Argument(
+                                        InvocationExpression(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                        globalNamespace.GetTypeNameSyntax(BuiltinType.Math),
+                                        IdentifierName("Min")),
+                                        ArgumentList(
+                                            SeparatedList(
+                                                new []
+                                                {
+                                                    Argument(
+                                                        BinaryExpression(SyntaxKind.MultiplyExpression,
+                                                            ParenthesizedExpression(
+                                                                BinaryExpression(SyntaxKind.CoalesceExpression,
+                                                                ConditionalAccessExpression(
+                                                                    IdentifierName(field.Name),
+                                                                    MemberBindingExpression(IdentifierName("Length"))),
+                                                                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)))),
+                                                            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(2))
+                                                        )),
+                                                    Argument(LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(field.ArrayDimensionValue)))
+                                                }
+                                            )
+                                    )))
                                 }
                             )))));
         }
