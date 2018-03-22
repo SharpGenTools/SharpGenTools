@@ -300,6 +300,22 @@ namespace SharpGen.Generator
                                 }
                             }
                         }
+                        else if (field.IsBitField)
+                        {
+                            return ExpressionStatement(AssignmentExpression(SyntaxKind.OrAssignmentExpression,
+                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                    IdentifierName("@ref"),
+                                    IdentifierName(field.Name)),
+                                CheckedExpression(SyntaxKind.UncheckedExpression,
+                                    CastExpression(ParseTypeName(field.MarshalType.QualifiedName),
+                                        ParenthesizedExpression(
+                                            BinaryExpression(SyntaxKind.LeftShiftExpression,
+                                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                                    ThisExpression(),
+                                                    IdentifierName(field.Name)),
+                                                LiteralExpression(SyntaxKind.NumericLiteralExpression,
+                                                    Literal(field.BitOffset))))))));
+                        }
                         else
                         {
                             if (field.PublicType.QualifiedName == "System.String")
@@ -359,7 +375,7 @@ namespace SharpGen.Generator
                             }
                             else if (field.PublicType != field.MarshalType)
                             {
-                                if (field.IsBoolToInt || field.IsBitField)
+                                if (field.IsBoolToInt)
                                 {
                                     return ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                                         MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
@@ -519,6 +535,17 @@ namespace SharpGen.Generator
                                 }
                             }
                         }
+                        else if (field.IsBitField)
+                        {
+                            return ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                    ThisExpression(),
+                                    IdentifierName($"_{field.Name}")),
+                                CheckedExpression(SyntaxKind.UncheckedExpression,
+                                    CastExpression(ParseTypeName(field.PublicType.QualifiedName),
+                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                            IdentifierName("@ref"),
+                                            IdentifierName(field.Name))))));}
                         else
                         {
                             if (field.PublicType.QualifiedName == "System.String")
@@ -573,7 +600,7 @@ namespace SharpGen.Generator
                             }
                             else if (field.PublicType != field.MarshalType)
                             {
-                                if (field.IsBoolToInt || field.IsBitField)
+                                if (field.IsBoolToInt)
                                 {
                                     return ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,

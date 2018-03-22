@@ -115,5 +115,21 @@ namespace Struct
 
             Assert.Equal(obj.LargeString, Functions.PassThrough(obj).LargeString);
         }
+
+        [Fact]
+        public void BitFieldWithMarshalTypeMarshalsCorrectly()
+        {
+            var obj = new BitField2
+            {
+                ReservedBits = 20
+            };
+            
+            Assert.True(Functions.VerifyReservedBits(obj));
+
+            obj.UpperBits = 4;
+            obj.LowerBits = 10;
+
+            Assert.True(Functions.VerifyReservedBits(obj));
+        }
     }
 }

@@ -18,6 +18,8 @@
   <mapping>
     <map function="Get.*" dll='"StructNative.dll"' group="Struct.Functions" />
     <map function="PassThrough(.*)" dll='"StructNative.dll"' group="Struct.Functions" name="PassThrough" />
+    <map function="VerifyReservedBits" dll='"StructNative.dll"' group="Struct.Functions" />
+    <map struct="BitField2" native="true" />
   </mapping>
 
   <depends>SharpGen.Runtime</depends>

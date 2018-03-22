@@ -37,6 +37,13 @@ struct Utf16Test
 	wchar_t* LargeString;
 };
 
+struct BitField2
+{
+	short lowerBits : 4;
+	short reservedBits : 8;
+	short upperBits: 4;
+};
+
 static_assert(sizeof(wchar_t) == 2, "Wide character isn't wide.");
 
 STRUCTLIB_FUNC(SimpleStruct) GetSimpleStruct();
@@ -50,3 +57,5 @@ STRUCTLIB_FUNC(BitField) PassThroughBitfield(BitField param);
 STRUCTLIB_FUNC(AsciiTest) PassThroughAscii(AsciiTest param);
 
 STRUCTLIB_FUNC(Utf16Test) PassThroughUtf(Utf16Test param);
+
+STRUCTLIB_FUNC(bool) VerifyReservedBits(BitField2 param);
