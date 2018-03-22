@@ -38,7 +38,7 @@ You will likely only define an interface if you are going to use it in a binding
 Structs
 ---------
 
-Structs represent any structures in C++ that do not have any virtual functions. If a struct is hard for SharpGen to model or you already have accurate marshalling for it in source or a referenced assembly, you can use a ``<define>`` tag to define it. For the most effecient and accruate code generation, you should calculate the size of the structure in bytes. Below is a simple example of defining a struct.
+Structs represent any structures in C++ that do not have any virtual functions. If a struct is hard for SharpGen to model or you already have accurate marshalling for it in source or a referenced assembly, you can use a ``<define>`` tag to define it. For the most efficient and accurate code generation, you should calculate the size of the structure in bytes. Below is a simple example of defining a struct.
 
 .. code-block:: xml
 
