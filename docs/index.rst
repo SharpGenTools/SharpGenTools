@@ -21,7 +21,7 @@ SharpGenTools SDK Documentation
 What is SharpGenTools
 =======================
 
-SharpGenTools is a code generator that generates C# for interoperation with C++ and COM libraries. It generates effecient C# code and handles all of the native marshalling. Additionally, it includes an assembly patcher to use CLR instructions not available from C# to further minimize the overhead of the generated code.
+SharpGenTools is a code generator that generates C# for interoperation with C++ and COM libraries. It generates efficient C# code and handles all of the native marshalling. Additionally, it includes an assembly patcher to use CLR instructions not available from C# to further minimize the overhead of the generated code.
 
 Why SharpGenTools?
 ====================
