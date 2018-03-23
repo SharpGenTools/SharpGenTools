@@ -19,6 +19,12 @@ union TestUnion
 	float decimal;
 };
 
+union UnionWithArray
+{
+	unsigned long long bigInt;
+	unsigned int parts[2];
+};
+
 struct BitField
 {
 	int firstBit : 1;
@@ -37,6 +43,12 @@ struct Utf16Test
 	wchar_t* LargeString;
 };
 
+struct NestedTest
+{
+	AsciiTest Ascii;
+	Utf16Test Utf;
+};
+
 struct BitField2
 {
 	short lowerBits : 4;
@@ -52,10 +64,14 @@ STRUCTLIB_FUNC(StructWithArray) PassThroughArray(StructWithArray param);
 
 STRUCTLIB_FUNC(TestUnion) PassThroughUnion(TestUnion param);
 
+STRUCTLIB_FUNC(UnionWithArray) PassThroughUnion2(UnionWithArray param);
+
 STRUCTLIB_FUNC(BitField) PassThroughBitfield(BitField param);
 
 STRUCTLIB_FUNC(AsciiTest) PassThroughAscii(AsciiTest param);
 
 STRUCTLIB_FUNC(Utf16Test) PassThroughUtf(Utf16Test param);
+
+STRUCTLIB_FUNC(NestedTest) PassThroughNested(NestedTest param);
 
 STRUCTLIB_FUNC(bool) VerifyReservedBits(BitField2 param);

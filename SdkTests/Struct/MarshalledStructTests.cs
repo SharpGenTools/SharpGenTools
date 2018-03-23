@@ -45,6 +45,21 @@ namespace Struct
         }
 
         [Fact]
+        public void UnionWithArrayMemberMarshalsCorrectly()
+        {
+            var obj = new UnionWithArray();
+            
+            obj.Parts[0] = 20u;
+
+            obj.Parts[1] = 40u;
+
+            var result = Functions.PassThrough(obj);
+
+            Assert.Equal(obj.Parts[0], result.Parts[0]);
+            Assert.Equal(obj.Parts[1], result.Parts[1]);
+        }
+
+        [Fact]
         public void BitFieldMarshalsCorrectly()
         {
             var obj = new BitField
@@ -114,6 +129,27 @@ namespace Struct
             };
 
             Assert.Equal(obj.LargeString, Functions.PassThrough(obj).LargeString);
+        }
+
+        [Fact]
+        public void StructWithNestedMarshalTypeMarshalsCorrectly()
+        {
+            var obj = new NestedTest
+            {
+                Ascii = new AsciiTest
+                {
+                    SmallString = "Test"
+                },
+                Utf = new Utf16Test
+                {
+                    SmallString = "Test"
+                }
+            };
+
+            var result = Functions.PassThrough(obj);
+
+            Assert.Equal(obj.Ascii.SmallString, result.Ascii.SmallString);
+            Assert.Equal(obj.Utf.SmallString, result.Utf.SmallString);
         }
 
         [Fact]
