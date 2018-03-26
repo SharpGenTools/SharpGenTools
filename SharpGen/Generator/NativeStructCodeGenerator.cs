@@ -373,42 +373,17 @@ namespace SharpGen.Generator
                                         : marshalToStatement
                                     );
                             }
-                            else if (field.PublicType != field.MarshalType)
-                            {
-                                if (field.IsBoolToInt)
-                                {
-                                    return ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            IdentifierName("@ref"),
-                                            IdentifierName(field.Name)),
-                                        CheckedExpression(SyntaxKind.UncheckedExpression,
-                                            CastExpression(ParseTypeName(field.MarshalType.QualifiedName),
-                                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                    ThisExpression(),
-                                                    IdentifierName($"_{field.Name}"))))));
-                                }
-                                else
-                                {
-                                    return ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            IdentifierName("@ref"),
-                                            IdentifierName(field.Name)),
-                                        CheckedExpression(SyntaxKind.UncheckedExpression,
-                                            CastExpression(ParseTypeName(field.MarshalType.QualifiedName),
-                                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                    ThisExpression(),
-                                                    IdentifierName(field.Name)))))); 
-                                }
-                            }
                             else
                             {
                                 return ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                                     MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                         IdentifierName("@ref"),
                                         IdentifierName(field.Name)),
-                                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                        ThisExpression(),
-                                        IdentifierName(field.Name))));
+                                    CheckedExpression(SyntaxKind.UncheckedExpression,
+                                        CastExpression(ParseTypeName(field.MarshalType.QualifiedName),
+                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                                ThisExpression(),
+                                                IdentifierName(field.Name))))));
                             }
                         }
                     }
@@ -598,42 +573,17 @@ namespace SharpGen.Generator
                                                             IdentifierName(field.Name)))
                                                         .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
                             }
-                            else if (field.PublicType != field.MarshalType)
-                            {
-                                if (field.IsBoolToInt)
-                                {
-                                    return ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                                       MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                           ThisExpression(),
-                                           IdentifierName($"_{field.Name}")),
-                                       CheckedExpression(SyntaxKind.UncheckedExpression,
-                                           CastExpression(ParseTypeName(field.PublicType.QualifiedName),
-                                               MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                   IdentifierName("@ref"),
-                                                   IdentifierName(field.Name))))));
-                                }
-                                else
-                                {
-                                    return ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            ThisExpression(),
-                                            IdentifierName(field.Name)),
-                                        CheckedExpression(SyntaxKind.UncheckedExpression,
-                                            CastExpression(ParseTypeName(field.PublicType.QualifiedName),
-                                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                    IdentifierName("@ref"),
-                                                    IdentifierName(field.Name)))))); 
-                                }
-                            }
                             else
                             {
                                 return ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                                     MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                         ThisExpression(),
                                         IdentifierName(field.Name)),
-                                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                        IdentifierName("@ref"),
-                                        IdentifierName(field.Name))));
+                                    CheckedExpression(SyntaxKind.UncheckedExpression,
+                                        CastExpression(ParseTypeName(field.PublicType.QualifiedName),
+                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                                IdentifierName("@ref"),
+                                                IdentifierName(field.Name)))))); 
                             }
                         }
                     }
