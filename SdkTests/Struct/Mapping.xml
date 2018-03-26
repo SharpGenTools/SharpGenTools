@@ -20,6 +20,8 @@
     <map function="PassThrough(.*)" dll='"StructNative.dll"' group="Struct.Functions" name="PassThrough" />
     <map function="VerifyReservedBits" dll='"StructNative.dll"' group="Struct.Functions" />
     <map struct="BitField2" native="true" />
+    <map struct="BoolToInt2" native="true" />
+    <map field="BoolToInt(.*)::test" type="bool" />
   </mapping>
 
   <depends>SharpGen.Runtime</depends>

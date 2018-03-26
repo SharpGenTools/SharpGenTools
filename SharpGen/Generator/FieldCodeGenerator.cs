@@ -38,7 +38,16 @@ namespace SharpGen.Generator
                                                 LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)))))
                                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
                                 AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
-                                    .WithExpressionBody(ArrowExpressionClause(CastExpression(ParseTypeName(csElement.PublicType.QualifiedName), ParseName("value"))))
+                                    .WithExpressionBody(ArrowExpressionClause(
+                                        AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                                            IdentifierName($"_{csElement.Name}"),
+                                            CastExpression(
+                                                ParseTypeName(csElement.MarshalType.QualifiedName),
+                                                ParenthesizedExpression(
+                                                    ConditionalExpression(ParseName("value"),
+                                                        LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(1)),
+                                                        LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)))
+                                        )))))
                                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
                             })))
                     .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))

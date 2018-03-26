@@ -56,6 +56,16 @@ struct BitField2
 	short upperBits: 4;
 };
 
+struct BoolToInt
+{
+	int test;
+};
+
+struct BoolToInt2
+{
+	int test;
+};
+
 static_assert(sizeof(wchar_t) == 2, "Wide character isn't wide.");
 
 STRUCTLIB_FUNC(SimpleStruct) GetSimpleStruct();
@@ -73,5 +83,7 @@ STRUCTLIB_FUNC(AsciiTest) PassThroughAscii(AsciiTest param);
 STRUCTLIB_FUNC(Utf16Test) PassThroughUtf(Utf16Test param);
 
 STRUCTLIB_FUNC(NestedTest) PassThroughNested(NestedTest param);
+
+STRUCTLIB_FUNC(BoolToInt2) PassThroughBoolToInt(BoolToInt2 param);
 
 STRUCTLIB_FUNC(bool) VerifyReservedBits(BitField2 param);

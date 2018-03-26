@@ -167,5 +167,27 @@ namespace Struct
 
             Assert.True(Functions.VerifyReservedBits(obj));
         }
+
+        [Fact]
+        public void BoolToIntMarshalsCorrectly()
+        {
+            var obj = new BoolToInt2
+            {
+                Test = true
+            };
+
+            Assert.True(Functions.PassThrough(obj).Test);
+        }
+
+        [Fact]
+        public void BoolToIntShortcutCorrectlyTracksValue()
+        {
+            var obj = new BoolToInt
+            {
+                Test = true
+            };
+
+            Assert.Equal(1, obj._Test);
+        }
     }
 }
