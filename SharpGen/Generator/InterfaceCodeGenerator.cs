@@ -103,7 +103,19 @@ namespace SharpGen.Generator
                             SingletonSeparatedList(
                                 Argument(
                                     IdentifierName("nativePtr"))))),
-                                    Block()));
+                                    Block(
+                                        List(
+                                            csElement.InnerInterfaces.Select(inner =>
+                                                ExpressionStatement(
+                                                    AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                                                        IdentifierName(inner.PropertyAccessName),
+                                                        ObjectCreationExpression(
+                                                            ParseTypeName(inner.QualifiedName))
+                                                            .WithArgumentList(ArgumentList(
+                                                                SingletonSeparatedList(
+                                                                    Argument(IdentifierName("nativePtr"))
+                                        )))))))
+                                    )));
 
                 members.Add(ConversionOperatorDeclaration(
                     default,

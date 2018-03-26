@@ -52,5 +52,23 @@ namespace Interface
                 inst.AddToThis(new InterfaceArray<NativeInterface2>(), 0);
             }
         }
+
+        [Fact]
+        public void GuidCorrectlyAssociatedWithInterface()
+        {
+            Assert.Equal(Guid.Parse("{16410F4E-B4AB-4B33-B9A3-7FC8FA15F4F4}"), typeof(IInterfaceWithGuid).GUID);
+        }
+
+        [Fact]
+        public void InnerInterfaceNativePointerKeptUpToDate()
+        {
+            var largeInterface = new ILargeInterface(IntPtr.Zero);
+
+            Assert.Equal(largeInterface.NativePointer, largeInterface.Inner.NativePointer);
+
+            largeInterface.NativePointer = new IntPtr(1);
+
+            Assert.Equal(largeInterface.NativePointer, largeInterface.Inner.NativePointer);
+        }
     }
 }

@@ -23,6 +23,7 @@
     <map function="CreateInstance2" dll='"InterfaceNative.dll"' group="Interface.Functions" />
     <map function="CloneInstance" dll='"InterfaceNative.dll"' group="Interface.Functions" />
     <map param="IInterface2::AddToThis::interfaces" attribute="in buffer" />
+    <move method="ILargeInterface::Method3" to="InnerInterface" property="Inner" />
   </mapping>
 
   <depends>SharpGen.Runtime</depends>
