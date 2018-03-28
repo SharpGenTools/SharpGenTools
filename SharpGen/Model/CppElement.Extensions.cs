@@ -134,6 +134,7 @@ namespace SharpGen.Model
             if (newRule.StructToClass != null) tag.StructToClass = newRule.StructToClass;
             if (newRule.StructCustomMarshal != null) tag.StructCustomMarshal = newRule.StructCustomMarshal;
             if (newRule.StructCustomNew != null) tag.StructCustomNew = newRule.StructCustomNew;
+            if (newRule.IsStaticMarshal != null) tag.IsStaticMarshal = newRule.IsStaticMarshal;
             if (newRule.StructForceMarshalToToBeGenerated != null)
                 tag.StructForceMarshalToToBeGenerated = newRule.StructForceMarshalToToBeGenerated;
             if (newRule.MappingType != null) tag.MappingType = RegexRename(patchRegex, element.FullName, newRule.MappingType);

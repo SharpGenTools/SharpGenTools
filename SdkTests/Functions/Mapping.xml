@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config id="FunctionsMapping" xmlns="urn:SharpGen.Config">
+    <assembly>Functions</assembly>
+    <namespace>Functions</namespace>
+
+    <sdk name="StdLib" />
+
+    <include-dir>$(THIS_CONFIG_PATH)\..\Native\Functions</include-dir>
+    <include file="Functions.h" attach="true" />
+
+    <extension>
+        <create class="Functions.NativeFunctions" />
+    </extension>
+
+    <mapping>
+        <map param="(.*)::out(.*)" attribute="out" />
+        <map param="(.*)::results" attribute="out buffer" />
+        <map param="BoolToIntTest:.*" type="bool" />
+        <map param="FastOutTest::out" attribute="out fast" />
+        <map function=".*" group="Functions.NativeFunctions" dll='"FunctionsNative.dll"' />
+        <map struct="StructWithStaticMarshal" static-marshal="true" />
+        <map param="SumOfLastElements::.*" attribute="in buffer" />
+    </mapping>
+</config>

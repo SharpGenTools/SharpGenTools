@@ -1,0 +1,5 @@
+cmake_minimum_required (VERSION 3.0)
+project (Functions)
+set(LIB_TYPE SHARED)
+set(SOURCES Functions.cpp dllmain.cpp)
+add_library(FunctionsNative ${LIB_TYPE} ${SOURCES})

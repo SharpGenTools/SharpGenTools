@@ -192,9 +192,10 @@ namespace SharpGen.Generator
             }
             if (param.IsBoolToInt)
             {
-                return ConditionalExpression(IdentifierName(param.Name),
-                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(1)),
-                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)));
+                return ParenthesizedExpression(
+                    ConditionalExpression(IdentifierName(param.Name),
+                        LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(1)),
+                        LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))));
             }
             if (param.IsFixed && !param.HasNativeValueType)
             {
