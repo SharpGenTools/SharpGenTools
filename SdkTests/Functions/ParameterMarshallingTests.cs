@@ -61,7 +61,18 @@ namespace Functions
             defaultMarshalling.I[2] = 10;
             staticMarshalling.I[2] = 30;
 
-            Assert.Equal(40, NativeFunctions.SumOfLastElements(new []{ defaultMarshalling }, new []{ staticMarshalling }));
+            var defaultMarshallingOut = new StructWithMarshal();
+            var staticMarshallingOut = new StructWithStaticMarshal();
+
+            
+            NativeFunctions.StructArrayMarshalling(
+                new [] { defaultMarshalling },
+                new [] { staticMarshalling },
+                new [] { defaultMarshallingOut },
+                new [] { staticMarshallingOut });
+
+            Assert.Equal(defaultMarshalling.I[1], defaultMarshallingOut.I[1]);
+            Assert.Equal(staticMarshalling.I[1], staticMarshallingOut.I[1]);
         }
 
         [Fact]

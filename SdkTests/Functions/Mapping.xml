@@ -14,11 +14,12 @@
 
     <mapping>
         <map param="(.*)::out(.*)" attribute="out" />
+        <map param="StructArrayMarshalling::(.*)" attribute="buffer" />
+        <map param="StructArrayMarshalling::out(.*)" attribute="out buffer" />
         <map param="(.*)::results" attribute="out buffer" />
         <map param="BoolToIntTest:.*" type="bool" />
         <map param="FastOutTest::out" attribute="out fast" />
         <map function=".*" group="Functions.NativeFunctions" dll='"FunctionsNative.dll"' />
         <map struct="StructWithStaticMarshal" static-marshal="true" />
-        <map param="SumOfLastElements::.*" attribute="in buffer" />
     </mapping>
 </config>

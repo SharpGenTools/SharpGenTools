@@ -37,9 +37,10 @@ DECL(void) StructMarshalling(StructWithMarshal in, StructWithStaticMarshal inSta
     *outStatic = inStatic;
 }
 
-DECL(int) SumOfLastElements(StructWithMarshal in[1], StructWithStaticMarshal inStatic[1])
+DECL(void) StructArrayMarshalling(StructWithMarshal in[1], StructWithStaticMarshal inStatic[1], StructWithMarshal out[1], StructWithStaticMarshal outStatic[1])
 {
-    return in[0].i[2] + inStatic[0].i[2];
+    out[0] = in[0];
+    outStatic[0] = inStatic[0];
 }
 
 DECL(void) FastOutTest(Interface** out)

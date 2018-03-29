@@ -27,7 +27,7 @@ DECL(void) BoolToIntTest(int in, int* out);
 
 DECL(void) StructMarshalling(StructWithMarshal in, StructWithStaticMarshal inStatic, StructWithMarshal* out, StructWithStaticMarshal* outStatic);
 
-DECL(int) SumOfLastElements(StructWithMarshal in[1], StructWithStaticMarshal inStatic[1]);
+DECL(void) StructArrayMarshalling(StructWithMarshal in[1], StructWithStaticMarshal inStatic[1], StructWithMarshal out[1], StructWithStaticMarshal outStatic[1]);
 
 DECL(void) FastOutTest(Interface** out);
 
