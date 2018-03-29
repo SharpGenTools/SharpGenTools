@@ -196,6 +196,15 @@ namespace SharpGen.Model
             }
         }
 
+        public bool IsNullableStruct
+        {
+            get => IsRefIn
+                && IsValueType
+                && !IsArray
+                && IsOptional
+                && !IsStructClass;
+        }
+
         public override object Clone()
         {
             var parameter = (CsParameter)base.Clone();

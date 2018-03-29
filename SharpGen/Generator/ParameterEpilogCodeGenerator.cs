@@ -20,25 +20,20 @@ namespace SharpGen.Generator
                     if (param.IsArray)
                     {
                         yield return LoopThroughArrayParameter(param.Name,
-                            ExpressionStatement(
-                                InvocationExpression(
-                                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                        ElementAccessExpression(
-                                            IdentifierName(param.Name),
-                                            BracketedArgumentList(
-                                                SingletonSeparatedList(
-                                                    Argument(IdentifierName("i"))))),
-                                        IdentifierName("__MarshalFrom")),
-                                    ArgumentList(
+                            CreateMarshalStructStatement(
+                                param,
+                                "__MarshalFrom",
+                                ElementAccessExpression(
+                                    IdentifierName(param.Name),
+                                    BracketedArgumentList(
                                         SingletonSeparatedList(
-                                            Argument(
-                                                ElementAccessExpression(
-                                                    IdentifierName($"{param.TempName}_"),
-                                                    BracketedArgumentList(
-                                                        SingletonSeparatedList(
-                                                            Argument(IdentifierName("i"))))))
-                                                .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))),
-                            "i");
+                                            Argument(IdentifierName("i"))))),
+                                ElementAccessExpression(
+                                    IdentifierName($"{param.TempName}_"),
+                                    BracketedArgumentList(
+                                        SingletonSeparatedList(
+                                            Argument(IdentifierName("i")))))),
+                            "i");                
                     }
                     else
                     {
@@ -47,35 +42,12 @@ namespace SharpGen.Generator
                                 IdentifierName(param.Name),
                                 ObjectCreationExpression(ParseTypeName(param.PublicType.QualifiedName))
                                     .WithArgumentList(ArgumentList())));
-                        if (param.IsStaticMarshal)
-                        {
-                            yield return ExpressionStatement(
-                                    InvocationExpression(
-                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            ParseTypeName(param.PublicType.QualifiedName),
-                                            IdentifierName("__MarshalFrom")),
-                                        ArgumentList(
-                                            SeparatedList(
-                                                new[]
-                                                {
-                                                    Argument(IdentifierName(param.Name))
-                                                        .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)),
-                                                    Argument(IdentifierName(param.TempName))
-                                                        .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword))
-                                                }))));
-                        }
-                        else
-                        {
-                            yield return ExpressionStatement(
-                                    InvocationExpression(
-                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            IdentifierName(param.Name),
-                                            IdentifierName("__MarshalFrom")),
-                                        ArgumentList(
-                                            SingletonSeparatedList(
-                                                Argument(IdentifierName(param.TempName))
-                                                    .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword))))));
-                        }
+                        
+                        yield return CreateMarshalStructStatement(
+                                param,
+                                "__MarshalFrom",
+                                IdentifierName(param.Name),
+                                IdentifierName(param.TempName));
                     }
                 }
                 else if (param.IsInterface)
@@ -206,121 +178,51 @@ namespace SharpGen.Generator
             {
                 if (param.IsArray)
                 {
-                    yield return GenerateNullCheckIfNeeded(param, false,
-                        LoopThroughArrayParameter(param.Name,
-                            ExpressionStatement(
-                                InvocationExpression(
-                                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                        ElementAccessExpression(
-                                            IdentifierName(param.Name),
-                                            BracketedArgumentList(
-                                                SingletonSeparatedList(
-                                                    Argument(IdentifierName("i"))))),
-                                        IdentifierName("__MarshalFree")),
-                                    ArgumentList(
+                        yield return LoopThroughArrayParameter(param.Name,
+                            CreateMarshalStructStatement(
+                                param,
+                                "__MarshalFree",
+                                ElementAccessExpression(
+                                    IdentifierName(param.Name),
+                                    BracketedArgumentList(
                                         SingletonSeparatedList(
-                                            Argument(
-                                                ElementAccessExpression(
-                                                    IdentifierName($"{param.TempName}_"),
-                                                    BracketedArgumentList(
-                                                        SingletonSeparatedList(
-                                                            Argument(IdentifierName("i"))))))
-                                                .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))),
-                            "i"));
+                                            Argument(IdentifierName("i"))))),
+                                ElementAccessExpression(
+                                    IdentifierName($"{param.TempName}_"),
+                                    BracketedArgumentList(
+                                        SingletonSeparatedList(
+                                            Argument(IdentifierName("i")))))),
+                            "i");
 
                 }
                 else
                 {
-                    if (param.IsStaticMarshal)
+                    ExpressionSyntax publicElementExpression = IdentifierName(param.Name);
+
+                    if (param.IsNullableStruct)
                     {
-                        if (param.IsRef)
-                        {
-                            yield return ExpressionStatement(
-                                InvocationExpression(
-                                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                        ParseTypeName(param.PublicType.QualifiedName),
-                                        IdentifierName("__MarshalFrom")),
-                                    ArgumentList(
-                                        SeparatedList(
-                                            new[]
-                                            {
-                                                Argument(IdentifierName(param.Name))
-                                                    .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)),
-                                                Argument(IdentifierName(param.TempName))
-                                                    .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword))
-                                            }))));
-                        }
-                        yield return ExpressionStatement(
-                            InvocationExpression(
-                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                    ParseTypeName(param.PublicType.QualifiedName),
-                                    IdentifierName("__MarshalFree")),
-                                ArgumentList(
-                                    SeparatedList(
-                                        new[]
-                                        {
-                                            Argument(IdentifierName(param.Name))
-                                                .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)),
-                                            Argument(IdentifierName(param.TempName))
-                                                .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword))
-                                        }))));
+                        publicElementExpression = MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            publicElementExpression,
+                            IdentifierName("Value"));
                     }
-                    else
+
+                    if (param.IsRef)
                     {
-                        if (param.IsRefIn && param.IsValueType && param.IsOptional && !param.IsStructClass)
-                        {
-                            yield return GenerateNullCheckIfNeeded(param, false,
-                                    ExpressionStatement(
-                                        InvocationExpression(
-                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                    IdentifierName(param.Name),
-                                                    IdentifierName("Value")),
-                                                IdentifierName("__MarshalFrom")),
-                                            ArgumentList(
-                                                SingletonSeparatedList(
-                                                    Argument(IdentifierName(param.TempName))
-                                                        .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
-                            yield return GenerateNullCheckIfNeeded(param, true,
-                                ExpressionStatement(
-                                    InvocationExpression(
-                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                    IdentifierName(param.Name),
-                                                    IdentifierName("Value")),
-                                                IdentifierName("__MarshalFrom")),
-                                        ArgumentList(
-                                            SingletonSeparatedList(
-                                                Argument(IdentifierName(param.TempName))
-                                                    .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
-                        }
-                        else
-                        {
-                            if (param.IsRef)
-                            {
-                                yield return GenerateNullCheckIfNeeded(param, true,
-                                    ExpressionStatement(
-                                        InvocationExpression(
-                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                IdentifierName(param.Name),
-                                                IdentifierName("__MarshalFrom")),
-                                            ArgumentList(
-                                                SingletonSeparatedList(
-                                                    Argument(IdentifierName(param.TempName))
-                                                        .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
-                            }
-                            yield return GenerateNullCheckIfNeeded(param, true,
-                                ExpressionStatement(
-                                    InvocationExpression(
-                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            IdentifierName(param.Name),
-                                            IdentifierName("__MarshalFree")),
-                                        ArgumentList(
-                                            SingletonSeparatedList(
-                                                Argument(IdentifierName(param.TempName))
-                                                    .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
-                        }
+                        yield return CreateMarshalStructStatement(
+                            param,
+                            "__MarshalFrom",
+                            publicElementExpression,
+                            IdentifierName(param.TempName)
+                        );
                     }
+
+                    yield return CreateMarshalStructStatement(
+                        param,
+                        "__MarshalFree",
+                        publicElementExpression,
+                        IdentifierName(param.TempName)
+                    );
                 }
             }
         }

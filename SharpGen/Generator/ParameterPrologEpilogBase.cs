@@ -68,5 +68,40 @@ namespace SharpGen.Generator
                             IdentifierName(variableName))));
         }
 
+        protected StatementSyntax CreateMarshalStructStatement(
+            CsParameter param,
+            string marshalMethod,
+            ExpressionSyntax publicElementExpr,
+            ExpressionSyntax marshalElementExpr)
+        {
+            if (param.IsStaticMarshal)
+            {
+                return ExpressionStatement(InvocationExpression(
+                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                        ParseTypeName(param.PublicType.QualifiedName),
+                        IdentifierName(marshalMethod)),
+                    ArgumentList(
+                        SeparatedList(
+                            new[]
+                            {
+                                Argument(publicElementExpr)
+                                    .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)),
+                                Argument(marshalElementExpr)
+                                    .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword))
+                            }))));
+            }
+            else
+            {
+                return ExpressionStatement(InvocationExpression(
+                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                        publicElementExpr,
+                        IdentifierName(marshalMethod)),
+                    ArgumentList(
+                        SingletonSeparatedList(
+                            Argument(marshalElementExpr)
+                                .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword))))));
+            }
+        }
+
     }
 }

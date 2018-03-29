@@ -34,11 +34,7 @@ namespace SharpGen.Generator
 
             var type = ParseTypeName(csElement.PublicType.QualifiedName);
 
-            if (csElement.IsRefIn
-                && csElement.IsValueType
-                && !csElement.IsArray
-                && csElement.IsOptional
-                && !csElement.IsStructClass)
+            if (csElement.IsNullableStruct)
             {
                 type = NullableType(type);
             }

@@ -64,28 +64,21 @@ namespace SharpGen.Generator
                                             LiteralExpression(SyntaxKind.NullLiteralExpression)))))));
                     if (csElement.IsRefIn)
                     {
-                        yield return GenerateNullCheckIfNeeded(csElement, false,
-                                    LoopThroughArrayParameter(csElement.Name, ExpressionStatement(
-                                            InvocationExpression(
-                                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                    ElementAccessExpression(
-                                                        IdentifierName(csElement.Name),
-                                                        BracketedArgumentList(
-                                                            SingletonSeparatedList(
-                                                                Argument(IdentifierName("i"))))),
-                                                    IdentifierName("__MarshalTo")),
-                                                    ArgumentList(
-                                                                SingletonSeparatedList(
-                                                                    Argument(
-                                                                        ElementAccessExpression(
-                                                                            IdentifierName($"{csElement.TempName}_"))
-                                                                        .WithArgumentList(
-                                                                            BracketedArgumentList(
-                                                                                SingletonSeparatedList(
-                                                                                    Argument(
-                                                                                        IdentifierName("i"))))))
-                                                                    .WithRefOrOutKeyword(
-                                                                        Token(SyntaxKind.RefKeyword)))))), "i"));
+                        yield return LoopThroughArrayParameter(csElement.Name,
+                            CreateMarshalStructStatement(
+                                csElement,
+                                "__MarshalTo",
+                                ElementAccessExpression(
+                                    IdentifierName(csElement.Name),
+                                    BracketedArgumentList(
+                                        SingletonSeparatedList(
+                                            Argument(IdentifierName("i"))))),
+                                ElementAccessExpression(
+                                    IdentifierName($"{csElement.TempName}_"),
+                                    BracketedArgumentList(
+                                        SingletonSeparatedList(
+                                            Argument(IdentifierName("i")))))),
+                            "i"); 
 
                     }
                 }
@@ -99,54 +92,23 @@ namespace SharpGen.Generator
                                         EqualsValueClause(
                                             ParseExpression(((CsStruct)csElement.PublicType).GetConstructor()))))));
 
-                    if (csElement.IsRefIn && csElement.IsValueType && csElement.IsOptional && !csElement.IsStructClass)
+                    ExpressionSyntax publicElementExpression = IdentifierName(csElement.Name);
+
+                    if (csElement.IsNullableStruct)
                     {
-                        yield return GenerateNullCheckIfNeeded(csElement, false,
-                                ExpressionStatement(
-                                    InvocationExpression(
-                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                IdentifierName(csElement.Name),
-                                                IdentifierName("Value")),
-                                            IdentifierName("__MarshalTo")),
-                                        ArgumentList(
-                                            SingletonSeparatedList(
-                                                Argument(IdentifierName(csElement.TempName))
-                                                    .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
+                        publicElementExpression = MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            publicElementExpression,
+                            IdentifierName("Value"));
                     }
-                    else if (csElement.IsRefIn || csElement.IsRef || csElement.IsIn)
+                    
+                    if (csElement.IsRefIn || csElement.IsRef || csElement.IsIn)
                     {
-                        if (csElement.IsStaticMarshal)
-                        {
-                            yield return GenerateNullCheckIfNeeded(csElement, false,
-                                ExpressionStatement(
-                                    InvocationExpression(
-                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            ParseTypeName(csElement.PublicType.QualifiedName),
-                                            IdentifierName("__MarshalTo")),
-                                        ArgumentList(
-                                            SeparatedList(
-                                                new[]
-                                                {
-                                                    Argument(IdentifierName(csElement.Name))
-                                                        .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)),
-                                                    Argument(IdentifierName(csElement.TempName))
-                                                        .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword))
-                                                })))));
-                        }
-                        else
-                        {
-                            yield return GenerateNullCheckIfNeeded(csElement, true,
-                                ExpressionStatement(
-                                    InvocationExpression(
-                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            IdentifierName(csElement.Name),
-                                            IdentifierName("__MarshalTo")),
-                                        ArgumentList(
-                                            SingletonSeparatedList(
-                                                Argument(IdentifierName(csElement.TempName))
-                                                    .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
-                        }
+                        yield return CreateMarshalStructStatement(
+                                csElement,
+                                "__MarshalTo",
+                                publicElementExpression,
+                                IdentifierName(csElement.TempName));
                     }
                 }
             }
