@@ -36,6 +36,53 @@ public:
 	}
 };
 
+class PropertyImplementation : public InterfaceWithProperties
+{
+	bool isTrue;
+	int value;
+	int value2;
+
+public:
+	PropertyImplementation(bool isTrue, int value, int value2)
+		: isTrue(isTrue), value(value), value2(value2)
+	{}
+
+	virtual bool __stdcall IsTrue() override
+	{
+		return isTrue;
+	}
+	virtual RESULT __stdcall IsTrueOutProp(bool* value)
+	{
+		*value = isTrue;
+		return 0;
+	}
+
+	virtual int __stdcall GetValue()
+	{
+		return value;
+	}
+
+	virtual void __stdcall SetValue(int value)
+	{
+		this->value = value;
+	}
+	virtual RESULT __stdcall GetValue2(int* value)
+	{
+		*value = value2;
+		return 0;
+	}
+	virtual void __stdcall SetValue2(int value)
+	{
+		value2 = value;
+	}
+
+	virtual int __stdcall GetValuePersistent()
+	{
+		return value;
+	}
+};
+
+
 extern "C" __declspec(dllexport) IInterface2 * __stdcall CreateInstance(void)
 {
 	return new Implementation();
@@ -52,4 +99,9 @@ extern "C" __declspec(dllexport) bool __stdcall CloneInstance(IInterface* interf
 	auto value = interface->GetValue();
 	*clonedInterface = new Implementation(value.I, value.J);
 	return true;
+}
+
+extern "C" __declspec(dllexport) InterfaceWithProperties* CreatePropertyTest(bool isTrue, int value, int value2)
+{
+	return new PropertyImplementation(isTrue, value, value2);
 }

@@ -161,17 +161,6 @@ namespace SharpGen.Model
             get { return PublicType is CsFundamentalType type && type.Type == typeof (string); }
         }
 
-        public bool IsValueType
-        {
-            get { return PublicType is CsStruct || PublicType is CsEnum ||
-                    (PublicType is CsFundamentalType type && (type.Type.GetTypeInfo().IsValueType || type.Type.GetTypeInfo().IsPrimitive)); }
-        }
-
-        public bool IsStructClass
-        {
-            get { return PublicType is CsStruct csStruct && csStruct.GenerateAsClass; }
-        }
-
         public bool HasNativeValueType
         {
             get { return (PublicType is CsStruct csStruct && csStruct.HasMarshalType) ; }

@@ -39,8 +39,24 @@ struct ILargeInterface
 	virtual int __stdcall Method3() = 0;
 };
 
+typedef int RESULT;
+
+struct InterfaceWithProperties
+{
+	virtual bool __stdcall IsTrue() = 0;
+	virtual RESULT __stdcall IsTrueOutProp(bool* value) = 0;
+	virtual int __stdcall GetValue() = 0;
+	virtual void __stdcall SetValue(int value) = 0;
+	virtual RESULT __stdcall GetValue2(int* value) = 0;
+	virtual void __stdcall SetValue2(int value) = 0;
+
+	virtual int __stdcall GetValuePersistent() = 0;
+};
+
 extern "C" __declspec(dllexport) IInterface2* __stdcall CreateInstance(void);
 
 extern "C" __declspec(dllexport) IInterface* __stdcall CreateInstance2(int i, double j);
 
 extern "C" __declspec(dllexport) bool __stdcall CloneInstance(IInterface* iface, IInterface** cloned);
+
+extern "C" __declspec(dllexport) InterfaceWithProperties* CreatePropertyTest(bool isTrue, int value, int value2);

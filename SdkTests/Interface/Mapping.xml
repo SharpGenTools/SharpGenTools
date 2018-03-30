@@ -13,6 +13,7 @@
   </extension>
 
   <bindings>
+    <bind from="RESULT" to="SharpGen.Runtime.Result" />
   </bindings>
 
   <mapping>
@@ -22,8 +23,13 @@
     <map function="CreateInstance" dll='"InterfaceNative.dll"' group="Interface.Functions" />
     <map function="CreateInstance2" dll='"InterfaceNative.dll"' group="Interface.Functions" />
     <map function="CloneInstance" dll='"InterfaceNative.dll"' group="Interface.Functions" />
+    <map function="CreatePropertyTest" dll='"InterfaceNative.dll"' group="Interface.Functions" />
     <map param="IInterface2::AddToThis::interfaces" attribute="in buffer" />
     <move method="ILargeInterface::Method3" to="InnerInterface" property="Inner" />
+    <map method="InterfaceWithProperties::(.*)" custom-vtbl="true" />
+    <map param="InterfaceWithProperties::GetValue2::(.*)" attribute="out" />
+    <map param="InterfaceWithProperties::IsTrueOutProp::(.*)" attribute="out" />
+    <map method="InterfaceWithProperties::GetValuePersistent" persist="true" />
   </mapping>
 
   <depends>SharpGen.Runtime</depends>
