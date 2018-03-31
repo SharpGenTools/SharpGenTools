@@ -27,9 +27,9 @@
     <map param="IInterface2::AddToThis::interfaces" attribute="in buffer" />
     <move method="ILargeInterface::Method3" to="InnerInterface" property="Inner" />
     <map method="InterfaceWithProperties::(.*)" custom-vtbl="true" />
-    <map param="InterfaceWithProperties::GetValue2::(.*)" attribute="out" />
+    <map param="InterfaceWithProperties::GetValue2(.*)::(.*)" attribute="out" />
     <map param="InterfaceWithProperties::IsTrueOutProp::(.*)" attribute="out" />
-    <map method="InterfaceWithProperties::GetValuePersistent" persist="true" />
+    <map method="InterfaceWithProperties::(.+)Persistent" persist="true" />
   </mapping>
 
   <depends>SharpGen.Runtime</depends>

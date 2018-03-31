@@ -63,5 +63,14 @@ namespace Interface
                 Assert.Equal(10, value.ValuePersistent);
             }
         }
+
+        [Fact]
+        public void PersistentPropertyWithInterfaceCachesValue()
+        {
+            using (var value = Functions.CreatePropertyTest(false, 0, 0))
+            {
+                Assert.Equal(value.NativePointer, value.SelfPersistent.NativePointer);
+            }
+        }
     }
 }

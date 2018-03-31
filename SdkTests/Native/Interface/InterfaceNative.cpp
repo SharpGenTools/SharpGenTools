@@ -80,6 +80,23 @@ public:
 	{
 		return value;
 	}
+
+	virtual RESULT __stdcall GetValue2Persistent(int* value)
+	{
+		*value = value2;
+		return 0;
+	}
+
+	virtual InterfaceWithProperties* __stdcall GetSelfPersistent()
+	{
+		return this;
+	}
+
+	virtual RESULT __stdcall GetSelfOutPersistent(InterfaceWithProperties** self)
+	{
+		*self = this;
+		return 0;
+	}
 };
 
 
