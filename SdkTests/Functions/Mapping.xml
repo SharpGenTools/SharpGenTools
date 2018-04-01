@@ -10,16 +10,27 @@
 
     <extension>
         <create class="Functions.NativeFunctions" />
+        <const from-macro="TestConstant" class="Functions.NativeFunctions" type="int" name="TestConstant">$1</const>
     </extension>
 
     <mapping>
+        <map enum="MyEnum" flags="true" />
         <map param="(.*)::out(.*)" attribute="out" />
-        <map param="StructArrayMarshalling::(.*)" attribute="buffer" />
+        <map param="StructArrayMarshalling::in(.*)" attribute="in buffer" />
         <map param="StructArrayMarshalling::out(.*)" attribute="out buffer" />
+        <map param="SetAllElements::ref" attribute="inout" />
+        <map param="FirstElementOrZero::ref" attribute="in optional" />
         <map param="(.*)::results" attribute="out buffer" />
-        <map param="BoolToIntTest:.*" type="bool" />
+        <map param="(.*)Optional::results" attribute="out buffer optional" />
+        <map param="BoolToIntTest::.*" type="bool" />
+        <map param="BoolToIntTest::out" return="true" />
         <map param="FastOutTest::out" attribute="out fast" />
         <map function=".*" group="Functions.NativeFunctions" dll='"FunctionsNative.dll"' />
         <map struct="StructWithStaticMarshal" static-marshal="true" />
+        <map param="Increment::cell" attribute="inout" />
+        <map param="Add::rhs_opt" attribute="in optional" />
+        <map param="Sum::elements" attribute="in buffer optional" />
+        <map param="Product::elements" attribute="in buffer params" />
+        <map function="Product" type="longlong" />
     </mapping>
 </config>

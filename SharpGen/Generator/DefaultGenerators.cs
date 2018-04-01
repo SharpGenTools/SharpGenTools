@@ -23,7 +23,7 @@ namespace SharpGen.Generator
             NativeStruct = new NativeStructCodeGenerator(globalNamespace);
             NativeInvocation = new NativeInvocationCodeGenerator(this, globalNamespace);
             ParameterProlog = new ParameterPrologCodeGenerator(globalNamespace);
-            ParameterEpilog = new ParameterEpilogCodeGenerator();
+            ParameterEpilog = new ParameterEpilogCodeGenerator(globalNamespace);
             Callable = new CallableCodeGenerator(this, documentation, docReader, globalNamespace);
             Method = new MethodCodeGenerator(this);
             Function = new FunctionCodeGenerator(this);

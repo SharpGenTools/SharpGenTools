@@ -542,7 +542,7 @@ namespace SharpGen.Generator
                                             LiteralExpression(SyntaxKind.NullLiteralExpression),
                                             InvocationExpression(
                                                 MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                    ParseTypeName("System.Runtime.InteropServices.Marshal"),
+                                                    globalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
                                                     IdentifierName("PtrToString" + (field.IsWideChar ? "Uni" : "Ansi"))),
                                                 ArgumentList(SingletonSeparatedList(
                                                     Argument(

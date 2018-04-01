@@ -10,6 +10,13 @@ namespace SharpGen.Generator
 {
     class ParameterEpilogCodeGenerator : ParameterPrologEpilogBase, IMultiCodeGenerator<CsParameter, StatementSyntax>
     {
+        private readonly GlobalNamespaceProvider globalNamespace;
+
+        public ParameterEpilogCodeGenerator(GlobalNamespaceProvider globalNamespace)
+        {
+            this.globalNamespace = globalNamespace;
+        }
+
         public IEnumerable<StatementSyntax> GenerateCode(CsParameter param)
         {
             // Post-process output parameters
@@ -157,16 +164,7 @@ namespace SharpGen.Generator
                     InvocationExpression(
                         MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
-                            MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                MemberAccessExpression(
-                                    SyntaxKind.SimpleMemberAccessExpression,
-                                    MemberAccessExpression(
-                                        SyntaxKind.SimpleMemberAccessExpression,
-                                        IdentifierName("System"),
-                                        IdentifierName("Runtime")),
-                                    IdentifierName("InteropServices")),
-                                IdentifierName("Marshal")),
+                            globalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
                             IdentifierName("FreeHGlobal")),
                         ArgumentList(
                             SingletonSeparatedList(
@@ -209,20 +207,26 @@ namespace SharpGen.Generator
 
                     if (param.IsRef)
                     {
-                        yield return CreateMarshalStructStatement(
+                        yield return GenerateNullCheckIfNeeded(
                             param,
-                            "__MarshalFrom",
-                            publicElementExpression,
-                            IdentifierName(param.TempName)
-                        );
+                            false,
+                            CreateMarshalStructStatement(
+                                param,
+                                "__MarshalFrom",
+                                publicElementExpression,
+                                IdentifierName(param.TempName)
+                        ));
                     }
 
-                    yield return CreateMarshalStructStatement(
-                        param,
-                        "__MarshalFree",
-                        publicElementExpression,
-                        IdentifierName(param.TempName)
-                    );
+                        yield return GenerateNullCheckIfNeeded(
+                            param,
+                            false,
+                            CreateMarshalStructStatement(
+                                param,
+                                "__MarshalFree",
+                                publicElementExpression,
+                                IdentifierName(param.TempName)
+                        ));
                 }
             }
         }

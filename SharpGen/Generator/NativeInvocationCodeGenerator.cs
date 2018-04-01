@@ -21,7 +21,7 @@ namespace SharpGen.Generator
 
         public IGeneratorRegistry Generators { get; }
 
-        private static ExpressionSyntax GetCastedReturn(ExpressionSyntax invocation, CsReturnValue returnValue, bool largeReturn)
+        private ExpressionSyntax GetCastedReturn(ExpressionSyntax invocation, CsReturnValue returnValue, bool largeReturn)
         {
             var fundamentalPublic = returnValue.PublicType as CsFundamentalType;
 
@@ -41,7 +41,7 @@ namespace SharpGen.Generator
                 var marshalMethodName = "PtrToString" + (returnValue.IsWideChar ? "Uni" : "Ansi");
                 return InvocationExpression(
                     MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                        ParseTypeName("System.Runtime.InteropServices.Marshal"), IdentifierName(marshalMethodName)),
+                        globalNamespace.GetTypeNameSyntax(BuiltinType.Marshal), IdentifierName(marshalMethodName)),
                         ArgumentList(
                             SingletonSeparatedList(
                                 Argument(

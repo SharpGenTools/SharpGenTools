@@ -104,11 +104,12 @@ namespace SharpGen.Generator
                     
                     if (csElement.IsRefIn || csElement.IsRef || csElement.IsIn)
                     {
-                        yield return CreateMarshalStructStatement(
+                        yield return GenerateNullCheckIfNeeded(csElement, true,
+                            CreateMarshalStructStatement(
                                 csElement,
                                 "__MarshalTo",
                                 publicElementExpression,
-                                IdentifierName(csElement.TempName));
+                                IdentifierName(csElement.TempName)));
                     }
                 }
             }
