@@ -13,7 +13,7 @@ namespace SharpGen.Generator
 
         protected static StatementSyntax GenerateNullCheckIfNeeded(CsParameter param, bool checkStructClass, StatementSyntax statement)
         {
-            if (param.IsOptional && (!checkStructClass || param.IsStructClass))
+            if (param.IsOptional && (param.IsArray || param.IsInterface || param.IsNullableStruct || (!checkStructClass || param.IsStructClass)))
             {
                 return IfStatement(
                                 BinaryExpression(SyntaxKind.NotEqualsExpression,
@@ -26,7 +26,7 @@ namespace SharpGen.Generator
 
         protected ExpressionSyntax GenerateNullCheckIfNeeded(CsParameter param, bool checkStructClass, ExpressionSyntax expression, ExpressionSyntax nullAlternative)
         {
-            if (param.IsOptional && (!checkStructClass || param.IsStructClass))
+            if (param.IsOptional && (param.IsArray || param.IsInterface || param.IsNullableStruct || (!checkStructClass || param.IsStructClass)))
             {
                 return ConditionalExpression(
                     BinaryExpression(SyntaxKind.EqualsExpression,
@@ -66,6 +66,41 @@ namespace SharpGen.Generator
                         PostfixUnaryExpression(
                             SyntaxKind.PostIncrementExpression,
                             IdentifierName(variableName))));
+        }
+
+        protected StatementSyntax CreateMarshalStructStatement(
+            CsParameter param,
+            string marshalMethod,
+            ExpressionSyntax publicElementExpr,
+            ExpressionSyntax marshalElementExpr)
+        {
+            if (param.IsStaticMarshal)
+            {
+                return ExpressionStatement(InvocationExpression(
+                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                        ParseTypeName(param.PublicType.QualifiedName),
+                        IdentifierName(marshalMethod)),
+                    ArgumentList(
+                        SeparatedList(
+                            new[]
+                            {
+                                Argument(publicElementExpr)
+                                    .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)),
+                                Argument(marshalElementExpr)
+                                    .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword))
+                            }))));
+            }
+            else
+            {
+                return ExpressionStatement(InvocationExpression(
+                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                        publicElementExpr,
+                        IdentifierName(marshalMethod)),
+                    ArgumentList(
+                        SingletonSeparatedList(
+                            Argument(marshalElementExpr)
+                                .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword))))));
+            }
         }
 
     }

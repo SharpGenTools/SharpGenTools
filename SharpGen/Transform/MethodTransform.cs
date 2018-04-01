@@ -202,6 +202,8 @@ namespace SharpGen.Transform
                         cSharpInteropCalliSignature.ReturnType = typeof(int);
                     else if (returnQualifiedName == globalNamespace.GetTypeName(WellKnownName.PointerSize))
                         cSharpInteropCalliSignature.ReturnType = typeof(void*);
+                    else if (csMethod.ReturnValue.PublicType is CsStruct csStruct && csStruct.HasMarshalType)
+                        cSharpInteropCalliSignature.ReturnType = $"{csStruct.QualifiedName}.__Native";
                     else
                         cSharpInteropCalliSignature.ReturnType = csMethod.ReturnValue.PublicType.QualifiedName;
                 }

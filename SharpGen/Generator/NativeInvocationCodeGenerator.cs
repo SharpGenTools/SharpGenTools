@@ -21,7 +21,7 @@ namespace SharpGen.Generator
 
         public IGeneratorRegistry Generators { get; }
 
-        private static ExpressionSyntax GetCastedReturn(ExpressionSyntax invocation, CsReturnValue returnValue, bool largeReturn)
+        private ExpressionSyntax GetCastedReturn(ExpressionSyntax invocation, CsReturnValue returnValue, bool largeReturn)
         {
             var fundamentalPublic = returnValue.PublicType as CsFundamentalType;
 
@@ -41,7 +41,7 @@ namespace SharpGen.Generator
                 var marshalMethodName = "PtrToString" + (returnValue.IsWideChar ? "Uni" : "Ansi");
                 return InvocationExpression(
                     MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                        ParseTypeName("System.Runtime.InteropServices.Marshal"), IdentifierName(marshalMethodName)),
+                        globalNamespace.GetTypeNameSyntax(BuiltinType.Marshal), IdentifierName(marshalMethodName)),
                         ArgumentList(
                             SingletonSeparatedList(
                                 Argument(
@@ -75,9 +75,19 @@ namespace SharpGen.Generator
 
             if (callable.IsReturnStructLarge)
             {
-                arguments.Add(Argument(CastExpression(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
-                                        PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
-                                            IdentifierName("__result__")))));
+                if (callable.ReturnValue.PublicType is CsStruct returnStruct && returnStruct.HasMarshalType)
+                {
+                    arguments.Add(Argument(CastExpression(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
+                        PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
+                            IdentifierName("__result__native")))));
+                }
+                else
+                {
+                    arguments.Add(Argument(CastExpression(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
+                        PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
+                            IdentifierName("__result__")))));
+                }
+               
             }
 
             arguments.AddRange(callable.Parameters.Select(param => Generators.Argument.GenerateCode(param)));

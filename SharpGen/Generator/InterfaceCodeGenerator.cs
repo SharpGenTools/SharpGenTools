@@ -23,36 +23,7 @@ namespace SharpGen.Generator
 
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsInterface csElement)
         {
-            DocumentationCommentTriviaSyntax docComment;
-            if (csElement.Parent is CsInterface)
-            {
-                docComment = DocumentationCommentTrivia(
-                    SyntaxKind.SingleLineDocumentationCommentTrivia,
-                    List(
-                        new XmlNodeSyntax[]{
-                            XmlText(XmlTextNewLine("", true)),
-                            XmlElement(
-                                XmlElementStartTag(XmlName(Identifier("summary"))),
-                                SingletonList<XmlNodeSyntax>(
-                                    XmlText(TokenList(
-                                        XmlTextLiteral($"Interface {csElement.Name}")))),
-                                XmlElementEndTag(XmlName(Identifier("summary")))
-                            ),
-                            XmlText(XmlTextNewLine("\n", true)),
-                            XmlElement(
-                                XmlElementStartTag(XmlName(Identifier("unmanaged"))),
-                                SingletonList<XmlNodeSyntax>(
-                                    XmlText(TokenList(
-                                        XmlTextLiteral(csElement.DocUnmanagedName)))),
-                                XmlElementEndTag(XmlName(Identifier("unmanaged")))
-                            ),
-                            XmlText(XmlTextNewLine("\n", false))
-                        }));
-            }
-            else
-            {
-                docComment = GenerateDocumentationTrivia(csElement);
-            }
+            var docComment = GenerateDocumentationTrivia(csElement);
 
             AttributeListSyntax attributes = null;
             if (csElement.Guid != null)
@@ -103,7 +74,19 @@ namespace SharpGen.Generator
                             SingletonSeparatedList(
                                 Argument(
                                     IdentifierName("nativePtr"))))),
-                                    Block()));
+                                    Block(
+                                        List(
+                                            csElement.InnerInterfaces.Select(inner =>
+                                                ExpressionStatement(
+                                                    AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                                                        IdentifierName(inner.PropertyAccessName),
+                                                        ObjectCreationExpression(
+                                                            ParseTypeName(inner.QualifiedName))
+                                                            .WithArgumentList(ArgumentList(
+                                                                SingletonSeparatedList(
+                                                                    Argument(IdentifierName("nativePtr"))
+                                        )))))))
+                                    )));
 
                 members.Add(ConversionOperatorDeclaration(
                     default,

@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Reflection;
 using System.Runtime.Serialization;
 
 namespace SharpGen.Model
@@ -53,5 +54,16 @@ namespace SharpGen.Model
         public bool IsBoolToInt { get; set; }
         
         public int Size => MarshalType.Size * ((ArrayDimensionValue > 1) ? ArrayDimensionValue : 1);
+        
+        public bool IsValueType
+        {
+            get { return (PublicType is CsStruct csStruct && !csStruct.GenerateAsClass) || PublicType is CsEnum ||
+                    (PublicType is CsFundamentalType type && (type.Type.GetTypeInfo().IsValueType || type.Type.GetTypeInfo().IsPrimitive)); }
+        }
+
+        public bool IsStructClass
+        {
+            get { return PublicType is CsStruct csStruct && csStruct.GenerateAsClass; }
+        }
     }
 }

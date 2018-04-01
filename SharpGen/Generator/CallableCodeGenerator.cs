@@ -47,6 +47,9 @@ namespace SharpGen.Generator
 
             var statements = new List<StatementSyntax>();
 
+            string resultVariableName = null;
+            var resultMarshallingRequired = false;
+
             // foreach parameter
             foreach (var parameter in csElement.Parameters)
             {
@@ -54,11 +57,26 @@ namespace SharpGen.Generator
             }
             if (csElement.HasReturnType)
             {
+                resultVariableName = "__result__";
                 statements.Add(LocalDeclarationStatement(
                     VariableDeclaration(
                         ParseTypeName(csElement.ReturnValue.PublicType.QualifiedName),
                         SingletonSeparatedList(
-                            VariableDeclarator("__result__")))));
+                            VariableDeclarator(resultVariableName)))));
+                if (csElement.ReturnValue.PublicType is CsStruct returnStruct && returnStruct.HasMarshalType)
+                {
+                    resultMarshallingRequired = true;
+                    resultVariableName = "__result__native";
+                    statements.Add(ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                        IdentifierName("__result__"),
+                        ObjectCreationExpression(ParseTypeName(csElement.ReturnValue.PublicType.QualifiedName))
+                            .WithArgumentList(ArgumentList()))));
+                    statements.Add(LocalDeclarationStatement(
+                        VariableDeclaration(
+                            ParseTypeName(csElement.ReturnValue.PublicType.QualifiedName + ".__Native"),
+                            SingletonSeparatedList(
+                                VariableDeclarator(resultVariableName)))));
+                }
             }
 
             var fixedStatements = GenerateFixedStatements(csElement);
@@ -66,7 +84,7 @@ namespace SharpGen.Generator
             var invocation = Generators.NativeInvocation.GenerateCode(csElement);
             var callStmt = ExpressionStatement(csElement.HasReturnType && !csElement.IsReturnStructLarge ?
                 AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                    IdentifierName("__result__"),
+                    IdentifierName(resultVariableName),
                     invocation)
                     : invocation);
 
@@ -77,6 +95,20 @@ namespace SharpGen.Generator
             }
 
             statements.Add((StatementSyntax)fixedStatement ?? callStmt);
+
+            if (resultMarshallingRequired)
+            {
+                statements.Add(
+                    ExpressionStatement(
+                        InvocationExpression(
+                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                IdentifierName("__result__"),
+                                IdentifierName("__MarshalFrom")),
+                            ArgumentList(
+                                SingletonSeparatedList(
+                                    Argument(IdentifierName("__result__native"))
+                                        .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
+            }
 
             foreach (var parameter in csElement.Parameters)
             {
