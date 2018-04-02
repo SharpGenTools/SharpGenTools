@@ -51,7 +51,7 @@ namespace SharpGen.Parser
         private readonly HashSet<string> _includeToProcess = new HashSet<string>();
         private readonly Dictionary<string, bool> _includeIsAttached = new Dictionary<string, bool>();
         private readonly Dictionary<string, HashSet<string>> _includeAttachedTypes = new Dictionary<string, HashSet<string>>();
-        private readonly Dictionary<string, string> _bindings = new Dictionary<string, string>();
+        private readonly HashSet<string> _boundTypes = new HashSet<string>();
         private readonly CastXml _gccxml;
         private ConfigFile _configRoot;
         private CppInclude _currentCppInclude;
@@ -78,13 +78,13 @@ namespace SharpGen.Parser
             
             foreach (var bindRule in _configRoot.ConfigFilesLoaded.SelectMany(cfg => cfg.Bindings))
             {
-                if (_bindings.ContainsKey(bindRule.From))
+                if (_boundTypes.Contains(bindRule.From))
                 {
                     Logger.Warning(LoggingCodes.DuplicateBinding, $"Duplicate type bind for [{bindRule.From}] specified. First binding takes priority.");
                 }
                 else
                 {
-                    _bindings.Add(bindRule.From, bindRule.To);
+                    _boundTypes.Add(bindRule.From);
                 }
             }
 
@@ -210,23 +210,8 @@ namespace SharpGen.Parser
             return _group;
         }
         
-        private Dictionary<string, int> IncludeMacroCounts { get; } = new Dictionary<string, int>();
+        public Dictionary<string, int> IncludeMacroCounts { get; } = new Dictionary<string, int>();
 
-        /// <summary>
-        /// Prints the statistics.
-        /// </summary>
-        public void PrintStatistics()
-        {
-            var keys = IncludeMacroCounts.Keys.ToList();
-            keys.Sort(StringComparer.CurrentCultureIgnoreCase);
-
-            Logger.Message("Macro Statistics");
-            foreach (var key in keys)
-            {
-                Logger.Message("\t{0}\t{1}", key, IncludeMacroCounts[key]);
-            }
-            Logger.Message("\n");
-        }
 
         /// <summary>
         /// Parses the specified reader.
@@ -433,6 +418,10 @@ namespace SharpGen.Parser
                 {
                     cppCallingConvention = CppCallingConvention.CDecl;
                 }
+                else if (newItem.StartsWith("__thiscall__"))
+                {
+                    cppCallingConvention = CppCallingConvention.ThisCall;
+                }
                 else if (newItem.StartsWith("uuid("))
                 {
                     guid = newItem.Trim(')').Substring("uuid(".Length).Trim('"', '{', '}');
@@ -447,7 +436,7 @@ namespace SharpGen.Parser
 
 
             // Update CppElement based on its type
-            if (cppElement is CppParameter)
+            if (cppElement is CppParameter param)
             {
                 // Replace in & out with inout.
                 // Todo check to use in & out instead of inout
@@ -458,15 +447,15 @@ namespace SharpGen.Parser
                     paramAttribute |= ParamAttribute.InOut;
                 }
 
-                ((CppParameter) cppElement).Attribute = paramAttribute;
+                param.Attribute = paramAttribute;
             }
-            else if (cppElement is CppMethod && cppCallingConvention != CppCallingConvention.Unknown)
+            else if (cppElement is CppCallable callable && cppCallingConvention != CppCallingConvention.Unknown)
             {
-                ((CppMethod)cppElement).CallingConvention = cppCallingConvention;
+                callable.CallingConvention = cppCallingConvention;
             }
-            else if (cppElement is CppInterface && guid != null)
+            else if (cppElement is CppInterface iface && guid != null)
             {
-                ((CppInterface)cppElement).Guid = guid;
+                iface.Guid = guid;
             }
         }
 
@@ -478,22 +467,22 @@ namespace SharpGen.Parser
         /// <returns>The C++ parsed T.</returns>
         private T ParseCallable<T>(XElement xElement) where T : CppCallable, new()
         {
-            var cppMethod = new T { Name = xElement.AttributeValue("name") };
+            var cppCallable = new T { Name = xElement.AttributeValue("name") };
 
-            Logger.PushContext("Method:[{0}]", cppMethod.Name);
+            Logger.PushContext("Callable:[{0}]", cppCallable.Name);
 
             // Parse annotations
-            ParseAnnotations(xElement, cppMethod);
+            ParseAnnotations(xElement, cppCallable);
 
             // Parse parameters
-            ParseParameters(xElement, cppMethod);
+            ParseParameters(xElement, cppCallable);
 
-            cppMethod.ReturnValue = new CppReturnValue();
-            ResolveAndFillType(xElement.AttributeValue("returns"), cppMethod.ReturnValue);
+            cppCallable.ReturnValue = new CppReturnValue();
+            ResolveAndFillType(xElement.AttributeValue("returns"), cppCallable.ReturnValue);
 
             Logger.PopContext();
 
-            return cppMethod;
+            return cppCallable;
         }
 
         /// <summary>
@@ -970,7 +959,8 @@ namespace SharpGen.Parser
         /// <returns>
         /// 	<c>true</c> if the specified type has a binded in the mapping process; otherwise, <c>false</c>.
         /// </returns>
-        private bool IsTypeBinded(XElement type) => IsTypeFromIncludeToProcess(type) || _bindings.ContainsKey(type.AttributeValue("name"));
+        private bool IsTypeBinded(XElement type)
+            => IsTypeFromIncludeToProcess(type) || _boundTypes.Contains(type.AttributeValue("name"));
 
         /// <summary>
         /// Resolves a type to its fundamental type or a binded type.
@@ -1006,7 +996,7 @@ namespace SharpGen.Parser
                         isTypeResolved = true;
                         break;
                     case CastXml.TagTypedef:
-                        if (_bindings.ContainsKey(name))
+                        if (_boundTypes.Contains(name))
                         {
                             type.TypeName = name;
                             isTypeResolved = true;
