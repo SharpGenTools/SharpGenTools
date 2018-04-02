@@ -92,5 +92,48 @@ namespace SharpGen.UnitTests.Parsing
 
             Assert.Equal(guid.ToString(), iface.Guid);
         }
+
+        [Fact]
+        public void InheritingFromInterfaceDefinedInUnprocessedIncludeDoesntSetBase()
+        {
+            var externalCppFile = CreateCppFile("test", @"
+                struct Test
+                {
+                    virtual void Method() = 0;
+                };
+            ");
+
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(GuidAttribute),
+                Assembly = nameof(GuidAttribute),
+                Namespace = nameof(GuidAttribute),
+                IncludeProlog =
+                {
+                    "#define __declspec(x) __attribute__((annotate(#x)))\n"
+                },
+                IncludeDirs =
+                {
+                    GetTestFileIncludeRule()
+                },
+                Includes =
+                {
+                    CreateCppFile("attached", @"
+                        #include ""test.h""
+
+                        struct Attached : public Test
+                        {
+                           virtual void Method2() = 0;
+                        };
+                    "),
+                }
+            };
+
+            var model = ParseCpp(config);
+
+            var attached = model.FindFirst<CppInterface>("Attached");
+
+            Assert.Null(attached.Base);
+        }
     }
 }

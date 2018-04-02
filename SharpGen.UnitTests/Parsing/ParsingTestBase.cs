@@ -4,8 +4,10 @@ using SharpGen.Parser;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace SharpGen.UnitTests.Parsing
@@ -17,7 +19,7 @@ namespace SharpGen.UnitTests.Parsing
         protected ParsingTestBase(ITestOutputHelper outputHelper) : base(outputHelper)
         {
         }
-        
+
         public IncludeRule CreateCppFile(string cppFileName, string cppFile, [CallerMemberName] string testName = "")
         {
             var includesDir = TestDirectory.CreateSubdirectory("includes");
@@ -25,6 +27,18 @@ namespace SharpGen.UnitTests.Parsing
             return new IncludeRule
             {
                 Attach = true,
+                File = cppFileName + ".h",
+                Namespace = testName,
+            };
+        }
+
+        public IncludeRule CreateCppFile(string cppFileName, string cppFile, List<string> attaches, [CallerMemberName] string testName = "")
+        {
+            var includesDir = TestDirectory.CreateSubdirectory("includes");
+            File.WriteAllText(Path.Combine(includesDir.FullName, cppFileName + ".h"), cppFile);
+            return new IncludeRule
+            {
+                AttachTypes = attaches,
                 File = cppFileName + ".h",
                 Namespace = testName,
             };

@@ -503,10 +503,7 @@ namespace SharpGen.Parser
 
             // Enter Interface description
             Logger.PushContext("Interface:[{0}]", cppInterface.Name);
-
-            if (!IsTypeBinded(xElement))
-                Logger.Error(LoggingCodes.MissingBinding, "Binding is missing for interface type [{0}] defined in file [{1}]", cppInterface.Name, _mapIdToXElement[xElement.AttributeValue("file")].AttributeValue("name"));
-
+            
             // Calculate offset method using inheritance
             var offsetMethod = 0;
 
@@ -524,9 +521,9 @@ namespace SharpGen.Parser
                 CppInterface cppInterfaceBase = null;
                 Logger.RunInContext("Base", () => { cppInterfaceBase = ParseInterface(xElementBase); });
 
-                if (string.IsNullOrEmpty(cppInterface.Base))
+                if (string.IsNullOrEmpty(cppInterface.Base) && IsTypeBinded(xElementBase))
                     cppInterface.Base = cppInterfaceBase.Name;
-                
+
                 offsetMethod += cppInterfaceBase.TotalMethodCount;
             }
 

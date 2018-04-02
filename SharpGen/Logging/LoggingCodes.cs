@@ -36,8 +36,6 @@ namespace SharpGen.Logging
 
         public const string InvalidUnderlyingType = "SG0015";
 
-        public const string MissingBinding = "SG0016";
-
         public const string UnknownFundamentalType = "SG0017";
 
         public const string ImpossibleAlignment = "SG0018";
