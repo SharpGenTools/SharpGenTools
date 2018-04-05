@@ -123,11 +123,6 @@ namespace SharpGen.Parser
         public Logger Logger { get; }
 
         /// <summary>
-        /// List of error filters regexp.
-        /// </summary>
-        private List<Regex> FilterErrors { get; } = new List<Regex>();
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="CastXml"/> class.
         /// </summary>
         public CastXml(Logger logger, string executablePath)
@@ -144,26 +139,7 @@ namespace SharpGen.Parser
                 // Add all include directories
                 foreach (var includeDir in configFile.IncludeDirs)
                     IncludeDirectoryList.Add(includeDir);
-
-                foreach (var includeRule in configFile.Includes)
-                {
-                    foreach (var filterError in includeRule.FilterErrors)
-                    {
-                        AddFilterError(includeRule.File.ToLower(), filterError);
-                    }
-                }
             }
-        }
-
-        /// <summary>
-        /// Adds a filter error that will ignore a particular error from gccxml.
-        /// </summary>
-        /// <param name="file">The headerFile.</param>
-        /// <param name="regexpError">a regexp that filters a particular gccxml error message.</param>
-        private void AddFilterError(string file, string regexpError)
-        {
-            var fullRegexpError = @"[\\/]" + Regex.Escape(file) + ":.*" + regexpError;
-            FilterErrors.Add(new Regex(fullRegexpError));
         }
 
         /// <summary>
@@ -403,17 +379,7 @@ namespace SharpGen.Parser
                 {
 
                     var matchError = matchFileErrorRegex.Match(e.Data);
-
-                    bool lineFiltered = false;
-                    foreach (var filterError in FilterErrors)
-                    {
-                        if (filterError.Match(e.Data).Success)
-                        {
-                            lineFiltered = true;
-                            break;
-                        }
-
-                    }
+                    
                     string errorText = e.Data;
 
                     if (matchError.Success)
@@ -423,17 +389,10 @@ namespace SharpGen.Parser
                         errorText = matchError.Groups[4].Value;
                     }
 
-                    if (!lineFiltered)
-                    {
-                        if (MatchError.Match(e.Data).Success)
-                            Logger.Error(LoggingCodes.CastXmlError, errorText);
-                        else
-                            Logger.Warning(LoggingCodes.CastXmlWarning, errorText);
-                    }
+                    if (MatchError.Match(e.Data).Success)
+                        Logger.Error(LoggingCodes.CastXmlError, errorText);
                     else
-                    {
                         Logger.Warning(LoggingCodes.CastXmlWarning, errorText);
-                    }
                 }
             }
             finally

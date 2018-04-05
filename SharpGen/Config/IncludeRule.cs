@@ -33,7 +33,6 @@ namespace SharpGen.Config
         public IncludeRule()
         {
             AttachTypes = new List<string>();
-            FilterErrors = new List<string>();
         }
 
         /// <summary>
@@ -111,13 +110,6 @@ namespace SharpGen.Config
         /// <value>The post.</value>
         [XmlElement("attach")]
         public List<string> AttachTypes{ get; set; }
-
-        /// <summary>
-        /// Gets or sets the ignore errors.
-        /// </summary>
-        /// <value>The ignore errors.</value>
-        [XmlElement("filter-error")]
-        public List<string> FilterErrors { get; set; }
 
         /// <summary>
         /// Returns a <see cref="System.String"/> that represents this instance.
