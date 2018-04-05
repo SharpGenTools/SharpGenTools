@@ -141,59 +141,7 @@ namespace SharpGen.Parser
                     IncludeDirectoryList.Add(includeDir);
             }
         }
-
-        /// <summary>
-        /// Preprocesses the specified header file.
-        /// </summary>
-        /// <param name="headerFile">The header file.</param>
-        /// <param name="handler">The handler.</param>
-        public void Preprocess(string headerFile, DataReceivedEventHandler handler)
-        {
-            Logger.RunInContext("castxml", () =>
-                    {
-                        if (!File.Exists(ExecutablePath))
-                            Logger.Fatal("castxml.exe not found from path: [{0}]", ExecutablePath);
-
-                        if (!File.Exists(headerFile))
-                            Logger.Fatal("C++ Header file [{0}] not found", headerFile);
-
-                        using (var currentProcess = new Process())
-                        {
-                            var startInfo = new ProcessStartInfo(ExecutablePath)
-                            {
-                                RedirectStandardOutput = true,
-                                RedirectStandardError = true,
-                                UseShellExecute = false,
-                                CreateNoWindow = true,
-                                WorkingDirectory = OutputPath
-                            };
-
-                            var arguments = GetCastXmlArgs();
-                            arguments += " -E -dD";
-                            var builder = new System.Text.StringBuilder();
-                            builder.Append(arguments);
-
-                            foreach (var directory in GetIncludePaths())
-                            {
-                                builder.Append(" ").Append(directory);
-                            }
-                            arguments = builder.ToString();
-
-                            startInfo.Arguments = arguments + " " + headerFile;
-                            Logger.Message($"Preprocessor arguments: {builder}");
-                            currentProcess.StartInfo = startInfo;
-                            currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
-                            currentProcess.OutputDataReceived += handler;
-                            currentProcess.Start();
-                            currentProcess.BeginOutputReadLine();
-                            currentProcess.BeginErrorReadLine();
-
-                            currentProcess.WaitForExit();
-                        }
-
-                    });
-        }
-
+        
         private List<string> GetIncludePaths()
         {
             var paths = new List<string>();
@@ -284,6 +232,27 @@ namespace SharpGen.Parser
             return (path, success);
         }
 
+
+        /// <summary>
+        /// Preprocesses the specified header file.
+        /// </summary>
+        /// <param name="headerFile">The header file.</param>
+        /// <param name="handler">The handler.</param>
+        public void Preprocess(string headerFile, DataReceivedEventHandler handler)
+        {
+            Logger.RunInContext("Preprocess", () =>
+            {
+                if (!File.Exists(ExecutablePath))
+                    Logger.Fatal("castxml.exe not found from path: [{0}]", ExecutablePath);
+
+                if (!File.Exists(headerFile))
+                    Logger.Fatal("C++ Header file [{0}] not found", headerFile);
+
+                RunCastXml(headerFile, handler, "-E -dD");
+
+            });
+        }
+
         /// <summary>
         /// Processes the specified header headerFile.
         /// </summary>
@@ -293,7 +262,7 @@ namespace SharpGen.Parser
         {
             StreamReader result = null;
 
-            Logger.RunInContext("castxml", () =>
+            Logger.RunInContext("Processor", () =>
             {
                 if (!File.Exists(ExecutablePath)) Logger.Fatal("castxml.exe not found from path: [{0}]", ExecutablePath);
 
@@ -301,44 +270,10 @@ namespace SharpGen.Parser
 
                 var xmlFile = Path.ChangeExtension(headerFile, "xml");
 
-                using (var currentProcess = new Process())
-                {
-                    var startInfo = new ProcessStartInfo(ExecutablePath)
-                    {
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                        WorkingDirectory = OutputPath
-                    };
+                // Delete any previously generated xml file
+                File.Delete(xmlFile);
 
-                    // Delete any previously generated xml file
-                    File.Delete(xmlFile);
-                    
-                    var builder = new System.Text.StringBuilder();
-                    builder.Append(GetCastXmlArgs());
-                    builder.Append(" -o ");
-                    builder.Append(xmlFile);
-
-                    foreach (var directory in GetIncludePaths())
-                    {
-                        builder.Append(" ").Append(directory);
-                    }
-
-                    var arguments = builder.ToString();
-
-                    startInfo.Arguments = arguments + " " + headerFile;
-
-                    Logger.Message($"Processor arguments: {builder}");
-                    currentProcess.StartInfo = startInfo;
-                    currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
-                    currentProcess.OutputDataReceived += ProcessOutputFromHeaderFile;
-                    currentProcess.Start();
-                    currentProcess.BeginOutputReadLine();
-                    currentProcess.BeginErrorReadLine();
-
-                    currentProcess.WaitForExit();
-                }
+                RunCastXml(headerFile, LogCastXmlOutput, $"-o {xmlFile}");
 
                 if (!File.Exists(xmlFile) || Logger.HasErrors)
                 {
@@ -353,6 +288,47 @@ namespace SharpGen.Parser
             return result;
         }
 
+        private void RunCastXml(string headerFile, DataReceivedEventHandler outputDataCallback, string additionalArguments)
+        {
+            using (var currentProcess = new Process())
+            {
+                var startInfo = new ProcessStartInfo(ExecutablePath)
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    WorkingDirectory = OutputPath
+                };
+
+                var arguments = GetCastXmlArgs();
+                var builder = new System.Text.StringBuilder();
+                builder.Append(arguments).Append(" ").Append(additionalArguments);
+
+                foreach (var directory in GetIncludePaths())
+                {
+                    builder.Append(" ").Append(directory);
+                }
+                arguments = builder.ToString();
+
+                startInfo.Arguments = arguments + " " + headerFile;
+                Logger.Message($"CastXML {builder}");
+                currentProcess.StartInfo = startInfo;
+                currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
+                currentProcess.OutputDataReceived += outputDataCallback;
+                currentProcess.Start();
+                currentProcess.BeginOutputReadLine();
+                currentProcess.BeginErrorReadLine();
+
+                currentProcess.WaitForExit();
+
+                if (Logger.HasErrors)
+                {
+                    Logger.Error(LoggingCodes.CastXmlFailed, "Failed to run CastXML. Check previous errors.");
+                }
+            }
+        }
+
         private static string GetCastXmlArgs()
         {
             var arguments = "";
@@ -362,7 +338,7 @@ namespace SharpGen.Parser
             return arguments;
         }
 
-        // E:/Code/Microsoft DirectX SDK (June 2010)//include/xaudio2fx.h:68:1: error:
+        // path/to/header.h:68:1: error:
         private static Regex matchFileErrorRegex = new Regex(@"^(.*):(\d+):(\d+):\s+error:(.*)");
 
         /// <summary>
@@ -407,7 +383,7 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="sender">The sender.</param>
         /// <param name="e">The <see cref="System.Diagnostics.DataReceivedEventArgs"/> instance containing the event data.</param>
-        void ProcessOutputFromHeaderFile(object sender, DataReceivedEventArgs e)
+        void LogCastXmlOutput(object sender, DataReceivedEventArgs e)
         {
             if (e.Data != null)
                 Logger.Message(e.Data);
