@@ -82,5 +82,88 @@ namespace SharpGen.UnitTests.Parsing
             Assert.NotNull(field2);
             Assert.Equal(0, field2.Offset);
         }
+
+        [Fact]
+        public void BitfieldStructHasCorrectBitOffsets()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(BitfieldStructHasCorrectBitOffsets),
+                Namespace = nameof(BitfieldStructHasCorrectBitOffsets),
+                Assembly = nameof(BitfieldStructHasCorrectBitOffsets),
+                IncludeDirs = { GetTestFileIncludeRule() },
+                Includes =
+                {
+                    CreateCppFile("bitfield", @"
+                        struct Test
+                        {
+                            int bitfield1 : 8;
+                            int bitfield2 : 6;
+                        };
+                    ")
+                }
+            };
+
+            var model = ParseCpp(config);
+
+            var generatedStruct = model.FindFirst<CppStruct>("Test");
+
+            var firstBitField = generatedStruct.FindFirst<CppField>("Test::bitfield1");
+
+            Assert.Equal(8, firstBitField.BitOffset);
+            Assert.True(firstBitField.IsBitField);
+            Assert.Equal(0, firstBitField.Offset);
+
+            var secondBitField = generatedStruct.FindFirst<CppField>("Test::bitfield2");
+
+            Assert.Equal(6, secondBitField.BitOffset);
+            Assert.True(secondBitField.IsBitField);
+            Assert.Equal(0, secondBitField.Offset);
+        }
+
+        [Fact(Skip = "Issue #48")]
+        public void MultipleBitfieldsHaveCorrectBitOffsets()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(MultipleBitfieldsHaveCorrectBitOffsets),
+                Namespace = nameof(MultipleBitfieldsHaveCorrectBitOffsets),
+                Assembly = nameof(MultipleBitfieldsHaveCorrectBitOffsets),
+                IncludeDirs = { GetTestFileIncludeRule() },
+                Includes =
+                {
+                    CreateCppFile("multibitfield", @"
+                        struct Test
+                        {
+                            int bitfield1 : 16;
+                            int field;
+                            int bitfield2 : 16;
+                        };
+                    ")
+                }
+            };
+
+            var model = ParseCpp(config);
+
+            var generatedStruct = model.FindFirst<CppStruct>("Test");
+
+            var firstBitField = generatedStruct.FindFirst<CppField>("Test::bitfield1");
+
+            Assert.Equal(16, firstBitField.BitOffset);
+            Assert.True(firstBitField.IsBitField);
+            Assert.Equal(0, firstBitField.Offset);
+
+            var field = generatedStruct.FindFirst<CppField>("Test::field");
+
+            Assert.Equal(1, field.Offset);
+
+            var secondBitField = generatedStruct.FindFirst<CppField>("Test::bitfield2");
+
+            Assert.Equal(16, secondBitField.BitOffset);
+            Assert.True(secondBitField.IsBitField);
+            Assert.Equal(2, secondBitField.Offset);
+
+
+        }
     }
 }
