@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32;
 using SharpGen.Config;
@@ -42,21 +43,28 @@ namespace SharpGen.Parser
                     // Is Using registry?
                     if (path.StartsWith("="))
                     {
-                        var registryPath = path.Substring(1);
-                        var indexOfSubPath = directory.Path.IndexOf(";");
-                        var subPath = "";
-                        if (indexOfSubPath >= 0)
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                         {
-                            subPath = registryPath.Substring(indexOfSubPath + 1);
-                            registryPath = registryPath.Substring(0, indexOfSubPath);
+                            var registryPath = path.Substring(1);
+                            var indexOfSubPath = directory.Path.IndexOf(";");
+                            var subPath = "";
+                            if (indexOfSubPath >= 0)
+                            {
+                                subPath = registryPath.Substring(indexOfSubPath + 1);
+                                registryPath = registryPath.Substring(0, indexOfSubPath);
+                            }
+
+                            var (registryPathPortion, success) = ResolveRegistryDirectory(registryPath);
+
+                            if (!success)
+                                continue;
+
+                            path = Path.Combine(registryPathPortion, subPath); 
                         }
-                        
-                        var (registryPathPortion, success) = ResolveRegistryDirectory(registryPath);
-
-                        if (!success)
-                            continue;
-
-                        path = Path.Combine(registryPathPortion, subPath);
+                        else
+                        {
+                            logger.Error(LoggingCodes.RegistryKeyNotFound, "Unable to resolve registry paths when not on Windows.");
+                        }
                     }
 
                     if (directory.IsOverride)
