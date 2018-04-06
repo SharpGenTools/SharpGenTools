@@ -50,8 +50,8 @@ namespace SharpGen.Parser
                             var subPath = "";
                             if (indexOfSubPath >= 0)
                             {
-                                subPath = registryPath.Substring(indexOfSubPath + 1);
-                                registryPath = registryPath.Substring(0, indexOfSubPath);
+                                subPath = registryPath.Substring(indexOfSubPath);
+                                registryPath = registryPath.Substring(0, indexOfSubPath - 1);
                             }
 
                             var (registryPathPortion, success) = ResolveRegistryDirectory(registryPath);
