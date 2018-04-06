@@ -365,5 +365,91 @@ namespace SharpGen.UnitTests.Mapping
 
             Assert.True(field.IsBoolToInt);
         }
+
+        [Fact]
+        public void MultipleBitfieldOffsetsGeneratedCorrectly()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(AsParameterByValueMarkedAsMarshalToNative),
+                Namespace = nameof(AsParameterByValueMarkedAsMarshalToNative),
+                Assembly = nameof(AsParameterByValueMarkedAsMarshalToNative),
+                Includes =
+                {
+                    new Config.IncludeRule
+                    {
+                        File = "test.h",
+                        Attach = true,
+                        Namespace = nameof(AsParameterByValueMarkedAsMarshalToNative)
+                    }
+                },
+                Bindings =
+                {
+                    new Config.BindRule("int", "System.Int32")
+                }
+            };
+
+
+            var structure = new CppStruct
+            {
+                Name = "Test"
+            };
+
+            structure.Add(new CppField
+            {
+                Name = "bitfield1",
+                TypeName = "int",
+                IsBitField = true,
+                BitOffset = 16,
+                Offset = 0,
+            });
+            structure.Add(new CppField
+            {
+                Name = "field",
+                TypeName = "int",
+                Offset = 1,
+            });
+            structure.Add(new CppField
+            {
+                Name = "bitfield2",
+                TypeName = "int",
+                IsBitField = true,
+                BitOffset = 16,
+                Offset = 2
+            });
+
+            var include = new CppInclude
+            {
+                Name = "test"
+            };
+
+            include.Add(structure);
+
+            var module = new CppModule();
+            module.Add(include);
+
+            var (solution, _) = MapModel(module, config);
+
+            var csStruct = solution.EnumerateDescendants().OfType<CsStruct>().First();
+
+            var bitField1 = csStruct.Fields.First(field => field.Name == "Bitfield1");
+
+            Assert.Equal(0, bitField1.BitOffset);
+            Assert.Equal(0, bitField1.Offset);
+            Assert.Equal((1 << 16) - 1, bitField1.BitMask);
+            Assert.True(bitField1.IsBitField);
+
+            var csField = csStruct.Fields.First(field => field.Name == "Field");
+
+            Assert.Equal(4, csField.Offset);
+            Assert.False(csField.IsBitField);
+
+            var bitField2 = csStruct.Fields.First(field => field.Name == "Bitfield2");
+
+            Assert.Equal(0, bitField2.BitOffset);
+            Assert.Equal(8, bitField2.Offset);
+            Assert.Equal((1 << 16) - 1, bitField2.BitMask);
+            Assert.True(bitField2.IsBitField);
+        }
     }
 }

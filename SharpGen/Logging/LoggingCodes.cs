@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SharpGen.Logging
 {
-    class LoggingCodes
+    public class LoggingCodes
     {
         public const string MissingConfigDependency = "SG0001";
 
@@ -35,8 +35,6 @@ namespace SharpGen.Logging
         public const string DuplicateBinding = "SG0014";
 
         public const string InvalidUnderlyingType = "SG0015";
-
-        public const string MissingBinding = "SG0016";
 
         public const string UnknownFundamentalType = "SG0017";
 

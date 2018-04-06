@@ -209,12 +209,13 @@ namespace SharpGen.Interactive
 
                 if (cppHeadersUpdated.Count != 0)
                 {
-                    var castXml = new CastXml(Logger, CastXmlExecutablePath)
+                    var resolver = new IncludeDirectoryResolver(Logger);
+                    resolver.Configure(Config);
+
+                    var castXml = new CastXml(Logger, resolver, CastXmlExecutablePath)
                     {
                         OutputPath = IntermediateOutputPath,
                     };
-
-                    castXml.Configure(Config);
 
                     group = GenerateExtensionHeaders(filesWithExtensions, cppHeadersUpdated, castXml);
                     group = ParseCpp(castXml, group);
@@ -418,9 +419,26 @@ namespace SharpGen.Interactive
             }
 
             // Print statistics
-            parser.PrintStatistics();
+            PrintStatistics(parser);
 
             return group;
+        }
+
+
+        /// <summary>
+        /// Prints the statistics.
+        /// </summary>
+        private void PrintStatistics(CppParser parser)
+        {
+            var keys = parser.IncludeMacroCounts.Keys.ToList();
+            keys.Sort(StringComparer.CurrentCultureIgnoreCase);
+
+            Logger.Message("Macro Statistics");
+            foreach (var key in keys)
+            {
+                Logger.Message("\t{0}\t{1}", key, parser.IncludeMacroCounts[key]);
+            }
+            Logger.Message("\n");
         }
 
         private CppModule GenerateExtensionHeaders(IReadOnlyCollection<string> filesWithExtensions, IReadOnlyCollection<ConfigFile> updatedConfigs, CastXml castXml)

@@ -129,6 +129,7 @@ namespace SharpGen.Parser
         /// Creates a C++ variable declaration from a macro rule.
         /// </summary>
         /// <param name="cstRule">The macro rule.</param>
+        /// <param name="finder">The element finder to find the macro definitions in.</param>
         /// <returns>A C++ variable declaration string</returns>
         private string CreateVariableFromMacro(CppElementFinder finder, ConstantRule cstRule)
         {

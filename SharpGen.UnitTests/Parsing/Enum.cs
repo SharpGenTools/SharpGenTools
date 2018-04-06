@@ -115,5 +115,33 @@ namespace SharpGen.UnitTests.Parsing
 
             Assert.Equal("short", cppEnum.UnderlyingType);
         }
+
+
+        [Fact]
+        public void AnonymousEnumAssignedExpectedName()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(AnonymousEnumAssignedExpectedName),
+                Assembly = nameof(AnonymousEnumAssignedExpectedName),
+                Namespace = nameof(AnonymousEnumAssignedExpectedName),
+                IncludeDirs =
+                {
+                    GetTestFileIncludeRule()
+                },
+                Includes =
+                {
+                    CreateCppFile("cppEnum", @"
+                        enum {
+                            Element1
+                        };
+                    ")
+                }
+            };
+
+            var model = ParseCpp(config);
+
+            Assert.Single(model.Find<CppEnum>("CPPENUM_ENUM_0"));
+        }
     }
 }

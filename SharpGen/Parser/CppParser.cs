@@ -51,7 +51,7 @@ namespace SharpGen.Parser
         private readonly HashSet<string> _includeToProcess = new HashSet<string>();
         private readonly Dictionary<string, bool> _includeIsAttached = new Dictionary<string, bool>();
         private readonly Dictionary<string, HashSet<string>> _includeAttachedTypes = new Dictionary<string, HashSet<string>>();
-        private readonly Dictionary<string, string> _bindings = new Dictionary<string, string>();
+        private readonly HashSet<string> _boundTypes = new HashSet<string>();
         private readonly CastXml _gccxml;
         private ConfigFile _configRoot;
         private CppInclude _currentCppInclude;
@@ -78,13 +78,13 @@ namespace SharpGen.Parser
             
             foreach (var bindRule in _configRoot.ConfigFilesLoaded.SelectMany(cfg => cfg.Bindings))
             {
-                if (_bindings.ContainsKey(bindRule.From))
+                if (_boundTypes.Contains(bindRule.From))
                 {
                     Logger.Warning(LoggingCodes.DuplicateBinding, $"Duplicate type bind for [{bindRule.From}] specified. First binding takes priority.");
                 }
                 else
                 {
-                    _bindings.Add(bindRule.From, bindRule.To);
+                    _boundTypes.Add(bindRule.From);
                 }
             }
 
@@ -210,23 +210,8 @@ namespace SharpGen.Parser
             return _group;
         }
         
-        private Dictionary<string, int> IncludeMacroCounts { get; } = new Dictionary<string, int>();
+        public Dictionary<string, int> IncludeMacroCounts { get; } = new Dictionary<string, int>();
 
-        /// <summary>
-        /// Prints the statistics.
-        /// </summary>
-        public void PrintStatistics()
-        {
-            var keys = IncludeMacroCounts.Keys.ToList();
-            keys.Sort(StringComparer.CurrentCultureIgnoreCase);
-
-            Logger.Message("Macro Statistics");
-            foreach (var key in keys)
-            {
-                Logger.Message("\t{0}\t{1}", key, IncludeMacroCounts[key]);
-            }
-            Logger.Message("\n");
-        }
 
         /// <summary>
         /// Parses the specified reader.
@@ -257,27 +242,7 @@ namespace SharpGen.Parser
             }
 
             // Fix all structure names
-            foreach (var xTypedef in doc.Elements("GCC_XML").Elements())
-            {
-                if (xTypedef.Name.LocalName == CastXml.TagTypedef)
-                {
-                    var xStruct = _mapIdToXElement[xTypedef.AttributeValue("type")];
-                    switch (xStruct.Name.LocalName)
-                    {
-                        case CastXml.TagStruct:
-                        case CastXml.TagUnion:
-                        case CastXml.TagEnumeration:
-                            var structName = xStruct.AttributeValue("name");
-                            // Rename all structure starting with tagXXXX to XXXX
-                            if (structName.StartsWith("tag") || structName.StartsWith("_") || string.IsNullOrEmpty(structName))
-                            {
-                                var typeName = xTypedef.AttributeValue("name");
-                                xStruct.SetAttributeValue("name", typeName);
-                            }
-                            break;
-                    }
-                }
-            }
+            AdjustTypeNamesFromTypedefs(doc);
 
             // Find all elements that are referring to a context and attach them to
             // the context as child elements
@@ -290,8 +255,30 @@ namespace SharpGen.Parser
                     _mapIdToXElement[id].Add(xElement);
                 }
             }
-            
+
             ParseAllElements();
+        }
+
+        private void AdjustTypeNamesFromTypedefs(XDocument doc)
+        {
+            foreach (var xTypedef in doc.Elements("GCC_XML").Elements(CastXml.TagTypedef))
+            {
+                var xStruct = _mapIdToXElement[xTypedef.AttributeValue("type")];
+                switch (xStruct.Name.LocalName)
+                {
+                    case CastXml.TagStruct:
+                    case CastXml.TagUnion:
+                    case CastXml.TagEnumeration:
+                        var structName = xStruct.AttributeValue("name");
+                        // Rename all structure starting with tagXXXX to XXXX
+                        if (structName.StartsWith("tag") || structName.StartsWith("_") || string.IsNullOrEmpty(structName))
+                        {
+                            var typeName = xTypedef.AttributeValue("name");
+                            xStruct.SetAttributeValue("name", typeName);
+                        }
+                        break;
+                }
+            }
         }
 
         /// <summary>
@@ -433,6 +420,10 @@ namespace SharpGen.Parser
                 {
                     cppCallingConvention = CppCallingConvention.CDecl;
                 }
+                else if (newItem.StartsWith("__thiscall__"))
+                {
+                    cppCallingConvention = CppCallingConvention.ThisCall;
+                }
                 else if (newItem.StartsWith("uuid("))
                 {
                     guid = newItem.Trim(')').Substring("uuid(".Length).Trim('"', '{', '}');
@@ -447,7 +438,7 @@ namespace SharpGen.Parser
 
 
             // Update CppElement based on its type
-            if (cppElement is CppParameter)
+            if (cppElement is CppParameter param)
             {
                 // Replace in & out with inout.
                 // Todo check to use in & out instead of inout
@@ -458,15 +449,15 @@ namespace SharpGen.Parser
                     paramAttribute |= ParamAttribute.InOut;
                 }
 
-                ((CppParameter) cppElement).Attribute = paramAttribute;
+                param.Attribute = paramAttribute;
             }
-            else if (cppElement is CppMethod && cppCallingConvention != CppCallingConvention.Unknown)
+            else if (cppElement is CppCallable callable && cppCallingConvention != CppCallingConvention.Unknown)
             {
-                ((CppMethod)cppElement).CallingConvention = cppCallingConvention;
+                callable.CallingConvention = cppCallingConvention;
             }
-            else if (cppElement is CppInterface && guid != null)
+            else if (cppElement is CppInterface iface && guid != null)
             {
-                ((CppInterface)cppElement).Guid = guid;
+                iface.Guid = guid;
             }
         }
 
@@ -478,22 +469,22 @@ namespace SharpGen.Parser
         /// <returns>The C++ parsed T.</returns>
         private T ParseCallable<T>(XElement xElement) where T : CppCallable, new()
         {
-            var cppMethod = new T { Name = xElement.AttributeValue("name") };
+            var cppCallable = new T { Name = xElement.AttributeValue("name") };
 
-            Logger.PushContext("Method:[{0}]", cppMethod.Name);
+            Logger.PushContext("Callable:[{0}]", cppCallable.Name);
 
             // Parse annotations
-            ParseAnnotations(xElement, cppMethod);
+            ParseAnnotations(xElement, cppCallable);
 
             // Parse parameters
-            ParseParameters(xElement, cppMethod);
+            ParseParameters(xElement, cppCallable);
 
-            cppMethod.ReturnValue = new CppReturnValue();
-            ResolveAndFillType(xElement.AttributeValue("returns"), cppMethod.ReturnValue);
+            cppCallable.ReturnValue = new CppReturnValue();
+            ResolveAndFillType(xElement.AttributeValue("returns"), cppCallable.ReturnValue);
 
             Logger.PopContext();
 
-            return cppMethod;
+            return cppCallable;
         }
 
         /// <summary>
@@ -515,9 +506,6 @@ namespace SharpGen.Parser
             // Enter Interface description
             Logger.PushContext("Interface:[{0}]", cppInterface.Name);
 
-            if (!IsTypeBinded(xElement))
-                Logger.Error(LoggingCodes.MissingBinding, "Binding is missing for interface type [{0}] defined in file [{1}]", cppInterface.Name, _mapIdToXElement[xElement.AttributeValue("file")].AttributeValue("name"));
-
             // Calculate offset method using inheritance
             var offsetMethod = 0;
 
@@ -530,14 +518,13 @@ namespace SharpGen.Parser
 
                 var xElementBase = _mapIdToXElement[xElementBaseId];
                 var baseTypeName = xElementBase.AttributeValue("name");
-                var baseTypeFile = _mapIdToXElement[xElementBase.AttributeValue("file")].AttributeValue("name");
 
                 CppInterface cppInterfaceBase = null;
                 Logger.RunInContext("Base", () => { cppInterfaceBase = ParseInterface(xElementBase); });
 
-                if (string.IsNullOrEmpty(cppInterface.Base))
+                if (string.IsNullOrEmpty(cppInterface.Base) && IsTypeBinded(xElementBase))
                     cppInterface.Base = cppInterfaceBase.Name;
-                
+
                 offsetMethod += cppInterfaceBase.TotalMethodCount;
             }
 
@@ -558,10 +545,28 @@ namespace SharpGen.Parser
                 }
             }
 
+            FixMethodAbiOrdering(methods);
+
+            // Add the methods to the interface with the correct offsets
+            foreach (var cppMethod in methods)
+            {
+                cppMethod.Offset = offsetMethod++;
+                cppInterface.Add(cppMethod);
+            }
+
+            cppInterface.TotalMethodCount = offsetMethod;
+
+            // Leave Interface
+            Logger.PopContext();
+
+            return cppInterface;
+        }
+
+        private static void FixMethodAbiOrdering(List<CppMethod> methods)
+        {
             // The Visual C++ compiler breaks the rules of the COM ABI when overloaded methods are used.
             // It will group the overloads together in memory and lay them out in the reverse of their declaration order.
             // Since GCC always lays them out in the order declared, we have to modify the order of the methods to match Visual C++.
-            // See http://support.microsoft.com/kb/131104 for more information.
             for (int i = 0; i < methods.Count; i++)
             {
                 var name = methods[i].Name;
@@ -584,20 +589,6 @@ namespace SharpGen.Parser
                     }
                 }
             }
-
-            // Add the methods to the interface with the correct offsets
-            foreach (var cppMethod in methods)
-            {
-                cppMethod.Offset = offsetMethod++;
-                cppInterface.Add(cppMethod);
-            }
-
-            cppInterface.TotalMethodCount = offsetMethod;
-
-            // Leave Interface
-            Logger.PopContext();
-
-            return cppInterface;
         }
 
         /// <summary>
@@ -605,9 +596,14 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="xElement">The gccxml <see cref="XElement"/> that describes a C++ structure field declaration.</param>
         /// <returns>A C++ field parsed</returns>
-        private CppField ParseField(XElement xElement)
+        private CppField ParseField(XElement xElement, int fieldOffset)
         {
-            var cppField = new CppField { Name = xElement.AttributeValue("name") };
+            var fieldName = xElement.AttributeValue("name");
+            var cppField = new CppField
+            {
+                Name = string.IsNullOrEmpty(fieldName) ? $"field{fieldOffset}" : fieldName,
+                Offset = fieldOffset
+            };
 
             Logger.PushContext("Field:[{0}]", cppField.Name);
 
@@ -641,18 +637,7 @@ namespace SharpGen.Parser
                 return cppStruct;
 
             // Build struct name directly from the struct name or based on the parent
-            var structName = xElement.AttributeValue("name") ?? "";
-            if (cppParent != null)
-            {
-                if (string.IsNullOrEmpty(structName))
-                {
-                    structName = cppParent.Name + "_INNER_" + innerAnonymousIndex;
-                }
-                else
-                {
-                    structName = cppParent.Name + "_" + structName + "_INNER";
-                }
-            }
+            var structName = GetStructName(xElement, cppParent, innerAnonymousIndex);
 
             // Create struct
             cppStruct = new CppStruct { Name = structName };
@@ -660,7 +645,7 @@ namespace SharpGen.Parser
             var isUnion = (xElement.Name.LocalName == CastXml.TagUnion);
 
             // Get align from structure
-            cppStruct.Align = int.Parse(xElement.AttributeValue("align"))/8;
+            cppStruct.Align = int.Parse(xElement.AttributeValue("align")) / 8;
 
             // By default, packing is platform x86/x64 dependent (4 or 8)
             // but because gccxml is running in x86, it outputs 4
@@ -674,19 +659,8 @@ namespace SharpGen.Parser
 
             var basesValue = xElement.AttributeValue("bases");
             var bases = basesValue != null ? basesValue.Split(' ') : Enumerable.Empty<string>();
-            foreach (var xElementBaseId in bases)
-            {
-                if (string.IsNullOrEmpty(xElementBaseId))
-                    continue;
 
-                var xElementBase = _mapIdToXElement[xElementBaseId];
-
-                CppStruct cppStructBase = null;
-                Logger.RunInContext("Base", () => { cppStructBase = ParseStructOrUnion(xElementBase); });
-
-                if (string.IsNullOrEmpty(cppStructBase.Base))
-                    cppStruct.Base = cppStructBase.Name;
-            }
+            cppStruct.Base = GetStructDirectBase(bases);
 
             // Parse all fields
             var fieldOffset = 0;
@@ -697,8 +671,7 @@ namespace SharpGen.Parser
                     continue;
 
                 // Parse the field
-                var cppField = ParseField(field);
-                cppField.Offset = fieldOffset;
+                var cppField = ParseField(field, fieldOffset);
 
                 // Test if the field type is declared inside this struct or union
                 var fieldName = field.AttributeValue("name");
@@ -707,31 +680,9 @@ namespace SharpGen.Parser
                 {
                     var fieldSubStruct = ParseStructOrUnion(fieldType, cppStruct, innerStructCount++);
 
-                    // If fieldName is empty, then we need to inline fields from the struct/union.
-                    if (string.IsNullOrEmpty(fieldName))
-                    {
-                        // Make a copy in order to remove fields
-                        var listOfSubFields = new List<CppField>(fieldSubStruct.Fields);
-                        // Copy the current field offset
-                        var lastFieldOffset = fieldOffset;
-                        foreach (var subField in listOfSubFields)
-                        {
-                            subField.Offset = subField.Offset + fieldOffset;
-                            cppStruct.Add(subField);
-                            lastFieldOffset = subField.Offset;
-                        }
-                        // Set the current field offset according to the inlined fields
-                        if (!isUnion)
-                            fieldOffset = lastFieldOffset;
-                        // Don't add the current field, as it is actually an inline struct/union
-                        cppField = null;
-                    }
-                    else
-                    {
-                        // Get the type name from the inner-struct and set it to the field
-                        cppField.TypeName = fieldSubStruct.Name;
-                        _currentCppInclude.Add(fieldSubStruct);
-                    }
+                    // Get the type name from the inner-struct and set it to the field
+                    cppField.TypeName = fieldSubStruct.Name;
+                    _currentCppInclude.Add(fieldSubStruct);
                 }
 
                 // Go to next field offset if not in union
@@ -754,6 +705,44 @@ namespace SharpGen.Parser
             Logger.PopContext();
 
             return cppStruct;
+        }
+
+        private string GetStructDirectBase(IEnumerable<string> bases)
+        {
+            string baseName = default;
+            foreach (var xElementBaseId in bases)
+            {
+                if (string.IsNullOrEmpty(xElementBaseId))
+                    continue;
+
+                var xElementBase = _mapIdToXElement[xElementBaseId];
+
+                CppStruct cppStructBase = null;
+                Logger.RunInContext("Base", () => { cppStructBase = ParseStructOrUnion(xElementBase); });
+
+                if (string.IsNullOrEmpty(cppStructBase.Base))
+                    baseName = cppStructBase.Name;
+            }
+
+            return baseName;
+        }
+
+        private static string GetStructName(XElement xElement, CppElement cppParent, int innerAnonymousIndex)
+        {
+            var structName = xElement.AttributeValue("name") ?? "";
+            if (cppParent != null)
+            {
+                if (string.IsNullOrEmpty(structName))
+                {
+                    structName = cppParent.Name + "_INNER_" + innerAnonymousIndex;
+                }
+                else
+                {
+                    structName = cppParent.Name + "_" + structName + "_INNER";
+                }
+            }
+
+            return structName;
         }
 
         /// <summary>
@@ -805,7 +794,7 @@ namespace SharpGen.Parser
             ResolveAndFillType(xElement.AttributeValue("type"), cppMarshallable);
 
 
-            var value = xElement.AttributeValue("init");
+            var value = xElement.AttributeValue("init") ?? string.Empty;
             if (cppMarshallable.TypeName == "GUID")
             {
                 var guid = ParseGuid(value);
@@ -892,60 +881,66 @@ namespace SharpGen.Parser
                     _group.Add(_currentCppInclude);
                 }
 
-                foreach (var xElement in _mapFileToXElement[includeGccXmlId])
-                {
-                    // If the element is not defined from a root namespace
-                    // than skip it, as it might be an inner type
-                    if (_mapIdToXElement[xElement.AttributeValue("context")].Name.LocalName != CastXml.TagNamespace)
-                        continue;
-
-                    // If incomplete flag, than element cannot be parsed
-                    if (xElement.AttributeValue("incomplete") != null)
-                        continue;
-
-                    var castXmlTag = xElement.Name.LocalName;
-
-                    var elementName = xElement.AttributeValue("name");
-
-                    // If this include is partially attached and the current type is not attached
-                    // Than skip it, as we are not mapping it
-                    if (!isIncludeFullyAttached && !_includeAttachedTypes[includeId].Contains(elementName))
-                        continue;
-
-                    // Ignore CastXML built-in functions
-                    if (elementName.StartsWith("__builtin"))
-                        continue;
-
-                    CppElement cppElement = null;
-                    switch (castXmlTag)
-                    {
-                        case CastXml.TagEnumeration:
-                            cppElement = ParseEnum(xElement);
-                            break;
-                        case CastXml.TagFunction:
-                            // TODO: Find btter criteria for exclusion. In CastXML extern="1" only indicates an explicit external storage modifier.
-                            // For now, exlude inline functions instead; may not be sensible since by default all functions have external linkage.
-                            if (xElement.AttributeValue("inline") == null)
-                                cppElement = ParseFunction(xElement);
-                            break;
-                        case CastXml.TagStruct:
-                            cppElement = xElement.AttributeValue("abstract") != null ? (CppElement)ParseInterface(xElement) : ParseStructOrUnion(xElement);
-                            break;
-                        case CastXml.TagUnion:
-                            cppElement = ParseStructOrUnion(xElement);
-                            break;
-                        case CastXml.TagVariable:
-                            if (xElement.AttributeValue("init") != null)
-                                cppElement = ParseVariable(xElement);
-                            break;
-                    }
-
-                    if (cppElement != null)
-                        _currentCppInclude.Add(cppElement);
-                }
+                ParseElementsInInclude(includeGccXmlId, includeId, isIncludeFullyAttached);
 
                 Logger.PopContext();
             }
+        }
+
+        private void ParseElementsInInclude(string includeGccXmlId, string includeId, bool isIncludeFullyAttached)
+        {
+            foreach (var xElement in _mapFileToXElement[includeGccXmlId])
+            {
+                // If the element is not defined from a root namespace
+                // than skip it, as it might be an inner type
+                if (_mapIdToXElement[xElement.AttributeValue("context")].Name.LocalName != CastXml.TagNamespace)
+                    continue;
+
+                // If incomplete flag, than element cannot be parsed
+                if (xElement.AttributeValue("incomplete") != null)
+                    continue;
+
+
+                var elementName = xElement.AttributeValue("name");
+
+                // If this include is partially attached and the current type is not attached
+                // Than skip it, as we are not mapping it
+                if (!isIncludeFullyAttached && !_includeAttachedTypes[includeId].Contains(elementName))
+                    continue;
+
+                // Ignore CastXML built-in functions
+                if (elementName.StartsWith("__builtin"))
+                    continue;
+
+                var cppElement = ParseElement(xElement);
+
+                if (cppElement != null)
+                    _currentCppInclude.Add(cppElement);
+            }
+        }
+
+        private CppElement ParseElement(XElement xElement)
+        {
+            switch (xElement.Name.LocalName)
+            {
+                case CastXml.TagEnumeration:
+                    return ParseEnum(xElement);
+                case CastXml.TagFunction:
+                    // TODO: Find btter criteria for exclusion. In CastXML extern="1" only indicates an explicit external storage modifier.
+                    // For now, exlude inline functions instead; may not be sensible since by default all functions have external linkage.
+                    if (xElement.AttributeValue("inline") == null)
+                        return ParseFunction(xElement);
+                    break;
+                case CastXml.TagStruct:
+                    return xElement.AttributeValue("abstract") != null ? (CppElement)ParseInterface(xElement) : ParseStructOrUnion(xElement);
+                case CastXml.TagUnion:
+                    return ParseStructOrUnion(xElement);
+                case CastXml.TagVariable:
+                    if (xElement.AttributeValue("init") != null)
+                        return ParseVariable(xElement);
+                    break;
+            }
+            return null;
         }
 
         /// <summary>
@@ -964,13 +959,14 @@ namespace SharpGen.Parser
         }
 
         /// <summary>
-        /// Determines whether the specified type has a binded in the mapping process.
+        /// Determines whether the specified type is bound in the mapping process and will be represented in the C# model.
         /// </summary>
         /// <param name="type">The type to check.</param>
         /// <returns>
-        /// 	<c>true</c> if the specified type has a binded in the mapping process; otherwise, <c>false</c>.
+        /// 	<c>true</c> if the specified type is bound in the mapping process; otherwise, <c>false</c>.
         /// </returns>
-        private bool IsTypeBinded(XElement type) => IsTypeFromIncludeToProcess(type) || _bindings.ContainsKey(type.AttributeValue("name"));
+        private bool IsTypeBinded(XElement type)
+            => IsTypeFromIncludeToProcess(type) || _boundTypes.Contains(type.AttributeValue("name"));
 
         /// <summary>
         /// Resolves a type to its fundamental type or a binded type.
@@ -981,7 +977,7 @@ namespace SharpGen.Parser
         /// <param name="type">The C++ type to fill.</param>
         private void ResolveAndFillType(string typeId, CppMarshallable type)
         {
-            var  fullTypeName = new List<string>();
+            var typeResolutionPath = new List<string>();
 
             var xType = _mapIdToXElement[typeId];
 
@@ -991,7 +987,7 @@ namespace SharpGen.Parser
             {
                 var name = xType.AttributeValue("name");
                 if (name != null)
-                    fullTypeName.Add(name);
+                    typeResolutionPath.Add(name);
                 var nextType = xType.AttributeValue("type");
                 switch (xType.Name.LocalName)
                 {
@@ -1006,7 +1002,7 @@ namespace SharpGen.Parser
                         isTypeResolved = true;
                         break;
                     case CastXml.TagTypedef:
-                        if (_bindings.ContainsKey(name))
+                        if (_boundTypes.Contains(name))
                         {
                             type.TypeName = name;
                             isTypeResolved = true;
@@ -1055,7 +1051,7 @@ namespace SharpGen.Parser
         ///	long unsigned int    => unsigned int
         ///	short int            => short
         ///	int                  => int
-        ///	long int             => int
+        ///	long int             => long
         ///	float                => float
         ///	unsigned char        => unsigned char
         ///	unsigned int         => unsigned int
@@ -1107,6 +1103,8 @@ namespace SharpGen.Parser
                 }
             }
 
+            if (longCount == 1)
+                outputType = "long";
             if (longCount == 1 && outputType == "double")
                 outputType = "long double";     // 96 bytes, unhandled
             if (longCount == 2)

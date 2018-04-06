@@ -36,5 +36,7 @@ namespace SharpGen.CppModel
         /// <value>The offset.</value>
         [XmlAttribute("offset")]
         public int Offset { get; set; }
+
+        protected override CppCallingConvention DefaultCallingConvention => CppCallingConvention.ThisCall;
     }
 }

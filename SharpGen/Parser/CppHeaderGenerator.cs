@@ -119,41 +119,5 @@ namespace SharpGen.Parser
 
             return (updatedConfigs, prolog.ToString() + Environment.NewLine);
         }
-
-        public static (HashSet<string> filesWithIncludes, HashSet<string> filesWithExtensionHeaders)
-            GetFilesWithIncludesAndExtensionHeaders(ConfigFile configRoot)
-        {
-            var filesWithExtensionHeaders = new HashSet<string>();
-
-            var filesWithIncludes = new HashSet<string>();
-
-            // Check if the file has any includes related config
-            foreach (var configFile in configRoot.ConfigFilesLoaded)
-            {
-                var includesAnyFiles = false;
-
-                // Build prolog
-                if (configFile.IncludeProlog.Count > 0)
-                    includesAnyFiles = true;
-
-                if (configFile.Includes.Count > 0)
-                    includesAnyFiles = true;
-
-                if (configFile.References.Count > 0)
-                    includesAnyFiles = true;
-
-                if (configFile.Extension.Any(rule => rule.GeneratesExtensionHeader()))
-                {
-                    filesWithExtensionHeaders.Add(configFile.Id);
-                    includesAnyFiles = true;
-                }
-
-                // If this config file has any include rules
-                if (includesAnyFiles)
-                    filesWithIncludes.Add(configFile.Id);
-            }
-
-            return (filesWithIncludes, filesWithExtensionHeaders);
-        }
     }
 }
