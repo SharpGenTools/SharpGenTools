@@ -9,6 +9,8 @@ namespace SharpGen.CppModel
     [XmlType("callable")]
     public class CppCallable : CppElement
     {
+        protected virtual CppCallingConvention DefaultCallingConvention => CppCallingConvention.CDecl;
+
         /// <summary>
         /// Gets or sets the type of the return.
         /// </summary>
@@ -16,12 +18,26 @@ namespace SharpGen.CppModel
         [XmlElement("return")]
         public CppReturnValue ReturnValue { get; set; }
 
+
+        private CppCallingConvention callingConvention;
         /// <summary>
         /// Gets or sets the calling convention.
         /// </summary>
         /// <value>The calling convention.</value>
         [XmlAttribute("call-conv")]
-        public CppCallingConvention CallingConvention { get; set; }
+        public CppCallingConvention CallingConvention
+        {
+            get
+            {
+                return (callingConvention == CppCallingConvention.Unknown)
+                    ? (callingConvention = DefaultCallingConvention)
+                    : callingConvention;
+            }
+            set
+            {
+                callingConvention = value;
+            }
+        }
 
         /// <summary>
         /// Gets the parameters.

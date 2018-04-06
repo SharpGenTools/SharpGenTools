@@ -229,5 +229,37 @@ namespace SharpGen.UnitTests.Parsing
             Assert.NotNull(model.FindFirst<CppStruct>("Test2"));
             Assert.NotNull(model.FindFirst<CppStruct>("Test3"));
         }
+
+        [Fact]
+        public void InheritingStructHasBaseMemberSetCorrectly()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(InheritingStructHasBaseMemberSetCorrectly),
+                Namespace = nameof(InheritingStructHasBaseMemberSetCorrectly),
+                Assembly = nameof(InheritingStructHasBaseMemberSetCorrectly),
+                IncludeDirs = { GetTestFileIncludeRule() },
+                Includes =
+                {
+                    CreateCppFile("typedef", @"
+                        struct Test {
+                            int field1;
+                            int field2;
+                        };
+
+                        struct Test2 : public Test {
+                            int field1;
+                            int field2;
+                        };
+                    ")
+                }
+            };
+
+            var model = ParseCpp(config);
+
+            var generatedStruct = model.FindFirst<CppStruct>("Test2");
+
+            Assert.Equal("Test", generatedStruct.Base);
+        }
     }
 }

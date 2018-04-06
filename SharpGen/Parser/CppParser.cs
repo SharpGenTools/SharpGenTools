@@ -1050,7 +1050,7 @@ namespace SharpGen.Parser
         ///	long unsigned int    => unsigned int
         ///	short int            => short
         ///	int                  => int
-        ///	long int             => int
+        ///	long int             => long
         ///	float                => float
         ///	unsigned char        => unsigned char
         ///	unsigned int         => unsigned int
@@ -1102,6 +1102,8 @@ namespace SharpGen.Parser
                 }
             }
 
+            if (longCount == 1)
+                outputType = "long";
             if (longCount == 1 && outputType == "double")
                 outputType = "long double";     // 96 bytes, unhandled
             if (longCount == 2)

@@ -1,6 +1,7 @@
 ﻿using SharpGen.CppModel;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Xunit;
 using Xunit.Abstractions;
@@ -134,6 +135,82 @@ namespace SharpGen.UnitTests.Parsing
             var attached = model.FindFirst<CppInterface>("Attached");
 
             Assert.Null(attached.Base);
+        }
+
+        [Fact]
+        public void OverloadedMethodsCorrectlyOrderedInVtable()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(OverloadedMethodsCorrectlyOrderedInVtable),
+                Assembly = nameof(OverloadedMethodsCorrectlyOrderedInVtable),
+                Namespace = nameof(OverloadedMethodsCorrectlyOrderedInVtable),
+                IncludeDirs =
+                {
+                    GetTestFileIncludeRule()
+                },
+                Includes =
+                {
+                    CreateCppFile("overloads", @"
+                        struct Test
+                        {
+                            virtual int Method() = 0;
+                            virtual int NotOverloaded() = 0;
+                            virtual int Method(int i) = 0;
+                        };
+                    "),
+                },
+                Bindings =
+                {
+                    new Config.BindRule("int", "System.Int32")
+                }
+            };
+
+            var model = ParseCpp(config);
+            var methods = model.Find<CppMethod>("Test::Method");
+
+            var parameterized = methods.First(method => method.Parameters.Any());
+
+            Assert.Equal(0, parameterized.Offset);
+
+            var parameterless = methods.First(method => !method.Parameters.Any());
+
+            Assert.Equal(1, parameterless.Offset);
+
+            Assert.Equal(2, model.FindFirst<CppMethod>("Test::NotOverloaded").Offset);
+        }
+
+
+        [Fact]
+        public void DefaultMethodCallingConventionIsThisCall()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(DefaultMethodCallingConventionIsThisCall),
+                Assembly = nameof(DefaultMethodCallingConventionIsThisCall),
+                Namespace = nameof(DefaultMethodCallingConventionIsThisCall),
+                IncludeDirs =
+                {
+                    GetTestFileIncludeRule()
+                },
+                Includes =
+                {
+                    CreateCppFile("defaultcc", @"
+                        struct Test
+                        {
+                            virtual int Method() = 0;
+                        };
+                    "),
+                },
+                Bindings =
+                {
+                    new Config.BindRule("int", "System.Int32")
+                }
+            };
+
+            var model = ParseCpp(config);
+
+            Assert.Equal(CppCallingConvention.ThisCall, model.FindFirst<CppMethod>("Test::Method").CallingConvention);
         }
     }
 }

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SharpGen.Logging
 {
-    class LoggingCodes
+    public class LoggingCodes
     {
         public const string MissingConfigDependency = "SG0001";
 
