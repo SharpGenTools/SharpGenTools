@@ -194,7 +194,8 @@ namespace SharpGen.UnitTests.Mapping
             method.Add(new CppParameter
             {
                 Name = "param",
-                TypeName = "Param"
+                TypeName = "Param",
+                Pointer = "*"
             });
 
             iface.Add(method);
@@ -218,6 +219,8 @@ namespace SharpGen.UnitTests.Mapping
             Assert.IsType<CsInterface>(param.PublicType);
 
             Assert.NotNull(((CsInterface)param.PublicType).NativeImplementation);
+
+            Assert.False(Logger.HasErrors);
         }
     }
 }
