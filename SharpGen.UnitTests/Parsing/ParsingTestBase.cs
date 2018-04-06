@@ -64,11 +64,14 @@ namespace SharpGen.UnitTests.Parsing
 
             var (updated, _) = cppHeaderGenerator.GenerateCppHeaders(loaded, configsWithIncludes, filesWithExtensionHeaders);
 
-            var castXml = new CastXml(Logger, CastXmlExecutablePath)
+            var resolver = new IncludeDirectoryResolver(Logger);
+
+            resolver.Configure(loaded);
+
+            var castXml = new CastXml(Logger, resolver, CastXmlExecutablePath)
             {
                 OutputPath = TestDirectory.FullName
             };
-            castXml.Configure(loaded);
 
             var extensionGenerator = new CppExtensionHeaderGenerator(new MacroManager(castXml));
 

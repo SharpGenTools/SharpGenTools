@@ -209,12 +209,13 @@ namespace SharpGen.Interactive
 
                 if (cppHeadersUpdated.Count != 0)
                 {
-                    var castXml = new CastXml(Logger, CastXmlExecutablePath)
+                    var resolver = new IncludeDirectoryResolver(Logger);
+                    resolver.Configure(Config);
+
+                    var castXml = new CastXml(Logger, resolver, CastXmlExecutablePath)
                     {
                         OutputPath = IntermediateOutputPath,
                     };
-
-                    castXml.Configure(Config);
 
                     group = GenerateExtensionHeaders(filesWithExtensions, cppHeadersUpdated, castXml);
                     group = ParseCpp(castXml, group);

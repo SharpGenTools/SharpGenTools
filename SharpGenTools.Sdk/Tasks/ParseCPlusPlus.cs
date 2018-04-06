@@ -24,12 +24,13 @@ namespace SharpGenTools.Sdk.Tasks
 
         protected override bool Execute(ConfigFile config)
         {
-            var castXml = new CastXml(SharpGenLogger, CastXmlExecutablePath)
+            var resolver = new IncludeDirectoryResolver(SharpGenLogger);
+            resolver.Configure(config);
+
+            var castXml = new CastXml(SharpGenLogger, resolver, CastXmlExecutablePath)
             {
                 OutputPath = OutputPath
             };
-
-            castXml.Configure(config);
 
             // Run the parser
             var parser = new CppParser(SharpGenLogger, castXml)

@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace SharpGen.Parser
@@ -114,124 +115,19 @@ namespace SharpGen.Parser
 
         public string OutputPath { get; set; }
 
-        /// <summary>
-        /// Gets or sets the include directory list.
-        /// </summary>
-        /// <value>The include directory list.</value>
-        private List<IncludeDirRule> IncludeDirectoryList { get; } = new List<IncludeDirRule>();
+        private readonly IncludeDirectoryResolver directoryResolver;
 
         public Logger Logger { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CastXml"/> class.
         /// </summary>
-        public CastXml(Logger logger, string executablePath)
+        public CastXml(Logger logger, IncludeDirectoryResolver resolver, string executablePath)
         {
             Logger = logger;
             ExecutablePath = executablePath;
+            directoryResolver = resolver;
         }
-
-        public void Configure(ConfigFile config)
-        {
-            // Configure gccxml with include directory
-            foreach (var configFile in config.ConfigFilesLoaded)
-            {
-                // Add all include directories
-                foreach (var includeDir in configFile.IncludeDirs)
-                    IncludeDirectoryList.Add(includeDir);
-            }
-        }
-        
-        private List<string> GetIncludePaths()
-        {
-            var paths = new List<string>();
-
-            foreach (var directory in IncludeDirectoryList)
-            {
-                var path = directory.Path;
-
-                // Is Using registry?
-                if (path.StartsWith("="))
-                {
-                    bool success;
-                    (path, success) = ResolveRegistryDirectory(directory);
-
-                    if (!success)
-                        continue;
-                }
-
-                if (directory.IsOverride)
-                {
-                    paths.Add("-I\"" + path.TrimEnd('\\') + "\"");
-                }
-                else
-                {
-                    paths.Add("-isystem\"" + path.TrimEnd('\\') + "\"");
-                }
-            }
-
-            foreach (var path in paths)
-            {
-                Logger.Message("Path used for castxml [{0}]", path);
-            }
-
-            return paths;
-        }
-
-        private (string path, bool success) ResolveRegistryDirectory(IncludeDirRule directory)
-        {
-            string path = null;
-            var success = true;
-            var registryPath = directory.Path.Substring(1);
-            var indexOfSubPath = registryPath.IndexOf(";");
-            var subPath = "";
-            if (indexOfSubPath >= 0)
-            {
-                subPath = registryPath.Substring(indexOfSubPath + 1);
-                registryPath = registryPath.Substring(0, indexOfSubPath);
-            }
-            var indexOfKey = registryPath.LastIndexOf("\\");
-            var subKeyStr = registryPath.Substring(indexOfKey + 1);
-            registryPath = registryPath.Substring(0, indexOfKey);
-
-            var indexOfHive = registryPath.IndexOf("\\");
-            var hiveStr = registryPath.Substring(0, indexOfHive).ToUpper();
-            registryPath = registryPath.Substring(indexOfHive + 1);
-
-            try
-            {
-                var hive = RegistryHive.LocalMachine;
-                switch (hiveStr)
-                {
-                    case "HKEY_LOCAL_MACHINE":
-                        hive = RegistryHive.LocalMachine;
-                        break;
-                    case "HKEY_CURRENT_USER":
-                        hive = RegistryHive.CurrentUser;
-                        break;
-                    case "HKEY_CURRENT_CONFIG":
-                        hive = RegistryHive.CurrentConfig;
-                        break;
-                }
-                var rootKey = RegistryKey.OpenBaseKey(hive, RegistryView.Registry32);
-                var subKey = rootKey.OpenSubKey(registryPath);
-                if (subKey == null)
-                {
-                    Logger.Error(LoggingCodes.RegistryKeyNotFound, "Unable to locate key [{0}] in registry", registryPath);
-                    success = false;
-
-                }
-                path = Path.Combine(subKey.GetValue(subKeyStr).ToString(), subPath);
-                Logger.Message($"Resolved registry path {directory.Path} to {path}");
-            }
-            catch (Exception)
-            {
-                Logger.Error(LoggingCodes.RegistryKeyNotFound, "Unable to locate key [{0}] in registry", registryPath);
-                success = false;
-            }
-            return (path, success);
-        }
-
 
         /// <summary>
         /// Preprocesses the specified header file.
@@ -240,7 +136,7 @@ namespace SharpGen.Parser
         /// <param name="handler">The handler.</param>
         public void Preprocess(string headerFile, DataReceivedEventHandler handler)
         {
-            Logger.RunInContext("Preprocess", () =>
+            Logger.RunInContext(nameof(Preprocess), () =>
             {
                 if (!File.Exists(ExecutablePath))
                     Logger.Fatal("castxml.exe not found from path: [{0}]", ExecutablePath);
@@ -262,7 +158,7 @@ namespace SharpGen.Parser
         {
             StreamReader result = null;
 
-            Logger.RunInContext("Processor", () =>
+            Logger.RunInContext(nameof(Process), () =>
             {
                 if (!File.Exists(ExecutablePath)) Logger.Fatal("castxml.exe not found from path: [{0}]", ExecutablePath);
 
@@ -305,7 +201,7 @@ namespace SharpGen.Parser
                 var builder = new System.Text.StringBuilder();
                 builder.Append(arguments).Append(" ").Append(additionalArguments);
 
-                foreach (var directory in GetIncludePaths())
+                foreach (var directory in directoryResolver.IncludePaths)
                 {
                     builder.Append(" ").Append(directory);
                 }
@@ -348,7 +244,7 @@ namespace SharpGen.Parser
         /// <param name="e">The <see cref="System.Diagnostics.DataReceivedEventArgs"/> instance containing the event data.</param>
         void ProcessErrorFromHeaderFile(object sender, DataReceivedEventArgs e)
         {
-            bool popContext = false;
+            var popContext = false;
             try
             {
                 if (e.Data != null)
@@ -356,7 +252,7 @@ namespace SharpGen.Parser
 
                     var matchError = matchFileErrorRegex.Match(e.Data);
                     
-                    string errorText = e.Data;
+                    var errorText = e.Data;
 
                     if (matchError.Success)
                     {

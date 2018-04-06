@@ -44,12 +44,13 @@ namespace SharpGenTools.Sdk.Tasks
                 }
             }
 
-            var castXml = new CastXml(SharpGenLogger, CastXmlExecutablePath)
+            var resolver = new IncludeDirectoryResolver(SharpGenLogger);
+            resolver.Configure(config);
+
+            var castXml = new CastXml(SharpGenLogger, resolver, CastXmlExecutablePath)
             {
                 OutputPath = OutputPath
             };
-
-            castXml.Configure(config);
 
             var cppExtensionGenerator = new CppExtensionHeaderGenerator(new MacroManager(castXml));
 
