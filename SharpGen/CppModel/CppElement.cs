@@ -34,17 +34,6 @@ namespace SharpGen.CppModel
     public class CppElement
     {
         /// <summary>
-        ///   Delegate Modifier
-        /// </summary>
-        /// <returns>true to remove the element from the model. false otherwise.</returns>
-        public delegate bool ProcessModifier(Regex regex, CppElement cppElement);
-
-        /// <summary>
-        /// Current context used by the finder.
-        /// </summary>
-        private List<string> _findContext;
-
-        /// <summary>
         /// Gets or sets the name.
         /// </summary>
         /// <value>The name.</value>
@@ -105,22 +94,6 @@ namespace SharpGen.CppModel
         }
 
         /// <summary>
-        /// Gets the parent root C++ element.
-        /// </summary>
-        /// <value>The parent root.</value>
-        [XmlIgnore]
-        public CppElement ParentRoot
-        {
-            get
-            {
-                var cppRoot = this;
-                while (cppRoot.Parent != null)
-                    cppRoot = cppRoot.Parent;
-                return cppRoot;
-            }
-        }
-
-        /// <summary>
         /// Gets the path.
         /// </summary>
         /// <value>The path.</value>
@@ -170,20 +143,6 @@ namespace SharpGen.CppModel
         [XmlArrayItem(typeof(CppMarshallable))]
         public List<CppElement> Items { get; set; }
 
-        /// <summary>
-        ///   Gets the context find list.
-        /// </summary>
-        /// <value>The context find list.</value>
-        private List<string> ContextFindList
-        {
-            get
-            {
-                if (_findContext == null)
-                    _findContext = new List<string>();
-                return _findContext;
-            }
-        }
-
         protected internal virtual IEnumerable<CppElement> AllItems
         {
             get { return Iterate<CppElement>(); }
@@ -209,7 +168,12 @@ namespace SharpGen.CppModel
             if (element.Parent != null)
                 element.Parent.Remove(element);
             element.Parent = this;
-            GetSafeItems().Add(element);
+            if (Items == null)
+            {
+                Items = new List<CppElement>();
+            }
+
+            Items.Add(element);
         }
 
         /// <summary>
@@ -219,14 +183,10 @@ namespace SharpGen.CppModel
         public void Remove(CppElement element)
         {
             element.Parent = null;
-            GetSafeItems().Remove(element);
-        }
-
-        private List<CppElement> GetSafeItems()
-        {
-            if (Items == null)
-                Items = new List<CppElement>();
-            return Items;
+            if (Items != null)
+            {
+                Items.Remove(element);
+            }
         }
 
         /// <summary>
@@ -241,7 +201,7 @@ namespace SharpGen.CppModel
 
         protected void ResetParents()
         {
-            foreach (var innerElement in Iterate<CppElement>())
+            foreach (var innerElement in Items)
             {
                 innerElement.Parent = this;
                 innerElement.ResetParents();

@@ -162,8 +162,35 @@ namespace SharpGen.UnitTests.Parsing
             Assert.Equal(16, secondBitField.BitOffset);
             Assert.True(secondBitField.IsBitField);
             Assert.Equal(2, secondBitField.Offset);
+        }
 
+        [Fact]
+        public void InnerStructGivenExpectedName()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(InnerStructGivenExpectedName),
+                Namespace = nameof(InnerStructGivenExpectedName),
+                Assembly = nameof(InnerStructGivenExpectedName),
+                IncludeDirs = { GetTestFileIncludeRule() },
+                Includes =
+                {
+                    CreateCppFile("anonStruct", @"
+                        struct Test {
+                            struct { int i; } field1;
+                        };
+                    ")
+                }
+            };
 
+            var model = ParseCpp(config);
+
+            var generatedStruct = model.FindFirst<CppStruct>("Test");
+
+            var field = generatedStruct.FindFirst<CppField>("Test::field1");
+
+            Assert.NotNull(field);
+            Assert.Equal("Test_INNER_0", field.TypeName);
         }
     }
 }

@@ -565,7 +565,6 @@ namespace SharpGen.Parser
             // The Visual C++ compiler breaks the rules of the COM ABI when overloaded methods are used.
             // It will group the overloads together in memory and lay them out in the reverse of their declaration order.
             // Since GCC always lays them out in the order declared, we have to modify the order of the methods to match Visual C++.
-            // See http://support.microsoft.com/kb/131104 for more information.
             for (int i = 0; i < methods.Count; i++)
             {
                 var name = methods[i].Name;
@@ -595,9 +594,14 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="xElement">The gccxml <see cref="XElement"/> that describes a C++ structure field declaration.</param>
         /// <returns>A C++ field parsed</returns>
-        private CppField ParseField(XElement xElement)
+        private CppField ParseField(XElement xElement, int fieldOffset)
         {
-            var cppField = new CppField { Name = xElement.AttributeValue("name") };
+            var fieldName = xElement.AttributeValue("name");
+            var cppField = new CppField
+            {
+                Name = string.IsNullOrEmpty(fieldName) ? $"field{fieldOffset}" : fieldName,
+                Offset = fieldOffset
+            };
 
             Logger.PushContext("Field:[{0}]", cppField.Name);
 
@@ -665,8 +669,7 @@ namespace SharpGen.Parser
                     continue;
 
                 // Parse the field
-                var cppField = ParseField(field);
-                cppField.Offset = fieldOffset;
+                var cppField = ParseField(field, fieldOffset);
 
                 // Test if the field type is declared inside this struct or union
                 var fieldName = field.AttributeValue("name");
@@ -675,31 +678,9 @@ namespace SharpGen.Parser
                 {
                     var fieldSubStruct = ParseStructOrUnion(fieldType, cppStruct, innerStructCount++);
 
-                    // If fieldName is empty, then we need to inline fields from the struct/union.
-                    if (string.IsNullOrEmpty(fieldName))
-                    {
-                        // Make a copy in order to remove fields
-                        var listOfSubFields = new List<CppField>(fieldSubStruct.Fields);
-                        // Copy the current field offset
-                        var lastFieldOffset = fieldOffset;
-                        foreach (var subField in listOfSubFields)
-                        {
-                            subField.Offset = subField.Offset + fieldOffset;
-                            cppStruct.Add(subField);
-                            lastFieldOffset = subField.Offset;
-                        }
-                        // Set the current field offset according to the inlined fields
-                        if (!isUnion)
-                            fieldOffset = lastFieldOffset;
-                        // Don't add the current field, as it is actually an inline struct/union
-                        cppField = null;
-                    }
-                    else
-                    {
-                        // Get the type name from the inner-struct and set it to the field
-                        cppField.TypeName = fieldSubStruct.Name;
-                        _currentCppInclude.Add(fieldSubStruct);
-                    }
+                    // Get the type name from the inner-struct and set it to the field
+                    cppField.TypeName = fieldSubStruct.Name;
+                    _currentCppInclude.Add(fieldSubStruct);
                 }
 
                 // Go to next field offset if not in union
@@ -811,7 +792,7 @@ namespace SharpGen.Parser
             ResolveAndFillType(xElement.AttributeValue("type"), cppMarshallable);
 
 
-            var value = xElement.AttributeValue("init");
+            var value = xElement.AttributeValue("init") ?? string.Empty;
             if (cppMarshallable.TypeName == "GUID")
             {
                 var guid = ParseGuid(value);
