@@ -242,27 +242,7 @@ namespace SharpGen.Parser
             }
 
             // Fix all structure names
-            foreach (var xTypedef in doc.Elements("GCC_XML").Elements())
-            {
-                if (xTypedef.Name.LocalName == CastXml.TagTypedef)
-                {
-                    var xStruct = _mapIdToXElement[xTypedef.AttributeValue("type")];
-                    switch (xStruct.Name.LocalName)
-                    {
-                        case CastXml.TagStruct:
-                        case CastXml.TagUnion:
-                        case CastXml.TagEnumeration:
-                            var structName = xStruct.AttributeValue("name");
-                            // Rename all structure starting with tagXXXX to XXXX
-                            if (structName.StartsWith("tag") || structName.StartsWith("_") || string.IsNullOrEmpty(structName))
-                            {
-                                var typeName = xTypedef.AttributeValue("name");
-                                xStruct.SetAttributeValue("name", typeName);
-                            }
-                            break;
-                    }
-                }
-            }
+            AdjustTypeNamesFromTypedefs(doc);
 
             // Find all elements that are referring to a context and attach them to
             // the context as child elements
@@ -275,8 +255,30 @@ namespace SharpGen.Parser
                     _mapIdToXElement[id].Add(xElement);
                 }
             }
-            
+
             ParseAllElements();
+        }
+
+        private void AdjustTypeNamesFromTypedefs(XDocument doc)
+        {
+            foreach (var xTypedef in doc.Elements("GCC_XML").Elements(CastXml.TagTypedef))
+            {
+                var xStruct = _mapIdToXElement[xTypedef.AttributeValue("type")];
+                switch (xStruct.Name.LocalName)
+                {
+                    case CastXml.TagStruct:
+                    case CastXml.TagUnion:
+                    case CastXml.TagEnumeration:
+                        var structName = xStruct.AttributeValue("name");
+                        // Rename all structure starting with tagXXXX to XXXX
+                        if (structName.StartsWith("tag") || structName.StartsWith("_") || string.IsNullOrEmpty(structName))
+                        {
+                            var typeName = xTypedef.AttributeValue("name");
+                            xStruct.SetAttributeValue("name", typeName);
+                        }
+                        break;
+                }
+            }
         }
 
         /// <summary>

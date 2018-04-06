@@ -192,5 +192,42 @@ namespace SharpGen.UnitTests.Parsing
             Assert.NotNull(field);
             Assert.Equal("Test_INNER_0", field.TypeName);
         }
+
+        [Fact]
+        public void TypedefedStructAdjustsNameToTypedef()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(TypedefedStructAdjustsNameToTypedef),
+                Namespace = nameof(TypedefedStructAdjustsNameToTypedef),
+                Assembly = nameof(TypedefedStructAdjustsNameToTypedef),
+                IncludeDirs = { GetTestFileIncludeRule() },
+                Includes =
+                {
+                    CreateCppFile("typedef", @"
+                        typedef struct _Test {
+                            int field1;
+                            int field2;
+                        } Test;
+
+                        typedef struct tagTest2 {
+                            int field1;
+                            int field2;
+                        } Test2;
+
+                        typedef struct {
+                            int field1;
+                            int field2;
+                        } Test3;
+                    ")
+                }
+            };
+
+            var model = ParseCpp(config);
+
+            Assert.NotNull(model.FindFirst<CppStruct>("Test"));
+            Assert.NotNull(model.FindFirst<CppStruct>("Test2"));
+            Assert.NotNull(model.FindFirst<CppStruct>("Test3"));
+        }
     }
 }
