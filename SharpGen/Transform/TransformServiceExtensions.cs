@@ -54,10 +54,10 @@ namespace SharpGen.Transform
             {
                 if (element.DocId != null)
                 {
-                    docItems.Add("<msdn-id>" + Utilities.EscapeXml(element.DocId) + "</msdn-id>");
+                    docItems.Add("<msdn-id>" + EscapeXml(element.DocId) + "</msdn-id>");
                 }
-                docItems.Add("<unmanaged>" + Utilities.EscapeXml(element.DocUnmanagedName) + "</unmanaged>");
-                docItems.Add("<unmanaged-short>" + Utilities.EscapeXml(element.DocUnmanagedShortName) + "</unmanaged-short>");
+                docItems.Add("<unmanaged>" + EscapeXml(element.DocUnmanagedName) + "</unmanaged>");
+                docItems.Add("<unmanaged-short>" + EscapeXml(element.DocUnmanagedShortName) + "</unmanaged-short>");
             }
 
             return docItems;
@@ -107,6 +107,16 @@ namespace SharpGen.Transform
             if (csName.StartsWith("<"))
                 return csName;
             return string.Format(CultureInfo.InvariantCulture, "<see cref=\"{0}\"/>", csName);
+        }
+
+        /// <summary>
+        /// Escapes the xml/html text in order to use it inside xml.
+        /// </summary>
+        /// <param name="stringToEscape">The string to escape.</param>
+        /// <returns></returns>
+        private static string EscapeXml(string stringToEscape)
+        {
+            return stringToEscape.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;").Replace("'", "&apos;");
         }
     }
 }
