@@ -900,7 +900,6 @@ namespace SharpGen.Parser
                 if (xElement.AttributeValue("incomplete") != null)
                     continue;
 
-                var castXmlTag = xElement.Name.LocalName;
 
                 var elementName = xElement.AttributeValue("name");
 
@@ -913,33 +912,35 @@ namespace SharpGen.Parser
                 if (elementName.StartsWith("__builtin"))
                     continue;
 
-                CppElement cppElement = null;
-                switch (castXmlTag)
-                {
-                    case CastXml.TagEnumeration:
-                        cppElement = ParseEnum(xElement);
-                        break;
-                    case CastXml.TagFunction:
-                        // TODO: Find btter criteria for exclusion. In CastXML extern="1" only indicates an explicit external storage modifier.
-                        // For now, exlude inline functions instead; may not be sensible since by default all functions have external linkage.
-                        if (xElement.AttributeValue("inline") == null)
-                            cppElement = ParseFunction(xElement);
-                        break;
-                    case CastXml.TagStruct:
-                        cppElement = xElement.AttributeValue("abstract") != null ? (CppElement)ParseInterface(xElement) : ParseStructOrUnion(xElement);
-                        break;
-                    case CastXml.TagUnion:
-                        cppElement = ParseStructOrUnion(xElement);
-                        break;
-                    case CastXml.TagVariable:
-                        if (xElement.AttributeValue("init") != null)
-                            cppElement = ParseVariable(xElement);
-                        break;
-                }
+                var cppElement = ParseElement(xElement);
 
                 if (cppElement != null)
                     _currentCppInclude.Add(cppElement);
             }
+        }
+
+        private CppElement ParseElement(XElement xElement)
+        {
+            switch (xElement.Name.LocalName)
+            {
+                case CastXml.TagEnumeration:
+                    return ParseEnum(xElement);
+                case CastXml.TagFunction:
+                    // TODO: Find btter criteria for exclusion. In CastXML extern="1" only indicates an explicit external storage modifier.
+                    // For now, exlude inline functions instead; may not be sensible since by default all functions have external linkage.
+                    if (xElement.AttributeValue("inline") == null)
+                        return ParseFunction(xElement);
+                    break;
+                case CastXml.TagStruct:
+                    return xElement.AttributeValue("abstract") != null ? (CppElement)ParseInterface(xElement) : ParseStructOrUnion(xElement);
+                case CastXml.TagUnion:
+                    return ParseStructOrUnion(xElement);
+                case CastXml.TagVariable:
+                    if (xElement.AttributeValue("init") != null)
+                        return ParseVariable(xElement);
+                    break;
+            }
+            return null;
         }
 
         /// <summary>
