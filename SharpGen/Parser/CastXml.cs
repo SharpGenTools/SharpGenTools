@@ -145,7 +145,6 @@ namespace SharpGen.Parser
                     Logger.Fatal("C++ Header file [{0}] not found", headerFile);
 
                 RunCastXml(headerFile, handler, "-E -dD");
-
             });
         }
 
@@ -249,9 +248,8 @@ namespace SharpGen.Parser
             {
                 if (e.Data != null)
                 {
-
                     var matchError = matchFileErrorRegex.Match(e.Data);
-                    
+
                     var errorText = e.Data;
 
                     if (matchError.Success)

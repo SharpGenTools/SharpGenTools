@@ -17,8 +17,7 @@ namespace SharpGen.CppModel
         /// <value>The type of the return.</value>
         [XmlElement("return")]
         public CppReturnValue ReturnValue { get; set; }
-
-
+        
         private CppCallingConvention callingConvention;
         /// <summary>
         /// Gets or sets the calling convention.
