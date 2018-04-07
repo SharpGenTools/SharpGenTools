@@ -34,6 +34,7 @@ namespace SharpGen.Config
         /// <returns>
         /// A <see cref="System.String"/> that represents this instance.
         /// </returns>
+        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             // Print the names of this rule using the XmlTypeAttribute name if present.

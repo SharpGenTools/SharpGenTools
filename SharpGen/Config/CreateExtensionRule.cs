@@ -34,7 +34,7 @@ namespace SharpGen.Config
         public Visibility _Visibility_ { get { return Visibility.Value; } set { Visibility = value; } }
         public bool ShouldSerialize_Visibility_() { return Visibility != null; }
 
-
+        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} visibility:{1}", base.ToString(), Visibility.HasValue ? Visibility.Value.ToString() : "undef");

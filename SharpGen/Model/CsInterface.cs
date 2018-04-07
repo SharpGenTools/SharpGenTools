@@ -107,6 +107,7 @@ namespace SharpGen.Model
         /// </summary>
         public bool HasInnerInterfaces => Items.OfType<CsInterface>().Any();
 
+        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             return string.Format(System.Globalization.CultureInfo.InvariantCulture, "csinterface {0} => {1}", CppElementName, QualifiedName);

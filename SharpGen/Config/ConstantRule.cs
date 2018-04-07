@@ -26,7 +26,7 @@ namespace SharpGen.Config
     /// Usage: const [from-macro="MACRO_REGEXP"] class="C#_CLASS_NAME" type="C#_TYPE_NAME" name="FIELD_NAME" value="FIELD_VALUE"
     /// </summary>
     [XmlType("const")]
-    public class ConstantRule : ConfigBaseRule
+    public class ConstantRule : ExtensionBaseRule
     {
         [XmlAttribute("from-macro")]
         public string Macro { get; set; }
@@ -60,6 +60,7 @@ namespace SharpGen.Config
         [XmlText]
         public string Value { get; set; }
 
+        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} from-{1}:{2} class:{3} cpp-type:{4} cpp-cast:{5} type:{6} name:{7} value:{8}", base.ToString(), Macro!=null?"macro":"guid",  Macro ?? Guid, ClassName, CppType, CppCast, Type, Name, Value);

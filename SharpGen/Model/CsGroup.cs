@@ -47,6 +47,7 @@ namespace SharpGen.Model
             get { return Items.OfType<CsVariable>(); }
         }
 
+        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             return Name;

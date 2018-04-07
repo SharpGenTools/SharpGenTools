@@ -28,7 +28,7 @@ namespace SharpGen.Config
     /// <summary>
     /// An Include directive
     /// </summary>
-    public class IncludeRule : IEquatable<IncludeRule>
+    public class IncludeRule
     {
         public IncludeRule()
         {
@@ -117,26 +117,10 @@ namespace SharpGen.Config
         /// <returns>
         /// A <see cref="System.String"/> that represents this instance.
         /// </returns>
+        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             return string.Format(System.Globalization.CultureInfo.InvariantCulture, "include: {0}", File);
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is IncludeRule other && Equals(other);
-        }
-
-        public bool Equals(IncludeRule other)
-        {
-            return File == other.File
-                && Pre == other.Pre
-                && Post == other.Post;
-        }
-
-        public override int GetHashCode()
-        {
-            return File.GetHashCode();
         }
     }
 }

@@ -95,28 +95,5 @@ namespace SharpGen.CppModel
         {
             return TypeName;
         }
-
-        public bool Equals(CppMarshallable other)
-        {
-            if (ReferenceEquals(null, other)) return false;
-            if (ReferenceEquals(this, other)) return true;
-            return Equals(other.TypeName, TypeName) && Equals(other.Pointer, Pointer);
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                return ((TypeName != null ? TypeName.GetHashCode() : 0)*397) ^ (Pointer != null ? Pointer.GetHashCode() : 0);
-            }
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != typeof (CppMarshallable)) return false;
-            return Equals((CppMarshallable) obj);
-        }
     }
 }

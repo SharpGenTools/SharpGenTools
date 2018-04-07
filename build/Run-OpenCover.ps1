@@ -3,6 +3,9 @@ Param([string] $executable, [string[]] $arguments, [string[]] $filters, [string]
 $targetArgs = $($arguments -join ' ')
 $filter = $($filters -join ' ')
 
-OpenCover.Console -register:user -oldstyle -returntargetcode -target:"$executable" -targetargs:"$targetArgs" -filter:"$filter" -mergeoutput -mergebyhash -output:$output -skipautoprops | Write-Host
+OpenCover.Console -register:user -oldstyle -returntargetcode `
+    -target:"$executable" -targetargs:"$targetArgs" -filter:"$filter" `
+    -mergeoutput -mergebyhash -output:$output -skipautoprops `
+    -excludebyattribute:*.ExcludeFromCodeCoverageAttribute | Write-Host
 
 return $LastExitCode -eq 0

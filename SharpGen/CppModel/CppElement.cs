@@ -208,11 +208,12 @@ namespace SharpGen.CppModel
             }
         }
 
+        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             return GetType().Name + " [" + Name + "]";
         }
-
+        
         public virtual string ToShortString()
         {
             return Name;

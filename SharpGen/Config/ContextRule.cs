@@ -23,7 +23,7 @@ using System.Xml.Serialization;
 namespace SharpGen.Config
 {
     [XmlType("context")]
-    public class ContextRule : ConfigBaseRule
+    public class ContextRule : ExtensionBaseRule
     {
         public ContextRule()
         {
@@ -46,6 +46,7 @@ namespace SharpGen.Config
         [XmlText]
         public List<string> Ids { get; set; }
 
+        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} Ids:{1}", base.ToString(), (Ids != null) ? Ids.ToString() : "");

@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2014 SharpDX - Alexandre Mutel
+﻿// Copyright (c) 2010-2014 SharpDX - Alexandre Mutel
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,16 +18,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Diagnostics;
 
-namespace SharpGen.Config
+namespace SharpGen
 {
-    [AttributeUsage(AttributeTargets.Field|AttributeTargets.Property, AllowMultiple = false)]
-    public class LiteralAttribute : Attribute
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Constructor)]
+    [Conditional("DEBUG")]
+    [ExcludeFromCodeCoverage]
+    internal sealed class ExcludeFromCodeCoverageAttribute : Attribute
     {
-        public bool SharpString { get; set; }
-
-        public bool Identifier { get; set; }
-
-        public bool QualifiedIdentifier { get; set; }
+        public string Reason { get; set; }
     }
 }

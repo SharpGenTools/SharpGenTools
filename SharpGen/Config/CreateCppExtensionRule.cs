@@ -36,6 +36,7 @@ namespace SharpGen.Config
         [XmlAttribute("macro")]
         public string Macro { get; set; }
 
+        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} macro:{1}", base.ToString(), Macro);

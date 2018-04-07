@@ -33,7 +33,7 @@ namespace SharpGen.UnitTests.Parsing
 #                       define TESTENUM_Element2 1
                     "),
                 },
-                Extension = new List<Config.ConfigBaseRule>
+                Extension =
                 {
                     new Config.ContextRule("cppEnum"),
                     new Config.ContextRule(nameof(CreatedFromMacros)),
