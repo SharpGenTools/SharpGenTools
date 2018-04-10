@@ -55,7 +55,7 @@ namespace SharpGen.Config
         }
 
         /// <summary>
-        /// Gets dynamic variables used by dynamic variable substitution #{MyVariable}
+        /// Gets dynamic variables used by dynamic variable substitution #(MyVariable)
         /// </summary>
         /// <value>The dynamic variables.</value>
         [XmlIgnore]
@@ -160,17 +160,6 @@ namespace SharpGen.Config
         public List<ConfigBaseRule> Mappings { get; set; }
 
         /// <summary>
-        /// Returns all depend config files
-        /// </summary>
-        /// <returns></returns>
-        public List<ConfigFile> FindAllDependencies()
-        {
-            var dependencies = new List<ConfigFile>();
-            FindAllDependencies(dependencies);
-            return dependencies;
-        }
-
-        /// <summary>
         /// Finds all dependencies ConfigFile from this instance.
         /// </summary>
         /// <param name="dependencyListOutput">The dependencies list to fill.</param>
@@ -210,7 +199,7 @@ namespace SharpGen.Config
         /// <summary>
         /// Expands all dynamic variables used inside Bindings and Mappings tags.
         /// </summary>
-        /// <param name="expandDynamicVariable">if set to <c>true</c> [expand dynamic variable].</param>
+        /// <param name="expandDynamicVariable">if set to <c>true</c> expand dynamic variables.</param>
         public void ExpandVariables(bool expandDynamicVariable, Logger logger)
         {
             ExpandVariables(Variables, expandDynamicVariable, logger);

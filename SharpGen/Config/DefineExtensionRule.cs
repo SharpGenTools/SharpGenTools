@@ -24,20 +24,6 @@ namespace SharpGen.Config
     [XmlType("define")]
     public class DefineExtensionRule : ExtensionBaseRule
     {
-        public DefineExtensionRule()
-        {
-        }
-
-        public DefineExtensionRule(int sizeOf)
-        {
-            SizeOf = sizeOf;
-        }
-
-        public DefineExtensionRule(int sizeOf, int align)
-        {
-            SizeOf = sizeOf;
-            Align = align;
-        }
 
         [XmlAttribute("enum")]
         public string Enum { get; set; }
