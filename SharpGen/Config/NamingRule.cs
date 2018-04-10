@@ -25,6 +25,7 @@ namespace SharpGen.Config
     /// </summary>
     public abstract class NamingRule : KeyValue
     {
+        [ExcludeFromCodeCoverage(Reason = "For XML Serialization")]
         protected NamingRule()
         {
         }

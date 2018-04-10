@@ -32,6 +32,7 @@ namespace SharpGen.Config
         /// <summary>
         /// Initializes a new instance of the <see cref="NamingRuleShort"/> class.
         /// </summary>
+        [ExcludeFromCodeCoverage(Reason = "For XML Serialization")]
         public NamingRuleShort()
         {
         }
