@@ -24,7 +24,6 @@ namespace SharpGen.Config
     [XmlType("define")]
     public class DefineExtensionRule : ExtensionBaseRule
     {
-
         [XmlAttribute("enum")]
         public string Enum { get; set; }
         [XmlAttribute("struct")]
@@ -37,7 +36,6 @@ namespace SharpGen.Config
 
         [XmlAttribute("underlying")]
         public string UnderlyingType { get; set; }
-
 
         [XmlIgnore]
         public int? SizeOf { get; set; }
