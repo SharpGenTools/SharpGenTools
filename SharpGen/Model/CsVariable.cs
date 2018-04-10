@@ -25,10 +25,9 @@ namespace SharpGen.Model
     [DataContract(Name = "Variable")]
     public class CsVariable : CsBase
     {
+        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
         public CsVariable()
         {
-            CppElement = null;
-            Visibility = Config.Visibility.Public | Config.Visibility.Static;
         }
 
         public CsVariable(string typeName, string name, string value)

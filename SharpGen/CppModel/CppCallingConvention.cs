@@ -44,12 +44,12 @@ namespace SharpGen.CppModel
         /// <summary>
         /// Thiscall calling convention.
         /// </summary>
-        [XmlEnum("thiscall")]        
+        [XmlEnum("thiscall")]
         ThisCall = 3,
         /// <summary>
         /// Cdecl calling convention.
         /// </summary>
-        [XmlEnum("cdecl")]        
+        [XmlEnum("cdecl")]
         CDecl = 4,
     }
 }

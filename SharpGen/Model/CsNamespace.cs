@@ -30,10 +30,11 @@ namespace SharpGen.Model
     [DataContract(Name = "Namespace")]
     public class CsNamespace : CsBase
     {
+        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
         public CsNamespace()
         {
-                
         }
+
         public CsNamespace(string nameSpace)
         {
             Name = nameSpace;

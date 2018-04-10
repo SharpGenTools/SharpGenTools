@@ -29,6 +29,7 @@ namespace SharpGen.Model
     [DataContract(Name = "Interface")]
     public class CsInterface : CsTypeBase
     {
+        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
         public CsInterface() : this(null)
         {
         }

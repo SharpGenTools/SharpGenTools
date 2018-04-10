@@ -37,7 +37,6 @@ namespace SharpGen.Model
 
         public CsMethod()
         {
-
         }
 
         public CsMethod(CppMethod cppMethod)
@@ -56,7 +55,7 @@ namespace SharpGen.Model
             if (HasReturnType)
                 docItems.Add("<returns>" + GetReturnTypeDoc(manager) + "</returns>");
         }
-        
+
         protected override void UpdateFromMappingRule(MappingRule tag)
         {
             base.UpdateFromMappingRule(tag);

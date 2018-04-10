@@ -64,7 +64,6 @@ namespace SharpGen.CppModel
         /// <returns>
         /// A <see cref="System.String"/> that represents this instance.
         /// </returns>
-        /// 
         [ExcludeFromCodeCoverage]
         public override string ToString()
         {

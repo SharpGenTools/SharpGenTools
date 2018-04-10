@@ -30,6 +30,7 @@ namespace SharpGen.CppModel
         /// <summary>
         /// Initializes a new instance of the <see cref="CppDefine"/> class.
         /// </summary>
+        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
         public CppDefine()
         {
         }
@@ -51,17 +52,5 @@ namespace SharpGen.CppModel
         /// <value>The value.</value>
         [XmlAttribute("value")]
         public string Value { get; set; }
-
-        /// <summary>
-        /// Gets a stripped string value trimming double-quotes ".
-        /// </summary>
-        /// <value>The strip string value.</value>
-        public string StripStringValue
-        {
-            get
-            {
-                return Value.Trim('"');
-            }
-        }
     }
 }

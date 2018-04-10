@@ -30,6 +30,7 @@ namespace SharpGen.CppModel
         /// <summary>
         /// Initializes a new instance of the <see cref="CppEnumItem"/> class.
         /// </summary>
+        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
         public CppEnumItem()
         {
         }

@@ -33,7 +33,7 @@ namespace SharpGen.Model
         public CsTypeBase PublicType { get; set; }
 
         /// <summary>
-        ///   Internal type used for marshalling to native. If null, then use instead public type.
+        ///   Internal type used for marshalling to native.
         /// </summary>
         [DataMember]
         public CsTypeBase MarshalType { get; set; }
@@ -52,9 +52,9 @@ namespace SharpGen.Model
 
         [DataMember]
         public bool IsBoolToInt { get; set; }
-        
+
         public int Size => MarshalType.Size * ((ArrayDimensionValue > 1) ? ArrayDimensionValue : 1);
-        
+
         public bool IsValueType
         {
             get { return (PublicType is CsStruct csStruct && !csStruct.GenerateAsClass) || PublicType is CsEnum ||

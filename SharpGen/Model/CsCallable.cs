@@ -26,6 +26,7 @@ namespace SharpGen.Model
 
         protected abstract int MaxSizeReturnParameter { get; }
 
+        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
         protected CsCallable()
         {
 

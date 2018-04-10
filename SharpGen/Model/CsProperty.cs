@@ -26,6 +26,7 @@ namespace SharpGen.Model
     [DataContract(Name = "Property")]
     public class CsProperty : CsMarshalBase
     {
+        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
         public CsProperty()
         {
         }
