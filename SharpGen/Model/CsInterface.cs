@@ -29,6 +29,7 @@ namespace SharpGen.Model
     [DataContract(Name = "Interface")]
     public class CsInterface : CsTypeBase
     {
+        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
         public CsInterface() : this(null)
         {
         }
@@ -107,6 +108,7 @@ namespace SharpGen.Model
         /// </summary>
         public bool HasInnerInterfaces => Items.OfType<CsInterface>().Any();
 
+        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             return string.Format(System.Globalization.CultureInfo.InvariantCulture, "csinterface {0} => {1}", CppElementName, QualifiedName);

@@ -52,6 +52,7 @@ namespace SharpGen.Config
         [XmlAttribute("doc")]
         public string DocItem { get; set; }
 
+        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             string type = "";

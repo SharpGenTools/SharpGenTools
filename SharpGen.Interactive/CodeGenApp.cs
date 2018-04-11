@@ -292,7 +292,7 @@ namespace SharpGen.Interactive
 
             var (solution, defines) = transformer.Transform(group, Config, IntermediateOutputPath);
 
-            consumerConfig.Extension = new List<ConfigBaseRule>(defines);
+            consumerConfig.Extension = new List<ExtensionBaseRule>(defines);
 
             var (bindings, generatedDefines) = transformer.GenerateTypeBindingsForConsumers();
 

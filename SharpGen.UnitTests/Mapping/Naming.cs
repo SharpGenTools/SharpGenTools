@@ -6,9 +6,9 @@ using Xunit.Abstractions;
 
 namespace SharpGen.UnitTests.Mapping
 {
-    public class RenameRules : MappingTestBase
+    public class Naming : MappingTestBase
     {
-        public RenameRules(ITestOutputHelper outputHelper) : base(outputHelper)
+        public Naming(ITestOutputHelper outputHelper) : base(outputHelper)
         {
         }
 
@@ -122,6 +122,49 @@ namespace SharpGen.UnitTests.Mapping
             var csStruct = solution.EnumerateDescendants().OfType<CsStruct>().First(element => element.Name == "Test");
 
             Assert.Single(csStruct.Fields.Where(field => field.Name == "MyField"));
+        }
+
+        [Fact]
+        public void ShortNameRuleReplacesAcronym()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(ShortNameRuleReplacesAcronym),
+                Assembly = nameof(ShortNameRuleReplacesAcronym),
+                Namespace = nameof(ShortNameRuleReplacesAcronym),
+                Includes =
+                {
+                    new Config.IncludeRule
+                    {
+                        File = "simpleStruct.h",
+                        Attach = true,
+                        Namespace = nameof(ShortNameRuleReplacesAcronym)
+                    }
+                },
+                Naming =
+                {
+                    new Config.NamingRuleShort("DESC", "Description")
+                }
+            };
+
+
+            var cppStruct = new CppStruct
+            {
+                Name = "TEST_DESC"
+            };
+
+            var include = new CppInclude
+            {
+                Name = "simpleStruct"
+            };
+            include.Add(cppStruct);
+            var module = new CppModule();
+            module.Add(include);
+
+            var (solution, _) = MapModel(module, config);
+
+            Assert.Single(solution.EnumerateDescendants().OfType<CsStruct>().Where(element => element.Name == "TestDescription"));
+
         }
     }
 }

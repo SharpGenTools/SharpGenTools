@@ -27,7 +27,7 @@ namespace SharpGen.Config
     /// <summary>
     /// A simple Xml preprocessor.
     /// </summary>
-    internal class Preprocessor
+    internal static class Preprocessor
     {
         /// <summary>
         /// Preprocesses the specified XML text.
@@ -35,7 +35,7 @@ namespace SharpGen.Config
         /// <param name="xmlText">The XML text.</param>
         /// <param name="macros">The macros.</param>
         /// <returns>A preprocessed xml text</returns>
-        public static string Preprocess(string xmlText, string[] macros)
+        public static string Preprocess(string xmlText, params string[] macros)
         {
             var doc = XDocument.Load(new StringReader(xmlText));
 

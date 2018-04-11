@@ -243,7 +243,6 @@ namespace SharpGen.Model
                     DocId = string.IsNullOrEmpty(CppElement.Id) ? DocId : CppElement.Id;
                     Description = string.IsNullOrEmpty(CppElement.Description) ? Description : CppElement.Description;
                     Remarks = string.IsNullOrEmpty(CppElement.Remarks) ? Remarks : CppElement.Remarks;
-                    
                     UpdateFromMappingRule(_cppElement.GetMappingRule());
                 }
             }

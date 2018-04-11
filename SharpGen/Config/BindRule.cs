@@ -86,6 +86,7 @@ namespace SharpGen.Config
         /// <returns>
         /// A <see cref="System.String"/> that represents this instance.
         /// </returns>
+        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} from:{1} to:{2} marshal:{3}", base.ToString(), From, To, Marshal);

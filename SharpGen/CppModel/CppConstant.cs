@@ -30,6 +30,7 @@ namespace SharpGen.CppModel
         /// <summary>
         /// Initializes a new instance of the <see cref="CppConstant"/> class.
         /// </summary>
+        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
         public CppConstant()
         {
         }
@@ -50,6 +51,6 @@ namespace SharpGen.CppModel
         /// </summary>
         /// <value>The value.</value>
         [XmlAttribute("value")]
-        public string Value{ get; set; }
+        public string Value { get; set; }
     }
 }

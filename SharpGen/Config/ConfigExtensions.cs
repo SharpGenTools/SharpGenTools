@@ -81,7 +81,7 @@ namespace SharpGen.Config
         /// </summary>
         /// <param name="rule">The rule to check.</param>
         /// <returns>true if the rule is creating an header extension.</returns>
-        public static bool GeneratesExtensionHeader(this ConfigBaseRule rule)
+        public static bool GeneratesExtensionHeader(this ExtensionBaseRule rule)
         {
             return (rule is CreateCppExtensionRule createCpp && !string.IsNullOrEmpty(createCpp.Macro))
                 || (rule is ConstantRule constant && !string.IsNullOrEmpty(constant.Macro));

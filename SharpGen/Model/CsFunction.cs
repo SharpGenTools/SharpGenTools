@@ -28,6 +28,7 @@ namespace SharpGen.Model
     [DataContract(Name = "Function")]
     public class CsFunction : CsCallable
     {
+        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
         public CsFunction()
         {
 

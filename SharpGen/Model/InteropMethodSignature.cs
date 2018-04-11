@@ -76,6 +76,7 @@ namespace SharpGen.Model
         }
 
 
+        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder();

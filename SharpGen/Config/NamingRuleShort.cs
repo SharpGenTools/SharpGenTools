@@ -32,6 +32,7 @@ namespace SharpGen.Config
         /// <summary>
         /// Initializes a new instance of the <see cref="NamingRuleShort"/> class.
         /// </summary>
+        [ExcludeFromCodeCoverage(Reason = "For XML Serialization")]
         public NamingRuleShort()
         {
         }
@@ -51,6 +52,7 @@ namespace SharpGen.Config
         /// <returns>
         /// A <see cref="System.String"/> that represents this instance.
         /// </returns>
+        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             return string.Format(System.Globalization.CultureInfo.InvariantCulture, "naming-rule-short: \"{0}\" => \"{1}\"", Name, Value);

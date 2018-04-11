@@ -25,22 +25,7 @@ namespace SharpGen.Logging
     /// </summary>
     public class LogLocation
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="LogLocation"/> class.
-        /// </summary>
-        /// <param name="filePath">The file location.</param>
-        public LogLocation(string filePath) : this(filePath, 1)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="LogLocation"/> class.
-        /// </summary>
-        /// <param name="filePath">The file path.</param>
-        /// <param name="line">The line.</param>
-        public LogLocation(string filePath, int line) : this(filePath, line, 1)
-        {
-        }
+        public static readonly LogLocation EmptyLocation = new LogLocation(string.Empty, 1, 1);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LogLocation"/> class.

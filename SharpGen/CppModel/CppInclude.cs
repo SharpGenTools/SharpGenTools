@@ -88,25 +88,5 @@ namespace SharpGen.CppModel
         {
             get { return Iterate<CppEnum>(); }
         }
-
-        /// <summary>
-        /// Gets the guids.
-        /// </summary>
-        /// <value>The guids.</value>
-        [XmlIgnore]
-        public IEnumerable<CppGuid> Guids
-        {
-            get { return Iterate<CppGuid>(); }
-        }
-
-        /// <summary>
-        /// Gets the constants.
-        /// </summary>
-        /// <value>The constants.</value>
-        [XmlIgnore]
-        public IEnumerable<CppConstant> Constants
-        {
-            get { return Iterate<CppConstant>(); }
-        }
     }
 }

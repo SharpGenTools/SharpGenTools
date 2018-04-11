@@ -31,10 +31,6 @@ namespace SharpGen.Model
     [DataContract(Name = "Parameter")]
     public class CsParameter : CsMarshalBase
     {
-        public CsParameter()
-        {
-        }
-        
         [DataMember]
         public CsParameterAttribute Attribute { get; set; }
 

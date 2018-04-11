@@ -82,7 +82,7 @@ namespace SharpGenTools.Sdk.Tasks
 
             consumerConfig.Id = ConsumerBindMappingConfigId;
 
-            consumerConfig.Extension = new List<ConfigBaseRule>(defines);
+            consumerConfig.Extension = new List<ExtensionBaseRule>(defines);
 
             var (bindings, generatedDefines) = transformer.GenerateTypeBindingsForConsumers();
 

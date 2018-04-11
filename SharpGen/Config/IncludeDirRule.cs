@@ -25,7 +25,7 @@ namespace SharpGen.Config
     /// <summary>
     /// An Include directive
     /// </summary>
-    public class IncludeDirRule : IEquatable<IncludeDirRule>
+    public class IncludeDirRule
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IncludeDirRule"/> class.
@@ -60,28 +60,14 @@ namespace SharpGen.Config
         /// </value>
         [XmlAttribute("override")]
         public bool IsOverride { get; set; }
-
-        public override bool Equals(object obj)
-        {
-            return obj is IncludeDirRule other && Equals(other);
-        }
-
-        public bool Equals(IncludeDirRule other)
-        {
-            return Path == other.Path && IsOverride == other.IsOverride;
-        }
-
-        public override int GetHashCode()
-        {
-            return Path.GetHashCode();
-        }
-
+        
         /// <summary>
         /// Returns a <see cref="System.String"/> that represents this instance.
         /// </summary>
         /// <returns>
         /// A <see cref="System.String"/> that represents this instance.
         /// </returns>
+        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             return string.Format("include-dir: {0} override: {1}", Path, IsOverride);

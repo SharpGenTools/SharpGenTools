@@ -34,6 +34,7 @@ namespace SharpGen.Config
         [XmlAttribute("base")]
         public string Base { get; set; }
 
+        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} to:{1} property:{2} base:{3}", base.ToString(), To, Property, Base);

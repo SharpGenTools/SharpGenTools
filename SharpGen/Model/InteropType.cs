@@ -28,6 +28,7 @@ namespace SharpGen.Model
     /// </summary>
     public class InteropType
     {
+        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
         public InteropType()
         {
         }

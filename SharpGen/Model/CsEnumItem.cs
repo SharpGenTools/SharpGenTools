@@ -26,6 +26,7 @@ namespace SharpGen.Model
     [DataContract(Name = "Enum-Item")]
     public class CsEnumItem : CsBase
     {
+        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
         public CsEnumItem()
         {
         }
