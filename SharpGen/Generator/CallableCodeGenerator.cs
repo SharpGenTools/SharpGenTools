@@ -66,7 +66,7 @@ namespace SharpGen.Generator
 
             if (csElement.HasReturnType)
             {
-                resultVariableName = "__result__";
+                resultVariableName = csElement.ReturnValue.Name;
                 statements.Add(LocalDeclarationStatement(
                     VariableDeclaration(
                         ParseTypeName(csElement.ReturnValue.PublicType.QualifiedName),
@@ -75,9 +75,9 @@ namespace SharpGen.Generator
                 if (csElement.ReturnValue.PublicType is CsStruct returnStruct && returnStruct.HasMarshalType)
                 {
                     resultMarshallingRequired = true;
-                    resultVariableName = "__result__native";
+                    resultVariableName = csElement.ReturnValue.MarshalStorageLocation;
                     statements.Add(ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                        IdentifierName("__result__"),
+                        IdentifierName(csElement.ReturnValue.Name),
                         ObjectCreationExpression(ParseTypeName(csElement.ReturnValue.PublicType.QualifiedName))
                             .WithArgumentList(ArgumentList()))));
                     statements.Add(LocalDeclarationStatement(
@@ -113,11 +113,11 @@ namespace SharpGen.Generator
                     ExpressionStatement(
                         InvocationExpression(
                             MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                IdentifierName("__result__"),
+                                IdentifierName(csElement.ReturnValue.Name),
                                 IdentifierName("__MarshalFrom")),
                             ArgumentList(
                                 SingletonSeparatedList(
-                                    Argument(IdentifierName("__result__native"))
+                                    Argument(IdentifierName(csElement.ReturnValue.MarshalStorageLocation))
                                         .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
             }
 
@@ -144,7 +144,7 @@ namespace SharpGen.Generator
                 statements.Add(ExpressionStatement(
                     InvocationExpression(
                         MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                        IdentifierName("__result__"),
+                        IdentifierName(csElement.ReturnValue.Name),
                         IdentifierName("CheckError")))));
             }
 

@@ -9,9 +9,10 @@ using System.Linq;
 
 namespace SharpGen.Generator
 {
-    class NativeInvocationCodeGenerator : ICodeGenerator<CsCallable, ExpressionSyntax>
+    class NativeInvocationCodeGenerator : MarshallingCodeGeneratorBase, ICodeGenerator<CsCallable, ExpressionSyntax>
     {
         public NativeInvocationCodeGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
+            :base(globalNamespace)
         {
             Generators = generators;
             this.globalNamespace = globalNamespace;
@@ -30,12 +31,11 @@ namespace SharpGen.Generator
                     LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)),
                     invocation);
             if (returnValue.PublicType is CsInterface)
-                return ObjectCreationExpression(ParseTypeName(returnValue.PublicType.QualifiedName),
-                    ArgumentList(
+                return ObjectCreationExpression(ParseTypeName(returnValue.PublicType.QualifiedName))
+                    .WithArgumentList(ArgumentList(
                         SingletonSeparatedList(
                             Argument(
-                                CastExpression(QualifiedName(IdentifierName("System"), IdentifierName("IntPtr")), invocation)))),
-                    InitializerExpression(SyntaxKind.ObjectInitializerExpression));
+                                CastExpression(QualifiedName(IdentifierName("System"), IdentifierName("IntPtr")), invocation)))));
             if (fundamentalPublic?.Type == typeof(string))
             {
                 var marshalMethodName = "PtrToString" + (returnValue.IsWideChar ? "Uni" : "Ansi");
@@ -79,13 +79,13 @@ namespace SharpGen.Generator
                 {
                     arguments.Add(Argument(CastExpression(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
                         PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
-                            IdentifierName("__result__native")))));
+                            GetMarshalStorageLocation(callable.ReturnValue)))));
                 }
                 else
                 {
                     arguments.Add(Argument(CastExpression(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
                         PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
-                            IdentifierName("__result__")))));
+                            IdentifierName(callable.ReturnValue.Name)))));
                 }
                
             }

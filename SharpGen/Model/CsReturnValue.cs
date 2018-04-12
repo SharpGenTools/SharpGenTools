@@ -12,5 +12,7 @@ namespace SharpGen.Model
         {
             Name = "__result__";
         }
+
+        public string MarshalStorageLocation => "__result__native";
     }
 }

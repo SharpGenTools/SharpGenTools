@@ -313,8 +313,8 @@ namespace SharpGen.Generator
                     return Identifier($"{marshallable.Name}_");
                 case CsField _:
                     throw new ArgumentException("Marshal storage location for a field cannot be represented by a token.", nameof(marshallable));
-                case CsReturnValue _:
-                    return Identifier("__result_native__");
+                case CsReturnValue returnValue:
+                    return Identifier(returnValue.MarshalStorageLocation);
                 default:
                     throw new ArgumentException(nameof(marshallable));
             }
