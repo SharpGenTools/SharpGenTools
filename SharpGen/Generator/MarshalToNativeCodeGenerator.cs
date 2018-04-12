@@ -151,9 +151,7 @@ namespace SharpGen.Generator
                         GetMarshalStorageLocation(csElement),
                         CastExpression(ParseTypeName(csElement.MarshalType.QualifiedName),
                             ParenthesizedExpression(BinaryExpression(SyntaxKind.BitwiseAndExpression,
-                                ParenthesizedExpression(CastExpression(
-                                    PredefinedType(Token(SyntaxKind.ULongKeyword)),
-                                    IdentifierName(csElement.IntermediateMarshalName))),
+                                IdentifierName(csElement.IntermediateMarshalName),
                                 LiteralExpression(
                                     SyntaxKind.NumericLiteralExpression,
                                     Literal(field.BitMask << field.BitOffset)))))));

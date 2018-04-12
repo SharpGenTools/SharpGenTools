@@ -187,16 +187,24 @@ namespace SharpGen.Generator
                                 IdentifierName("NativePointer")),
                             marshalElement));
             }
-
-            // TODO: Account for possibly 0 IntPtr from native (set to null if 0 unless fast out).
-            return Block(
-                ExpressionStatement(
-                    AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                    publicElement,
-                    ObjectCreationExpression(ParseTypeName(interfaceType.GetNativeImplementationOrThis().QualifiedName))
-                    .WithArgumentList(
-                        ArgumentList(SingletonSeparatedList(
-                            Argument(marshalElement)))))));
+            
+            return IfStatement(
+                    BinaryExpression(SyntaxKind.NotEqualsExpression,
+                        marshalElement,
+                        ParseExpression("System.IntPtr.Zero")),
+                    ExpressionStatement(
+                        AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                        publicElement,
+                        ObjectCreationExpression(ParseTypeName(interfaceType.GetNativeImplementationOrThis().QualifiedName))
+                        .WithArgumentList(
+                            ArgumentList(SingletonSeparatedList(
+                                Argument(marshalElement)))))),
+                    ElseClause(
+                        ExpressionStatement(
+                        AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                            publicElement,
+                            LiteralExpression(SyntaxKind.NullLiteralExpression,
+                                Token(SyntaxKind.NullKeyword))))));
         }
     }
 }

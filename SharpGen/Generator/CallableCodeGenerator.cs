@@ -134,6 +134,7 @@ namespace SharpGen.Generator
             }
             
             statements.AddRange(csElement.Parameters
+                .Where(param => !param.IsOut)
                 .Select(Generators.MarshalCleanupSingleFrame.GenerateCode)
                 .Where(param => param != null));
 
