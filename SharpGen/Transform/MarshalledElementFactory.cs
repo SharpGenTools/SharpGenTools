@@ -322,7 +322,7 @@ namespace SharpGen.Transform
             param.HasParams = hasParams;
             param.PublicType = publicType ?? throw new ArgumentException("Public type cannot be null");
             param.MarshalType = marshalType;
-            param.IsOptional = isOptional;
+            param.OptionalParameter = isOptional;
 
             // Force IsString to be only string (due to Buffer attribute)
             if (param.IsString)

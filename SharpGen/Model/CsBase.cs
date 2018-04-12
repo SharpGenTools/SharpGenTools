@@ -313,5 +313,11 @@ namespace SharpGen.Model
         {
             return MemberwiseClone();
         }
+
+        [ExcludeFromCodeCoverage]
+        public override string ToString()
+        {
+            return QualifiedName;
+        }
     }
 }

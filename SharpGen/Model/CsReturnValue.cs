@@ -8,5 +8,9 @@ namespace SharpGen.Model
     [DataContract(Name = "Return")]
     public class CsReturnValue : CsMarshalBase
     {
+        public CsReturnValue()
+        {
+            Name = "__result__";
+        }
     }
 }

@@ -29,17 +29,15 @@ namespace SharpGen.Model
     [DataContract(Name = "Field")]
     public class CsField : CsMarshalBase
     {
-        [DataMember]
-        public int Offset { get; set; }
-
-        [DataMember]
-        public bool IsBitField { get; set; }
 
         [DataMember]
         public int BitMask { get; set; }
 
         [DataMember]
         public int BitOffset { get; set; }
+
+        [DataMember]
+        public bool IsBitField { get; set; }
 
         public bool IsFixedArrayOfStruct
         {
@@ -48,5 +46,7 @@ namespace SharpGen.Model
                 return MarshalType is CsStruct || PublicType is CsFundamentalType fundamental && fundamental.Type == typeof(System.IntPtr);
             }
         }
+        [DataMember]
+        public int Offset { get; set; }
     }
 }

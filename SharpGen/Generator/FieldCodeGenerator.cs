@@ -34,13 +34,13 @@ namespace SharpGen.Generator
                                 AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
                                     .WithExpressionBody(ArrowExpressionClause(
                                         BinaryExpression(SyntaxKind.NotEqualsExpression,
-                                                IdentifierName($"_{csElement.Name}"),
+                                                IdentifierName(csElement.IntermediateMarshalName),
                                                 LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)))))
                                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
                                 AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
                                     .WithExpressionBody(ArrowExpressionClause(
                                         AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                                            IdentifierName($"_{csElement.Name}"),
+                                            IdentifierName(csElement.IntermediateMarshalName),
                                             CastExpression(
                                                 ParseTypeName(csElement.MarshalType.QualifiedName),
                                                 ParenthesizedExpression(
@@ -52,7 +52,7 @@ namespace SharpGen.Generator
                             })))
                     .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
                     .WithLeadingTrivia(Trivia(docComments));
-                yield return GenerateBackingField(csElement.Name, csElement.MarshalType, csElement.VisibilityName, explicitLayout ? csElement.Offset : (int?)null);
+                yield return GenerateBackingField(csElement, csElement.MarshalType, explicitLayout ? csElement.Offset : (int?)null);
             }
             else if (csElement.IsArray && csElement.PublicType.QualifiedName != "System.String")
             {
@@ -65,10 +65,10 @@ namespace SharpGen.Generator
                                     AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
                                         .WithExpressionBody(ArrowExpressionClause(
                                             BinaryExpression(SyntaxKind.CoalesceExpression,
-                                                ParseName($"_{csElement.Name}"),
+                                                ParseName(csElement.IntermediateMarshalName),
                                                 ParenthesizedExpression(
                                                     AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                                                        ParseName($"_{csElement.Name}"),
+                                                        ParseName(csElement.IntermediateMarshalName),
                                                         ObjectCreationExpression(
                                                             ArrayType(ParseTypeName(csElement.PublicType.QualifiedName),
                                                             SingletonList(
@@ -81,7 +81,7 @@ namespace SharpGen.Generator
                     .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
                     .WithLeadingTrivia(Trivia(docComments));
 
-                yield return GenerateBackingField(csElement.Name, csElement.PublicType, csElement.VisibilityName, explicitLayout ? csElement.Offset : (int?)null, isArray: true);
+                yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : (int?)null, isArray: true);
             }
             else if (csElement.IsBitField)
             {
@@ -101,7 +101,7 @@ namespace SharpGen.Generator
                                                         BinaryExpression(SyntaxKind.BitwiseAndExpression,
                                                             ParenthesizedExpression(
                                                                 BinaryExpression(SyntaxKind.RightShiftExpression,
-                                                                    ParseName($"_{csElement.Name}"),
+                                                                    ParseName(csElement.IntermediateMarshalName),
                                                                     LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.BitOffset)))),
                                                             LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.BitMask)))))))
                                                             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
@@ -112,7 +112,7 @@ namespace SharpGen.Generator
                                                     MemberAccessExpression(
                                                         SyntaxKind.SimpleMemberAccessExpression,
                                                         ThisExpression(),
-                                                        IdentifierName($"_{csElement.Name}")),
+                                                        IdentifierName(csElement.IntermediateMarshalName)),
                                                     CastExpression(
                                                         ParseTypeName(csElement.PublicType.QualifiedName),
                                                         ParenthesizedExpression(
@@ -124,7 +124,7 @@ namespace SharpGen.Generator
                                                                         MemberAccessExpression(
                                                                             SyntaxKind.SimpleMemberAccessExpression,
                                                                             ThisExpression(),
-                                                                            IdentifierName(($"_{csElement.Name}"))),
+                                                                            IdentifierName(csElement.IntermediateMarshalName)),
                                                                         PrefixUnaryExpression(
                                                                             SyntaxKind.BitwiseNotExpression,
                                                                             ParenthesizedExpression(
@@ -179,7 +179,7 @@ namespace SharpGen.Generator
                                                         BinaryExpression(SyntaxKind.BitwiseAndExpression,
                                                             ParenthesizedExpression(
                                                                 BinaryExpression(SyntaxKind.RightShiftExpression,
-                                                                    ParseName($"_{csElement.Name}"),
+                                                                    IdentifierName(csElement.IntermediateMarshalName),
                                                                     LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.BitOffset)))),
                                                             LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.BitMask)))))))
                                             .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
@@ -190,7 +190,7 @@ namespace SharpGen.Generator
                                                     MemberAccessExpression(
                                                         SyntaxKind.SimpleMemberAccessExpression,
                                                         ThisExpression(),
-                                                        IdentifierName($"_{csElement.Name}")),
+                                                        IdentifierName(csElement.IntermediateMarshalName)),
                                                     CastExpression(
                                                         ParseTypeName(csElement.PublicType.QualifiedName),
                                                         ParenthesizedExpression(
@@ -202,7 +202,7 @@ namespace SharpGen.Generator
                                                                         MemberAccessExpression(
                                                                             SyntaxKind.SimpleMemberAccessExpression,
                                                                             ThisExpression(),
-                                                                            IdentifierName(($"_{csElement.Name}"))),
+                                                                            IdentifierName(csElement.IntermediateMarshalName)),
                                                                         PrefixUnaryExpression(
                                                                             SyntaxKind.BitwiseNotExpression,
                                                                             ParenthesizedExpression(
@@ -233,24 +233,24 @@ namespace SharpGen.Generator
                     .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
                     .WithLeadingTrivia(Trivia(docComments));
                 }
-                yield return GenerateBackingField(csElement.Name, csElement.PublicType, csElement.VisibilityName, explicitLayout ? csElement.Offset : (int?)null);
+                yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : (int?)null);
             }
             else
             {
-                yield return GenerateBackingField(csElement.Name, csElement.PublicType, csElement.VisibilityName, explicitLayout ? csElement.Offset : (int?)null, docTrivia: docComments, propertyBacking: false);
+                yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : (int?)null, docTrivia: docComments, propertyBacking: false);
             }
         }
 
-        private static MemberDeclarationSyntax GenerateBackingField(string name, CsTypeBase type, string visibility, int? offset, bool isArray = false, bool propertyBacking = true, DocumentationCommentTriviaSyntax docTrivia = null)
+        private static MemberDeclarationSyntax GenerateBackingField(CsField field, CsTypeBase backingType, int? offset, bool isArray = false, bool propertyBacking = true, DocumentationCommentTriviaSyntax docTrivia = null)
         {
             var fieldDecl = FieldDeclaration(
                VariableDeclaration(isArray ?
-                   ArrayType(ParseTypeName(type.QualifiedName), SingletonList(ArrayRankSpecifier()))
-                   : ParseTypeName(type.QualifiedName),
+                   ArrayType(ParseTypeName(backingType.QualifiedName), SingletonList(ArrayRankSpecifier()))
+                   : ParseTypeName(backingType.QualifiedName),
                    SingletonSeparatedList(
-                       VariableDeclarator(propertyBacking ? $"_{name}" : name)
+                       VariableDeclarator(propertyBacking ? field.IntermediateMarshalName : field.Name)
                    )))
-               .WithModifiers(propertyBacking ? TokenList(Token(SyntaxKind.InternalKeyword)) : TokenList(ParseTokens(visibility)));
+               .WithModifiers(propertyBacking ? TokenList(Token(SyntaxKind.InternalKeyword)) : TokenList(ParseTokens(field.VisibilityName)));
 
             if (offset.HasValue)
             {

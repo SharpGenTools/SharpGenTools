@@ -20,7 +20,7 @@ namespace SharpGen.Generator
             this.globalNamespace = globalNamespace;
         }
 
-        GlobalNamespaceProvider globalNamespace;
+        readonly GlobalNamespaceProvider globalNamespace;
 
         public IGeneratorRegistry Generators { get; }
 
@@ -49,12 +49,21 @@ namespace SharpGen.Generator
 
             string resultVariableName = null;
             var resultMarshallingRequired = false;
+            
+            statements.AddRange(csElement.Parameters.SelectMany(param => Generators.ParameterProlog.GenerateCode(param)));
 
-            // foreach parameter
-            foreach (var parameter in csElement.Parameters)
+            foreach (var param in csElement.Parameters)
             {
-                statements.AddRange(Generators.ParameterProlog.GenerateCode(parameter));
+                if (param.IsIn || param.IsRefIn || param.IsRef)
+                {
+                    var marshalToNative = Generators.MarshalToNativeSingleFrame.GenerateCode(param);
+                    if (marshalToNative != null)
+                    {
+                        statements.Add(marshalToNative);
+                    }
+                }
             }
+
             if (csElement.HasReturnType)
             {
                 resultVariableName = "__result__";
@@ -79,7 +88,9 @@ namespace SharpGen.Generator
                 }
             }
 
-            var fixedStatements = GenerateFixedStatements(csElement);
+            var fixedStatements = csElement.PublicParameters
+                .Select(Generators.Pinning.GenerateCode)
+                .Where(stmt => stmt != null).ToList();
 
             var invocation = Generators.NativeInvocation.GenerateCode(csElement);
             var callStmt = ExpressionStatement(csElement.HasReturnType && !csElement.IsReturnStructLarge ?
@@ -110,23 +121,35 @@ namespace SharpGen.Generator
                                         .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
             }
 
-            foreach (var parameter in csElement.Parameters)
+            foreach (var param in csElement.Parameters)
             {
-                statements.AddRange(Generators.ParameterEpilog.GenerateCode(parameter));
+                if (param.IsRef || param.IsOut)
+                {
+                    var marshalFromNative = Generators.MarshalFromNativeSingleFrame.GenerateCode(param);
+                    if (marshalFromNative != null)
+                    {
+                        statements.Add(marshalFromNative);
+                    }
+                }
+            }
+            
+            statements.AddRange(csElement.Parameters
+                .Select(Generators.MarshalCleanupSingleFrame.GenerateCode)
+                .Where(param => param != null));
+
+
+            if ((csElement.ReturnValue.PublicType.Name == globalNamespace.GetTypeName(WellKnownName.Result)) && csElement.CheckReturnType)
+            {
+                statements.Add(ExpressionStatement(
+                    InvocationExpression(
+                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                        IdentifierName("__result__"),
+                        IdentifierName("CheckError")))));
             }
 
             // Return
             if (csElement.HasPublicReturnType)
             {
-                if ((csElement.ReturnValue.PublicType.Name == globalNamespace.GetTypeName(WellKnownName.Result)) && csElement.CheckReturnType)
-                {
-                    statements.Add(ExpressionStatement(
-                        InvocationExpression(
-                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                            IdentifierName("__result__"),
-                            IdentifierName("CheckError")))));
-                }
-
                 if (csElement.HasReturnTypeParameter || csElement.ForceReturnType || !csElement.HideReturnType)
                 {
                     statements.Add(ReturnStatement(IdentifierName(csElement.ReturnName)));
@@ -135,60 +158,5 @@ namespace SharpGen.Generator
 
             yield return methodDeclaration.WithBody(Block(statements));
         }
-
-
-        private static List<FixedStatementSyntax> GenerateFixedStatements(CsCallable csElement)
-        {
-            var fixedStatements = new List<FixedStatementSyntax>();
-            foreach (var param in csElement.Parameters)
-            {
-                FixedStatementSyntax statement = null;
-                if (param.IsArray && param.IsValueType)
-                {
-                    if (param.HasNativeValueType || param.IsOptional)
-                    {
-                        statement = FixedStatement(VariableDeclaration(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
-                            SingletonSeparatedList(
-                                VariableDeclarator(param.TempName).WithInitializer(EqualsValueClause(
-                                    IdentifierName($"{param.TempName}_")
-                                    )))), EmptyStatement());
-                    }
-                    else
-                    {
-                        statement = FixedStatement(VariableDeclaration(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
-                            SingletonSeparatedList(
-                                VariableDeclarator(param.TempName).WithInitializer(EqualsValueClause(
-                                    IdentifierName(param.Name)
-                                    )))), EmptyStatement());
-                    }
-                }
-                else if (param.IsFixed && param.IsValueType && !param.HasNativeValueType && !param.IsUsedAsReturnType)
-                {
-                    statement = FixedStatement(VariableDeclaration(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
-                        SingletonSeparatedList(
-                            VariableDeclarator(param.TempName).WithInitializer(EqualsValueClause(
-                                PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
-                                    IdentifierName(param.Name))
-                                )))), EmptyStatement());
-                }
-                else if (param.IsString && param.IsWideChar)
-                {
-                    statement = FixedStatement(VariableDeclaration(PointerType(PredefinedType(Token(SyntaxKind.CharKeyword))),
-                        SingletonSeparatedList(
-                            VariableDeclarator(param.TempName).WithInitializer(EqualsValueClause(
-                                IdentifierName(param.Name)
-                                )))), EmptyStatement());
-                }
-
-                if (statement != null)
-                {
-                    fixedStatements.Add(statement);
-                }
-            }
-
-            return fixedStatements;
-        }
-
-
     }
 }

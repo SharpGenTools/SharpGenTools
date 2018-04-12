@@ -31,25 +31,9 @@ namespace SharpGen.Model
     [DataContract(Name = "Parameter")]
     public class CsParameter : CsMarshalBase
     {
+        private const int SizeOfLimit = 16;
         [DataMember]
         public CsParameterAttribute Attribute { get; set; }
-
-        [DataMember]
-        public bool HasParams { get; set; }
-
-        [DataMember]
-        public bool IsOptional { get; set; }
-
-        [DataMember]
-        public bool IsUsedAsReturnType { get; set; }
-
-        [DataMember]
-        public bool IsFast { get; set; }
-
-        public bool IsFastOut
-        {
-            get { return IsFast && IsOut; }
-        }
 
         [DataMember]
         public string DefaultValue { get; set; }
@@ -57,27 +41,15 @@ namespace SharpGen.Model
         [DataMember]
         public bool ForcePassByValue { get; set; }
 
-        private const int SizeOfLimit = 16;
+        [DataMember]
+        public bool HasParams { get; set; }
 
-        protected override void UpdateFromMappingRule(MappingRule tag)
+        [DataMember]
+        public bool IsFast { get; set; }
+
+        public override bool IsFastOut
         {
-            base.UpdateFromMappingRule(tag);
-            if (tag.ParameterUsedAsReturnType.HasValue)
-                IsUsedAsReturnType = tag.ParameterUsedAsReturnType.Value;
-            if (tag.ParameterAttribute.HasValue)
-            {
-                if((tag.ParameterAttribute.Value & ParamAttribute.Fast) != 0)
-                {
-                    IsFast = true;
-                }
-
-                if((tag.ParameterAttribute.Value & ParamAttribute.Value) != 0)
-                {
-                    ForcePassByValue = true;
-                }
-            }
-
-            DefaultValue = tag.DefaultValue;
+            get { return IsFast && IsOut; }
         }
 
         public bool IsFixed
@@ -98,22 +70,9 @@ namespace SharpGen.Model
             }
         }
 
-        public string TempName
+        public bool IsIn
         {
-            get { return Name + "_"; }
-        }
-
-        public bool IsRef
-        {
-            get { return Attribute == CsParameterAttribute.Ref; }
-        }
-
-        public bool IsInterfaceArray
-        {
-            get
-            {
-                return PublicType is CsInterfaceArray;
-            }
+            get { return Attribute == CsParameterAttribute.In; }
         }
 
         public bool IsInInterfaceArrayLike
@@ -124,52 +83,21 @@ namespace SharpGen.Model
             }
         }
 
-        public bool IsInterface
-        {
-            get
-            {
-                return PublicType is CsInterface;
-            }
-        }
-
-        public bool IsRefIn
-        {
-            get { return Attribute == CsParameterAttribute.RefIn; }
-        }
-
-        public bool IsIn
-        {
-            get { return Attribute == CsParameterAttribute.In; }
-        }
+        public override bool IsOptional => OptionalParameter;
 
         public bool IsOut
         {
             get { return Attribute == CsParameterAttribute.Out; }
         }
 
-        public bool IsPrimitive
+        public bool IsRef
         {
-            get { return PublicType is CsFundamentalType type && type.Type.GetTypeInfo().IsPrimitive; }
+            get { return Attribute == CsParameterAttribute.Ref; }
         }
 
-        public bool IsString
+        public override bool IsRefIn
         {
-            get { return PublicType is CsFundamentalType type && type.Type == typeof (string); }
-        }
-
-        public bool HasNativeValueType
-        {
-            get { return (PublicType is CsStruct csStruct && csStruct.HasMarshalType) ; }
-        }
-
-        public bool IsStaticMarshal
-        {
-            get { return (PublicType is CsStruct csStruct && csStruct.IsStaticMarshal); }
-        }
-
-        public bool IsRefInValueTypeOptional
-        {
-            get { return IsRefIn && IsValueType && !IsArray && IsOptional; }
+            get { return Attribute == CsParameterAttribute.RefIn; }
         }
 
         public bool IsRefInValueTypeByValue
@@ -181,13 +109,20 @@ namespace SharpGen.Model
             }
         }
 
-        public bool IsNullableStruct
+        public bool IsRefInValueTypeOptional
         {
-            get => IsRefIn
-                && IsValueType
-                && !IsArray
-                && IsOptional
-                && !IsStructClass;
+            get { return IsRefIn && IsValueType && !IsArray && OptionalParameter; }
+        }
+
+        [DataMember]
+        public bool IsUsedAsReturnType { get; set; }
+
+        [DataMember]
+        public bool OptionalParameter { get; set; }
+
+        public string TempName
+        {
+            get { return Name + "_"; }
         }
 
         public override object Clone()
@@ -195,6 +130,27 @@ namespace SharpGen.Model
             var parameter = (CsParameter)base.Clone();
             parameter.Parent = null;
             return parameter;
+        }
+
+        protected override void UpdateFromMappingRule(MappingRule tag)
+        {
+            base.UpdateFromMappingRule(tag);
+            if (tag.ParameterUsedAsReturnType.HasValue)
+                IsUsedAsReturnType = tag.ParameterUsedAsReturnType.Value;
+            if (tag.ParameterAttribute.HasValue)
+            {
+                if ((tag.ParameterAttribute.Value & ParamAttribute.Fast) != 0)
+                {
+                    IsFast = true;
+                }
+
+                if ((tag.ParameterAttribute.Value & ParamAttribute.Value) != 0)
+                {
+                    ForcePassByValue = true;
+                }
+            }
+
+            DefaultValue = tag.DefaultValue;
         }
     }
 }

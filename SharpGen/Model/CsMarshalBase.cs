@@ -53,6 +53,12 @@ namespace SharpGen.Model
         [DataMember]
         public bool IsBoolToInt { get; set; }
 
+        public virtual bool IsOptional => false;
+
+        public virtual bool IsRefIn => false;
+
+        public virtual bool IsFastOut => false;
+
         public int Size => MarshalType.Size * ((ArrayDimensionValue > 1) ? ArrayDimensionValue : 1);
 
         public bool IsValueType
@@ -61,9 +67,56 @@ namespace SharpGen.Model
                     (PublicType is CsFundamentalType type && (type.Type.GetTypeInfo().IsValueType || type.Type.GetTypeInfo().IsPrimitive)); }
         }
 
+        public bool IsInterface
+        {
+            get
+            {
+                return PublicType is CsInterface;
+            }
+        }
+
         public bool IsStructClass
         {
             get { return PublicType is CsStruct csStruct && csStruct.GenerateAsClass; }
         }
+
+        public bool IsPrimitive
+        {
+            get { return PublicType is CsFundamentalType type && type.Type.GetTypeInfo().IsPrimitive; }
+        }
+
+        public bool IsString
+        {
+            get { return PublicType is CsFundamentalType type && type.Type == typeof(string); }
+        }
+
+        public bool HasNativeValueType
+        {
+            get { return (PublicType is CsStruct csStruct && csStruct.HasMarshalType); }
+        }
+
+        public bool IsStaticMarshal
+        {
+            get { return (PublicType is CsStruct csStruct && csStruct.IsStaticMarshal); }
+        }
+
+        public bool IsInterfaceArray
+        {
+            get
+            {
+                return PublicType is CsInterfaceArray;
+            }
+        }
+
+        public bool IsNullableStruct
+        {
+            get => IsRefIn
+                && IsValueType
+                && !IsArray
+                && IsOptional
+                && !IsStructClass;
+        }
+
+        public string IntermediateMarshalName => Name[0] == '@' ? $"_{Name.Substring(1)}" : $"_{Name}";
     }
 }

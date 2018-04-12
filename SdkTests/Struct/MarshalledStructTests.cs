@@ -94,7 +94,7 @@ namespace Struct
 
             var result = Functions.PassThrough(obj);
 
-            Assert.Equal("1234567890", result.SmallString);
+            Assert.Equal("123456789", result.SmallString);
             Assert.Null(result.LargeString);
         }
 
