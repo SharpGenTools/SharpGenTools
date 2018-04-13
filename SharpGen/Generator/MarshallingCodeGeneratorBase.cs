@@ -350,5 +350,15 @@ namespace SharpGen.Generator
                                     SyntaxKind.StringLiteralExpression,
                                     Literal(message)))))));
         }
+
+        protected bool ReturnValueMarshalled(CsReturnValue value)
+        {
+            return value.HasNativeValueType
+                || value.IsBoolToInt
+                || value.IsInterface
+                || value.IsArray
+                || value.IsString
+                || value.MappedToDifferentPublicType;
+        }
     }
 }

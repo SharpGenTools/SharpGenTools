@@ -11,15 +11,15 @@ namespace SharpGen.Generator
     /// <summary>
     /// Declares local variables and allocates memory required for marshalling parameters to their native views.
     /// </summary>
-    class ParameterPrologCodeGenerator : MarshallingCodeGeneratorBase, IMultiCodeGenerator<CsParameter, StatementSyntax>
+    class CallableMarshallingPrologCodeGenerator : MarshallingCodeGeneratorBase, IMultiCodeGenerator<CsMarshalCallableBase, StatementSyntax>
     {
-        public ParameterPrologCodeGenerator(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
+        public CallableMarshallingPrologCodeGenerator(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
         {
         }
 
-        public IEnumerable<StatementSyntax> GenerateCode(CsParameter csElement)
+        public IEnumerable<StatementSyntax> GenerateCode(CsMarshalCallableBase csElement)
         {
-            if (csElement.IsUsedAsReturnType)
+            if (csElement.UsedAsReturn)
             {
                 yield return LocalDeclarationStatement(
                     VariableDeclaration(
@@ -141,9 +141,23 @@ namespace SharpGen.Generator
                 yield break;
             }
 
+            if (csElement.IsString && (!csElement.IsWideChar || csElement is CsReturnValue))
+            {
+                yield return LocalDeclarationStatement(
+                    VariableDeclaration(
+                        QualifiedName(
+                            IdentifierName("System"),
+                            IdentifierName("IntPtr")),
+                        SingletonSeparatedList(
+                            VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)))));
+                yield break;
+            }
+
             if (csElement.IsOut && !csElement.IsArray)
             {
-                if (csElement.IsValueType && !csElement.IsPrimitive)
+                if (csElement.IsValueType
+                    && !csElement.IsPrimitive
+                    && !(csElement is CsReturnValue value && !ReturnValueMarshalled(value)))
                 {
                     yield return ExpressionStatement(
                         AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
@@ -157,15 +171,14 @@ namespace SharpGen.Generator
                     yield return LocalDeclarationStatement(
                         VariableDeclaration(PredefinedType(Token(SyntaxKind.IntKeyword)),
                             SingletonSeparatedList(VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)))));
+                    yield break;
                 }
             }
-            else if (csElement.IsString && !csElement.IsWideChar)
+
+            if (csElement.MappedToDifferentPublicType)
             {
                 yield return LocalDeclarationStatement(
-                    VariableDeclaration(
-                        QualifiedName(
-                            IdentifierName("System"),
-                            IdentifierName("IntPtr")),
+                    VariableDeclaration(ParseTypeName(csElement.MarshalType.QualifiedName),
                         SingletonSeparatedList(
                             VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)))));
             }

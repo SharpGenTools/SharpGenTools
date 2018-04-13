@@ -129,9 +129,7 @@ namespace SharpGen.Generator
                     IdentifierName(csElement.Name),
                     GetMarshalStorageLocation(csElement));
             }
-            else if (csElement.MarshalType != csElement.PublicType
-                && !csElement.IsBoolToInt
-                && !(csElement.MarshalType.QualifiedName == "System.IntPtr" && csElement.HasPointer))
+            else if (csElement.MappedToDifferentPublicType)
             {
                 return ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                         IdentifierName(csElement.Name),

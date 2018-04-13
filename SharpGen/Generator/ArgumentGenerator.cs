@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace SharpGen.Generator
 {
-    class ArgumentGenerator : MarshallingCodeGeneratorBase, ICodeGenerator<CsParameter, ArgumentSyntax>
+    class ArgumentGenerator : MarshallingCodeGeneratorBase, ICodeGenerator<CsMarshalCallableBase, ArgumentSyntax>
     {
         GlobalNamespaceProvider globalNamespace;
 
@@ -18,7 +18,7 @@ namespace SharpGen.Generator
             this.globalNamespace = globalNamespace;
         }
 
-        public ArgumentSyntax GenerateCode(CsParameter csElement)
+        public ArgumentSyntax GenerateCode(CsMarshalCallableBase csElement)
         {
             if (csElement.MarshalType.QualifiedName == "System.IntPtr") // Marshal System.IntPtr as void* for arguments.
             {
@@ -29,7 +29,7 @@ namespace SharpGen.Generator
             }
 
             // Cast the argument to the native (marshal) type
-            if (csElement.MarshalType != csElement.PublicType)
+            if (csElement.MarshalType != csElement.PublicType && !(csElement is CsReturnValue))
             {
                 return Argument(CheckedExpression(
                             SyntaxKind.UncheckedExpression,
@@ -43,7 +43,7 @@ namespace SharpGen.Generator
             }
         }
 
-        private ExpressionSyntax GenerateExpression(CsParameter param)
+        private ExpressionSyntax GenerateExpression(CsMarshalCallableBase param)
         {
             if (param.IsInterfaceArray)
             {
@@ -107,7 +107,7 @@ namespace SharpGen.Generator
                 }
                 else if (param.IsFixed && !param.HasNativeValueType)
                 {
-                    return param.IsUsedAsReturnType
+                    return param.UsedAsReturn
                         ? PrefixUnaryExpression(SyntaxKind.AddressOfExpression, IdentifierName(param.Name))
                         : GetMarshalStorageLocation(param);
                 }
@@ -115,14 +115,27 @@ namespace SharpGen.Generator
                 {
                     return PrefixUnaryExpression(SyntaxKind.AddressOfExpression, GetMarshalStorageLocation(param));
                 }
+                else if (param.IsString)
+                {
+                    return PrefixUnaryExpression(SyntaxKind.AddressOfExpression, GetMarshalStorageLocation(param));
+                }
+                else if (param.IsValueType)
+                {
+                    if (!param.MappedToDifferentPublicType)
+                    {
+                        return PrefixUnaryExpression(SyntaxKind.AddressOfExpression, IdentifierName(param.Name));
+                    }
+                    else
+                    {
+                        return PrefixUnaryExpression(SyntaxKind.AddressOfExpression, GetMarshalStorageLocation(param));
+                    }
+                }
                 else
                 {
-                    return param.IsValueType
-                        ? PrefixUnaryExpression(SyntaxKind.AddressOfExpression, IdentifierName(param.Name))
-                        : GetMarshalStorageLocation(param);
+                    return GetMarshalStorageLocation(param);
                 }
             }
-            if (param.IsRefInValueTypeOptional)
+            if (param.PassedByNullableInstance)
             {
                 return GenerateNullCheckIfNeeded(
                     param,
@@ -137,7 +150,7 @@ namespace SharpGen.Generator
                                     Literal(0)))
                         );
             }
-            if (param.IsRefInValueTypeByValue)
+            if (param.RefInPassedByValue)
             {
                 return PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
                     param.HasNativeValueType ? GetMarshalStorageLocation(param) : IdentifierName(param.Name));
@@ -158,7 +171,7 @@ namespace SharpGen.Generator
                     GetMarshalStorageLocation(param));
             }
             if (param.PublicType is CsInterface
-                && param.Attribute == CsParameterAttribute.In
+                && param.IsIn
                 && !param.IsArray)
             {
                 return CastExpression(
@@ -173,7 +186,7 @@ namespace SharpGen.Generator
                 {
                     return IdentifierName(param.IntermediateMarshalName);
                 }
-                else if (param.IsValueType && param.OptionalParameter)
+                else if (param.IsValueType && param.IsOptional)
                 {
                     return GetMarshalStorageLocation(param);
                 }
@@ -187,7 +200,7 @@ namespace SharpGen.Generator
             }
             if (param.IsFixed && !param.HasNativeValueType)
             {
-                return GetMarshalStorageLocation(param); ;
+                return GetMarshalStorageLocation(param);
             }
             if (param.PublicType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr) && !param.IsArray)
             {

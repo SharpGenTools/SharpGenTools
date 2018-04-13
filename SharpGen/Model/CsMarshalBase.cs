@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -67,6 +68,8 @@ namespace SharpGen.Model
                     (PublicType is CsFundamentalType type && (type.Type.GetTypeInfo().IsValueType || type.Type.GetTypeInfo().IsPrimitive)); }
         }
 
+        public bool PassedByNullableInstance => IsRefIn && IsValueType && !IsArray && IsOptional;
+
         public bool IsInterface
         {
             get
@@ -90,33 +93,24 @@ namespace SharpGen.Model
             get { return PublicType is CsFundamentalType type && type.Type == typeof(string); }
         }
 
-        public bool HasNativeValueType
-        {
-            get { return (PublicType is CsStruct csStruct && csStruct.HasMarshalType); }
-        }
+        public bool HasNativeValueType => (PublicType is CsStruct csStruct && csStruct.HasMarshalType);
 
-        public bool IsStaticMarshal
-        {
-            get { return (PublicType is CsStruct csStruct && csStruct.IsStaticMarshal); }
-        }
+        public bool IsStaticMarshal => (PublicType is CsStruct csStruct && csStruct.IsStaticMarshal);
 
-        public bool IsInterfaceArray
+        public bool IsInterfaceArray => PublicType is CsInterfaceArray;
+
+        public bool IsNullableStruct => PassedByNullableInstance && !IsStructClass;
+
+        public string IntermediateMarshalName => Name[0] == '@' ? $"_{Name.Substring(1)}" : $"_{Name}";
+
+        public bool MappedToDifferentPublicType
         {
             get
             {
-                return PublicType is CsInterfaceArray;
+                return MarshalType != PublicType
+                && !IsBoolToInt
+                && !(MarshalType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr) && HasPointer);
             }
         }
-
-        public bool IsNullableStruct
-        {
-            get => IsRefIn
-                && IsValueType
-                && !IsArray
-                && IsOptional
-                && !IsStructClass;
-        }
-
-        public string IntermediateMarshalName => Name[0] == '@' ? $"_{Name.Substring(1)}" : $"_{Name}";
     }
 }

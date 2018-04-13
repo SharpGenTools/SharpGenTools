@@ -29,7 +29,7 @@ using System.Runtime.Serialization;
 namespace SharpGen.Model
 {
     [DataContract(Name = "Parameter")]
-    public class CsParameter : CsMarshalBase
+    public class CsParameter : CsMarshalCallableBase
     {
         private const int SizeOfLimit = 16;
         [DataMember]
@@ -52,15 +52,13 @@ namespace SharpGen.Model
             get { return IsFast && IsOut; }
         }
 
-        public bool IsFixed
+        public override bool IsFixed
         {
             get
             {
                 if (Attribute == CsParameterAttribute.Ref || Attribute == CsParameterAttribute.RefIn)
                 {
-                    if (IsRefInValueTypeOptional || IsRefInValueTypeByValue)
-                        return false;
-                    return true;
+                    return !(PassedByNullableInstance || RefInPassedByValue);
                 }
                 if (Attribute == CsParameterAttribute.Out && !IsBoolToInt)
                     return true;
@@ -70,7 +68,7 @@ namespace SharpGen.Model
             }
         }
 
-        public bool IsIn
+        public override bool IsIn
         {
             get { return Attribute == CsParameterAttribute.In; }
         }
@@ -85,7 +83,7 @@ namespace SharpGen.Model
 
         public override bool IsOptional => OptionalParameter;
 
-        public bool IsOut
+        public override bool IsOut
         {
             get { return Attribute == CsParameterAttribute.Out; }
         }
@@ -100,7 +98,7 @@ namespace SharpGen.Model
             get { return Attribute == CsParameterAttribute.RefIn; }
         }
 
-        public bool IsRefInValueTypeByValue
+        public override bool RefInPassedByValue
         {
             get
             {
@@ -109,13 +107,10 @@ namespace SharpGen.Model
             }
         }
 
-        public bool IsRefInValueTypeOptional
-        {
-            get { return IsRefIn && IsValueType && !IsArray && OptionalParameter; }
-        }
-
         [DataMember]
         public bool IsUsedAsReturnType { get; set; }
+
+        public override bool UsedAsReturn => IsUsedAsReturnType;
 
         [DataMember]
         public bool OptionalParameter { get; set; }

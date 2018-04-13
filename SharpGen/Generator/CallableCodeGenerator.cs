@@ -50,7 +50,12 @@ namespace SharpGen.Generator
             string resultVariableName = null;
             var resultMarshallingRequired = false;
             
-            statements.AddRange(csElement.Parameters.SelectMany(param => Generators.ParameterProlog.GenerateCode(param)));
+            statements.AddRange(csElement.Parameters.SelectMany(param => Generators.CallableMarshallingProlog.GenerateCode(param)));
+            if (csElement.HasReturnType)
+            {
+                statements.AddRange(Generators.CallableMarshallingProlog.GenerateCode(csElement.ReturnValue)); 
+            }
+
 
             foreach (var param in csElement.Parameters)
             {
@@ -64,40 +69,11 @@ namespace SharpGen.Generator
                 }
             }
 
-            if (csElement.HasReturnType)
-            {
-                resultVariableName = csElement.ReturnValue.Name;
-                statements.Add(LocalDeclarationStatement(
-                    VariableDeclaration(
-                        ParseTypeName(csElement.ReturnValue.PublicType.QualifiedName),
-                        SingletonSeparatedList(
-                            VariableDeclarator(resultVariableName)))));
-                if (csElement.ReturnValue.PublicType is CsStruct returnStruct && returnStruct.HasMarshalType)
-                {
-                    resultMarshallingRequired = true;
-                    resultVariableName = csElement.ReturnValue.MarshalStorageLocation;
-                    statements.Add(ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                        IdentifierName(csElement.ReturnValue.Name),
-                        ObjectCreationExpression(ParseTypeName(csElement.ReturnValue.PublicType.QualifiedName))
-                            .WithArgumentList(ArgumentList()))));
-                    statements.Add(LocalDeclarationStatement(
-                        VariableDeclaration(
-                            ParseTypeName(csElement.ReturnValue.PublicType.QualifiedName + ".__Native"),
-                            SingletonSeparatedList(
-                                VariableDeclarator(resultVariableName)))));
-                }
-            }
-
             var fixedStatements = csElement.PublicParameters
                 .Select(Generators.Pinning.GenerateCode)
                 .Where(stmt => stmt != null).ToList();
 
-            var invocation = Generators.NativeInvocation.GenerateCode(csElement);
-            var callStmt = ExpressionStatement(csElement.HasReturnType && !csElement.IsReturnStructLarge ?
-                AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                    IdentifierName(resultVariableName),
-                    invocation)
-                    : invocation);
+            var callStmt = ExpressionStatement(Generators.NativeInvocation.GenerateCode(csElement));
 
             var fixedStatement = fixedStatements.FirstOrDefault()?.WithStatement(callStmt);
             foreach (var statement in fixedStatements.Skip(1))
@@ -130,6 +106,15 @@ namespace SharpGen.Generator
                     {
                         statements.Add(marshalFromNative);
                     }
+                }
+            }
+
+            if (csElement.HasReturnType)
+            {
+                var marshalReturnType = Generators.MarshalFromNativeSingleFrame.GenerateCode(csElement.ReturnValue);
+                if (marshalReturnType != null)
+                {
+                    statements.Add(marshalReturnType);
                 }
             }
             
