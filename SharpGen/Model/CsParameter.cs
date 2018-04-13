@@ -115,11 +115,6 @@ namespace SharpGen.Model
         [DataMember]
         public bool OptionalParameter { get; set; }
 
-        public string TempName
-        {
-            get { return Name + "_"; }
-        }
-
         public override object Clone()
         {
             var parameter = (CsParameter)base.Clone();
