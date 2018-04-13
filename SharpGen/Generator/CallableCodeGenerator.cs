@@ -46,9 +46,6 @@ namespace SharpGen.Generator
                 .WithLeadingTrivia(Trivia(documentationTrivia));
 
             var statements = new List<StatementSyntax>();
-
-            string resultVariableName = null;
-            var resultMarshallingRequired = false;
             
             statements.AddRange(csElement.Parameters.SelectMany(param => Generators.CallableMarshallingProlog.GenerateCode(param)));
             if (csElement.HasReturnType)
@@ -82,20 +79,6 @@ namespace SharpGen.Generator
             }
 
             statements.Add((StatementSyntax)fixedStatement ?? callStmt);
-
-            if (resultMarshallingRequired)
-            {
-                statements.Add(
-                    ExpressionStatement(
-                        InvocationExpression(
-                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                IdentifierName(csElement.ReturnValue.Name),
-                                IdentifierName("__MarshalFrom")),
-                            ArgumentList(
-                                SingletonSeparatedList(
-                                    Argument(IdentifierName(csElement.ReturnValue.MarshalStorageLocation))
-                                        .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
-            }
 
             foreach (var param in csElement.Parameters)
             {
