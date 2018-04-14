@@ -33,9 +33,7 @@ namespace SharpGen.Generator
                             {
                                 AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
                                     .WithExpressionBody(ArrowExpressionClause(
-                                        BinaryExpression(SyntaxKind.NotEqualsExpression,
-                                                IdentifierName(csElement.IntermediateMarshalName),
-                                                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)))))
+                                        GenerateIntToBoolConversion(IdentifierName(csElement.IntermediateMarshalName))))
                                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
                                 AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
                                     .WithExpressionBody(ArrowExpressionClause(
@@ -44,9 +42,7 @@ namespace SharpGen.Generator
                                             CastExpression(
                                                 ParseTypeName(csElement.MarshalType.QualifiedName),
                                                 ParenthesizedExpression(
-                                                    ConditionalExpression(ParseName("value"),
-                                                        LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(1)),
-                                                        LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)))
+                                                    GenerateBoolToIntConversion(IdentifierName("value"))
                                         )))))
                                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
                             })))
@@ -100,71 +96,8 @@ namespace SharpGen.Generator
                                 List(
                                     new[]
                                     {
-                                        AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                                            .WithExpressionBody(ArrowExpressionClause(
-                                                BinaryExpression(SyntaxKind.NotEqualsExpression,
-                                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)),
-                                                    ParenthesizedExpression(
-                                                        BinaryExpression(SyntaxKind.BitwiseAndExpression,
-                                                            ParenthesizedExpression(
-                                                                BinaryExpression(SyntaxKind.RightShiftExpression,
-                                                                    ParseName(csElement.IntermediateMarshalName),
-                                                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.BitOffset)))),
-                                                            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.BitMask)))))))
-                                                            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
-                                        AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
-                                            .WithExpressionBody(ArrowExpressionClause(
-                                                AssignmentExpression(
-                                                    SyntaxKind.SimpleAssignmentExpression,
-                                                    MemberAccessExpression(
-                                                        SyntaxKind.SimpleMemberAccessExpression,
-                                                        ThisExpression(),
-                                                        IdentifierName(csElement.IntermediateMarshalName)),
-                                                    CastExpression(
-                                                        ParseTypeName(csElement.PublicType.QualifiedName),
-                                                        ParenthesizedExpression(
-                                                            BinaryExpression(
-                                                                SyntaxKind.BitwiseOrExpression,
-                                                                ParenthesizedExpression(
-                                                                    BinaryExpression(
-                                                                        SyntaxKind.BitwiseAndExpression,
-                                                                        MemberAccessExpression(
-                                                                            SyntaxKind.SimpleMemberAccessExpression,
-                                                                            ThisExpression(),
-                                                                            IdentifierName(csElement.IntermediateMarshalName)),
-                                                                        PrefixUnaryExpression(
-                                                                            SyntaxKind.BitwiseNotExpression,
-                                                                            ParenthesizedExpression(
-                                                                                BinaryExpression(
-                                                                                    SyntaxKind.LeftShiftExpression,
-                                                                                    LiteralExpression(
-                                                                                        SyntaxKind.NumericLiteralExpression,
-                                                                                        Literal(csElement.BitMask)),
-                                                                                    LiteralExpression(
-                                                                                        SyntaxKind.NumericLiteralExpression,
-                                                                                        Literal(csElement.BitOffset))))))),
-                                                                ParenthesizedExpression(
-                                                                    BinaryExpression(
-                                                                        SyntaxKind.LeftShiftExpression,
-                                                                        ParenthesizedExpression(
-                                                                            BinaryExpression(
-                                                                                SyntaxKind.BitwiseAndExpression,
-                                                                                ParenthesizedExpression(
-                                                                                    ConditionalExpression(
-                                                                                        IdentifierName("value"),
-                                                                                        LiteralExpression(
-                                                                                            SyntaxKind.NumericLiteralExpression,
-                                                                                            Literal(1)),
-                                                                                        LiteralExpression(
-                                                                                            SyntaxKind.NumericLiteralExpression,
-                                                                                            Literal(0)))),
-                                                                                LiteralExpression(
-                                                                                    SyntaxKind.NumericLiteralExpression,
-                                                                                    Literal(csElement.BitMask)))),
-                                                                        LiteralExpression(
-                                                                            SyntaxKind.NumericLiteralExpression,
-                                                                            Literal(csElement.BitOffset))))))))))
-                                            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+                                        GenerateBitFieldGetter(csElement, GenerateIntToBoolConversion),
+                                        GenerateBitFieldSetter(csElement, GenerateBoolToIntConversion)
                                     }
                                     )))
                     .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
@@ -179,62 +112,8 @@ namespace SharpGen.Generator
                                 List(
                                     new[]
                                     {
-                                        AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                                            .WithExpressionBody(ArrowExpressionClause(
-                                                CastExpression(ParseTypeName(csElement.PublicType.QualifiedName),
-                                                    ParenthesizedExpression(
-                                                        BinaryExpression(SyntaxKind.BitwiseAndExpression,
-                                                            ParenthesizedExpression(
-                                                                BinaryExpression(SyntaxKind.RightShiftExpression,
-                                                                    IdentifierName(csElement.IntermediateMarshalName),
-                                                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.BitOffset)))),
-                                                            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.BitMask)))))))
-                                            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
-                                        AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
-                                            .WithExpressionBody(ArrowExpressionClause(
-                                                AssignmentExpression(
-                                                    SyntaxKind.SimpleAssignmentExpression,
-                                                    MemberAccessExpression(
-                                                        SyntaxKind.SimpleMemberAccessExpression,
-                                                        ThisExpression(),
-                                                        IdentifierName(csElement.IntermediateMarshalName)),
-                                                    CastExpression(
-                                                        ParseTypeName(csElement.PublicType.QualifiedName),
-                                                        ParenthesizedExpression(
-                                                            BinaryExpression(
-                                                                SyntaxKind.BitwiseOrExpression,
-                                                                ParenthesizedExpression(
-                                                                    BinaryExpression(
-                                                                        SyntaxKind.BitwiseAndExpression,
-                                                                        MemberAccessExpression(
-                                                                            SyntaxKind.SimpleMemberAccessExpression,
-                                                                            ThisExpression(),
-                                                                            IdentifierName(csElement.IntermediateMarshalName)),
-                                                                        PrefixUnaryExpression(
-                                                                            SyntaxKind.BitwiseNotExpression,
-                                                                            ParenthesizedExpression(
-                                                                                BinaryExpression(
-                                                                                    SyntaxKind.LeftShiftExpression,
-                                                                                    LiteralExpression(
-                                                                                        SyntaxKind.NumericLiteralExpression,
-                                                                                        Literal(csElement.BitMask)),
-                                                                                    LiteralExpression(
-                                                                                        SyntaxKind.NumericLiteralExpression,
-                                                                                        Literal(csElement.BitOffset))))))),
-                                                                ParenthesizedExpression(
-                                                                    BinaryExpression(
-                                                                        SyntaxKind.LeftShiftExpression,
-                                                                        ParenthesizedExpression(
-                                                                            BinaryExpression(
-                                                                                SyntaxKind.BitwiseAndExpression,
-                                                                                IdentifierName("value"),
-                                                                                LiteralExpression(
-                                                                                    SyntaxKind.NumericLiteralExpression,
-                                                                                    Literal(csElement.BitMask)))),
-                                                                        LiteralExpression(
-                                                                            SyntaxKind.NumericLiteralExpression,
-                                                                            Literal(csElement.BitOffset))))))))))
-                                            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+                                        GenerateBitFieldGetter(csElement, valueExpression => CastExpression(ParseTypeName(csElement.PublicType.QualifiedName), valueExpression)),
+                                        GenerateBitFieldSetter(csElement)
                                     }
                                     )))
                     .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
@@ -246,6 +125,95 @@ namespace SharpGen.Generator
             {
                 yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : (int?)null, docTrivia: docComments, propertyBacking: false);
             }
+        }
+
+        private static BinaryExpressionSyntax GenerateIntToBoolConversion(ExpressionSyntax valueExpression)
+        {
+            return BinaryExpression(SyntaxKind.NotEqualsExpression,
+                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)),
+                valueExpression);
+        }
+
+        private static AccessorDeclarationSyntax GenerateBitFieldGetter(CsField csElement, Func<ExpressionSyntax, ExpressionSyntax> valueTransformation = null)
+        {
+            var valueExpression = BinaryExpression(SyntaxKind.BitwiseAndExpression,
+                            ParenthesizedExpression(
+                                BinaryExpression(SyntaxKind.RightShiftExpression,
+                                    ParseName(csElement.IntermediateMarshalName),
+                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.BitOffset)))),
+                            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.BitMask)));
+
+            return AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+            .WithExpressionBody(ArrowExpressionClause(
+                valueTransformation != null
+                ? valueTransformation(ParenthesizedExpression(valueExpression))
+                : valueExpression))
+            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+        }
+
+        private static AccessorDeclarationSyntax GenerateBitFieldSetter(CsField csElement, Func<ExpressionSyntax, ExpressionSyntax> valueTransformation = null)
+        {
+            ExpressionSyntax valueExpression = IdentifierName("value");
+
+            return AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                .WithExpressionBody(ArrowExpressionClause(
+                    AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression,
+                        MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            ThisExpression(),
+                            IdentifierName(csElement.IntermediateMarshalName)),
+                        CastExpression(
+                            ParseTypeName(csElement.PublicType.QualifiedName),
+                            ParenthesizedExpression(
+                                BinaryExpression(
+                                    SyntaxKind.BitwiseOrExpression,
+                                    ParenthesizedExpression(
+                                        BinaryExpression(
+                                            SyntaxKind.BitwiseAndExpression,
+                                            MemberAccessExpression(
+                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                ThisExpression(),
+                                                IdentifierName(csElement.IntermediateMarshalName)),
+                                            PrefixUnaryExpression(
+                                                SyntaxKind.BitwiseNotExpression,
+                                                ParenthesizedExpression(
+                                                    BinaryExpression(
+                                                        SyntaxKind.LeftShiftExpression,
+                                                        LiteralExpression(
+                                                            SyntaxKind.NumericLiteralExpression,
+                                                            Literal(csElement.BitMask)),
+                                                        LiteralExpression(
+                                                            SyntaxKind.NumericLiteralExpression,
+                                                            Literal(csElement.BitOffset))))))),
+                                    ParenthesizedExpression(
+                                        BinaryExpression(
+                                            SyntaxKind.LeftShiftExpression,
+                                            ParenthesizedExpression(
+                                                BinaryExpression(
+                                                    SyntaxKind.BitwiseAndExpression,
+                                                    valueTransformation != null ?
+                                                    ParenthesizedExpression(valueTransformation(valueExpression))
+                                                    : valueExpression,
+                                                    LiteralExpression(
+                                                        SyntaxKind.NumericLiteralExpression,
+                                                        Literal(csElement.BitMask)))),
+                                            LiteralExpression(
+                                                SyntaxKind.NumericLiteralExpression,
+                                                Literal(csElement.BitOffset))))))))))
+                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+        }
+
+        private static ExpressionSyntax GenerateBoolToIntConversion(ExpressionSyntax valueExpression)
+        {
+            return ConditionalExpression(
+                valueExpression,
+                LiteralExpression(
+                    SyntaxKind.NumericLiteralExpression,
+                    Literal(1)),
+                LiteralExpression(
+                    SyntaxKind.NumericLiteralExpression,
+                    Literal(0)));
         }
 
         private static MemberDeclarationSyntax GenerateBackingField(CsField field, CsTypeBase backingType, int? offset, bool isArray = false, bool propertyBacking = true, DocumentationCommentTriviaSyntax docTrivia = null)
