@@ -44,6 +44,14 @@ DECL(void) BoolToIntTest(int in, int* out)
     *out = in;
 }
 
+DECL(void) BoolArrayTest(bool* in, bool* out, int numElements)
+{
+    for (int i = 0; i < numElements; ++i)
+    {
+        out[i] = in[i];
+    }
+}
+
 DECL(void) StructMarshalling(StructWithMarshal in, StructWithStaticMarshal inStatic, StructWithMarshal* out, StructWithStaticMarshal* outStatic)
 {
     *out = in;

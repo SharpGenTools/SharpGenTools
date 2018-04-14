@@ -16,6 +16,11 @@ namespace SharpGen.Generator
 
         public FixedStatementSyntax GenerateCode(CsParameter param)
         {
+            if (param.IsArray && param.IsBoolToInt)
+            {
+                return null;
+            }
+
             if (param.IsArray && param.IsValueType)
             {
                 if (param.HasNativeValueType)

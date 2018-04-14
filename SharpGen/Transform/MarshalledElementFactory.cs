@@ -152,15 +152,18 @@ namespace SharpGen.Transform
                 marshalType is CsFundamentalType marshalFundamental && IsIntegerFundamentalType(marshalFundamental)
                 && publicType is CsFundamentalType publicFundamental && publicFundamental.Type == typeof(bool);
 
-            // Always marshal pointers as IntPtr, and present void* elements as IntPtr.
+            // Present void* elements as IntPtr. Marshal strings as IntPtr
             if (csMarshallable.HasPointer)
             {
-                marshalType = typeRegistry.ImportType(typeof(IntPtr));
-                
                 if (publicTypeName == "void")
                 {
                     publicType = typeRegistry.ImportType(typeof(IntPtr));
+                    marshalType = typeRegistry.ImportType(typeof(IntPtr));
                 }
+                else if (publicType == typeRegistry.ImportType(typeof(string)))
+                {
+                    marshalType = typeRegistry.ImportType(typeof(IntPtr));
+                } 
             }
 
             csMarshallable.PublicType = publicType;
@@ -195,9 +198,13 @@ namespace SharpGen.Transform
         {
             var field = CreateCore<CsField>(cppField);
 
-            if (field.HasPointer && field.PublicType != typeRegistry.ImportType(typeof(string)))
+            if (field.HasPointer)
             {
-                field.PublicType = typeRegistry.ImportType(typeof(IntPtr));
+                field.MarshalType = typeRegistry.ImportType(typeof(IntPtr));
+                if (field.PublicType != typeRegistry.ImportType(typeof(string)))
+                {
+                    field.PublicType = typeRegistry.ImportType(typeof(IntPtr));
+                }
             }
 
             field.IsBitField = cppField.IsBitField;
@@ -232,8 +239,6 @@ namespace SharpGen.Transform
             // --------------------------------------------------------------------------------
             if (hasPointer)
             {
-                marshalType = typeRegistry.ImportType(typeof(IntPtr));
-
                 // --------------------------------------------------------------------------------
                 // Handling Parameter Interface
                 // --------------------------------------------------------------------------------
@@ -261,10 +266,6 @@ namespace SharpGen.Transform
                 }
                 else
                 {
-                    // If a pointer to array of bool are handle as array of underlying integer type
-                    if (param.IsBoolToInt && (cppAttribute & ParamAttribute.Buffer) != 0)
-                        publicType = param.MarshalType;
-
                     if ((cppAttribute & ParamAttribute.In) != 0)
                     {
                         var fundamentalType = (publicType as CsFundamentalType)?.Type;

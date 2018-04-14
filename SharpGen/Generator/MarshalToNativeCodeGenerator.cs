@@ -53,7 +53,57 @@ namespace SharpGen.Generator
                 }
                 else if (csElement.IsBoolToInt)
                 {
-                    return NotImplemented("Bool to int arrays");
+                    if (singleStackFrame)
+                    {
+                        return GenerateNullCheckIfNeeded(csElement,
+                            ExpressionStatement(
+                                    InvocationExpression(
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            globalNamespace.GetTypeNameSyntax(WellKnownName.BooleanHelpers),
+                                            IdentifierName("ConvertToIntArray")))
+                                    .WithArgumentList(
+                                        ArgumentList(
+                                            SeparatedList(
+                                                new[]
+                                                {
+                                                    Argument(IdentifierName(csElement.Name)),
+                                                    Argument(GetMarshalStorageLocation(csElement))
+                                                }
+                                    )))));
+                    }
+                    else
+                    {
+                        return GenerateNullCheckIfNeeded(csElement,
+                            FixedStatement(
+                                VariableDeclaration(
+                                    PointerType(
+                                        ParseTypeName(csElement.MarshalType.QualifiedName)))
+                                .WithVariables(
+                                    SingletonSeparatedList(
+                                        VariableDeclarator(
+                                            Identifier("__ptr"))
+                                        .WithInitializer(
+                                            EqualsValueClause(
+                                                PrefixUnaryExpression(
+                                                    SyntaxKind.AddressOfExpression,
+                                                   GetMarshalStorageLocation(csElement)))))),
+                                ExpressionStatement(
+                                    InvocationExpression(
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            globalNamespace.GetTypeNameSyntax(WellKnownName.BooleanHelpers),
+                                            IdentifierName("ConvertToIntArray")))
+                                    .WithArgumentList(
+                                        ArgumentList(
+                                            SeparatedList(
+                                                new[]
+                                                {
+                                                    Argument(IdentifierName(csElement.Name)),
+                                                    Argument(IdentifierName("__ptr"))
+                                                }
+                                    )))))); 
+                    }
                 }
                 else if (csElement.IsString) // Character array presented to the user as a string.
                 {

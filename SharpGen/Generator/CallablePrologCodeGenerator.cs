@@ -11,9 +11,9 @@ namespace SharpGen.Generator
     /// <summary>
     /// Declares local variables and allocates memory required for marshalling parameters to their native views.
     /// </summary>
-    class CallableMarshallingPrologCodeGenerator : MarshallingCodeGeneratorBase, IMultiCodeGenerator<CsMarshalCallableBase, StatementSyntax>
+    class CallablePrologCodeGenerator : MarshallingCodeGeneratorBase, IMultiCodeGenerator<CsMarshalCallableBase, StatementSyntax>
     {
-        public CallableMarshallingPrologCodeGenerator(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
+        public CallablePrologCodeGenerator(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
         {
         }
 
@@ -63,6 +63,31 @@ namespace SharpGen.Generator
                     VariableDeclaration(ParseTypeName(csElement.PublicType.QualifiedName),
                         SingletonSeparatedList(
                             VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)))));
+                yield break;
+            }
+
+            if (csElement.IsBoolToInt && csElement.IsArray)
+            {
+                yield return LocalDeclarationStatement(
+                    VariableDeclaration(
+                        PointerType(
+                            ParseTypeName(csElement.MarshalType.QualifiedName)))
+                    .WithVariables(
+                        SingletonSeparatedList(
+                            VariableDeclarator(
+                                GetMarshalStorageLocationIdentifier(csElement))
+                            .WithInitializer(EqualsValueClause(
+                                StackAllocArrayCreationExpression(
+                                    ArrayType(
+                                        ParseTypeName(csElement.MarshalType.QualifiedName))
+                                    .WithRankSpecifiers(
+                                        SingletonList(
+                                            ArrayRankSpecifier(
+                                                SingletonSeparatedList<ExpressionSyntax>(
+                                                    MemberAccessExpression(
+                                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                                IdentifierName(csElement.Name),
+                                                                IdentifierName("Length"))))))))))));
                 yield break;
             }
 
@@ -188,7 +213,8 @@ namespace SharpGen.Generator
         {
             if (structType.HasCustomNew)
             {
-                return InvocationExpression(ParseExpression($"{structType.QualifiedName}.__NewNative"));
+                return InvocationExpression(ParseExpression($"{structType.QualifiedName}.__NewNative"))
+                    .WithArgumentList(ArgumentList());
             }
             else
             {

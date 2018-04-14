@@ -41,28 +41,95 @@ namespace SharpGen.Runtime
     public static class BooleanHelpers
     {
         /// <summary>
-        /// Converts bool array to integer pointers array.
+        /// Converts bool array to an array of integers.
         /// </summary>
         /// <param name="array">The bool array.</param>
-        /// <param name="dest">The destination array of int pointers.</param>
-        public unsafe static void ConvertToIntArray(bool[] array, int* dest)
+        /// <param name="dest">The destination array of integers.</param>
+        public unsafe static void ConvertToIntArray(Span<bool> array, byte* dest)
+        {
+            fixed(void* src = &array.DangerousGetPinnableReference())
+            {
+                Unsafe.CopyBlockUnaligned(dest, src, (uint)array.Length);
+            }
+        }
+
+        /// <summary>
+        /// Converts bool array to an array of integers.
+        /// </summary>
+        /// <param name="array">The bool array.</param>
+        /// <param name="dest">The destination array of integers.</param>
+        public unsafe static void ConvertToIntArray(Span<bool> array, short* dest)
+        {
+            for (int i = 0; i < array.Length; i++)
+                dest[i] = (short)(array[i] ? 1 : 0);
+        }
+
+        /// <summary>
+        /// Converts bool array to an array of integers.
+        /// </summary>
+        /// <param name="array">The bool array.</param>
+        /// <param name="dest">The destination array of integers.</param>
+        public unsafe static void ConvertToIntArray(Span<bool> array, int* dest)
         {
             for (int i = 0; i < array.Length; i++)
                 dest[i] = array[i] ? 1 : 0;
         }
 
         /// <summary>
-        /// Converts integer pointer array to bool array.
+        /// Converts bool array to an array of integers.
         /// </summary>
-        /// <param name="array">The array of integer pointers.</param>
-        /// <param name="length">Array size.</param>
-        /// <returns>Converted array of bool.</returns>
-        public static unsafe bool[] ConvertToBoolArray(int* array, int length)
+        /// <param name="array">The bool array.</param>
+        /// <param name="dest">The destination array of integers.</param>
+        public unsafe static void ConvertToIntArray(Span<bool> array, long* dest)
         {
-            var temp = new bool[length];
-            for(int i = 0; i < temp.Length; i++)
-                temp[i] = array[i] != 0;
-            return temp;
+            for (int i = 0; i < array.Length; i++)
+                dest[i] = array[i] ? 1 : 0;
+        }
+
+        /// <summary>
+        /// Converts integer array to bool array.
+        /// </summary>
+        /// <param name="src">A pointer to the array of integers.</param>
+        /// <param name="array">The target bool array to fill.</param>
+        public static unsafe void ConvertToBoolArray(byte* src, Span<bool> array)
+        {
+            fixed (void* dest = &array.DangerousGetPinnableReference())
+            {
+                Unsafe.CopyBlockUnaligned(dest, src, (uint)array.Length);
+            }
+        }
+
+        /// <summary>
+        /// Converts integer array to bool array.
+        /// </summary>
+        /// <param name="src">A pointer to the array of integers.</param>
+        /// <param name="array">The target bool array to fill.</param>
+        public static unsafe void ConvertToBoolArray(short* src, Span<bool> array)
+        {
+            for (int i = 0; i < array.Length; i++)
+                array[i] = src[i] != 0;
+        }
+
+        /// <summary>
+        /// Converts integer array to bool array.
+        /// </summary>
+        /// <param name="src">A pointer to the array of integers.</param>
+        /// <param name="array">The target bool array to fill.</param>
+        public static unsafe void ConvertToBoolArray(int* src, Span<bool> array)
+        {
+            for (int i = 0; i < array.Length; i++)
+                array[i] = src[i] != 0;
+        }
+
+        /// <summary>
+        /// Converts integer array to bool array.
+        /// </summary>
+        /// <param name="src">A pointer to the array of integers.</param>
+        /// <param name="array">The target bool array to fill.</param>
+        public static unsafe void ConvertToBoolArray(long* src, Span<bool> array)
+        {
+            for (int i = 0; i < array.Length; i++)
+                array[i] = src[i] != 0;
         }
     }
 }

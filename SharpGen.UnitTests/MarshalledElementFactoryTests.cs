@@ -1,4 +1,5 @@
-﻿using SharpGen.Config;
+﻿using FakeItEasy;
+using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
 using SharpGen.Transform;
@@ -17,7 +18,7 @@ namespace SharpGen.UnitTests
         }
 
         [Fact]
-        public void PointerToTypeWithMarshallingMarshalsAsIntPtr()
+        public void PointerToTypeWithMarshallingMarshalsAsUnderlyingType()
         {
             var cppMarshallable = new CppMarshallable
             {
@@ -25,12 +26,12 @@ namespace SharpGen.UnitTests
                 Pointer = "*"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, new DocumentationLinker());
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
             typeRegistry.BindType("bool", typeRegistry.ImportType(typeof(bool)), typeRegistry.ImportType(typeof(int)));
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
 
             var csMarshallable = marshalledElementFactory.Create(cppMarshallable);
-            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csMarshallable.MarshalType);
+            Assert.Equal(typeRegistry.ImportType(typeof(int)), csMarshallable.MarshalType);
         }
 
         [Fact]
@@ -41,7 +42,7 @@ namespace SharpGen.UnitTests
                 TypeName = "int"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, new DocumentationLinker());
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
             typeRegistry.BindType("int", typeRegistry.ImportType(typeof(int)));
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
@@ -60,7 +61,7 @@ namespace SharpGen.UnitTests
                 Pointer = "**"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, new DocumentationLinker());
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
             typeRegistry.BindType("Interface", new CsInterface {Name = "Interface"});
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
@@ -80,7 +81,7 @@ namespace SharpGen.UnitTests
                 ArrayDimension = "10"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, new DocumentationLinker());
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
 
@@ -102,7 +103,7 @@ namespace SharpGen.UnitTests
                 ArrayDimension = "10"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, new DocumentationLinker());
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
 
@@ -126,7 +127,7 @@ namespace SharpGen.UnitTests
                 Pointer = "*"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, new DocumentationLinker());
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
 
@@ -146,7 +147,7 @@ namespace SharpGen.UnitTests
                 Pointer = "*"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, new DocumentationLinker());
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
 
@@ -168,7 +169,7 @@ namespace SharpGen.UnitTests
                 IsArray = true
             };
 
-            var typeRegistry = new TypeRegistry(Logger, new DocumentationLinker());
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
             typeRegistry.BindType("int", typeRegistry.ImportType(typeof(int)));
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
@@ -192,7 +193,7 @@ namespace SharpGen.UnitTests
                 }
             };
 
-            var typeRegistry = new TypeRegistry(Logger, new DocumentationLinker());
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
             typeRegistry.BindType("bool", typeRegistry.ImportType(typeof(bool)));
             typeRegistry.BindType("int", typeRegistry.ImportType(typeof(int)));
 
@@ -218,7 +219,7 @@ namespace SharpGen.UnitTests
                 }
             };
 
-            var typeRegistry = new TypeRegistry(Logger, new DocumentationLinker());
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
             typeRegistry.BindType("bool", typeRegistry.ImportType(typeof(bool)), typeRegistry.ImportType(typeof(int)));
             typeRegistry.BindType("short", typeRegistry.ImportType(typeof(short)));
 
@@ -252,7 +253,7 @@ namespace SharpGen.UnitTests
                 }
             };
 
-            var typeRegistry = new TypeRegistry(Logger, new DocumentationLinker());
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
             typeRegistry.BindType("bool", typeRegistry.ImportType(typeof(bool)));
             typeRegistry.BindType("Integer", typeRegistry.ImportType(integerType));
 
@@ -274,7 +275,7 @@ namespace SharpGen.UnitTests
                 Pointer = "*"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, new DocumentationLinker());
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
             typeRegistry.BindType("Interface", new CsInterface { Name = "Interface" });
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
 
@@ -285,7 +286,7 @@ namespace SharpGen.UnitTests
         }
 
         [Fact]
-        public void PointerParameterMarshalTypeIsIntPtr()
+        public void PointerParameterMarkedAsHasPointer()
         {
             var cppParameter = new CppParameter
             {
@@ -293,13 +294,57 @@ namespace SharpGen.UnitTests
                 Pointer = "*"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, new DocumentationLinker());
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
             typeRegistry.BindType("int", typeRegistry.ImportType(typeof(int)));
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
 
             var csParameter = marshalledElementFactory.Create(cppParameter);
 
-            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csParameter.MarshalType);
+            Assert.True(csParameter.HasPointer);
+        }
+
+        [Fact]
+        public void BoolToIntArrayPublicTypeIsBoolArray()
+        {
+            var cppParameter = new CppParameter
+            {
+                TypeName = "bool",
+                Pointer = "*"
+            };
+
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
+            typeRegistry.BindType("bool", typeRegistry.ImportType(typeof(bool)), typeRegistry.ImportType(typeof(byte)));
+            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
+
+            cppParameter.Attribute = ParamAttribute.In | ParamAttribute.Buffer;
+
+            var csParameter = marshalledElementFactory.Create(cppParameter);
+
+            Assert.Equal(typeRegistry.ImportType(typeof(bool)), csParameter.PublicType);
+            Assert.True(csParameter.IsArray);
+            Assert.True(csParameter.IsBoolToInt);
+        }
+        
+        [Fact]
+        public void BoolToIntArrayMarshalTypeIsIntegerArray()
+        {
+            var cppParameter = new CppParameter
+            {
+                TypeName = "bool",
+                Pointer = "*"
+            };
+
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
+            typeRegistry.BindType("bool", typeRegistry.ImportType(typeof(bool)), typeRegistry.ImportType(typeof(byte)));
+            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
+
+            cppParameter.Attribute = ParamAttribute.In | ParamAttribute.Buffer;
+
+            var csParameter = marshalledElementFactory.Create(cppParameter);
+
+            Assert.Equal(typeRegistry.ImportType(typeof(byte)), csParameter.MarshalType);
+            Assert.True(csParameter.IsArray);
+            Assert.True(csParameter.IsBoolToInt);
         }
     }
 }

@@ -171,7 +171,7 @@ namespace SharpGen.Transform
                             || csField.IsArray;
 
                         // BoolToInt doesn't generate native Marshaling although they have a different marshaller
-                        if (!csField.IsBoolToInt && fieldHasMarshalType)
+                        if ((!csField.IsBoolToInt || csField.IsArray) && fieldHasMarshalType)
                             hasMarshalType = true;
 
 

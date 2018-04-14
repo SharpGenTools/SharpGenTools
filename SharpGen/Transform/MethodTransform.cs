@@ -212,6 +212,17 @@ namespace SharpGen.Transform
             {
                 cSharpInteropCalliSignature.ReturnType = fundamentalReturn.Type;
             }
+            else if (csMethod.ReturnValue.HasPointer)
+            {
+                if (csMethod.ReturnValue.IsInterface)
+                {
+                    cSharpInteropCalliSignature.ReturnType = typeof(IntPtr);
+                }
+                else
+                {
+                    cSharpInteropCalliSignature.ReturnType = typeof(void*);
+                }
+            }
             else
             {
                 Logger.Error(LoggingCodes.InvalidMethodReturnType, "Invalid return type {0} for method {1}", csMethod.ReturnValue.PublicType.QualifiedName, csMethod.CppElement);
@@ -228,7 +239,14 @@ namespace SharpGen.Transform
                 }
                 else if (param.HasPointer)
                 {
-                    interopType = typeof(void*);
+                    if (csMethod.ReturnValue.IsInterface)
+                    {
+                        interopType = typeof(IntPtr);
+                    }
+                    else
+                    {
+                        interopType = typeof(void*);
+                    }
                 }
                 else if (param.MarshalType is CsFundamentalType marshalFundamental)
                 {

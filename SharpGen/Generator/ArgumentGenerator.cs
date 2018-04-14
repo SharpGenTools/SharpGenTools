@@ -20,7 +20,7 @@ namespace SharpGen.Generator
 
         public ArgumentSyntax GenerateCode(CsMarshalCallableBase csElement)
         {
-            if (csElement.MarshalType.QualifiedName == "System.IntPtr") // Marshal System.IntPtr as void* for arguments.
+            if (csElement.MarshalType.QualifiedName == "System.IntPtr" || csElement.HasPointer) // Marshal System.IntPtr as void* for arguments.
             {
                 return Argument(
                     CastExpression(
@@ -182,9 +182,13 @@ namespace SharpGen.Generator
             }
             if (param.IsArray)
             {
-                if (param.HasNativeValueType || param.IsBoolToInt)
+                if (param.HasNativeValueType)
                 {
                     return IdentifierName(param.IntermediateMarshalName);
+                }
+                else if (param.IsBoolToInt)
+                {
+                    return GetMarshalStorageLocation(param);
                 }
                 else if (param.IsValueType && param.IsOptional)
                 {

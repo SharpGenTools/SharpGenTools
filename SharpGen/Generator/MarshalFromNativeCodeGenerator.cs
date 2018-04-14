@@ -14,12 +14,12 @@ namespace SharpGen.Generator
     class MarshalFromNativeCodeGenerator : MarshallingCodeGeneratorBase, ICodeGenerator<CsMarshalBase, StatementSyntax>
     {
         private readonly GlobalNamespaceProvider globalNamespace;
-        private readonly bool singleStack;
-        private bool MarshalPinnableElements => !singleStack;
+        private readonly bool singleStackFrame;
+        private bool MarshalPinnableElements => !singleStackFrame;
 
         public MarshalFromNativeCodeGenerator(bool singleStack, GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
         {
-            this.singleStack = singleStack;
+            this.singleStackFrame = singleStack;
             this.globalNamespace = globalNamespace;
         }
 
@@ -47,7 +47,57 @@ namespace SharpGen.Generator
                 }
                 else if (csElement.IsBoolToInt)
                 {
-                    return NotImplemented("Bool to int arrays");
+                    if (singleStackFrame)
+                    {
+                        return GenerateNullCheckIfNeeded(csElement,
+                            ExpressionStatement(
+                                    InvocationExpression(
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            globalNamespace.GetTypeNameSyntax(WellKnownName.BooleanHelpers),
+                                            IdentifierName("ConvertToBoolArray")))
+                                    .WithArgumentList(
+                                        ArgumentList(
+                                            SeparatedList(
+                                                new[]
+                                                {
+                                                    Argument(GetMarshalStorageLocation(csElement)),
+                                                    Argument(IdentifierName(csElement.Name))
+                                                }
+                                    )))));
+                    }
+                    else
+                    {
+                        return GenerateNullCheckIfNeeded(csElement,
+                            FixedStatement(
+                                VariableDeclaration(
+                                    PointerType(
+                                        ParseTypeName(csElement.MarshalType.QualifiedName)))
+                                .WithVariables(
+                                    SingletonSeparatedList(
+                                        VariableDeclarator(
+                                            Identifier("__ptr"))
+                                        .WithInitializer(
+                                            EqualsValueClause(
+                                                PrefixUnaryExpression(
+                                                    SyntaxKind.AddressOfExpression,
+                                                   GetMarshalStorageLocation(csElement)))))),
+                                ExpressionStatement(
+                                    InvocationExpression(
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            globalNamespace.GetTypeNameSyntax(WellKnownName.BooleanHelpers),
+                                            IdentifierName("ConvertToBoolArray")))
+                                    .WithArgumentList(
+                                        ArgumentList(
+                                            SeparatedList(
+                                                new[]
+                                                {
+                                                    Argument(IdentifierName("__ptr")),
+                                                    Argument(IdentifierName(csElement.Name))
+                                                }
+                                    ))))));
+                    }
                 }
                 else if (csElement.IsString) // Character array presented to the user as a string.
                 {

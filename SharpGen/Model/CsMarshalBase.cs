@@ -109,7 +109,8 @@ namespace SharpGen.Model
             {
                 return MarshalType != PublicType
                 && !IsBoolToInt
-                && !(MarshalType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr) && HasPointer);
+                && !(MarshalType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr) && HasPointer)
+                && !(IsInterface && HasPointer);
             }
         }
     }

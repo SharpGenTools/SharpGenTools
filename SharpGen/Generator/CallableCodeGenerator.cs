@@ -47,10 +47,10 @@ namespace SharpGen.Generator
 
             var statements = new List<StatementSyntax>();
             
-            statements.AddRange(csElement.Parameters.SelectMany(param => Generators.CallableMarshallingProlog.GenerateCode(param)));
+            statements.AddRange(csElement.Parameters.SelectMany(param => Generators.CallableProlog.GenerateCode(param)));
             if (csElement.HasReturnType)
             {
-                statements.AddRange(Generators.CallableMarshallingProlog.GenerateCode(csElement.ReturnValue)); 
+                statements.AddRange(Generators.CallableProlog.GenerateCode(csElement.ReturnValue)); 
             }
 
 

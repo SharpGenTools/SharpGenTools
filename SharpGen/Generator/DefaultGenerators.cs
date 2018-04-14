@@ -32,7 +32,7 @@ namespace SharpGen.Generator
             Group = new GroupCodeGenerator(this, documentation, docReader);
             LocalInterop = new LocalInteropCodeGenerator(this);
             InteropMethod = new InteropMethodCodeGenerator();
-            CallableMarshallingProlog = new CallableMarshallingPrologCodeGenerator(globalNamespace);
+            CallableProlog = new CallablePrologCodeGenerator(globalNamespace);
             MarshalToNativeSingleFrame = new MarshalToNativeCodeGenerator(true, globalNamespace);
             MarshalToNative = new MarshalToNativeCodeGenerator(false, globalNamespace);
             MarshalFromNativeSingleFrame = new MarshalFromNativeCodeGenerator(true, globalNamespace);
@@ -62,7 +62,7 @@ namespace SharpGen.Generator
 
         public IMultiCodeGenerator<InteropMethodSignature, MemberDeclarationSyntax> InteropMethod { get; }
 
-        public IMultiCodeGenerator<CsMarshalCallableBase, StatementSyntax> CallableMarshallingProlog { get; }
+        public IMultiCodeGenerator<CsMarshalCallableBase, StatementSyntax> CallableProlog { get; }
 
         public ICodeGenerator<CsMarshalBase, StatementSyntax> MarshalToNativeSingleFrame { get; }
 

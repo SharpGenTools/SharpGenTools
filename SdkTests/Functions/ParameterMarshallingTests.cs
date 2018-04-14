@@ -122,6 +122,19 @@ namespace Functions
         }
 
         [Fact]
+        public void BoolArrayTest()
+        {
+            var inArray = new bool[2];
+            inArray[1] = true;
+
+            var outArray = new bool[2];
+
+            NativeFunctions.BoolArrayTest(inArray, outArray, 2);
+            Assert.False(outArray[0]);
+            Assert.True(outArray[1]);
+        }
+
+        [Fact]
         public void StringReturnTest()
         {
             Assert.Equal("Functions", NativeFunctions.GetName());

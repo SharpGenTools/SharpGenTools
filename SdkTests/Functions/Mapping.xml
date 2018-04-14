@@ -22,6 +22,8 @@
         <map param="FirstElementOrZero::ref" attribute="in optional" />
         <map param="(.*)::results" attribute="out buffer" />
         <map param="(.*)Optional::results" attribute="out buffer optional" />
+        <map param="BoolArrayTest::in" attribute="in buffer" />
+        <map param="BoolArrayTest::out" attribute="out buffer" />
         <map param="BoolToIntTest::.*" type="bool" />
         <map param="BoolToIntTest::out" return="true" />
         <map param="FastOutTest::out" attribute="out fast" />

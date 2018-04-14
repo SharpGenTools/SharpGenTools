@@ -36,6 +36,8 @@ DECL(char) GetFirstAnsiCharacter(char* string);
 
 DECL(void) BoolToIntTest(int in, int* out);
 
+DECL(void) BoolArrayTest(bool* in, bool* out, int numElements);
+
 DECL(void) StructMarshalling(StructWithMarshal in, StructWithStaticMarshal inStatic, StructWithMarshal* out, StructWithStaticMarshal* outStatic);
 
 DECL(void) StructArrayMarshalling(StructWithMarshal in[1], StructWithStaticMarshal inStatic[1], StructWithMarshal out[1], StructWithStaticMarshal outStatic[1]);

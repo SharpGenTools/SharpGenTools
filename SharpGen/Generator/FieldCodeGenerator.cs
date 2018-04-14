@@ -76,7 +76,14 @@ namespace SharpGen.Generator
                                                                     SingletonSeparatedList<ExpressionSyntax>(
                                                                         LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.ArrayDimensionValue))))
                                                     ))))))))
+                                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
+                                    AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                                        .WithExpressionBody(ArrowExpressionClause(
+                                                AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                                                    ParseName(csElement.IntermediateMarshalName),
+                                                    IdentifierName("value"))))
                                         .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+                                        .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)))
                                 })))
                     .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
                     .WithLeadingTrivia(Trivia(docComments));
