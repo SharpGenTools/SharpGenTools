@@ -71,6 +71,12 @@ struct BoolArray
 	bool elements[3];
 };
 
+struct CustomNativeNew {};
+struct CustomNativeNewNested
+{
+	CustomNativeNew Nested;
+};
+
 static_assert(sizeof(wchar_t) == 2, "Wide character isn't wide.");
 
 STRUCTLIB_FUNC(SimpleStruct) GetSimpleStruct();
@@ -94,3 +100,5 @@ STRUCTLIB_FUNC(BoolToInt2) PassThroughBoolToInt(BoolToInt2 param);
 STRUCTLIB_FUNC(BoolArray) PassThroughBoolArray(BoolArray param);
 
 STRUCTLIB_FUNC(bool) VerifyReservedBits(BitField2 param);
+
+STRUCTLIB_FUNC(void) CustomNativeNewTest(CustomNativeNew param);

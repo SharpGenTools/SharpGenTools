@@ -54,7 +54,7 @@ namespace SharpGen.Generator
                         VariableDeclaration(ParseTypeName($"{csElement.PublicType.QualifiedName}.__Native"),
                             SingletonSeparatedList(
                                 VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement))
-                                .WithInitializer(EqualsValueClause(GetConstructorSyntax(csElement.PublicType as CsStruct))))));
+                                .WithInitializer(EqualsValueClause(DefaultExpression(ParseTypeName($"{csElement.PublicType.QualifiedName}.__Native")))))));
                 }
             }
             else if (csElement.IsNullableStruct)
@@ -206,20 +206,6 @@ namespace SharpGen.Generator
                     VariableDeclaration(ParseTypeName(csElement.MarshalType.QualifiedName),
                         SingletonSeparatedList(
                             VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)))));
-            }
-        }
-        
-        private ExpressionSyntax GetConstructorSyntax(CsStruct structType)
-        {
-            if (structType.HasCustomNew)
-            {
-                return InvocationExpression(ParseExpression($"{structType.QualifiedName}.__NewNative"))
-                    .WithArgumentList(ArgumentList());
-            }
-            else
-            {
-                return ObjectCreationExpression(ParseTypeName($"{structType.QualifiedName}.__Native"))
-                    .WithArgumentList(ArgumentList());
             }
         }
     }

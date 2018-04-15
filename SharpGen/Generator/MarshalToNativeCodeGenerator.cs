@@ -38,11 +38,21 @@ namespace SharpGen.Generator
                     return LoopThroughArrayParameter(
                         csElement,
                         (publicElement, marshalElement) =>
-                            CreateMarshalStructStatement(
+                        {
+                            var marshalTo = CreateMarshalStructStatement(
                                 csElement,
                                 "__MarshalTo",
                                 publicElement,
-                                marshalElement));
+                                marshalElement);
+                            if (((CsStruct)csElement.PublicType).HasCustomNew)
+                            {
+                                return Block(
+                                    CreateMarshalCustomNewStatement(csElement, marshalElement),
+                                    marshalTo
+                                    );
+                            }
+                            return marshalTo;
+                        });
                 }
                 else if (csElement.IsInterface)
                 {
@@ -155,11 +165,19 @@ namespace SharpGen.Generator
                         publicElementExpression,
                         IdentifierName("Value"));
                 }
-                return CreateMarshalStructStatement(
+                var marshalToStatement = CreateMarshalStructStatement(
                     csElement,
                     "__MarshalTo",
                     publicElementExpression,
                     GetMarshalStorageLocation(csElement));
+
+                if (((CsStruct)csElement.PublicType).HasCustomNew)
+                {
+                    return Block(
+                        CreateMarshalCustomNewStatement(csElement, GetMarshalStorageLocation(csElement)),
+                        marshalToStatement);
+                }
+                return marshalToStatement;
             }
             else if (csElement.IsInterface)
             {
@@ -210,6 +228,18 @@ namespace SharpGen.Generator
             }
 
             return null;
+        }
+
+        private static ExpressionStatementSyntax CreateMarshalCustomNewStatement(CsMarshalBase csElement, ExpressionSyntax marshalElement)
+        {
+            return ExpressionStatement(
+                AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                    marshalElement,
+                    InvocationExpression(
+                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                            ParseTypeName(csElement.PublicType.QualifiedName),
+                            IdentifierName("__NewNative")))
+                    .WithArgumentList(ArgumentList())));
         }
 
         private ExpressionStatementSyntax MarshalInterfaceInstanceToNative(CsMarshalBase csElement, ExpressionSyntax publicElement, ExpressionSyntax marshalElement)
