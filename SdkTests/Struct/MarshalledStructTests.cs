@@ -205,5 +205,17 @@ namespace Struct
             Assert.Equal(obj.Elements[1], result.Elements[1]);
             Assert.Equal(obj.Elements[2], result.Elements[2]);
         }
+
+        [Fact]
+        public void InterfaceField()
+        {
+            var obj = Functions.GetStructWithInterface();
+
+            Assert.Equal(1, obj.Test.One());
+
+            var result = Functions.PassThrough(obj);
+
+            Assert.Equal(1, obj.Test.One());
+        }
     }
 }

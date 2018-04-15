@@ -201,7 +201,7 @@ namespace SharpGen.Transform
             if (field.HasPointer)
             {
                 field.MarshalType = typeRegistry.ImportType(typeof(IntPtr));
-                if (field.PublicType != typeRegistry.ImportType(typeof(string)))
+                if (field.PublicType != typeRegistry.ImportType(typeof(string)) && !field.IsInterface)
                 {
                     field.PublicType = typeRegistry.ImportType(typeof(IntPtr));
                 }

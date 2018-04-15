@@ -77,6 +77,16 @@ struct CustomNativeNewNested
 	CustomNativeNew Nested;
 };
 
+struct Interface
+{
+	virtual int One()=0;
+};
+
+struct StructWithInterface
+{
+	Interface* test;
+};
+
 static_assert(sizeof(wchar_t) == 2, "Wide character isn't wide.");
 
 STRUCTLIB_FUNC(SimpleStruct) GetSimpleStruct();
@@ -102,3 +112,7 @@ STRUCTLIB_FUNC(BoolArray) PassThroughBoolArray(BoolArray param);
 STRUCTLIB_FUNC(bool) VerifyReservedBits(BitField2 param);
 
 STRUCTLIB_FUNC(void) CustomNativeNewTest(CustomNativeNew param);
+
+STRUCTLIB_FUNC(StructWithInterface) GetStructWithInterface();
+
+STRUCTLIB_FUNC(StructWithInterface) PassThroughStructWithInterface(StructWithInterface param); 

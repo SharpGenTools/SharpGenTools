@@ -271,6 +271,25 @@ namespace SharpGen.UnitTests
         {
             var cppField = new CppField
             {
+                TypeName = "int",
+                Pointer = "*"
+            };
+
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
+            typeRegistry.BindType("int", typeRegistry.ImportType(typeof(IntPtr)));
+            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
+
+            var csField = marshalledElementFactory.Create(cppField);
+
+            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csField.PublicType);
+            Assert.Equal(csField.PublicType, csField.MarshalType);
+        }
+
+        [Fact]
+        public void FieldWithPointerToInterfaceTypeHasPublicTypeOfInterface()
+        {
+            var cppField = new CppField
+            {
                 TypeName = "Interface",
                 Pointer = "*"
             };
@@ -281,8 +300,9 @@ namespace SharpGen.UnitTests
 
             var csField = marshalledElementFactory.Create(cppField);
 
-            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csField.PublicType);
-            Assert.Equal(csField.PublicType, csField.MarshalType);
+            Assert.Equal(typeRegistry.FindBoundType("Interface"), csField.PublicType);
+            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csField.MarshalType);
+            Assert.True(csField.IsInterface);
         }
 
         [Fact]
