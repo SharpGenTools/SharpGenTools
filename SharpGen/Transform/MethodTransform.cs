@@ -179,42 +179,46 @@ namespace SharpGen.Transform
         /// <summary>
         /// Registers the native interop signature.
         /// </summary>
-        /// <param name="csMethod">The cs method.</param>
-        private void RegisterNativeInteropSignature(CsCallable csMethod, bool isFunction)
+        /// <param name="callable">The cs method.</param>
+        private void RegisterNativeInteropSignature(CsCallable callable, bool isFunction)
         {
             // Tag if the method is a function
-            var cSharpInteropCalliSignature = new InteropMethodSignature { IsFunction = isFunction };
+            var cSharpInteropCalliSignature = new InteropMethodSignature
+            {
+                IsFunction = isFunction,
+                CallingConvention = callable.CallingConvention
+            };
 
             // Handle Return Type parameter
             // MarshalType.Type == null, then check that it is a structure
-            if (csMethod.ReturnValue.PublicType is CsStruct || csMethod.ReturnValue.PublicType is CsEnum)
+            if (callable.ReturnValue.PublicType is CsStruct || callable.ReturnValue.PublicType is CsEnum)
             {
                 // Return type and 1st parameter are implicitly a pointer to the structure to fill 
-                if (csMethod.IsReturnStructLarge)
+                if (callable.IsReturnStructLarge)
                 {
                     cSharpInteropCalliSignature.ReturnType = typeof(void*);
                     cSharpInteropCalliSignature.ParameterTypes.Add(typeof(void*));
                 }
                 else
                 {
-                    var returnQualifiedName = csMethod.ReturnValue.PublicType.QualifiedName;
+                    var returnQualifiedName = callable.ReturnValue.PublicType.QualifiedName;
                     if (returnQualifiedName == globalNamespace.GetTypeName(WellKnownName.Result))
                         cSharpInteropCalliSignature.ReturnType = typeof(int);
                     else if (returnQualifiedName == globalNamespace.GetTypeName(WellKnownName.PointerSize))
                         cSharpInteropCalliSignature.ReturnType = typeof(void*);
-                    else if (csMethod.ReturnValue.PublicType is CsStruct csStruct && csStruct.HasMarshalType)
+                    else if (callable.ReturnValue.PublicType is CsStruct csStruct && csStruct.HasMarshalType)
                         cSharpInteropCalliSignature.ReturnType = $"{csStruct.QualifiedName}.__Native";
                     else
-                        cSharpInteropCalliSignature.ReturnType = csMethod.ReturnValue.PublicType.QualifiedName;
+                        cSharpInteropCalliSignature.ReturnType = callable.ReturnValue.PublicType.QualifiedName;
                 }
             }
-            else if (csMethod.ReturnValue.MarshalType is CsFundamentalType fundamentalReturn)
+            else if (callable.ReturnValue.MarshalType is CsFundamentalType fundamentalReturn)
             {
                 cSharpInteropCalliSignature.ReturnType = fundamentalReturn.Type;
             }
-            else if (csMethod.ReturnValue.HasPointer)
+            else if (callable.ReturnValue.HasPointer)
             {
-                if (csMethod.ReturnValue.IsInterface)
+                if (callable.ReturnValue.IsInterface)
                 {
                     cSharpInteropCalliSignature.ReturnType = typeof(IntPtr);
                 }
@@ -225,11 +229,11 @@ namespace SharpGen.Transform
             }
             else
             {
-                Logger.Error(LoggingCodes.InvalidMethodReturnType, "Invalid return type {0} for method {1}", csMethod.ReturnValue.PublicType.QualifiedName, csMethod.CppElement);
+                Logger.Error(LoggingCodes.InvalidMethodReturnType, "Invalid return type {0} for method {1}", callable.ReturnValue.PublicType.QualifiedName, callable.CppElement);
             }
 
             // Handle Parameters
-            foreach (var param in csMethod.Parameters)
+            foreach (var param in callable.Parameters)
             {
                 InteropType interopType;
                 var publicName = param.PublicType.QualifiedName;
@@ -239,7 +243,7 @@ namespace SharpGen.Transform
                 }
                 else if (param.HasPointer)
                 {
-                    if (csMethod.ReturnValue.IsInterface)
+                    if (callable.ReturnValue.IsInterface)
                     {
                         interopType = typeof(IntPtr);
                     }
@@ -281,17 +285,17 @@ namespace SharpGen.Transform
                 }
                 else
                 {
-                    Logger.Error(LoggingCodes.InvalidMethodParameterType, "Invalid parameter {0} for method {1}", param.PublicType.QualifiedName, csMethod.CppElement);
+                    Logger.Error(LoggingCodes.InvalidMethodParameterType, "Invalid parameter {0} for method {1}", param.PublicType.QualifiedName, callable.CppElement);
                     return;
                 }
 
                 cSharpInteropCalliSignature.ParameterTypes.Add(interopType);
             }
 
-            var assembly = csMethod.GetParent<CsAssembly>();
+            var assembly = callable.GetParent<CsAssembly>();
             cSharpInteropCalliSignature = assembly.Interop.Add(cSharpInteropCalliSignature);
 
-            csMethod.Interop = cSharpInteropCalliSignature;
+            callable.Interop = cSharpInteropCalliSignature;
         }
     }
 }

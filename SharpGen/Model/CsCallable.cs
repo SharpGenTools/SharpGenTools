@@ -64,6 +64,8 @@ namespace SharpGen.Model
                     return "Cdecl";
                 case CppCallingConvention.ThisCall:
                     return "ThisCall";
+                case CppCallingConvention.FastCall:
+                    return "FastCall";
                 default:
                     return "Winapi";
             }

@@ -19,6 +19,7 @@
 // THE SOFTWARE.
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml.Serialization;
 using SharpGen.Generator;
@@ -37,6 +38,7 @@ namespace SharpGen.Model
         public List<InteropType> ParameterTypes { get; }
         public bool IsLocal { get; set; }
         public bool IsFunction { get; set; }
+        public string CallingConvention { get; set; }
 
         public string Name
         {
@@ -45,7 +47,7 @@ namespace SharpGen.Model
                 var returnTypeName = ReturnType.TypeName;
                 returnTypeName = returnTypeName.Replace("*", "Ptr");
                 returnTypeName = returnTypeName.Replace(".", "");
-                return "Calli" + ((IsFunction)?"Func":"") + returnTypeName + ((IsLocal) ? Index.ToString() : "");
+                return "Calli" + CallingConvention + ((IsFunction)?"Func":"") + returnTypeName + ((IsLocal) ? Index.ToString() : "");
             }
         }
 
