@@ -70,7 +70,7 @@ namespace SharpGen.Generator
             return callable.IsReturnStructLarge || !callable.HasReturnType ?
                 (ExpressionSyntax)call
                 : AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                    ReturnValueMarshalled(callable.ReturnValue) ?
+                    NeedsMarshalling(callable.ReturnValue) ?
                         GetMarshalStorageLocation(callable.ReturnValue)
                         : IdentifierName(callable.ReturnValue.Name),
                     call

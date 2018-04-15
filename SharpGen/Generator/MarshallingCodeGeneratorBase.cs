@@ -351,7 +351,7 @@ namespace SharpGen.Generator
                                     Literal(message)))))));
         }
 
-        protected bool ReturnValueMarshalled(CsReturnValue value)
+        protected bool NeedsMarshalling(CsMarshalBase value)
         {
             return value.HasNativeValueType
                 || value.IsBoolToInt
