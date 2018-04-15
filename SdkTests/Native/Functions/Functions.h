@@ -24,6 +24,11 @@ struct StructWithStaticMarshal
 	int i[3];
 };
 
+struct LargeStruct
+{
+	long long i[3];
+};
+
 DECL(void) GetInterfaces(int numInstances, Interface** results);
 
 DECL(void) GetInterfacesOptional(int numInstances, Interface** results);
@@ -59,3 +64,5 @@ DECL(const char*) GetName();
 DECL(int) Sum(int numElements, SimpleStruct elements[]);
 
 DECL(int) Product(int numElements, SimpleStruct elements[]);
+
+DECL(long long) SumValues(LargeStruct val);

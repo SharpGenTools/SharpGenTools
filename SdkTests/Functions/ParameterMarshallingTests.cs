@@ -176,5 +176,17 @@ namespace Functions
         {
             Assert.Equal(10, NativeFunctions.Product(1, new SimpleStruct{ I = 10 }));
         }
+
+        [Fact]
+        public void ForcePassByValueParameter()
+        {
+            var value = new LargeStruct();
+
+            value.I[0] = 10;
+            value.I[1] = 20;
+            value.I[2] = 30;
+
+            Assert.Equal(60, NativeFunctions.SumValues(value));
+        }
     }
 }

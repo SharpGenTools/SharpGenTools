@@ -34,5 +34,6 @@
         <map param="Sum::elements" attribute="in buffer optional" />
         <map param="Product::elements" attribute="in buffer params" />
         <map function="Product" type="longlong" />
+        <map param="SumValues::val" attribute="in value" />
     </mapping>
 </config>
