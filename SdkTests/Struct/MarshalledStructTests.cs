@@ -94,7 +94,7 @@ namespace Struct
 
             var result = Functions.PassThrough(obj);
 
-            Assert.Equal("1234567890", result.SmallString);
+            Assert.Equal("123456789", result.SmallString);
             Assert.Null(result.LargeString);
         }
 
@@ -188,6 +188,34 @@ namespace Struct
             };
 
             Assert.Equal(1, obj._Test);
+        }
+
+        [Fact]
+        public void BoolArrayMemberMarshalsCorrectly()
+        {
+            var obj = new BoolArray();
+
+            obj.Elements[0] = true;
+
+            obj.Elements[1] = true;
+
+            var result = Functions.PassThrough(obj);
+
+            Assert.Equal(obj.Elements[0], result.Elements[0]);
+            Assert.Equal(obj.Elements[1], result.Elements[1]);
+            Assert.Equal(obj.Elements[2], result.Elements[2]);
+        }
+
+        [Fact]
+        public void InterfaceField()
+        {
+            var obj = Functions.GetStructWithInterface();
+
+            Assert.Equal(1, obj.Test.One());
+
+            var result = Functions.PassThrough(obj);
+
+            Assert.Equal(1, obj.Test.One());
         }
     }
 }

@@ -115,11 +115,6 @@ namespace SharpGen.Model
         [DataMember]
         public bool HasCustomNew { get; set; }
 
-        public string GetConstructor()
-        {
-            return string.Format(HasCustomNew ? "{0}.__NewNative()" : "new {0}.__Native()", QualifiedName);
-        }
-
         private bool marshalledToNative;
 
         [DataMember]

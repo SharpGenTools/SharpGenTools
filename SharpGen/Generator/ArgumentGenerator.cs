@@ -8,18 +8,19 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace SharpGen.Generator
 {
-    class ArgumentGenerator : ICodeGenerator<CsParameter, ArgumentSyntax>
+    class ArgumentGenerator : MarshallingCodeGeneratorBase, ICodeGenerator<CsMarshalCallableBase, ArgumentSyntax>
     {
         GlobalNamespaceProvider globalNamespace;
 
         public ArgumentGenerator(GlobalNamespaceProvider globalNamespace)
+            :base(globalNamespace)
         {
             this.globalNamespace = globalNamespace;
         }
 
-        public ArgumentSyntax GenerateCode(CsParameter csElement)
+        public ArgumentSyntax GenerateCode(CsMarshalCallableBase csElement)
         {
-            if (csElement.MarshalType.QualifiedName == "System.IntPtr") // Marshal System.IntPtr as void* for arguments.
+            if (csElement.MarshalType.QualifiedName == "System.IntPtr" || csElement.HasPointer) // Marshal System.IntPtr as void* for arguments.
             {
                 return Argument(
                     CastExpression(
@@ -28,7 +29,7 @@ namespace SharpGen.Generator
             }
 
             // Cast the argument to the native (marshal) type
-            if (csElement.MarshalType != csElement.PublicType)
+            if (csElement.MarshalType != csElement.PublicType && !(csElement is CsReturnValue))
             {
                 return Argument(CheckedExpression(
                             SyntaxKind.UncheckedExpression,
@@ -42,7 +43,7 @@ namespace SharpGen.Generator
             }
         }
 
-        private ExpressionSyntax GenerateExpression(CsParameter param)
+        private ExpressionSyntax GenerateExpression(CsMarshalCallableBase param)
         {
             if (param.IsInterfaceArray)
             {
@@ -64,82 +65,95 @@ namespace SharpGen.Generator
                                     IdentifierName("IntPtr")),
                                 IdentifierName("Zero")))));
             }
+
             if (param.IsOut)
             {
                 if (param.PublicType is CsInterface)
                 {
                     if (param.IsArray)
                     {
-                        if (param.IsOptional)
-                        {
-                            return ConditionalExpression(
-                                BinaryExpression(
-                                    SyntaxKind.EqualsExpression,
-                                    IdentifierName(param.Name),
-                                    LiteralExpression(
-                                        SyntaxKind.NullLiteralExpression)),
-                                CastExpression(
-                                    PointerType(
-                                        PredefinedType(
-                                            Token(SyntaxKind.VoidKeyword))),
-                                    LiteralExpression(
-                                        SyntaxKind.NumericLiteralExpression,
-                                        Literal(0))),
-                                IdentifierName(param.TempName));
-                        }
-                        else
-                        {
-                            return IdentifierName(param.TempName);
-                        }
+                        return GenerateNullCheckIfNeeded(
+                            param,
+                            GetMarshalStorageLocation(param),
+                            CastExpression(
+                                PointerType(
+                                    PredefinedType(
+                                        Token(SyntaxKind.VoidKeyword))),
+                                LiteralExpression(
+                                    SyntaxKind.NumericLiteralExpression,
+                                    Literal(0))));
                     }
                     else
                     {
-                        return PrefixUnaryExpression(SyntaxKind.AddressOfExpression, IdentifierName(param.TempName));
+                        return PrefixUnaryExpression(SyntaxKind.AddressOfExpression, GetMarshalStorageLocation(param));
                     }
                 }
                 else if (param.IsArray)
                 {
-                    return IdentifierName(param.TempName);
+                    if (param.HasNativeValueType)
+                    {
+                        return GenerateNullCheckIfNeeded(
+                            param,
+                            IdentifierName(param.IntermediateMarshalName),
+                            CastExpression(
+                                PointerType(
+                                    PredefinedType(
+                                        Token(SyntaxKind.VoidKeyword))),
+                                LiteralExpression(
+                                    SyntaxKind.NumericLiteralExpression,
+                                    Literal(0))));
+                    }
+                    return GetMarshalStorageLocation(param);
                 }
                 else if (param.IsFixed && !param.HasNativeValueType)
                 {
-                    return param.IsUsedAsReturnType
+                    return param.UsedAsReturn
                         ? PrefixUnaryExpression(SyntaxKind.AddressOfExpression, IdentifierName(param.Name))
-                        : (ExpressionSyntax)IdentifierName(param.TempName);
+                        : GetMarshalStorageLocation(param);
                 }
                 else if (param.HasNativeValueType || param.IsBoolToInt)
                 {
-                    return PrefixUnaryExpression(SyntaxKind.AddressOfExpression, IdentifierName(param.TempName));
+                    return PrefixUnaryExpression(SyntaxKind.AddressOfExpression, GetMarshalStorageLocation(param));
+                }
+                else if (param.IsString)
+                {
+                    return PrefixUnaryExpression(SyntaxKind.AddressOfExpression, GetMarshalStorageLocation(param));
+                }
+                else if (param.IsValueType)
+                {
+                    if (!param.MappedToDifferentPublicType)
+                    {
+                        return PrefixUnaryExpression(SyntaxKind.AddressOfExpression, IdentifierName(param.Name));
+                    }
+                    else
+                    {
+                        return PrefixUnaryExpression(SyntaxKind.AddressOfExpression, GetMarshalStorageLocation(param));
+                    }
                 }
                 else
                 {
-                    return param.IsValueType
-                        ? PrefixUnaryExpression(SyntaxKind.AddressOfExpression, IdentifierName(param.Name))
-                        : (ExpressionSyntax)IdentifierName(param.TempName);
+                    return GetMarshalStorageLocation(param);
                 }
             }
-            if (param.IsRefInValueTypeOptional)
+            if (param.PassedByNullableInstance)
             {
-                return ConditionalExpression(
-                    BinaryExpression(
-                        SyntaxKind.EqualsExpression,
-                        IdentifierName(param.Name),
-                        LiteralExpression(
-                            SyntaxKind.NullLiteralExpression)),
-                    CastExpression(
-                        PointerType(
-                            PredefinedType(
-                                Token(SyntaxKind.VoidKeyword))),
-                        LiteralExpression(
-                            SyntaxKind.NumericLiteralExpression,
-                            Literal(0))),
+                return GenerateNullCheckIfNeeded(
+                    param,
                     PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
-                        IdentifierName(param.TempName)));
+                        GetMarshalStorageLocation(param)),
+                        CastExpression(
+                                PointerType(
+                                    PredefinedType(
+                                        Token(SyntaxKind.VoidKeyword))),
+                                LiteralExpression(
+                                    SyntaxKind.NumericLiteralExpression,
+                                    Literal(0)))
+                        );
             }
-            if (param.IsRefInValueTypeByValue)
+            if (param.RefInPassedByValue)
             {
                 return PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
-                    IdentifierName(param.HasNativeValueType ? param.TempName : param.Name));
+                    param.HasNativeValueType ? GetMarshalStorageLocation(param) : IdentifierName(param.Name));
             }
             if (!param.IsFixed && param.PublicType is CsEnum csEnum && !param.IsArray)
             {
@@ -149,45 +163,36 @@ namespace SharpGen.Generator
                         ParseTypeName(csEnum.UnderlyingType?.Type.FullName ?? "int"),
                         IdentifierName(param.Name)));
             }
-
-            var fundamental = param.PublicType as CsFundamentalType;
-
-            if (fundamental?.Type == typeof(string))
+            
+            if (param.IsString)
             {
                 return CastExpression(
                     PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
-                    IdentifierName(param.TempName));
+                    GetMarshalStorageLocation(param));
             }
             if (param.PublicType is CsInterface
-                && param.Attribute == CsParameterAttribute.In
+                && param.IsIn
                 && !param.IsArray)
             {
                 return CastExpression(
                     PointerType(
                         PredefinedType(
                             Token(SyntaxKind.VoidKeyword))),
-                    ParenthesizedExpression(
-                        InvocationExpression(
-                            MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                globalNamespace.GetTypeNameSyntax(WellKnownName.CppObject),
-                                GenericName(
-                                    Identifier("ToCallbackPtr"))
-                                .WithTypeArgumentList(
-                                    TypeArgumentList(
-                                        SingletonSeparatedList<TypeSyntax>(
-                                            IdentifierName(param.PublicType.QualifiedName))))),
-                            ArgumentList(
-                                SingletonSeparatedList(
-                                    Argument(IdentifierName(param.Name)))))));
+                    GetMarshalStorageLocation(param));
             }
             if (param.IsArray)
             {
-                if (param.HasNativeValueType
-                    || param.IsBoolToInt
-                    || (param.IsValueType && param.IsOptional))
+                if (param.HasNativeValueType)
                 {
-                    return IdentifierName(param.TempName);
+                    return IdentifierName(param.IntermediateMarshalName);
+                }
+                else if (param.IsBoolToInt)
+                {
+                    return GetMarshalStorageLocation(param);
+                }
+                else if (param.IsValueType && param.IsOptional)
+                {
+                    return GetMarshalStorageLocation(param);
                 }
             }
             if (param.IsBoolToInt)
@@ -199,9 +204,9 @@ namespace SharpGen.Generator
             }
             if (param.IsFixed && !param.HasNativeValueType)
             {
-                return IdentifierName(param.TempName);
+                return GetMarshalStorageLocation(param);
             }
-            if (fundamental?.Type == typeof(IntPtr) && !param.IsArray)
+            if (param.PublicType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr) && !param.IsArray)
             {
                 return CastExpression(
                     PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
@@ -210,8 +215,9 @@ namespace SharpGen.Generator
             if (param.HasNativeValueType)
             {
                 return param.IsIn ?
-                    (ExpressionSyntax)IdentifierName(param.TempName)
-                    : PrefixUnaryExpression(SyntaxKind.AddressOfExpression, IdentifierName(param.TempName));
+                    GetMarshalStorageLocation(param)
+                    : PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
+                        GetMarshalStorageLocation(param));
             }
             if (param.PublicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.PointerSize))
             {

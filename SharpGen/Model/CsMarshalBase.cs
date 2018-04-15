@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -53,6 +54,12 @@ namespace SharpGen.Model
         [DataMember]
         public bool IsBoolToInt { get; set; }
 
+        public virtual bool IsOptional => false;
+
+        public virtual bool IsRefIn => false;
+
+        public virtual bool IsFastOut => false;
+
         public int Size => MarshalType.Size * ((ArrayDimensionValue > 1) ? ArrayDimensionValue : 1);
 
         public bool IsValueType
@@ -61,9 +68,50 @@ namespace SharpGen.Model
                     (PublicType is CsFundamentalType type && (type.Type.GetTypeInfo().IsValueType || type.Type.GetTypeInfo().IsPrimitive)); }
         }
 
+        public bool PassedByNullableInstance => IsRefIn && IsValueType && !IsArray && IsOptional;
+
+        public bool IsInterface
+        {
+            get
+            {
+                return PublicType is CsInterface;
+            }
+        }
+
         public bool IsStructClass
         {
             get { return PublicType is CsStruct csStruct && csStruct.GenerateAsClass; }
+        }
+
+        public bool IsPrimitive
+        {
+            get { return PublicType is CsFundamentalType type && type.Type.GetTypeInfo().IsPrimitive; }
+        }
+
+        public bool IsString
+        {
+            get { return PublicType is CsFundamentalType type && type.Type == typeof(string); }
+        }
+
+        public bool HasNativeValueType => (PublicType is CsStruct csStruct && csStruct.HasMarshalType);
+
+        public bool IsStaticMarshal => (PublicType is CsStruct csStruct && csStruct.IsStaticMarshal);
+
+        public bool IsInterfaceArray => PublicType is CsInterfaceArray;
+
+        public bool IsNullableStruct => PassedByNullableInstance && !IsStructClass;
+
+        public string IntermediateMarshalName => Name[0] == '@' ? $"_{Name.Substring(1)}" : $"_{Name}";
+
+        public bool MappedToDifferentPublicType
+        {
+            get
+            {
+                return MarshalType != PublicType
+                && !IsBoolToInt
+                && !(MarshalType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr) && HasPointer)
+                && !(IsInterface && HasPointer);
+            }
         }
     }
 }

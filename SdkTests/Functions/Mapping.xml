@@ -8,6 +8,10 @@
     <include-dir>$(THIS_CONFIG_PATH)\..\Native\Functions</include-dir>
     <include file="Functions.h" attach="true" />
 
+    <bindings>
+        <bind from="PointerSize" to="SharpGen.Runtime.PointerSize" />
+    </bindings>
+
     <extension>
         <create class="Functions.NativeFunctions" />
         <const from-macro="TestConstant" class="Functions.NativeFunctions" type="int" name="TestConstant">$1</const>
@@ -22,6 +26,8 @@
         <map param="FirstElementOrZero::ref" attribute="in optional" />
         <map param="(.*)::results" attribute="out buffer" />
         <map param="(.*)Optional::results" attribute="out buffer optional" />
+        <map param="BoolArrayTest::in" attribute="in buffer" />
+        <map param="BoolArrayTest::out" attribute="out buffer" />
         <map param="BoolToIntTest::.*" type="bool" />
         <map param="BoolToIntTest::out" return="true" />
         <map param="FastOutTest::out" attribute="out fast" />
@@ -32,5 +38,6 @@
         <map param="Sum::elements" attribute="in buffer optional" />
         <map param="Product::elements" attribute="in buffer params" />
         <map function="Product" type="longlong" />
+        <map param="SumValues::val" attribute="in value" />
     </mapping>
 </config>

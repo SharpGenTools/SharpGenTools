@@ -236,7 +236,7 @@ namespace SharpGen.Model
                     if (param.IsUsedAsReturnType)
                         return param.Name;
                 }
-                return "__result__";
+                return ReturnValue.Name;
             }
         }
 

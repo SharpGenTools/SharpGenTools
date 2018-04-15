@@ -29,27 +29,11 @@ using System.Runtime.Serialization;
 namespace SharpGen.Model
 {
     [DataContract(Name = "Parameter")]
-    public class CsParameter : CsMarshalBase
+    public class CsParameter : CsMarshalCallableBase
     {
+        private const int SizeOfLimit = 16;
         [DataMember]
         public CsParameterAttribute Attribute { get; set; }
-
-        [DataMember]
-        public bool HasParams { get; set; }
-
-        [DataMember]
-        public bool IsOptional { get; set; }
-
-        [DataMember]
-        public bool IsUsedAsReturnType { get; set; }
-
-        [DataMember]
-        public bool IsFast { get; set; }
-
-        public bool IsFastOut
-        {
-            get { return IsFast && IsOut; }
-        }
 
         [DataMember]
         public string DefaultValue { get; set; }
@@ -57,38 +41,24 @@ namespace SharpGen.Model
         [DataMember]
         public bool ForcePassByValue { get; set; }
 
-        private const int SizeOfLimit = 16;
+        [DataMember]
+        public bool HasParams { get; set; }
 
-        protected override void UpdateFromMappingRule(MappingRule tag)
+        [DataMember]
+        public bool IsFast { get; set; }
+
+        public override bool IsFastOut
         {
-            base.UpdateFromMappingRule(tag);
-            if (tag.ParameterUsedAsReturnType.HasValue)
-                IsUsedAsReturnType = tag.ParameterUsedAsReturnType.Value;
-            if (tag.ParameterAttribute.HasValue)
-            {
-                if((tag.ParameterAttribute.Value & ParamAttribute.Fast) != 0)
-                {
-                    IsFast = true;
-                }
-
-                if((tag.ParameterAttribute.Value & ParamAttribute.Value) != 0)
-                {
-                    ForcePassByValue = true;
-                }
-            }
-
-            DefaultValue = tag.DefaultValue;
+            get { return IsFast && IsOut; }
         }
 
-        public bool IsFixed
+        public override bool IsFixed
         {
             get
             {
                 if (Attribute == CsParameterAttribute.Ref || Attribute == CsParameterAttribute.RefIn)
                 {
-                    if (IsRefInValueTypeOptional || IsRefInValueTypeByValue)
-                        return false;
-                    return true;
+                    return !(PassedByNullableInstance || RefInPassedByValue);
                 }
                 if (Attribute == CsParameterAttribute.Out && !IsBoolToInt)
                     return true;
@@ -98,22 +68,9 @@ namespace SharpGen.Model
             }
         }
 
-        public string TempName
+        public override bool IsIn
         {
-            get { return Name + "_"; }
-        }
-
-        public bool IsRef
-        {
-            get { return Attribute == CsParameterAttribute.Ref; }
-        }
-
-        public bool IsInterfaceArray
-        {
-            get
-            {
-                return PublicType is CsInterfaceArray;
-            }
+            get { return Attribute == CsParameterAttribute.In; }
         }
 
         public bool IsInInterfaceArrayLike
@@ -124,55 +81,24 @@ namespace SharpGen.Model
             }
         }
 
-        public bool IsInterface
-        {
-            get
-            {
-                return PublicType is CsInterface;
-            }
-        }
+        public override bool IsOptional => OptionalParameter;
 
-        public bool IsRefIn
-        {
-            get { return Attribute == CsParameterAttribute.RefIn; }
-        }
-
-        public bool IsIn
-        {
-            get { return Attribute == CsParameterAttribute.In; }
-        }
-
-        public bool IsOut
+        public override bool IsOut
         {
             get { return Attribute == CsParameterAttribute.Out; }
         }
 
-        public bool IsPrimitive
+        public bool IsRef
         {
-            get { return PublicType is CsFundamentalType type && type.Type.GetTypeInfo().IsPrimitive; }
+            get { return Attribute == CsParameterAttribute.Ref; }
         }
 
-        public bool IsString
+        public override bool IsRefIn
         {
-            get { return PublicType is CsFundamentalType type && type.Type == typeof (string); }
+            get { return Attribute == CsParameterAttribute.RefIn; }
         }
 
-        public bool HasNativeValueType
-        {
-            get { return (PublicType is CsStruct csStruct && csStruct.HasMarshalType) ; }
-        }
-
-        public bool IsStaticMarshal
-        {
-            get { return (PublicType is CsStruct csStruct && csStruct.IsStaticMarshal); }
-        }
-
-        public bool IsRefInValueTypeOptional
-        {
-            get { return IsRefIn && IsValueType && !IsArray && IsOptional; }
-        }
-
-        public bool IsRefInValueTypeByValue
+        public override bool RefInPassedByValue
         {
             get
             {
@@ -181,20 +107,40 @@ namespace SharpGen.Model
             }
         }
 
-        public bool IsNullableStruct
-        {
-            get => IsRefIn
-                && IsValueType
-                && !IsArray
-                && IsOptional
-                && !IsStructClass;
-        }
+        [DataMember]
+        public bool IsUsedAsReturnType { get; set; }
+
+        public override bool UsedAsReturn => IsUsedAsReturnType;
+
+        [DataMember]
+        public bool OptionalParameter { get; set; }
 
         public override object Clone()
         {
             var parameter = (CsParameter)base.Clone();
             parameter.Parent = null;
             return parameter;
+        }
+
+        protected override void UpdateFromMappingRule(MappingRule tag)
+        {
+            base.UpdateFromMappingRule(tag);
+            if (tag.ParameterUsedAsReturnType.HasValue)
+                IsUsedAsReturnType = tag.ParameterUsedAsReturnType.Value;
+            if (tag.ParameterAttribute.HasValue)
+            {
+                if ((tag.ParameterAttribute.Value & ParamAttribute.Fast) != 0)
+                {
+                    IsFast = true;
+                }
+
+                if ((tag.ParameterAttribute.Value & ParamAttribute.Value) != 0)
+                {
+                    ForcePassByValue = true;
+                }
+            }
+
+            DefaultValue = tag.DefaultValue;
         }
     }
 }

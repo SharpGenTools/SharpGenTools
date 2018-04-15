@@ -16,12 +16,13 @@
   </bindings>
 
   <mapping>
-    <map function="Get.*" dll='"StructNative.dll"' group="Struct.Functions" />
-    <map function="PassThrough(.*)" dll='"StructNative.dll"' group="Struct.Functions" name="PassThrough" />
-    <map function="VerifyReservedBits" dll='"StructNative.dll"' group="Struct.Functions" />
+    <map function=".*" dll='"StructNative.dll"' group="Struct.Functions" />
+    <map function="PassThrough(.*)" name="PassThrough" />
     <map struct="BitField2" native="true" />
     <map struct="BoolToInt2" native="true" />
     <map field="BoolToInt(.*)::test" type="bool" />
+    <map struct="CustomNativeNew" native="true" new="true" />
+    <map struct="CustomNativeNewNested" marshalto="true" />
   </mapping>
 
   <depends>SharpGen.Runtime</depends>

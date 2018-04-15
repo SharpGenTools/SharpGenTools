@@ -24,7 +24,10 @@ namespace SharpGen.Transform
             foreach (var csSubParameter in newMethod.Parameters)
             {
                 if (csSubParameter.IsInInterfaceArrayLike)
+                {
                     csSubParameter.PublicType = new CsInterfaceArray((CsInterface)csSubParameter.PublicType, globalNamespace.GetTypeName(WellKnownName.InterfaceArray));
+                    csSubParameter.MarshalType = typeRegistry.ImportType(typeof(IntPtr));
+                }
             }
             return newMethod;
         }
@@ -40,6 +43,7 @@ namespace SharpGen.Transform
                 if (csSubParameter.IsArray || csSubParameter.IsInterface || csSubParameter.HasPointer)
                 {
                     csSubParameter.PublicType = typeRegistry.ImportType(typeof(IntPtr));
+                    csSubParameter.MarshalType = typeRegistry.ImportType(typeof(IntPtr));
                     csSubParameter.IsArray = false;
                     csSubParameter.Attribute = CsParameterAttribute.In;
                 }

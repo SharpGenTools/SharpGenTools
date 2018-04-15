@@ -1,3 +1,4 @@
+
 #define DECL(RetType) extern "C" __declspec(dllexport) RetType __stdcall
 
 #define TestConstant 2018
@@ -24,6 +25,16 @@ struct StructWithStaticMarshal
 	int i[3];
 };
 
+struct LargeStruct
+{
+	long long i[3];
+};
+
+struct PointerSize
+{
+	void* ptr;
+};
+
 DECL(void) GetInterfaces(int numInstances, Interface** results);
 
 DECL(void) GetInterfacesOptional(int numInstances, Interface** results);
@@ -35,6 +46,8 @@ DECL(wchar_t) GetFirstCharacter(wchar_t* string);
 DECL(char) GetFirstAnsiCharacter(char* string);
 
 DECL(void) BoolToIntTest(int in, int* out);
+
+DECL(void) BoolArrayTest(bool* in, bool* out, int numElements);
 
 DECL(void) StructMarshalling(StructWithMarshal in, StructWithStaticMarshal inStatic, StructWithMarshal* out, StructWithStaticMarshal* outStatic);
 
@@ -57,3 +70,7 @@ DECL(const char*) GetName();
 DECL(int) Sum(int numElements, SimpleStruct elements[]);
 
 DECL(int) Product(int numElements, SimpleStruct elements[]);
+
+DECL(long long) SumValues(LargeStruct val);
+
+DECL(PointerSize) PassThroughPointerSize(PointerSize param);

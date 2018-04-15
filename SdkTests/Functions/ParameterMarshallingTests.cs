@@ -1,4 +1,5 @@
 using System;
+using SharpGen.Runtime;
 using Xunit;
 
 namespace Functions
@@ -122,6 +123,19 @@ namespace Functions
         }
 
         [Fact]
+        public void BoolArrayTest()
+        {
+            var inArray = new bool[2];
+            inArray[1] = true;
+
+            var outArray = new bool[2];
+
+            NativeFunctions.BoolArrayTest(inArray, outArray, 2);
+            Assert.False(outArray[0]);
+            Assert.True(outArray[1]);
+        }
+
+        [Fact]
         public void StringReturnTest()
         {
             Assert.Equal("Functions", NativeFunctions.GetName());
@@ -162,6 +176,26 @@ namespace Functions
         public void ParamsArray()
         {
             Assert.Equal(10, NativeFunctions.Product(1, new SimpleStruct{ I = 10 }));
+        }
+
+        [Fact]
+        public void ForcePassByValueParameter()
+        {
+            var value = new LargeStruct();
+
+            value.I[0] = 10;
+            value.I[1] = 20;
+            value.I[2] = 30;
+
+            Assert.Equal(60, NativeFunctions.SumValues(value));
+        }
+
+        [Fact]
+        public void PointerSize()
+        {
+            var value = new PointerSize(20);
+
+            Assert.Equal(new PointerSize(20), NativeFunctions.PassThroughPointerSize(value));
         }
     }
 }

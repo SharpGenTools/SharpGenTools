@@ -44,6 +44,14 @@ DECL(void) BoolToIntTest(int in, int* out)
     *out = in;
 }
 
+DECL(void) BoolArrayTest(bool* in, bool* out, int numElements)
+{
+    for (int i = 0; i < numElements; ++i)
+    {
+        out[i] = in[i];
+    }
+}
+
 DECL(void) StructMarshalling(StructWithMarshal in, StructWithStaticMarshal inStatic, StructWithMarshal* out, StructWithStaticMarshal* outStatic)
 {
     *out = in;
@@ -126,4 +134,14 @@ DECL(int) Product(int numElements, SimpleStruct elements[])
         product *= elements[i].i;
     }
     return product;
+}
+
+DECL(long long) SumValues(LargeStruct val)
+{
+    return val.i[0] + val.i[1] + val.i[2];
+}
+
+DECL(PointerSize) PassThroughPointerSize(PointerSize param)
+{
+	return param;
 }

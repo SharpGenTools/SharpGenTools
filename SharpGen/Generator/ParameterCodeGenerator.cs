@@ -23,7 +23,7 @@ namespace SharpGen.Generator
                     || csElement.Attribute == CsParameterAttribute.RefIn)
                 && !csElement.IsArray)
             {
-                if (!(csElement.IsRefInValueTypeOptional || csElement.IsRefInValueTypeByValue)
+                if (!(csElement.PassedByNullableInstance || csElement.RefInPassedByValue)
                     && !csElement.IsStructClass)
                     param = param.AddModifiers(Token(SyntaxKind.RefKeyword));
             }

@@ -20,7 +20,7 @@ namespace SharpGen.Generator
             this.globalNamespace = globalNamespace;
         }
 
-        GlobalNamespaceProvider globalNamespace;
+        readonly GlobalNamespaceProvider globalNamespace;
 
         public IGeneratorRegistry Generators { get; }
 
@@ -46,47 +46,31 @@ namespace SharpGen.Generator
                 .WithLeadingTrivia(Trivia(documentationTrivia));
 
             var statements = new List<StatementSyntax>();
-
-            string resultVariableName = null;
-            var resultMarshallingRequired = false;
-
-            // foreach parameter
-            foreach (var parameter in csElement.Parameters)
-            {
-                statements.AddRange(Generators.ParameterProlog.GenerateCode(parameter));
-            }
+            
+            statements.AddRange(csElement.Parameters.SelectMany(param => Generators.CallableProlog.GenerateCode(param)));
             if (csElement.HasReturnType)
             {
-                resultVariableName = "__result__";
-                statements.Add(LocalDeclarationStatement(
-                    VariableDeclaration(
-                        ParseTypeName(csElement.ReturnValue.PublicType.QualifiedName),
-                        SingletonSeparatedList(
-                            VariableDeclarator(resultVariableName)))));
-                if (csElement.ReturnValue.PublicType is CsStruct returnStruct && returnStruct.HasMarshalType)
+                statements.AddRange(Generators.CallableProlog.GenerateCode(csElement.ReturnValue)); 
+            }
+
+
+            foreach (var param in csElement.Parameters)
+            {
+                if (param.IsIn || param.IsRefIn || param.IsRef)
                 {
-                    resultMarshallingRequired = true;
-                    resultVariableName = "__result__native";
-                    statements.Add(ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                        IdentifierName("__result__"),
-                        ObjectCreationExpression(ParseTypeName(csElement.ReturnValue.PublicType.QualifiedName))
-                            .WithArgumentList(ArgumentList()))));
-                    statements.Add(LocalDeclarationStatement(
-                        VariableDeclaration(
-                            ParseTypeName(csElement.ReturnValue.PublicType.QualifiedName + ".__Native"),
-                            SingletonSeparatedList(
-                                VariableDeclarator(resultVariableName)))));
+                    var marshalToNative = Generators.MarshalToNativeSingleFrame.GenerateCode(param);
+                    if (marshalToNative != null)
+                    {
+                        statements.Add(marshalToNative);
+                    }
                 }
             }
 
-            var fixedStatements = GenerateFixedStatements(csElement);
+            var fixedStatements = csElement.PublicParameters
+                .Select(Generators.Pinning.GenerateCode)
+                .Where(stmt => stmt != null).ToList();
 
-            var invocation = Generators.NativeInvocation.GenerateCode(csElement);
-            var callStmt = ExpressionStatement(csElement.HasReturnType && !csElement.IsReturnStructLarge ?
-                AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                    IdentifierName(resultVariableName),
-                    invocation)
-                    : invocation);
+            var callStmt = ExpressionStatement(Generators.NativeInvocation.GenerateCode(csElement));
 
             var fixedStatement = fixedStatements.FirstOrDefault()?.WithStatement(callStmt);
             foreach (var statement in fixedStatements.Skip(1))
@@ -96,37 +80,45 @@ namespace SharpGen.Generator
 
             statements.Add((StatementSyntax)fixedStatement ?? callStmt);
 
-            if (resultMarshallingRequired)
+            foreach (var param in csElement.Parameters)
             {
-                statements.Add(
-                    ExpressionStatement(
-                        InvocationExpression(
-                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                IdentifierName("__result__"),
-                                IdentifierName("__MarshalFrom")),
-                            ArgumentList(
-                                SingletonSeparatedList(
-                                    Argument(IdentifierName("__result__native"))
-                                        .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
+                if (param.IsRef || param.IsOut)
+                {
+                    var marshalFromNative = Generators.MarshalFromNativeSingleFrame.GenerateCode(param);
+                    if (marshalFromNative != null)
+                    {
+                        statements.Add(marshalFromNative);
+                    }
+                }
             }
 
-            foreach (var parameter in csElement.Parameters)
+            if (csElement.HasReturnType)
             {
-                statements.AddRange(Generators.ParameterEpilog.GenerateCode(parameter));
+                var marshalReturnType = Generators.MarshalFromNativeSingleFrame.GenerateCode(csElement.ReturnValue);
+                if (marshalReturnType != null)
+                {
+                    statements.Add(marshalReturnType);
+                }
+            }
+            
+            statements.AddRange(csElement.Parameters
+                .Where(param => !param.IsOut)
+                .Select(Generators.MarshalCleanupSingleFrame.GenerateCode)
+                .Where(param => param != null));
+
+
+            if ((csElement.ReturnValue.PublicType.Name == globalNamespace.GetTypeName(WellKnownName.Result)) && csElement.CheckReturnType)
+            {
+                statements.Add(ExpressionStatement(
+                    InvocationExpression(
+                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                        IdentifierName(csElement.ReturnValue.Name),
+                        IdentifierName("CheckError")))));
             }
 
             // Return
             if (csElement.HasPublicReturnType)
             {
-                if ((csElement.ReturnValue.PublicType.Name == globalNamespace.GetTypeName(WellKnownName.Result)) && csElement.CheckReturnType)
-                {
-                    statements.Add(ExpressionStatement(
-                        InvocationExpression(
-                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                            IdentifierName("__result__"),
-                            IdentifierName("CheckError")))));
-                }
-
                 if (csElement.HasReturnTypeParameter || csElement.ForceReturnType || !csElement.HideReturnType)
                 {
                     statements.Add(ReturnStatement(IdentifierName(csElement.ReturnName)));
@@ -135,60 +127,5 @@ namespace SharpGen.Generator
 
             yield return methodDeclaration.WithBody(Block(statements));
         }
-
-
-        private static List<FixedStatementSyntax> GenerateFixedStatements(CsCallable csElement)
-        {
-            var fixedStatements = new List<FixedStatementSyntax>();
-            foreach (var param in csElement.Parameters)
-            {
-                FixedStatementSyntax statement = null;
-                if (param.IsArray && param.IsValueType)
-                {
-                    if (param.HasNativeValueType || param.IsOptional)
-                    {
-                        statement = FixedStatement(VariableDeclaration(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
-                            SingletonSeparatedList(
-                                VariableDeclarator(param.TempName).WithInitializer(EqualsValueClause(
-                                    IdentifierName($"{param.TempName}_")
-                                    )))), EmptyStatement());
-                    }
-                    else
-                    {
-                        statement = FixedStatement(VariableDeclaration(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
-                            SingletonSeparatedList(
-                                VariableDeclarator(param.TempName).WithInitializer(EqualsValueClause(
-                                    IdentifierName(param.Name)
-                                    )))), EmptyStatement());
-                    }
-                }
-                else if (param.IsFixed && param.IsValueType && !param.HasNativeValueType && !param.IsUsedAsReturnType)
-                {
-                    statement = FixedStatement(VariableDeclaration(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
-                        SingletonSeparatedList(
-                            VariableDeclarator(param.TempName).WithInitializer(EqualsValueClause(
-                                PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
-                                    IdentifierName(param.Name))
-                                )))), EmptyStatement());
-                }
-                else if (param.IsString && param.IsWideChar)
-                {
-                    statement = FixedStatement(VariableDeclaration(PointerType(PredefinedType(Token(SyntaxKind.CharKeyword))),
-                        SingletonSeparatedList(
-                            VariableDeclarator(param.TempName).WithInitializer(EqualsValueClause(
-                                IdentifierName(param.Name)
-                                )))), EmptyStatement());
-                }
-
-                if (statement != null)
-                {
-                    fixedStatements.Add(statement);
-                }
-            }
-
-            return fixedStatements;
-        }
-
-
     }
 }
