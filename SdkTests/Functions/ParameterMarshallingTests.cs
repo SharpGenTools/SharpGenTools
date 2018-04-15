@@ -1,4 +1,5 @@
 using System;
+using SharpGen.Runtime;
 using Xunit;
 
 namespace Functions
@@ -187,6 +188,14 @@ namespace Functions
             value.I[2] = 30;
 
             Assert.Equal(60, NativeFunctions.SumValues(value));
+        }
+
+        [Fact]
+        public void PointerSize()
+        {
+            var value = new PointerSize(20);
+
+            Assert.Equal(new PointerSize(20), NativeFunctions.PassThroughPointerSize(value));
         }
     }
 }

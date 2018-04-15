@@ -8,6 +8,10 @@
     <include-dir>$(THIS_CONFIG_PATH)\..\Native\Functions</include-dir>
     <include file="Functions.h" attach="true" />
 
+    <bindings>
+        <bind from="PointerSize" to="SharpGen.Runtime.PointerSize" />
+    </bindings>
+
     <extension>
         <create class="Functions.NativeFunctions" />
         <const from-macro="TestConstant" class="Functions.NativeFunctions" type="int" name="TestConstant">$1</const>

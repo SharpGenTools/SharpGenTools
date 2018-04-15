@@ -140,3 +140,8 @@ DECL(long long) SumValues(LargeStruct val)
 {
     return val.i[0] + val.i[1] + val.i[2];
 }
+
+DECL(PointerSize) PassThroughPointerSize(PointerSize param)
+{
+	return param;
+}

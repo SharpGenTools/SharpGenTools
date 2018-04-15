@@ -1,3 +1,4 @@
+
 #define DECL(RetType) extern "C" __declspec(dllexport) RetType __stdcall
 
 #define TestConstant 2018
@@ -27,6 +28,11 @@ struct StructWithStaticMarshal
 struct LargeStruct
 {
 	long long i[3];
+};
+
+struct PointerSize
+{
+	void* ptr;
 };
 
 DECL(void) GetInterfaces(int numInstances, Interface** results);
@@ -66,3 +72,5 @@ DECL(int) Sum(int numElements, SimpleStruct elements[]);
 DECL(int) Product(int numElements, SimpleStruct elements[]);
 
 DECL(long long) SumValues(LargeStruct val);
+
+DECL(PointerSize) PassThroughPointerSize(PointerSize param);

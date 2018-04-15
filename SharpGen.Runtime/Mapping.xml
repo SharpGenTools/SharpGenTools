@@ -18,6 +18,7 @@
     <bind from="float" to="System.Single" />
     <bind from="double" to="System.Double" />
     <bind from="size_t" to="SharpGen.Runtime.PointerSize" />
+    <bind from="ptrdiff_t" to="SharpGen.Runtime.PointerSize" />
     <bind from="bool" to="System.Boolean" marshal="System.Byte" />
     <bind from="__function__stdcall" to="SharpGen.Runtime.FunctionCallback" />
     <bind from="GUID" to="System.Guid" />
