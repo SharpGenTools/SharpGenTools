@@ -69,8 +69,14 @@ namespace SharpGen.Runtime
 
                 foreach (var inheritInterface in inheritList)
                 {
+                    // If there isn't a Shadow attribute then this isn't a native interface.
                     var inheritShadowAttribute = ShadowAttribute.Get(inheritInterface);
                     if (inheritShadowAttribute == null)
+                        continue;
+
+                    // If we have the same GUID as an already added interface,
+                    // then there's already an accurate shadow for it, so we have nothing to do.
+                    if (guidToShadow.ContainsKey(inheritInterface.GetTypeInfo().GUID))
                         continue;
 
                     // Use same shadow as derived

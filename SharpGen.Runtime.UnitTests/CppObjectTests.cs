@@ -15,5 +15,15 @@ namespace SharpGen.Runtime.UnitTests
                 Assert.NotEqual(IntPtr.Zero, CppObject.ToCallbackPtr<ICallback>(callback));
             }
         }
+
+        [Fact]
+        public void GetCallbackPtrForClassWithMultipleInheritenceShouldReturnPointer()
+        {
+            using (var callback = new Callback2Impl())
+            {
+                Assert.NotEqual(IntPtr.Zero, CppObject.ToCallbackPtr<ICallback>(callback));
+                Assert.NotEqual(IntPtr.Zero, CppObject.ToCallbackPtr<ICallback2>(callback));
+            }
+        }
     }
 }

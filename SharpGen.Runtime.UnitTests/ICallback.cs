@@ -41,4 +41,41 @@ namespace SharpGen.Runtime.UnitTests
 
         protected override CppObjectVtbl Vtbl { get; } = new CallbackVbtl(0);
     }
+
+    [Shadow(typeof(Callback2Shadow))]
+    interface ICallback2: ICallback
+    {
+        int Decrement(int param);
+    }
+
+    class Callback2Shadow : CppObjectShadow
+    {
+        public class Callback2Vbtl : CallbackShadow.CallbackVbtl
+        {
+            public Callback2Vbtl(int numberOfCallbackMethods) : base(numberOfCallbackMethods + 1)
+            {
+                AddMethod(new DecrementDelegate(DecrementImpl));
+            }
+
+            [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+            public delegate int DecrementDelegate(IntPtr thisObj, int param);
+
+            private static int DecrementImpl(IntPtr thisObj, int param)
+            {
+                var shadow = ToShadow<CallbackShadow>(thisObj);
+                var callback = (ICallback)shadow.Callback;
+                return callback.Increment(param);
+            }
+        }
+
+        protected override CppObjectVtbl Vtbl { get; } = new Callback2Vbtl(0);
+    }
+
+    class Callback2Impl : CallbackImpl, ICallback, ICallback2
+    {
+        public int Decrement(int param)
+        {
+            return param - 1;
+        }
+    }
 }
