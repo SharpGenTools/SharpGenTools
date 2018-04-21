@@ -39,7 +39,7 @@ namespace SharpGen.Runtime
         /// Initializes a new instance of the <see cref="InterfaceArray"/> class.
         /// </summary>
         /// <param name="array">The array.</param>
-        public InterfaceArray(params T[] array)
+        public unsafe InterfaceArray(params T[] array)
         {
             values = array;
             nativeBuffer = IntPtr.Zero;
@@ -47,7 +47,7 @@ namespace SharpGen.Runtime
             {
                 var length = array.Length;
                 values = new T[length];
-                nativeBuffer = MemoryHelpers.AllocateMemory(length * Unsafe.SizeOf<IntPtr>());
+                nativeBuffer = MemoryHelpers.AllocateMemory(length * sizeof(IntPtr));
                 for (int i = 0; i < length; i++)
                     Set(i, array[i]);
             }
@@ -57,10 +57,10 @@ namespace SharpGen.Runtime
         /// Initializes a new instance of the <see cref="InterfaceArray"/> class.
         /// </summary>
         /// <param name="size">The size.</param>
-        public InterfaceArray(int size)
+        public unsafe InterfaceArray(int size)
         {
             values = new T[size];
-            nativeBuffer = MemoryHelpers.AllocateMemory(size * Unsafe.SizeOf<IntPtr>());
+            nativeBuffer = MemoryHelpers.AllocateMemory(size * sizeof(IntPtr));
         }
 
         /// <summary>
