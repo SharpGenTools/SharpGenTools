@@ -88,7 +88,7 @@ namespace SharpGen.Model
             get { return Attribute == CsParameterAttribute.Out; }
         }
 
-        public bool IsRef
+        public override bool IsRef
         {
             get { return Attribute == CsParameterAttribute.Ref; }
         }

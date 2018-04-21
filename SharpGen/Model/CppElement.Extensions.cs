@@ -164,6 +164,9 @@ namespace SharpGen.Model
             if (newRule.EnumHasNone != null) tag.EnumHasNone = newRule.EnumHasNone;
             if (newRule.IsCallbackInterface != null) tag.IsCallbackInterface = newRule.IsCallbackInterface;
             if (newRule.IsDualCallbackInterface != null) tag.IsDualCallbackInterface = newRule.IsDualCallbackInterface;
+            if (newRule.AutoGenerateShadow != null) tag.AutoGenerateShadow = newRule.AutoGenerateShadow;
+            if (newRule.ShadowName != null) tag.ShadowName = RegexRename(patchRegex, element.FullName, newRule.ShadowName);
+            if (newRule.VtblName != null) tag.VtblName = RegexRename(patchRegex, element.FullName, newRule.VtblName);
             if (newRule.IsKeepImplementPublic != null) tag.IsKeepImplementPublic = newRule.IsKeepImplementPublic;
             if (newRule.FunctionDllName != null) tag.FunctionDllName = RegexRename(patchRegex, element.FullName, newRule.FunctionDllName);
             if (newRule.Group != null) tag.Group = newRule.Group;

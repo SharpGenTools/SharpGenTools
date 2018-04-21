@@ -13,10 +13,13 @@ namespace SharpGen.Generator
 {
     class InterfaceCodeGenerator : MemberCodeGeneratorBase<CsInterface>
     {
-        public InterfaceCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation, ExternalDocCommentsReader docReader)
+        private readonly GlobalNamespaceProvider globalNamespace;
+
+        public InterfaceCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation, ExternalDocCommentsReader docReader, GlobalNamespaceProvider globalNamespace)
             : base(documentation, docReader)
         {
             Generators = generators;
+            this.globalNamespace = globalNamespace;
         }
 
         public IGeneratorRegistry Generators { get; }
@@ -37,7 +40,7 @@ namespace SharpGen.Generator
             var visibility = TokenList(ParseTokens(csElement.VisibilityName)
                 .Concat(new[] { Token(SyntaxKind.PartialKeyword) }));
 
-            BaseListSyntax baseList = default;
+            var baseList = default(BaseListSyntax);
 
             if (csElement.Base != null || csElement.IBase != null)
             {
@@ -225,8 +228,16 @@ namespace SharpGen.Generator
 
             foreach (var method in csElement.Methods)
             {
-                method.Hidden = csElement.IsCallback;
+                method.Hidden = csElement.IsCallback && !csElement.AutoGenerateShadow;
                 members.AddRange(Generators.Method.GenerateCode(method));
+            }
+
+            if (csElement.IsCallback && csElement.AutoGenerateShadow)
+            {
+                yield return Generators.Shadow.GenerateCode(csElement);
+                var shadowAttribute = Attribute(globalNamespace.GetTypeNameSyntax(WellKnownName.ShadowAttribute))
+                    .AddArgumentListArguments(AttributeArgument(TypeOfExpression(ParseTypeName(csElement.ShadowName))));
+                attributes = attributes?.AddAttributes(shadowAttribute) ?? AttributeList(SingletonSeparatedList(shadowAttribute));
             }
 
             yield return csElement.IsCallback ?

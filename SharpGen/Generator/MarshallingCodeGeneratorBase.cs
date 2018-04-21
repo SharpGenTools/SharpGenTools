@@ -360,5 +360,14 @@ namespace SharpGen.Generator
                 || value.IsString
                 || value.MappedToDifferentPublicType;
         }
+
+        protected TypeSyntax GetMarshalTypeSyntax(CsMarshalBase value)
+        {
+            if (value.HasNativeValueType)
+            {
+                return ParseTypeName($"{value.MarshalType.QualifiedName}.__Native");
+            }
+            return ParseTypeName(value.MarshalType.QualifiedName);
+        }
     }
 }

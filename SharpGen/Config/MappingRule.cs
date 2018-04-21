@@ -235,6 +235,17 @@ namespace SharpGen.Config
         [XmlAttribute("callback-dual")]
         public bool _IsDualCallbackInterface_ { get { return IsDualCallbackInterface.Value; } set { IsDualCallbackInterface = value; } } public bool ShouldSerialize_IsDualCallbackInterface_() { return IsDualCallbackInterface != null; }
 
+        [XmlIgnore]
+        public bool? AutoGenerateShadow { get; set; }
+        [XmlAttribute("autogen-shadow")]
+        public bool _AutoGenerateShadow_ { get => AutoGenerateShadow.Value; set => AutoGenerateShadow = value; } public bool ShouldSerialize_AutoGenerateShadow_() { return AutoGenerateShadow != null; }
+        
+        [XmlAttribute("shadow-name")]
+        public string ShadowName { get; set; }
+
+        [XmlAttribute("vtbl-name")]
+        public string VtblName { get; set; }
+
         /// <summary>
         /// Used for methods to specify that inheriting methods from interface should be kept public and without any rename.
         /// </summary>
@@ -281,10 +292,10 @@ namespace SharpGen.Config
         [XmlAttribute("group")]
         public string Group { get; set; }
 
-		/// <summary>
-		/// An integer that can be used to transform the method's vtable offset relative to the value specified by the compiler.
-		/// </summary>
-		[XmlAttribute("offset-translate")]
-		public int LayoutOffsetTranslate { get; set; }
+        /// <summary>
+        /// An integer that can be used to transform the method's vtable offset relative to the value specified by the compiler.
+        /// </summary>
+        [XmlAttribute("offset-translate")]
+        public int LayoutOffsetTranslate { get; set; }
     }
 }

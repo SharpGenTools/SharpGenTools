@@ -26,7 +26,7 @@ namespace SharpGen.Generator
             Pinning = new PinningCodeGenerator(globalNamespace);
             Method = new MethodCodeGenerator(this);
             Function = new FunctionCodeGenerator(this);
-            Interface = new InterfaceCodeGenerator(this, documentation, docReader);
+            Interface = new InterfaceCodeGenerator(this, documentation, docReader, globalNamespace);
             Parameter = new ParameterCodeGenerator();
             Argument = new ArgumentGenerator(globalNamespace);
             Group = new GroupCodeGenerator(this, documentation, docReader);
@@ -39,6 +39,10 @@ namespace SharpGen.Generator
             MarshalFromNative = new MarshalFromNativeCodeGenerator(false, globalNamespace);
             MarshalCleanupSingleFrame = new MarshalCleanupCodeGenerator(true, globalNamespace);
             MarshalCleanup = new MarshalCleanupCodeGenerator(false, globalNamespace);
+            ShadowCallable = new ShadowCallbackGenerator(this, globalNamespace);
+            ReverseCallableProlog = new ReverseCallablePrologCodeGenerator(globalNamespace);
+            Vtbl = new VtblGenerator(this, globalNamespace);
+            Shadow = new ShadowGenerator(this, globalNamespace);
         }
 
         public IMultiCodeGenerator<CsVariable, MemberDeclarationSyntax> Constant { get; }
@@ -75,5 +79,13 @@ namespace SharpGen.Generator
         public ICodeGenerator<CsMarshalBase, StatementSyntax> MarshalFromNative { get; }
 
         public ICodeGenerator<CsMarshalBase, StatementSyntax> MarshalCleanup { get; }
+
+        public ICodeGenerator<CsInterface, MemberDeclarationSyntax> Shadow { get; }
+
+        public ICodeGenerator<CsInterface, MemberDeclarationSyntax> Vtbl { get; }
+
+        public IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> ShadowCallable { get; }
+
+        public IMultiCodeGenerator<CsCallable, StatementSyntax> ReverseCallableProlog { get; }
     }
 }

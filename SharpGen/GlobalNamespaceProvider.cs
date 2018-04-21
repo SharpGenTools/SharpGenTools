@@ -27,7 +27,8 @@ namespace SharpGen
     public enum BuiltinType
     {
         Marshal,
-        Math
+        Math,
+        Unsafe
     }
 
     /// <summary> Types the SharpGen generator assumes are present in the SharpGen global namespace. </summary>
@@ -55,6 +56,18 @@ namespace SharpGen
         StringHelpers,
         /// <summary>Utility class that enables speedup for passing arrays of interface objects</summary>
         InterfaceArray,
+        /// <summary>
+        /// Base class for all shadow objects.
+        /// </summary>
+        CppObjectShadow,
+        /// <summary>
+        ///  Base class for all shadow virtual method tables.
+        /// </summary>
+        CppObjectVtbl,
+        /// <summary>
+        /// Attribute that defines the shadow type for an interface.
+        /// </summary>
+        ShadowAttribute
     }
 
     /// <summary>
@@ -96,6 +109,8 @@ namespace SharpGen
                     return SyntaxFactory.ParseName("System.Runtime.InteropServices.Marshal");
                 case BuiltinType.Math:
                     return SyntaxFactory.ParseName("System.Math");
+                case BuiltinType.Unsafe:
+                    return SyntaxFactory.ParseName("System.Runtime.CompilerServices.Unsafe");
                 default:
                     return null;
             }
