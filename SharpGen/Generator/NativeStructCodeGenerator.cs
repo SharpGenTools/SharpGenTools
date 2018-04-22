@@ -55,10 +55,7 @@ namespace SharpGen.Generator
 
             yield return GenerateMarshalFrom(csStruct);
 
-            if (csStruct.MarshalledToNative)
-            {
-                yield return GenerateMarshalTo(csStruct);
-            }
+            yield return GenerateMarshalTo(csStruct);
         }
 
 

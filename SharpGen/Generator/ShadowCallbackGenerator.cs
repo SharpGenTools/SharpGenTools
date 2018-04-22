@@ -23,7 +23,8 @@ namespace SharpGen.Generator
 
         public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsCallable csElement)
         {
-            throw new NotImplementedException();
+            yield return GenerateDelegateDeclaration(csElement);
+            yield return GenerateShadowCallback(csElement);
         }
 
         private DelegateDeclarationSyntax GenerateDelegateDeclaration(CsCallable csElement)
@@ -89,15 +90,10 @@ namespace SharpGen.Generator
             if (csElement.IsReturnStructLarge)
             {
                 nativeParameters = nativeParameters.Skip(1);
-
-                var typeName = !NeedsMarshalling(csElement.ReturnValue)
-                    ? csElement.ReturnValue.PublicType.QualifiedName
-                    : $"{csElement.ReturnValue.QualifiedName}.__Native";
-                
                 methodDecl = methodDecl
                     .AddParameterListParameters(
                         Parameter(Identifier("returnSlot"))
-                        .WithType(PointerType(ParseTypeName(typeName))));
+                        .WithType(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword)))));
             }
 
             methodDecl = methodDecl
@@ -220,36 +216,41 @@ namespace SharpGen.Generator
                                 ? GetMarshalStorageLocation(csElement.ReturnValue)
                                 : IdentifierName(csElement.ReturnValue.Name);
 
-            statements.Add(
-                ReturnStatement(csElement.IsReturnStructLarge ?
-                    IdentifierName("returnSlot")
-                    : nativeReturnLocation));
+            if (csElement.HasReturnType && (!csElement.HideReturnType || csElement.ForceReturnType))
+            {
+                statements.Add(
+                    ReturnStatement(csElement.IsReturnStructLarge ?
+                        IdentifierName("returnSlot")
+                        : nativeReturnLocation));
+            }
 
             var exceptionVariableIdentifier = Identifier("__exception__");
 
             var catchClause = CatchClause()
                 .WithDeclaration(
-                    CatchDeclaration(ParseTypeName("System.Exception"), exceptionVariableIdentifier))
+                    CatchDeclaration(ParseTypeName("System.Exception")))
                 .WithBlock(Block());
 
             if (csElement.ReturnValue.PublicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.Result))
             {
-                catchClause = catchClause.WithBlock(
-                    Block(
-                        ReturnStatement(
-                            CastExpression(
-                                ParseTypeName(csElement.ReturnValue.MarshalType.QualifiedName),
-                                InvocationExpression(
-                                    MemberAccessExpression(
-                                        SyntaxKind.SimpleMemberAccessExpression,
-                                        globalNamespace.GetTypeNameSyntax(WellKnownName.Result),
-                                        IdentifierName("GetResultFromException")))
-                                .WithArgumentList(
-                                    ArgumentList(
-                                        SingletonSeparatedList(
-                                            Argument(
-                                                IdentifierName(exceptionVariableIdentifier)))))))
-                    ));
+                catchClause = catchClause
+                    .WithDeclaration(catchClause.Declaration.WithIdentifier(exceptionVariableIdentifier))
+                    .WithBlock(
+                        Block(
+                            ReturnStatement(
+                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                    InvocationExpression(
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            globalNamespace.GetTypeNameSyntax(WellKnownName.Result),
+                                            IdentifierName("GetResultFromException")))
+                                    .WithArgumentList(
+                                        ArgumentList(
+                                            SingletonSeparatedList(
+                                                Argument(
+                                                    IdentifierName(exceptionVariableIdentifier))))),
+                                    IdentifierName("Code"))
+                        )));
 
                 if (csElement.HideReturnType && !csElement.ForceReturnType)
                 {
@@ -262,6 +263,20 @@ namespace SharpGen.Generator
                                     IdentifierName("Ok")),
                                 IdentifierName("Code"))));
                 }
+            }
+            else if (csElement.HasReturnType)
+            {
+                var returnStatement = default(ReturnStatementSyntax);
+                if (csElement.IsReturnStructLarge)
+                {
+                    returnStatement = ReturnStatement(IdentifierName("returnSlot"));
+                }
+                else
+                {
+                    returnStatement = ReturnStatement(
+                        DefaultExpression(GetMarshalTypeSyntax(csElement.ReturnValue)));
+                }
+                catchClause = catchClause.WithBlock(Block(returnStatement));
             }
 
             return methodDecl.WithBody(

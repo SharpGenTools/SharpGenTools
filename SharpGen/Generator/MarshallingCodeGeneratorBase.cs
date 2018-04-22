@@ -367,6 +367,10 @@ namespace SharpGen.Generator
             {
                 return ParseTypeName($"{value.MarshalType.QualifiedName}.__Native");
             }
+            else if (value.IsInterface)
+            {
+                return ParseTypeName("System.IntPtr");
+            }
             return ParseTypeName(value.MarshalType.QualifiedName);
         }
     }

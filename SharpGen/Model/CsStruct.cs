@@ -54,7 +54,6 @@ namespace SharpGen.Model
             HasCustomMarshal = tag.StructCustomMarshal ?? false;
             IsStaticMarshal = tag.IsStaticMarshal ?? false;
             HasCustomNew = tag.StructCustomNew ?? false;
-            MarshalledToNative = tag.StructForceMarshalToToBeGenerated ?? false;
 
             // Force a marshalling if a struct need to be treated as a class)
             if (GenerateAsClass)
@@ -114,39 +113,6 @@ namespace SharpGen.Model
 
         [DataMember]
         public bool HasCustomNew { get; set; }
-
-        private bool marshalledToNative;
-
-        [DataMember]
-        public bool MarshalledToNative
-        {
-            get => marshalledToNative;
-            set
-            {
-                if (value)
-                {
-                    SetMarshalledToNative(this);
-                }
-                else
-                {
-                    marshalledToNative = false;
-                }
-            }
-        }
-
-
-        private static void SetMarshalledToNative(CsStruct csStruct)
-        {
-            csStruct.marshalledToNative = true;
-
-            foreach (var field in csStruct.Fields)
-            {
-                if (field.PublicType is CsStruct innerStruct)
-                {
-                    SetMarshalledToNative(innerStruct);
-                }
-            }
-        }
 
         /// <summary>
         ///   List of declared inner structs

@@ -21,10 +21,14 @@ namespace SharpGen.Generator
         }
 
         public MemberDeclarationSyntax GenerateCode(CsInterface csElement)
-            => ClassDeclaration(csElement.VtblName)
+        {
+            var vtblClassName = csElement.VtblName.Split('.').Last();
+
+            return ClassDeclaration(vtblClassName)
                 .WithModifiers(
                     TokenList(
-                        Token(SyntaxKind.ProtectedKeyword)))
+                        Token(SyntaxKind.ProtectedKeyword),
+                        Token(SyntaxKind.UnsafeKeyword)))
                 .WithBaseList(
                     BaseList(
                         SingletonSeparatedList<BaseTypeSyntax>(
@@ -37,7 +41,7 @@ namespace SharpGen.Generator
                         new MemberDeclarationSyntax[]
                         {
                             ConstructorDeclaration(
-                                Identifier(csElement.VtblName))
+                                Identifier(vtblClassName))
                             .WithModifiers(
                                 TokenList(
                                     Token(SyntaxKind.PublicKeyword)))
@@ -60,7 +64,7 @@ namespace SharpGen.Generator
                                                     IdentifierName("numberOfCallbackMethods"),
                                                     LiteralExpression(
                                                         SyntaxKind.NumericLiteralExpression,
-                                                        Literal(1))))))))
+                                                        Literal(csElement.Methods.Count()))))))))
                             .WithBody(
                                 Block(csElement.Methods
                                         .OrderBy(method => method.Offset)
@@ -81,5 +85,6 @@ namespace SharpGen.Generator
                         }
                     .Concat(csElement.Methods
                                 .SelectMany(method => generators.ShadowCallable.GenerateCode(method)))));
+        }
     }
 }

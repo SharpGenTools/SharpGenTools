@@ -229,6 +229,7 @@ namespace SharpGen.Generator
             foreach (var method in csElement.Methods)
             {
                 method.Hidden = csElement.IsCallback && !csElement.AutoGenerateShadow;
+                method.SignatureOnly = csElement.IsCallback;
                 members.AddRange(Generators.Method.GenerateCode(method));
             }
 

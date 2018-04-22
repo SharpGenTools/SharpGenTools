@@ -120,7 +120,7 @@ namespace SharpGen.Model
         [DataMember]
         public string VtblName
         {
-            get => vtblName ?? $"{QualifiedName}Vtbl";
+            get => vtblName ?? $"{ShadowName}.{Name}Vtbl";
             set => vtblName = value;
         }
 

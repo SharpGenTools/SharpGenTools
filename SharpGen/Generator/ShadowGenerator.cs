@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SharpGen.Model;
 using Microsoft.CodeAnalysis.CSharp;
+using System.Linq;
 
 namespace SharpGen.Generator
 {
@@ -20,7 +21,10 @@ namespace SharpGen.Generator
         }
 
         public MemberDeclarationSyntax GenerateCode(CsInterface csElement)
-            => ClassDeclaration(csElement.ShadowName)
+        {
+            var shadowClassName = csElement.ShadowName.Split('.').Last();
+
+            return ClassDeclaration(shadowClassName)
             .WithBaseList(
                 BaseList(
                     SingletonSeparatedList<BaseTypeSyntax>(
@@ -61,5 +65,6 @@ namespace SharpGen.Generator
                         .WithSemicolonToken(
                             Token(SyntaxKind.SemicolonToken))
                     }));
+        }
     }
 }

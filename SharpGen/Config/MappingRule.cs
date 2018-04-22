@@ -167,15 +167,7 @@ namespace SharpGen.Config
         public bool? StructCustomNew { get; set; }
         [XmlAttribute("new")]
         public bool _StructCustomNew_ { get { return StructCustomNew.Value; } set { StructCustomNew = value; } } public bool ShouldSerialize_StructCustomNew_() { return StructCustomNew != null; }
-
-        /// <summary>
-        /// True to force a struct with Native marshalling to have the method __MarshalTo generated
-        /// </summary>
-        [XmlIgnore]
-        public bool? StructForceMarshalToToBeGenerated { get; set; }
-        [XmlAttribute("marshalto")]
-        public bool _StructForceMarshalToToBeGenerated_ { get { return StructForceMarshalToToBeGenerated.Value; } set { StructForceMarshalToToBeGenerated = value; } } public bool ShouldSerialize_StructForceMarshalToToBeGenerated_() { return StructForceMarshalToToBeGenerated != null; }
-
+        
         /// <summary>
         /// Mapping type name
         /// </summary>

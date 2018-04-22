@@ -155,6 +155,9 @@ namespace SharpGen.Model
         [DataMember]
         public bool AlwaysReturnHResult { get; set; }
 
+        [DataMember]
+        public bool SignatureOnly { get; set; }
+
         public bool HasReturnType
         {
             get { return !(ReturnValue.PublicType is CsFundamentalType fundamental && fundamental.Type == typeof(void)); }
