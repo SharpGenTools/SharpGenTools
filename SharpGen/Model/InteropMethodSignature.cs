@@ -68,6 +68,8 @@ namespace SharpGen.Model
                 return false;
             if (this.IsLocal != against.IsLocal)
                 return false;
+            if (this.CallingConvention != against.CallingConvention)
+                return false;
 
             for (int i = 0; i < ParameterTypes.Count; i++)
             {
