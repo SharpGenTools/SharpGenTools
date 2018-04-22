@@ -31,7 +31,7 @@ namespace SharpGen.Generator
                     yield return statement;
                 }
             }
-            else if (csElement.HasReturnType)
+            else if (csElement.HasReturnType && (!csElement.HideReturnType || csElement.ForceReturnType))
             {
                 if (NeedsMarshalling(csElement.ReturnValue))
                 {
@@ -39,6 +39,10 @@ namespace SharpGen.Generator
                         VariableDeclaration(GetMarshalTypeSyntax(csElement.ReturnValue))
                         .AddVariables(
                             VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement.ReturnValue))));
+                    yield return LocalDeclarationStatement(
+                         VariableDeclaration(ParseTypeName(csElement.ReturnValue.PublicType.QualifiedName))
+                         .AddVariables(
+                             VariableDeclarator(Identifier(csElement.ReturnValue.Name))));
                 }
                 else
                 {

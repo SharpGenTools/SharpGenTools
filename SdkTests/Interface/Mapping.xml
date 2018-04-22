@@ -36,6 +36,7 @@
     <map param="CallbackInterface::GetZero::ppValue" attribute="out" />
     <map param="CallbackInterface::Increment::pValue" attribute="inout" />
     <map method="CallbackInterface::.*" property="false" />
+    <map param="CallbackInterface::MappedTypeTest::i" type="unsigned int" />
   </mapping>
 
   <depends>SharpGen.Runtime</depends>

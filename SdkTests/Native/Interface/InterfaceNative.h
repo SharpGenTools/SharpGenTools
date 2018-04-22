@@ -85,4 +85,7 @@ struct CallbackInterface
 	virtual wchar_t GetFirstCharacter(wchar_t* str) = 0;
 	virtual char GetFirstAnsiCharacter(char* str) = 0;
 	virtual RESULT CloneInstance(CallbackInterface** out) = 0;
+	virtual bool AreEqual(CallbackInterface* rhs) = 0;
+	virtual int Add(int i, int j) = 0;
+	virtual int MappedTypeTest(int i) = 0;
 };

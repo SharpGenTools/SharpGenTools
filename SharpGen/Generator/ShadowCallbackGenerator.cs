@@ -196,7 +196,26 @@ namespace SharpGen.Generator
 
                 if (returnValueNeedsMarshalling)
                 {
-                    statements.Add(generators.MarshalToNative.GenerateCode(csElement.ReturnValue));
+                    // Bool-to-int is special cased in marshalling so we need to special case it here as well.
+                    if (csElement.ReturnValue.IsBoolToInt)
+                    {
+                        statements.Add(ExpressionStatement(
+                            AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                                GetMarshalStorageLocation(csElement.ReturnValue),
+                                CastExpression(GetMarshalTypeSyntax(csElement.ReturnValue),
+                                    ParenthesizedExpression(
+                                    ConditionalExpression(
+                                        IdentifierName(csElement.ReturnValue.Name),
+                                        LiteralExpression(SyntaxKind.NumericLiteralExpression,
+                                            Literal(1)),
+                                        LiteralExpression(SyntaxKind.NumericLiteralExpression,
+                                            Literal(0))
+                                ))))));
+                    }
+                    else
+                    {
+                        statements.Add(generators.MarshalToNative.GenerateCode(csElement.ReturnValue));
+                    }
                 }
             }
 
@@ -266,16 +285,9 @@ namespace SharpGen.Generator
             }
             else if (csElement.HasReturnType)
             {
-                var returnStatement = default(ReturnStatementSyntax);
-                if (csElement.IsReturnStructLarge)
-                {
-                    returnStatement = ReturnStatement(IdentifierName("returnSlot"));
-                }
-                else
-                {
-                    returnStatement = ReturnStatement(
-                        DefaultExpression(GetMarshalTypeSyntax(csElement.ReturnValue)));
-                }
+                var returnStatement = csElement.IsReturnStructLarge ?
+                    ReturnStatement(IdentifierName("returnSlot"))
+                    : ReturnStatement(DefaultExpression(GetMarshalTypeSyntax(csElement.ReturnValue)));
                 catchClause = catchClause.WithBlock(Block(returnStatement));
             }
 
