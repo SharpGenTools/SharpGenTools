@@ -135,8 +135,6 @@ namespace SharpGen.Model
             if (newRule.StructCustomMarshal != null) tag.StructCustomMarshal = newRule.StructCustomMarshal;
             if (newRule.StructCustomNew != null) tag.StructCustomNew = newRule.StructCustomNew;
             if (newRule.IsStaticMarshal != null) tag.IsStaticMarshal = newRule.IsStaticMarshal;
-            if (newRule.StructForceMarshalToToBeGenerated != null)
-                tag.StructForceMarshalToToBeGenerated = newRule.StructForceMarshalToToBeGenerated;
             if (newRule.MappingType != null) tag.MappingType = RegexRename(patchRegex, element.FullName, newRule.MappingType);
             if (newRule.OverrideNativeType != null) tag.OverrideNativeType = newRule.OverrideNativeType;
 
@@ -164,6 +162,9 @@ namespace SharpGen.Model
             if (newRule.EnumHasNone != null) tag.EnumHasNone = newRule.EnumHasNone;
             if (newRule.IsCallbackInterface != null) tag.IsCallbackInterface = newRule.IsCallbackInterface;
             if (newRule.IsDualCallbackInterface != null) tag.IsDualCallbackInterface = newRule.IsDualCallbackInterface;
+            if (newRule.AutoGenerateShadow != null) tag.AutoGenerateShadow = newRule.AutoGenerateShadow;
+            if (newRule.ShadowName != null) tag.ShadowName = RegexRename(patchRegex, element.FullName, newRule.ShadowName);
+            if (newRule.VtblName != null) tag.VtblName = RegexRename(patchRegex, element.FullName, newRule.VtblName);
             if (newRule.IsKeepImplementPublic != null) tag.IsKeepImplementPublic = newRule.IsKeepImplementPublic;
             if (newRule.FunctionDllName != null) tag.FunctionDllName = RegexRename(patchRegex, element.FullName, newRule.FunctionDllName);
             if (newRule.Group != null) tag.Group = newRule.Group;

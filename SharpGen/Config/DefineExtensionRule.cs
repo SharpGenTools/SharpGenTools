@@ -37,6 +37,12 @@ namespace SharpGen.Config
         [XmlAttribute("underlying")]
         public string UnderlyingType { get; set; }
 
+        [XmlAttribute("shadow")]
+        public string ShadowName { get; set; }
+
+        [XmlAttribute("vtbl")]
+        public string VtblName { get; set; }
+
         [XmlIgnore]
         public int? SizeOf { get; set; }
         [XmlAttribute("sizeof")]

@@ -182,7 +182,7 @@ namespace SharpGen.Generator
             {
                 if (csElement.IsValueType
                     && !csElement.IsPrimitive
-                    && !(csElement is CsReturnValue value && !ReturnValueMarshalled(value)))
+                    && !(csElement is CsReturnValue && !NeedsMarshalling(csElement)))
                 {
                     yield return ExpressionStatement(
                         AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,

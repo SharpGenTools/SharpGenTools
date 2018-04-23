@@ -64,3 +64,28 @@ extern "C" __declspec(dllexport) IInterface* __stdcall CreateInstance2(int i, do
 extern "C" __declspec(dllexport) bool __stdcall CloneInstance(IInterface* iface, IInterface** cloned);
 
 extern "C" __declspec(dllexport) InterfaceWithProperties* CreatePropertyTest(bool isTrue, int value, int value2);
+
+struct LargeStruct
+{
+	long long a;
+	long long b;
+};
+
+struct LargeStructWithMarshalling
+{
+	long long i[3];
+};
+
+struct CallbackInterface
+{
+	virtual void GetZero(int* ppValue) = 0;
+	virtual void Increment(int* pValue) = 0;
+	virtual LargeStruct GetLargeStruct(long long a, long long b) = 0;
+	virtual LargeStructWithMarshalling GetLargeMarshalledStruct(long long a, long long b, long long c) = 0;
+	virtual wchar_t GetFirstCharacter(wchar_t* str) = 0;
+	virtual char GetFirstAnsiCharacter(char* str) = 0;
+	virtual RESULT CloneInstance(CallbackInterface** out) = 0;
+	virtual bool AreEqual(CallbackInterface* rhs) = 0;
+	virtual int Add(int i, int j) = 0;
+	virtual int MappedTypeTest(int i) = 0;
+};

@@ -65,6 +65,9 @@ namespace SharpGen.Model
             base.UpdateFromMappingRule(tag);
             IsCallback = tag.IsCallbackInterface ?? false;
             IsDualCallback = tag.IsDualCallbackInterface ?? false;
+            AutoGenerateShadow = tag.AutoGenerateShadow ?? false;
+            ShadowName = tag.ShadowName;
+            VtblName = tag.VtblName;
         }
 
         /// <summary>
@@ -102,6 +105,27 @@ namespace SharpGen.Model
         /// </summary>
         [DataMember]
         public bool IsDualCallback { get; set; }
+
+        private string shadowName;
+
+        [DataMember]
+        public string ShadowName
+        {
+            get => shadowName ?? $"{QualifiedName}Shadow";
+            set => shadowName = value;
+        }
+
+        private string vtblName;
+
+        [DataMember]
+        public string VtblName
+        {
+            get => vtblName ?? $"{ShadowName}.{Name}Vtbl";
+            set => vtblName = value;
+        }
+
+        [DataMember]
+        public bool AutoGenerateShadow { get; set; }
 
         /// <summary>
         ///   List of declared inner structs

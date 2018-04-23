@@ -2,22 +2,6 @@
 SharpGenTools SDK Documentation
 #################################
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents
-   
-   release-notes
-   getting-started
-   custom-mapping
-   advanced-mapping
-   config-features
-   naming-rules
-   documentation
-   native-marshalling
-   shadows
-   advanced-configuration
-   limitations
-
 What is SharpGenTools
 =======================
 
@@ -37,6 +21,7 @@ Pros for SharpGenTools:
 
    * Does not require the user to build a driver program to generate C# code.
    * Generated code extremely configurable
+   * Escape hatches to allow the user to manually write mappings SharpGenTools cannot handle.
 * Full MSBuild integration
 * Consumer file passthough
 
@@ -52,3 +37,19 @@ Getting started
 ===================
 Check out :doc:`getting-started` to get started!.
 
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents
+   
+   release-notes
+   getting-started
+   custom-mapping
+   advanced-mapping
+   config-features
+   naming-rules
+   documentation
+   native-marshalling
+   shadows
+   advanced-configuration
+   limitations

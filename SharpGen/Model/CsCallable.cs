@@ -64,6 +64,8 @@ namespace SharpGen.Model
                     return "Cdecl";
                 case CppCallingConvention.ThisCall:
                     return "ThisCall";
+                case CppCallingConvention.FastCall:
+                    return "FastCall";
                 default:
                     return "Winapi";
             }
@@ -153,6 +155,9 @@ namespace SharpGen.Model
         [DataMember]
         public bool AlwaysReturnHResult { get; set; }
 
+        [DataMember]
+        public bool SignatureOnly { get; set; }
+
         public bool HasReturnType
         {
             get { return !(ReturnValue.PublicType is CsFundamentalType fundamental && fundamental.Type == typeof(void)); }
@@ -177,8 +182,7 @@ namespace SharpGen.Model
 
 
         /// <summary>
-        /// Return the Public return type. If a out parameter is used as a public return type
-        /// then use the type of the out parameter for the public API.
+        /// Returns true if a parameter is marked to be used as the return type.
         /// </summary>
         public bool HasReturnTypeParameter
         {

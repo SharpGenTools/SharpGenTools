@@ -12,6 +12,8 @@ namespace SharpGen.Model
 
         public virtual bool IsIn => false;
 
+        public virtual bool IsRef => false;
+
         public virtual bool IsOut => false;
 
         public virtual bool IsFixed => false;

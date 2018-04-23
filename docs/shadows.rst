@@ -4,14 +4,29 @@ SharpGen Callbacks and Shadows
 
 SharpGenTools has support as part of the SharpGen.Runtime package for inheriting from interfaces generated from C++ and passing C# implementations to native code. In the mapping files, the ``callback`` mapping rule specifies SharpGen should generate an interface instead of a class for the C++ interface.
 
-.. note::
+Auto-Generated Shadows
+=======================
 
-    SharpGen does not currently generate method signatures for callback interfaces by default. You will have to specify the method signatures in another file defining the interface.
+To auto-generate the shadow for a callback, add the ``autogen-shadow="true"`` attribute to a mapping rule for the callback interface. This will automatically generate a shadow interface corresponding with the instructions below using the same marshalling code-gen infrastructure as the rest of the generated code.
+
+.. warning::
+
+    Shadow auto-generation currently does not support non-string-like array parameters. If the native signature contains an array parameter, the generator will generate code that throws a ``NotImplementedException``.
+
+    Additionally, property generation does not currently play nice with the shadow auto-generator. You may need to use a mapping rule to disable property generation. See :ref:`callable` for details on the mapping rule. 
+
+Manually-Written Shadows
+===========================
 
 To declare the shadow type for a callback, put the ``SharpGen.Runtime.ShadowAttribute`` attribute on the interface type. The parameter is a ``typeof(MyInterfaceShadow)`` expression where the type is the shadow type. For an example, look at the code in ``ComStreamBaseShadow.cs`` in the ``SharpGen.Runtime.COM`` folder.
 
+.. note::
+
+    SharpGen does not currently generate method signatures for callback interfaces if it is not auto-generating shadows. You will have to specify the method signatures in another file defining the interface.
+
+
 Shadow Objects
-==============
+---------------
 
 The shadow object is the object that connects the native object with the .NET object instance. Most of your shadow classes will be similar to the shadow class below:
 
@@ -28,7 +43,7 @@ Most of the interesting work happens in the Vtbl type, which we cover in the nex
 
 
 Virtual Method Table (Vtbl) Type
-==================================
+---------------------------------
 
 The Vtbl type builds the virtual method table and has methods to marshal calls from native back into the managed code. The Vtbl class should be declared similar to as follows within the Shadow type:
 
@@ -39,7 +54,7 @@ The Vtbl type builds the virtual method table and has methods to marshal calls f
     }
 
 Vtbl Constructor
-=================
+----------------
 
 The Vtbl constructor should look similar to below:
 
@@ -57,7 +72,7 @@ There are statements we need to put into the constructor, but we will cover thos
 
 
 Vtbl Methods
-==============
+-------------
 
 Each method in the interface has to have a corresponding vtbl method and delegate. The delegate has to have an ``[UnmanagedFunctionPointer]`` attribute that specifies the native calling convention. Additionally, the delegate must have the first parameter be an ``IntPtr`` to represent the ``this`` pointer, and the remaining parameters must be directly representable directly in native code. To add it into the vtbl, add a statement in the constructor in the order that it was declared in native code:
 
@@ -75,9 +90,3 @@ Here are a few guidelines for vtbl method implementations:
     * To get the shadow object for the ``this`` pointer, call ``ToShadow<MyInterfaceShadow>(thisPtr)``.
     * To get the .NET object from the shadow, cast the ``Callback`` property on the shadow object to the interface type.
     * Wrap the call to the .NET object in a ``try``-``catch`` so .NET exceptions do not escape into native code. I make no promises that escaping exceptions won't crash the application.
-
-
-Why can't shadows be auto-generated?
-=====================================
-
-Many shadows can be auto-generated. Some have extra customization needed. Mainly, I haven't had time yet. They are on the roadmap.

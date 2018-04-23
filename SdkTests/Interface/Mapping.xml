@@ -30,6 +30,13 @@
     <map param="InterfaceWithProperties::GetValue2(.*)::(.*)" attribute="out" />
     <map param="InterfaceWithProperties::IsTrueOutProp::(.*)" attribute="out" />
     <map method="InterfaceWithProperties::(.+)Persistent" persist="true" />
+
+    <!-- Shadow auto-gen mappings -->
+    <map interface="CallbackInterface" callback="true" callback-dual="true" autogen-shadow="true" />
+    <map param="CallbackInterface::GetZero::ppValue" attribute="out" />
+    <map param="CallbackInterface::Increment::pValue" attribute="inout" />
+    <map method="CallbackInterface::.*" property="false" />
+    <map param="CallbackInterface::MappedTypeTest::i" type="unsigned int" />
   </mapping>
 
   <depends>SharpGen.Runtime</depends>

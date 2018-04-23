@@ -351,7 +351,7 @@ namespace SharpGen.Generator
                                     Literal(message)))))));
         }
 
-        protected bool ReturnValueMarshalled(CsReturnValue value)
+        protected bool NeedsMarshalling(CsMarshalBase value)
         {
             return value.HasNativeValueType
                 || value.IsBoolToInt
@@ -359,6 +359,19 @@ namespace SharpGen.Generator
                 || value.IsArray
                 || value.IsString
                 || value.MappedToDifferentPublicType;
+        }
+
+        protected TypeSyntax GetMarshalTypeSyntax(CsMarshalBase value)
+        {
+            if (value.HasNativeValueType)
+            {
+                return ParseTypeName($"{value.MarshalType.QualifiedName}.__Native");
+            }
+            else if (value.IsInterface)
+            {
+                return ParseTypeName("System.IntPtr");
+            }
+            return ParseTypeName(value.MarshalType.QualifiedName);
         }
     }
 }

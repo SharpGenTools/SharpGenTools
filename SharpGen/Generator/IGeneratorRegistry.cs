@@ -28,6 +28,10 @@ namespace SharpGen.Generator
         IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax> Method { get; }
         IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax> Function { get; }
         IMultiCodeGenerator<CsInterface, MemberDeclarationSyntax> Interface { get; }
+        ICodeGenerator<CsInterface, MemberDeclarationSyntax> Shadow { get; }
+        ICodeGenerator<CsInterface, MemberDeclarationSyntax> Vtbl { get; }
+        IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> ShadowCallable { get; }
+        IMultiCodeGenerator<CsCallable, StatementSyntax> ReverseCallableProlog { get; }
         ICodeGenerator<CsParameter, ParameterSyntax> Parameter { get; }
         ICodeGenerator<CsMarshalCallableBase, ArgumentSyntax> Argument { get; }
         IMultiCodeGenerator<CsGroup, MemberDeclarationSyntax> Group { get; }

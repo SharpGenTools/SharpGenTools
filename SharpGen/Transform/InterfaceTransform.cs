@@ -65,7 +65,12 @@ namespace SharpGen.Transform
             methodOverloadBuilder = new MethodOverloadBuilder(globalNamespace, typeRegistry);
 
             CppObjectType = new CsInterface { Name = globalNamespace.GetTypeName(WellKnownName.CppObject) };
-            DefaultCallbackable = new CsInterface { Name = globalNamespace.GetTypeName(WellKnownName.ICallbackable) };
+            DefaultCallbackable = new CsInterface
+            {
+                Name = globalNamespace.GetTypeName(WellKnownName.ICallbackable),
+                ShadowName = globalNamespace.GetTypeName(WellKnownName.CppObjectShadow),
+                VtblName = globalNamespace.GetTypeName(WellKnownName.CppObjectVtbl)
+            };
         }
 
         /// <summary>
@@ -288,7 +293,7 @@ namespace SharpGen.Transform
                 {
                     var newCsMethod = (CsMethod)method.Clone();
                     var tagForMethod = method.CppElement.GetMappingRule();
-                    var keepMethodPublic = tagForMethod.IsKeepImplementPublic.HasValue && tagForMethod.IsKeepImplementPublic.Value;
+                    var keepMethodPublic = interfaceType.AutoGenerateShadow || tagForMethod.IsKeepImplementPublic == true;
                     if (!keepMethodPublic)
                     {
                         newCsMethod.Visibility = Visibility.Internal;

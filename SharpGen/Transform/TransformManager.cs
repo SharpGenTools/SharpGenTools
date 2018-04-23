@@ -359,7 +359,12 @@ namespace SharpGen.Transform
                 }
                 else if (defineRule.Interface != null)
                 {
-                    var iface =  new CsInterface { Name = defineRule.Interface };
+                    var iface =  new CsInterface
+                    {
+                        Name = defineRule.Interface,
+                        ShadowName = defineRule.ShadowName,
+                        VtblName = defineRule.VtblName
+                    };
                     if (defineRule.NativeImplementation != null)
                     {
                         iface.NativeImplementation = new CsInterface { Name = defineRule.NativeImplementation, IsDualCallback = true };
@@ -769,7 +774,9 @@ namespace SharpGen.Transform
                         yield return new DefineExtensionRule
                         {
                             Interface = csInterface.QualifiedName,
-                            NativeImplementation = csInterface.NativeImplementation?.QualifiedName
+                            NativeImplementation = csInterface.NativeImplementation?.QualifiedName,
+                            ShadowName = csInterface.ShadowName,
+                            VtblName = csInterface.VtblName
                         };
                         break;
                 }

@@ -29,7 +29,7 @@ namespace SharpGen.Generator
             // Documentation
             var documentationTrivia = GenerateDocumentationTrivia(csElement);
 
-            // method signature (commented if hidden)
+            // method signature
             var methodDeclaration = MethodDeclaration(ParseTypeName(csElement.PublicReturnTypeQualifiedName), csElement.Name)
                 .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)).Add(Token(SyntaxKind.UnsafeKeyword)))
                 .WithParameterList(
@@ -44,6 +44,14 @@ namespace SharpGen.Generator
                         )
                 )
                 .WithLeadingTrivia(Trivia(documentationTrivia));
+
+            if (csElement.SignatureOnly)
+            {
+                yield return methodDeclaration
+                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
+                    .WithModifiers(TokenList());
+                yield break;
+            }
 
             var statements = new List<StatementSyntax>();
             

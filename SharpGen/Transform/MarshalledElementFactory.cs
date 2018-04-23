@@ -304,17 +304,7 @@ namespace SharpGen.Transform
                         parameterAttribute = CsParameterAttribute.In;
                         hasArray = false;
                     }
-                    else if (publicType is CsStruct structType &&
-                                (parameterAttribute == CsParameterAttribute.Out || hasArray || parameterAttribute == CsParameterAttribute.RefIn || parameterAttribute == CsParameterAttribute.Ref))
-                    {
-                        // Set MarshalledToNative on structure to generate proper marshalling
-                        structType.MarshalledToNative = true;
-                    }
                 }
-            }
-            else if (publicType is CsStruct structType && parameterAttribute != CsParameterAttribute.Out)
-            {
-                structType.MarshalledToNative = true;
             }
 
             param.HasPointer = hasPointer;
