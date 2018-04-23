@@ -10,5 +10,5 @@ Below are a list of limitations in SharpGen's current generator. Many of these a
     * Non-member functions must be declared ``extern "C"`` for the ``DllImport`` entry point to find the function.
     * Does not map state for classes with pure virtual members.
     * Does not map non-virtual member functions.
-    * Does not automatically generate shadow and vtbl classes for callbacks.
+    * Does not map function pointer parameters to C# delegate types.
 

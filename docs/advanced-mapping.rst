@@ -214,7 +214,16 @@ Interfaces
         * The visibility for the default implementation. See the :ref:`visibility options<visibility>` for possible values. 
     * ``callback-name``
 
-        * The name for the default implementation.
+        * A custom name for the default implementation. Defaults to the original name + "Native".
+    * ``autogen-shadow``
+
+        * Automatically generate the shadow classes for this callback interface. See :doc:`/shadows` for details.
+    * ``shadow-name``
+
+        * A custom name for the shadow type. See :doc:`/shadows` for details.
+    * ``vtbl-name``
+
+        * A custom name for the vtbl type. See :doc:`/shadows` for details.
 
 .. _callable:
 

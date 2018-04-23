@@ -35,6 +35,15 @@ You will likely only define an interface if you are going to use it in a binding
 
     <define interface="Qualified.Name.For.MyInterface" />
 
+There are a few other attributes for interface definitions. These are listed below.
+
+    * ``native``
+        * The native implmentation of the interface.
+    * ``shadow``
+        * The name of the shadow type of the interface. Will be used if any derived interfaces are callbacks. See :doc:`/shadows` for more details.
+    * ``vtbl``
+        * The name of the vtbl type of the interface. Will be used if any derived interfaces are callbacks. See :doc:`/shadows` for more details. 
+
 Structs
 ---------
 
@@ -81,7 +90,7 @@ Additionally, there you can specify the ``sizeof`` attribute instead of the ``un
 Defining Default Type Bindings
 ===============================
 
-Sometimes the code for a specific type and the way it is used in the native code is hard for SharpGenTools to understand. In other cases, the type already exists in .NET and you want specific native types to always use it. You can use ``<bind>`` elements to "bind" a native type to a managed type. An example of a bind element from SharpGen.Runtime is available below:
+Sometimes the code for a specific type and the way it is used in the native code is hard for SharpGenTools to understand. In other cases, the type already exists in .NET and you want specific native types to always use it. You can use ``<bind>`` elements (in a ``<bindings>`` tag) to "bind" a native type to a managed type. An example of a bind element from SharpGen.Runtime is available below:
 
 .. code-block:: xml
 
@@ -184,3 +193,7 @@ Field                        ``field``
 Any other element            ``element``
 Multiple types of elements   ``element``
 =========================== ===============
+
+.. warning::
+
+    Removing some elements (such as parameters or struct fields) will likely cause invalid marshalling code-gen and may destabilize your application.

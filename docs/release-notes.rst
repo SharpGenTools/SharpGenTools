@@ -2,6 +2,22 @@
 Release Notes
 =====================
 
+1.vNext
+==========
+
+This release focuses on improving codegen of already supported features and autogenerating some code that previously required manual generation.
+
+Features:
+
+    * Flow information about callbacks to consuming projects.
+    * Opt-in autogeneration of shadows for callback interfaces.
+    * Miscellanous bug fixes.
+
+Development Changes:
+
+    * Building now requires CMake and doesn't require the Windows SDK.
+    * The COM support library is now in a separate repository.
+    * Debug build now collects code coverage, enabling verification that our code works in our automated tests.
 
 1.0.0
 ==========
