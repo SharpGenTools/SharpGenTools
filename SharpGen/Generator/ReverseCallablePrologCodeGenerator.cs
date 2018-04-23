@@ -72,61 +72,9 @@ namespace SharpGen.Generator
         {
             if (publicElement.IsRefIn || publicElement.IsRef || publicElement.IsOut)
             {
-                var localByRef = publicElement.IsRef || publicElement.IsOut;
-                ExpressionSyntax refToNativeExpression = InvocationExpression(
-                    MemberAccessExpression(
-                        SyntaxKind.SimpleMemberAccessExpression,
-                        globalNamespace.GetTypeNameSyntax(BuiltinType.Unsafe),
-                        GenericName(Identifier("AsRef"))
-                        .WithTypeArgumentList(
-                            TypeArgumentList(
-                                SingletonSeparatedList(
-                                    GetMarshalTypeSyntax(publicElement))))))
-                .WithArgumentList(
-                    ArgumentList(
-                        SingletonSeparatedList(
-                            Argument(
-                                nativeParameter))));
-
-                var publicType = ParseTypeName(publicElement.PublicType.QualifiedName);
-
-                if (localByRef)
+                foreach (var statements in GenerateNativeByRefProlog(publicElement, nativeParameter))
                 {
-                    if (!NeedsMarshalling(publicElement))
-                    {
-                        publicType = RefType(publicType);
-                    }
-
-                    refToNativeExpression = RefExpression(refToNativeExpression);
-                }
-
-                if (NeedsMarshalling(publicElement))
-                {
-                    yield return LocalDeclarationStatement(
-                        VariableDeclaration(
-                            RefType(GetMarshalTypeSyntax(publicElement)))
-                        .WithVariables(
-                            SingletonSeparatedList(
-                                VariableDeclarator(
-                                    GetMarshalStorageLocationIdentifier(publicElement))
-                                .WithInitializer(
-                                    EqualsValueClause(
-                                        refToNativeExpression)))));
-
-                    yield return LocalDeclarationStatement(
-                        VariableDeclaration(publicType)
-                        .WithVariables(
-                            SingletonSeparatedList(
-                                VariableDeclarator(
-                                    Identifier(publicElement.Name)))));
-                }
-                else
-                {
-                    yield return LocalDeclarationStatement(
-                        VariableDeclaration(publicType)
-                        .AddVariables(
-                            VariableDeclarator(Identifier(publicElement.Name))
-                            .WithInitializer(EqualsValueClause(refToNativeExpression)))); 
+                    yield return statements;
                 }
             }
             else
@@ -206,6 +154,66 @@ namespace SharpGen.Generator
                             IdentifierName(publicElement.Name),
                             nativeParameter));
                 }
+            }
+        }
+
+        private IEnumerable<StatementSyntax> GenerateNativeByRefProlog(CsMarshalCallableBase publicElement, ExpressionSyntax nativeParameter)
+        {
+            var localByRef = publicElement.IsRef || publicElement.IsOut;
+            ExpressionSyntax refToNativeExpression = InvocationExpression(
+                MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    globalNamespace.GetTypeNameSyntax(BuiltinType.Unsafe),
+                    GenericName(Identifier("AsRef"))
+                    .WithTypeArgumentList(
+                        TypeArgumentList(
+                            SingletonSeparatedList(
+                                GetMarshalTypeSyntax(publicElement))))))
+            .WithArgumentList(
+                ArgumentList(
+                    SingletonSeparatedList(
+                        Argument(
+                            nativeParameter))));
+
+            var publicType = ParseTypeName(publicElement.PublicType.QualifiedName);
+
+            if (localByRef)
+            {
+                if (!NeedsMarshalling(publicElement))
+                {
+                    publicType = RefType(publicType);
+                }
+
+                refToNativeExpression = RefExpression(refToNativeExpression);
+            }
+
+            if (NeedsMarshalling(publicElement))
+            {
+                yield return LocalDeclarationStatement(
+                    VariableDeclaration(
+                        RefType(GetMarshalTypeSyntax(publicElement)))
+                    .WithVariables(
+                        SingletonSeparatedList(
+                            VariableDeclarator(
+                                GetMarshalStorageLocationIdentifier(publicElement))
+                            .WithInitializer(
+                                EqualsValueClause(
+                                    refToNativeExpression)))));
+
+                yield return LocalDeclarationStatement(
+                    VariableDeclaration(publicType)
+                    .WithVariables(
+                        SingletonSeparatedList(
+                            VariableDeclarator(
+                                Identifier(publicElement.Name)))));
+            }
+            else
+            {
+                yield return LocalDeclarationStatement(
+                    VariableDeclaration(publicType)
+                    .AddVariables(
+                        VariableDeclarator(Identifier(publicElement.Name))
+                        .WithInitializer(EqualsValueClause(refToNativeExpression))));
             }
         }
     }

@@ -40,7 +40,6 @@ namespace SharpGen.Config
         [XmlAttribute("shadow")]
         public string ShadowName { get; set; }
 
-
         [XmlAttribute("vtbl")]
         public string VtblName { get; set; }
 
