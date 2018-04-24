@@ -115,8 +115,12 @@ namespace SharpGen.UnitTests.Mapping
             Assert.Equal(typeof(int), csEnum.UnderlyingType.Type);
         }
 
-        [Fact]
-        public void ExplicitUnderlyingType()
+        [Theory]
+        [InlineData(typeof(short), "short")]
+        [InlineData(typeof(int), "int")]
+        [InlineData(typeof(ushort), "ushort")]
+        [InlineData(typeof(uint), "uint")]
+        public void ExplicitUnderlyingType(Type underlyingType, string underlyingTypeShortName)
         {
             var config = new Config.ConfigFile
             {
@@ -144,7 +148,7 @@ namespace SharpGen.UnitTests.Mapping
             var cppEnum = new CppEnum
             {
                 Name = "TestEnum",
-                UnderlyingType = "short"
+                UnderlyingType = underlyingTypeShortName
             };
 
             cppInclude.Add(cppEnum);
@@ -157,7 +161,7 @@ namespace SharpGen.UnitTests.Mapping
             Assert.Single(members.OfType<CsEnum>());
 
             var csEnum = members.OfType<CsEnum>().First();
-            Assert.Equal(typeof(short), csEnum.UnderlyingType.Type);
+            Assert.Equal(underlyingType, csEnum.UnderlyingType.Type);
         }
     }
 }
