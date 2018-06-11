@@ -60,14 +60,12 @@ namespace SharpGen.Generator
                         IdentifierName("Value"));
                 }
 
-                return GenerateNullCheckIfNeeded(
-                    csElement,
-                    CreateMarshalStructStatement(
+                return CreateMarshalStructStatement(
                         csElement,
                         "__MarshalFree",
                         publicElementExpression,
                         GetMarshalStorageLocation(csElement)
-                ));
+                );
             }
 
             return null;
