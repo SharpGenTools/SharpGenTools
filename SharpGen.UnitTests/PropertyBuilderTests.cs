@@ -86,6 +86,33 @@ namespace SharpGen.UnitTests
         }
 
         [Fact]
+        public void MethodWithNameStartingWithSetAndReturningResultGeneratesProperty()
+        {
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+
+            var paramType = new CsFundamentalType(typeof(int));
+
+            var setMethod = new CsMethod
+            {
+                Name = "SetActive",
+                ReturnValue = new CsReturnValue
+                {
+                    PublicType = new CsStruct { Name = "SharpGen.Runtime.Result" }
+                }
+            };
+
+            setMethod.Add(new CsParameter
+            {
+                PublicType = paramType
+            });
+
+            var properties = propertyBuilder.CreateProperties(new[] { setMethod });
+            Assert.True(properties.ContainsKey("Active"), "Property not created");
+            var prop = properties["Active"];
+            Assert.Equal(paramType, prop.PublicType);
+        }
+
+        [Fact]
         public void GetterMethodReturningStatusCodeWithOutParamGeneratesProperty()
         {
             var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));

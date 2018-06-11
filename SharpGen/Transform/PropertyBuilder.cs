@@ -105,7 +105,7 @@ namespace SharpGen.Transform
                 return true;
             }
 
-            return (setter.ReturnValue?.Name == globalNamespace.GetTypeName(WellKnownName.Result) || !setter.HasReturnType)
+            return (setter.ReturnValue?.PublicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.Result) || !setter.HasReturnType)
                 && setter.Parameters.Count == 1
                 && (setter.Parameters[0].IsRefIn
                     || setter.Parameters[0].IsIn
