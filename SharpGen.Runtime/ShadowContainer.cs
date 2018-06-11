@@ -89,6 +89,7 @@ namespace SharpGen.Runtime
             }
 
             var guidCount = guidList.Count;
+            Guids = new IntPtr[guidCount];
 
             guidPtr = Marshal.AllocHGlobal(Unsafe.SizeOf<Guid>() * guidCount);
 
