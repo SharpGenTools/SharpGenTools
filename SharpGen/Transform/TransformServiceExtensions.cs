@@ -54,7 +54,7 @@ namespace SharpGen.Transform
             {
                 if (element.DocId != null)
                 {
-                    docItems.Add("<msdn-id>" + EscapeXml(element.DocId) + "</msdn-id>");
+                    docItems.Add("<doc-id>" + EscapeXml(element.DocId) + "</doc-id>");
                 }
                 docItems.Add("<unmanaged>" + EscapeXml(element.DocUnmanagedName) + "</unmanaged>");
                 docItems.Add("<unmanaged-short>" + EscapeXml(element.DocUnmanagedShortName) + "</unmanaged-short>");

@@ -33,4 +33,4 @@ You can reference the SharpGen package on NuGet to get a reference to the assemb
 Doc Providers MSBuild Integration
 =====================================
 
-To integrate into MSBuild, you need to create an MSBuild task. The MSDN Doc Provider task project in the main repository (SharpGen.Doc.Msdn.Tasks), is a great example of how to create your own doc provider and hook it into the build process. If you are going to publicly publish the doc provider task, please make the task share the same condition statement as the one in SharpGen.Doc.Msdn.Tasks so users can easily enable the provider in a standard way.
+To integrate into MSBuild, you need to create an MSBuild task. The MSDN Doc Provider task project in the SharpGen.Doc.Msdn repository (SharpGen.Doc.Msdn.Tasks), is a great example of how to create your own doc provider and hook it into the build process. If you are going to publicly publish the doc provider task, please make the task share the same condition statement as the one in SharpGen.Doc.Msdn.Tasks so users can easily enable the provider in a standard way.

@@ -33,7 +33,6 @@ using SharpGen.CppModel;
 using SharpGen.Doc;
 using System.Xml;
 using System.Threading.Tasks;
-using SharpGen.Doc.Msdn;
 
 namespace SharpGen.Interactive
 {
@@ -499,8 +498,7 @@ namespace SharpGen.Interactive
         /// <param name="group">The module to document.</param>
         private Task<CppModule> ApplyDocumentation(DocItemCache cache, CppModule group)
         {
-            // Use default MSDN doc provider
-            IDocProvider docProvider = new MsdnProvider(message => Logger.Progress(30, message));
+            IDocProvider docProvider = null;
 
             // Try to load doc provider from an external assembly
             if (DocProviderAssemblyPath != null)
@@ -523,6 +521,11 @@ namespace SharpGen.Interactive
                     Logger.Warning(null, "Warning, Unable to locate/load DocProvider Assembly.");
                     Logger.Warning(null, "Warning, DocProvider was not found from assembly [{0}]", DocProviderAssemblyPath);
                 }
+            }
+
+            if (docProvider == null)
+            {
+                return Task.FromResult(group);
             }
 
             Logger.Progress(20, "Applying C++ documentation");

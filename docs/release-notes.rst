@@ -18,6 +18,7 @@ Development Changes:
     * Building now requires CMake and doesn't require the Windows SDK.
     * The COM support library is now in a separate repository.
     * Debug build now collects code coverage, enabling verification that our code works in our automated tests.
+    * MSDN Documentation provider and tasks in a separate repository.
 
 1.0.0
 ==========

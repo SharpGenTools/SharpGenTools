@@ -1,5 +1,0 @@
-﻿<Project>
-  <PropertyGroup>
-    <DocProviderTargets>$(DocProviderTargets);DocumentCppModuleFromMsdn;WarnUnableToFetchFromMsdn</DocProviderTargets>
-  </PropertyGroup>
-</Project>
