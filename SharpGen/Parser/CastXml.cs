@@ -206,7 +206,7 @@ namespace SharpGen.Parser
                 }
                 arguments = builder.ToString();
 
-                startInfo.Arguments = arguments + " " + headerFile;
+                startInfo.Arguments = arguments + " " + $"\"{headerFile}\"";
                 Logger.Message($"CastXML {builder}");
                 currentProcess.StartInfo = startInfo;
                 currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
