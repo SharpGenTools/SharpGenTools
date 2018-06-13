@@ -143,7 +143,6 @@ namespace SharpGen.Runtime
                     _nativePointer = (void*)0;
                 }
             }
-
         }
 
         /// <summary>
