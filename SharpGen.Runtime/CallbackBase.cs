@@ -81,6 +81,22 @@ namespace SharpGen.Runtime
             }
         }
 
-        ShadowContainer ICallbackable.Shadow { get; set; }
+        private ShadowContainer shadow;
+
+        ShadowContainer ICallbackable.Shadow
+        {
+            get
+            {
+                return Volatile.Read(ref shadow);
+            }
+            set
+            {
+                // Only set the shadow container if it is not already set.
+                if (Interlocked.CompareExchange(ref shadow, value, null) != null)
+                {
+                    value.Dispose();
+                }
+            }
+        }
     }
 }
