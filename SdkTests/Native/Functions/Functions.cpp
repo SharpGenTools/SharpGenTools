@@ -146,12 +146,10 @@ DECL(PointerSize) PassThroughPointerSize(PointerSize param)
 	return param;
 }
 
-DECL(bool) StructArrayOut(StructWithMarshal in, StructWithMarshal out[])
+DECL(void) StructArrayOut(StructWithMarshal in, StructWithMarshal out[])
 {
     if (out != nullptr)
     {
         out[0] = in;
-        return false;
     }
-    return true;
 }

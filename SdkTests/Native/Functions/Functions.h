@@ -75,4 +75,4 @@ DECL(long long) SumValues(LargeStruct val);
 
 DECL(PointerSize) PassThroughPointerSize(PointerSize param);
 
-DECL(bool) StructArrayOut(StructWithMarshal in, StructWithMarshal out[]);
+DECL(void) StructArrayOut(StructWithMarshal in, StructWithMarshal out[]);

@@ -201,7 +201,7 @@ namespace Functions
         [Fact]
         public void OptionalStructArrayOut()
         {
-            Assert.False(NativeFunctions.StructArrayOut(new StructWithMarshal(), null));
+            NativeFunctions.StructArrayOut(new StructWithMarshal(), null);
         }
     }
 }
