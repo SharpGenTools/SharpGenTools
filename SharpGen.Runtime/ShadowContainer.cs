@@ -41,16 +41,12 @@ namespace SharpGen.Runtime
 
         internal ShadowContainer(ICallbackable callbackable)
         {
-            callbackable.Shadow = this;
-
             var type = callbackable.GetType();
 
             var guidList = new List<Guid>();
-
-            var shadowedInterfaces = GetUninheritedShadowedInterfaces(type);
-
+            
             // Associate all shadows with their interfaces.
-            foreach (var item in shadowedInterfaces)
+            foreach (var item in GetUninheritedShadowedInterfaces(type))
             {
                 var shadowAttribute = ShadowAttribute.Get(item);
 

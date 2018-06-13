@@ -72,7 +72,6 @@ namespace SharpGen.Runtime
                     {
                         // Dispose native resources
                         var callback = ((ICallbackable)this);
-                        callback.Shadow.Dispose();
                         callback.Shadow = null;
                     }
                     return (uint)(old - 1);
@@ -81,6 +80,29 @@ namespace SharpGen.Runtime
             }
         }
 
-        ShadowContainer ICallbackable.Shadow { get; set; }
+        private ShadowContainer shadow;
+
+        ShadowContainer ICallbackable.Shadow
+        {
+            get
+            {
+                return Volatile.Read(ref shadow);
+            }
+            set
+            {
+                if (value != null)
+                {
+                    // Only set the shadow container if it is not already set.
+                    if (Interlocked.CompareExchange(ref shadow, value, null) != null)
+                    {
+                        value.Dispose();
+                    }
+                }
+                else
+                {
+                    Interlocked.Exchange(ref shadow, value).Dispose();
+                }
+            }
+        }
     }
 }

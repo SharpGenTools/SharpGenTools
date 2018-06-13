@@ -143,7 +143,6 @@ namespace SharpGen.Runtime
                     _nativePointer = (void*)0;
                 }
             }
-
         }
 
         /// <summary>
@@ -178,7 +177,8 @@ namespace SharpGen.Runtime
             var shadowContainer = callback.Shadow;
             if (shadowContainer == null)
             {
-                shadowContainer = new ShadowContainer(callback);
+                callback.Shadow = new ShadowContainer(callback);
+                shadowContainer = callback.Shadow;
             }
 
             return shadowContainer.Find(typeof(TCallback));
