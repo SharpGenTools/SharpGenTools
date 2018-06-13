@@ -74,3 +74,5 @@ DECL(int) Product(int numElements, SimpleStruct elements[]);
 DECL(long long) SumValues(LargeStruct val);
 
 DECL(PointerSize) PassThroughPointerSize(PointerSize param);
+
+DECL(bool) StructArrayOut(StructWithMarshal in, StructWithMarshal out[]);

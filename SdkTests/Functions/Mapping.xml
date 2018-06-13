@@ -39,5 +39,6 @@
         <map param="Product::elements" attribute="in buffer params" />
         <map function="Product" type="longlong" />
         <map param="SumValues::val" attribute="in value" />
+        <map param="StructArrayOut::out" attribute="out buffer optional" />
     </mapping>
 </config>

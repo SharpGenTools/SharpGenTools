@@ -197,5 +197,11 @@ namespace Functions
 
             Assert.Equal(new PointerSize(20), NativeFunctions.PassThroughPointerSize(value));
         }
+
+        [Fact]
+        public void OptionalStructArrayOut()
+        {
+            Assert.False(NativeFunctions.StructArrayOut(new StructWithMarshal(), null));
+        }
     }
 }
