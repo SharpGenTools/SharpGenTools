@@ -643,6 +643,7 @@ namespace SharpGen.Parser
             cppStruct = new CppStruct { Name = structName };
             xElement.AddAnnotation(cppStruct);
             var isUnion = (xElement.Name.LocalName == CastXml.TagUnion);
+            cppStruct.IsUnion = isUnion;
 
             // Get align from structure
             cppStruct.Align = int.Parse(xElement.AttributeValue("align")) / 8;

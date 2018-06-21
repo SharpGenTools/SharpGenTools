@@ -72,6 +72,8 @@ namespace SharpGen.UnitTests.Parsing
 
             var generatedStruct = model.FindFirst<CppStruct>("Test");
 
+            Assert.True(generatedStruct.IsUnion);
+
             var field = generatedStruct.FindFirst<CppField>("Test::field1");
 
             Assert.NotNull(field);

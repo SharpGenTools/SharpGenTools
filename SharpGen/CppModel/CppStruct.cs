@@ -51,5 +51,8 @@ namespace SharpGen.CppModel
         {
             get { return Iterate<CppField>(); }
         }
+
+        [XmlAttribute("union")]
+        public bool IsUnion { get; set; }
     }
 }
