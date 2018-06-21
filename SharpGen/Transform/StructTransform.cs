@@ -137,7 +137,6 @@ namespace SharpGen.Transform
 
             int cumulatedBitOffset = 0;
 
-
             var inheritedStructs = new Stack<CppStruct>();
             var currentStruct = cppStruct;
             while (currentStruct != null && currentStruct.Base != currentStruct.Name)
@@ -173,7 +172,6 @@ namespace SharpGen.Transform
                         // BoolToInt doesn't generate native Marshaling although they have a different marshaller
                         if ((!csField.IsBoolToInt || csField.IsArray) && fieldHasMarshalType)
                             hasMarshalType = true;
-
 
                         // If last field has same offset, then it's a union
                         // CurrentOffset is not moved
@@ -213,7 +211,6 @@ namespace SharpGen.Transform
                             csField.BitMask = ((1 << cppField.BitOffset) - 1);
                             csField.BitOffset = lastCumulatedBitOffset;
                         }
-
 
                         var nextFieldIndex = fieldIndex + 1;
                         if ((previousFieldOffsetIndex == cppField.Offset)
