@@ -55,9 +55,10 @@ namespace SharpGen.Model
             IsStaticMarshal = tag.IsStaticMarshal ?? false;
             HasCustomNew = tag.StructCustomNew ?? false;
 
-            // Force a marshalling if a struct need to be treated as a class)
-            if (GenerateAsClass)
+            if (HasCustomMarshal || IsStaticMarshal || HasCustomNew || GenerateAsClass)
+            {
                 HasMarshalType = true;
+            }
         }
 
         public override int Size => _Size_;

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SharpGen.Logging
 {
-    public class LoggingCodes
+    public static class LoggingCodes
     {
         public const string MissingConfigDependency = "SG0001";
 
@@ -38,7 +38,7 @@ namespace SharpGen.Logging
 
         public const string UnknownFundamentalType = "SG0017";
 
-        public const string ImpossibleAlignment = "SG0018";
+        public const string NonPortableAlignment = "SG0018";
 
         public const string UnusedMappingRule = "SG0019";
 

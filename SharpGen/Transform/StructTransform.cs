@@ -133,7 +133,7 @@ namespace SharpGen.Transform
             // 
             int maxSizeOfField = 0;
 
-            bool isInUnion = false;
+            bool isNonSequential = false;
 
             int cumulatedBitOffset = 0;
 
@@ -177,11 +177,11 @@ namespace SharpGen.Transform
 
                         // If last field has same offset, then it's a union
                         // CurrentOffset is not moved
-                        if (isInUnion && previousFieldOffsetIndex != cppField.Offset)
+                        if (isNonSequential && previousFieldOffsetIndex != cppField.Offset)
                         {
                             previousFieldSize = maxSizeOfField;
                             maxSizeOfField = 0;
-                            isInUnion = false;
+                            isNonSequential = false;
                         }
 
                         currentFieldAbsoluteOffset += previousFieldSize;
@@ -224,7 +224,7 @@ namespace SharpGen.Transform
                                 maxSizeOfField = 0;
                             }
                             maxSizeOfField = csField.Size > maxSizeOfField ? csField.Size : maxSizeOfField;
-                            isInUnion = true;
+                            isNonSequential = true;
                             csStruct.ExplicitLayout = true;
                             previousFieldSize = 0;
                         }
@@ -239,7 +239,7 @@ namespace SharpGen.Transform
 
             // In case of explicit layout, check that we can safely generate it on both x86 and x64 (in case of an union
             // using pointers, we can't)
-            if (csStruct.ExplicitLayout)
+            if (!csStruct.HasCustomMarshal && csStruct.ExplicitLayout && !cppStruct.IsUnion)
             {
                 var fieldList = csStruct.Fields.ToList();
                 for(int i = 0; i < fieldList.Count; i++)
@@ -253,7 +253,7 @@ namespace SharpGen.Transform
                         if ((i + 1) < fieldList.Count)
                         {
                             Logger.Error(
-                                LoggingCodes.ImpossibleAlignment,
+                                LoggingCodes.NonPortableAlignment,
                                 "The field [{0}] in structure [{1}] has pointer alignment within a structure that contains an union. An explicit layout cannot be handled on both x86/x64. This structure needs manual layout (remove fields from definition) and write them manually in xml mapping files",
                                 field.CppElementName,
                                 csStruct.CppElementName);

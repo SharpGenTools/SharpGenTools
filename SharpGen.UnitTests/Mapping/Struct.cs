@@ -1,4 +1,5 @@
 ﻿using SharpGen.CppModel;
+using SharpGen.Logging;
 using SharpGen.Model;
 using System;
 using System.Collections.Generic;
@@ -361,6 +362,231 @@ namespace SharpGen.UnitTests.Mapping
             Assert.Equal(8, bitField2.Offset);
             Assert.Equal((1 << 16) - 1, bitField2.BitMask);
             Assert.True(bitField2.IsBitField);
+        }
+
+        [Fact]
+        public void UnionsWithPointersGeneratesStructure()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(UnionsWithPointersGeneratesStructure),
+                Namespace = nameof(UnionsWithPointersGeneratesStructure),
+                Assembly = nameof(UnionsWithPointersGeneratesStructure),
+                Includes =
+                {
+                    new Config.IncludeRule
+                    {
+                        File = "test.h",
+                        Attach = true,
+                        Namespace = nameof(UnionsWithPointersGeneratesStructure)
+                    }
+                },
+                Bindings =
+                {
+                    new Config.BindRule("int", "System.Int32")
+                }
+            };
+
+
+            var structure = new CppStruct
+            {
+                Name = "Test",
+                IsUnion = true
+            };
+
+            structure.Add(new CppField
+            {
+                Name = "pointer",
+                TypeName = "int",
+                Pointer = "*"
+            });
+
+            structure.Add(new CppField
+            {
+                Name = "scalar",
+                TypeName = "int"
+            });
+
+            var include = new CppInclude
+            {
+                Name = "test"
+            };
+
+            include.Add(structure);
+
+            var module = new CppModule();
+            module.Add(include);
+
+            var (solution, _) = MapModel(module, config);
+
+            var csStruct = solution.EnumerateDescendants().OfType<CsStruct>().First();
+
+            foreach (var field in csStruct.Fields)
+            {
+                Assert.Equal(0, field.Offset);
+            }
+
+            Assert.False(Logger.HasErrors);
+        }
+
+        [Fact]
+        public void NonPortableStructAlignmentRaisesError()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(NonPortableStructAlignmentRaisesError),
+                Namespace = nameof(NonPortableStructAlignmentRaisesError),
+                Assembly = nameof(NonPortableStructAlignmentRaisesError),
+                Includes =
+                {
+                    new Config.IncludeRule
+                    {
+                        File = "test.h",
+                        Attach = true,
+                        Namespace = nameof(NonPortableStructAlignmentRaisesError)
+                    }
+                },
+                Bindings =
+                {
+                    new Config.BindRule("int", "System.Int32")
+                }
+            };
+
+
+            var structure = new CppStruct
+            {
+                Name = "Test"
+            };
+
+            structure.Add(new CppField
+            {
+                Name = "bitfield1",
+                TypeName = "int",
+                IsBitField = true,
+                BitOffset = 16,
+                Offset = 0,
+            });
+            structure.Add(new CppField
+            {
+                Name = "bitfield2",
+                TypeName = "int",
+                IsBitField = true,
+                BitOffset = 16,
+                Offset = 0
+            });
+
+            structure.Add(new CppField
+            {
+                Name = "pointer",
+                TypeName = "int",
+                Pointer = "*",
+                Offset = 1
+            });
+
+            structure.Add(new CppField
+            {
+                Name = "field",
+                TypeName = "int",
+                Offset = 2,
+            });
+
+            var include = new CppInclude
+            {
+                Name = "test"
+            };
+
+            include.Add(structure);
+
+            var module = new CppModule();
+            module.Add(include);
+
+            var (solution, _) = MapModel(module, config);
+
+            AssertLoggingCodeLogged(LoggingCodes.NonPortableAlignment);
+        }
+
+        [Fact]
+        public void NonPortableLayoutDoesNotErrorWhenMarkedForCustomMarshalling()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(NonPortableLayoutDoesNotErrorWhenMarkedForCustomMarshalling),
+                Namespace = nameof(NonPortableLayoutDoesNotErrorWhenMarkedForCustomMarshalling),
+                Assembly = nameof(NonPortableLayoutDoesNotErrorWhenMarkedForCustomMarshalling),
+                Includes =
+                {
+                    new Config.IncludeRule
+                    {
+                        File = "test.h",
+                        Attach = true,
+                        Namespace = nameof(NonPortableLayoutDoesNotErrorWhenMarkedForCustomMarshalling)
+                    }
+                },
+                Bindings =
+                {
+                    new Config.BindRule("int", "System.Int32")
+                },
+                Mappings =
+                {
+                    new Config.MappingRule
+                    {
+                        Struct = "Test",
+                        StructCustomMarshal = true
+                    }
+                }
+            };
+
+
+            var structure = new CppStruct
+            {
+                Name = "Test"
+            };
+
+            structure.Add(new CppField
+            {
+                Name = "bitfield1",
+                TypeName = "int",
+                IsBitField = true,
+                BitOffset = 16,
+                Offset = 0,
+            });
+            structure.Add(new CppField
+            {
+                Name = "bitfield2",
+                TypeName = "int",
+                IsBitField = true,
+                BitOffset = 16,
+                Offset = 0
+            });
+
+            structure.Add(new CppField
+            {
+                Name = "pointer",
+                TypeName = "int",
+                Pointer = "*",
+                Offset = 1
+            });
+
+            structure.Add(new CppField
+            {
+                Name = "field",
+                TypeName = "int",
+                Offset = 2,
+            });
+
+            var include = new CppInclude
+            {
+                Name = "test"
+            };
+
+            include.Add(structure);
+
+            var module = new CppModule();
+            module.Add(include);
+
+            var (solution, _) = MapModel(module, config);
+
+            Assert.False(Logger.HasErrors);
         }
     }
 }
