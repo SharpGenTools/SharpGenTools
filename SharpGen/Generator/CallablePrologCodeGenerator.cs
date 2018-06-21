@@ -71,23 +71,44 @@ namespace SharpGen.Generator
                 yield return LocalDeclarationStatement(
                     VariableDeclaration(
                         PointerType(
-                            ParseTypeName(csElement.MarshalType.QualifiedName)))
-                    .WithVariables(
+                            ParseTypeName(csElement.MarshalType.QualifiedName)),
                         SingletonSeparatedList(
-                            VariableDeclarator(
-                                GetMarshalStorageLocationIdentifier(csElement))
-                            .WithInitializer(EqualsValueClause(
-                                StackAllocArrayCreationExpression(
-                                    ArrayType(
-                                        ParseTypeName(csElement.MarshalType.QualifiedName))
-                                    .WithRankSpecifiers(
-                                        SingletonList(
-                                            ArrayRankSpecifier(
-                                                SingletonSeparatedList<ExpressionSyntax>(
-                                                    MemberAccessExpression(
-                                                                SyntaxKind.SimpleMemberAccessExpression,
-                                                                IdentifierName(csElement.Name),
-                                                                IdentifierName("Length"))))))))))));
+                            VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)))));
+                                yield return ExpressionStatement(
+                                    AssignmentExpression(
+                                        SyntaxKind.SimpleAssignmentExpression,
+                                        IdentifierName(GetMarshalStorageLocationIdentifier(csElement)),
+                                        CastExpression(
+                                            PointerType(
+                                                ParseTypeName(csElement.MarshalType.QualifiedName)),
+                                            LiteralExpression(
+                                                SyntaxKind.NumericLiteralExpression,
+                                                Literal(0)))));
+                    yield return GenerateNullCheckIfNeeded(csElement,
+                        Block(
+                            LocalDeclarationStatement(
+                                VariableDeclaration(
+                                    PointerType(ParseTypeName(csElement.MarshalType.QualifiedName)),
+                                    SingletonSeparatedList(
+                                        VariableDeclarator(
+                                            Identifier(csElement.IntermediateMarshalName))
+                                        .WithInitializer(
+                                            EqualsValueClause(
+                                                StackAllocArrayCreationExpression(
+                                                    ArrayType(
+                                                        ParseTypeName(csElement.MarshalType.QualifiedName),
+                                                        SingletonList(
+                                                            ArrayRankSpecifier(
+                                                                SingletonSeparatedList<ExpressionSyntax>(
+                                                                    MemberAccessExpression(
+                                                                        SyntaxKind.SimpleMemberAccessExpression,
+                                                                        IdentifierName(csElement.Name),
+                                                                        IdentifierName("Length")))))))))))),
+                            ExpressionStatement(
+                                AssignmentExpression(
+                                    SyntaxKind.SimpleAssignmentExpression,
+                                    IdentifierName(GetMarshalStorageLocationIdentifier(csElement)),
+                                    IdentifierName(csElement.IntermediateMarshalName)))));
                 yield break;
             }
 
