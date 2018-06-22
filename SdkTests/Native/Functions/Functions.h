@@ -35,6 +35,11 @@ struct PointerSize
 	void* ptr;
 };
 
+struct StructAsClass
+{
+	int i;
+};
+
 DECL(void) GetInterfaces(int numInstances, Interface** results);
 
 DECL(void) GetInterfacesOptional(int numInstances, Interface** results);
@@ -76,3 +81,5 @@ DECL(long long) SumValues(LargeStruct val);
 DECL(PointerSize) PassThroughPointerSize(PointerSize param);
 
 DECL(void) StructArrayOut(StructWithMarshal in, StructWithMarshal out[]);
+
+DECL(int) SumInner(StructAsClass test[], int length);

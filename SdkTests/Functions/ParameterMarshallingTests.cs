@@ -203,5 +203,12 @@ namespace Functions
         {
             NativeFunctions.StructArrayOut(new StructWithMarshal(), null);
         }
+
+        [Fact]
+        public void ArrayOfStructAsClass()
+        {
+            var test = new [] { new StructAsClass {I = 1}, new StructAsClass {I = 2}};
+            Assert.Equal(3, NativeFunctions.SumInner(test, 2));
+        }
     }
 }

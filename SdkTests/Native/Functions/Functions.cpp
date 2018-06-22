@@ -153,3 +153,13 @@ DECL(void) StructArrayOut(StructWithMarshal in, StructWithMarshal out[])
         out[0] = in;
     }
 }
+
+DECL(int) SumInner(StructAsClass test[], int length)
+{
+	int sum = 0;
+	for (int i = 0; i < length; i++)
+	{
+		sum += test[i].i;
+	}
+	return sum;
+}

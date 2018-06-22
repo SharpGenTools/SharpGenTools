@@ -40,6 +40,15 @@ namespace SharpGen.Generator
                                 )))), EmptyStatement());
                 }
             }
+            else if (param.IsArray && param.IsStructClass)
+            {
+                return FixedStatement(VariableDeclaration(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
+                    SingletonSeparatedList(
+                        VariableDeclarator(param.IntermediateMarshalName)
+                            .WithInitializer(
+                            EqualsValueClause(GetMarshalStorageLocation(param))))),
+                    EmptyStatement());
+            }
             else if (param.IsFixed && param.IsValueType && !param.HasNativeValueType && !param.IsUsedAsReturnType)
             {
                 return FixedStatement(VariableDeclaration(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
