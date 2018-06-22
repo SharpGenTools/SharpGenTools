@@ -680,10 +680,32 @@ namespace SharpGen.Parser
                 if (fieldType.AttributeValue("context") == xElement.AttributeValue("id"))
                 {
                     var fieldSubStruct = ParseStructOrUnion(fieldType, cppStruct, innerStructCount++);
-
-                    // Get the type name from the inner-struct and set it to the field
-                    cppField.TypeName = fieldSubStruct.Name;
-                    _currentCppInclude.Add(fieldSubStruct);
+                    
+                    // If fieldName is empty, then we need to inline fields from the struct/union.
+                    if (string.IsNullOrEmpty(fieldName))
+                    {
+                        // Make a copy in order to remove fields
+                        var listOfSubFields = new List<CppField>(fieldSubStruct.Fields);
+                        // Copy the current field offset
+                        var lastFieldOffset = fieldOffset;
+                        foreach (var subField in listOfSubFields)
+                        {
+                            subField.Offset = subField.Offset + fieldOffset;
+                            cppStruct.Add(subField);
+                            lastFieldOffset = subField.Offset;
+                        }
+                        // Set the current field offset according to the inlined fields
+                        if (!isUnion)
+                            fieldOffset = lastFieldOffset;
+                        // Don't add the current field, as it is actually an inline struct/union
+                        cppField = null;
+                    }
+                    else
+                    {
+                        // Get the type name from the inner-struct and set it to the field
+                        cppField.TypeName = fieldSubStruct.Name;
+                        _currentCppInclude.Add(fieldSubStruct);
+                    }
                 }
 
                 // Go to next field offset if not in union

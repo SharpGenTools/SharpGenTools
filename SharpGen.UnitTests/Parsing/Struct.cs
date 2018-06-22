@@ -263,5 +263,33 @@ namespace SharpGen.UnitTests.Parsing
 
             Assert.Equal("Test", generatedStruct.Base);
         }
+
+        [Fact]
+        public void AnonymousNestedStructureMembersInlined()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(AnonymousNestedStructureMembersInlined),
+                Namespace = nameof(AnonymousNestedStructureMembersInlined),
+                Assembly = nameof(AnonymousNestedStructureMembersInlined),
+                IncludeDirs = { GetTestFileIncludeRule() },
+                Includes =
+                {
+                    CreateCppFile("anonStructure", @"
+                        struct Test {
+                            struct {
+                                int field;
+                            };
+                        };
+                    ")
+                }
+            };
+
+            var model = ParseCpp(config);
+
+            var generatedStruct = model.FindFirst<CppStruct>("Test");
+
+            Assert.Single(generatedStruct.Find<CppField>("Test::field"));
+        }
     }
 }
