@@ -99,6 +99,11 @@ public:
 	}
 };
 
+class FastOutInterfaceImplementation : public FastOutInterface
+{
+	virtual void DoNothing() {}
+};
+
 
 extern "C" __declspec(dllexport) IInterface2 * __stdcall CreateInstance(void)
 {
@@ -121,4 +126,10 @@ extern "C" __declspec(dllexport) bool __stdcall CloneInstance(IInterface* interf
 extern "C" __declspec(dllexport) InterfaceWithProperties* CreatePropertyTest(bool isTrue, int value, int value2)
 {
 	return new PropertyImplementation(isTrue, value, value2);
+}
+
+
+extern "C" __declspec(dllexport) void FastOutInterfaceTest(FastOutInterface** out)
+{
+	*out = new FastOutInterfaceImplementation();
 }

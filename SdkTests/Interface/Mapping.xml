@@ -37,6 +37,11 @@
     <map param="CallbackInterface::Increment::pValue" attribute="inout" />
     <map method="CallbackInterface::.*" property="false" />
     <map param="CallbackInterface::MappedTypeTest::i" type="unsigned int" />
+  
+    <!-- Issue #67 -->
+    <map interface="FastOutInterface" callback="true" callback-dual="true" autogen-shadow="true" />
+    <map function="FastOutInterfaceTest" dll='"InterfaceNative.dll"' group="Interface.Functions" />
+    <map param="FastOutInterfaceTest::out" attribute="fast out" />
   </mapping>
 
   <depends>SharpGen.Runtime</depends>

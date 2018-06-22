@@ -70,5 +70,15 @@ namespace Interface
 
             Assert.Equal(largeInterface.NativePointer, largeInterface.Inner.NativePointer);
         }
+
+        [Fact]
+        public void FastOutInterfaceTest()
+        {
+            var impl = new FastOutInterfaceNative(IntPtr.Zero);
+
+            Functions.FastOutInterfaceTest(impl);
+
+            Assert.NotEqual(IntPtr.Zero, impl.NativePointer);
+        }
     }
 }

@@ -1,9 +1,6 @@
 ﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
 
 namespace SharpGen.Generator
@@ -33,6 +30,11 @@ namespace SharpGen.Generator
             }
 
             var type = ParseTypeName(csElement.PublicType.QualifiedName);
+
+            if (csElement.IsFastOut && csElement.PublicType is CsInterface iface)
+            {
+                type = ParseTypeName(iface.GetNativeImplementationOrThis().QualifiedName);
+            }
 
             if (csElement.IsNullableStruct)
             {

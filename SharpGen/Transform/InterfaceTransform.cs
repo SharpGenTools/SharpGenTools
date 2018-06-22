@@ -263,8 +263,7 @@ namespace SharpGen.Transform
             var tagForInterface = cppInterface.GetMappingRule();
             var nativeCallback = new CsInterface(interfaceType.CppElement as CppInterface)
             {
-                Name = interfaceType.Name + "Native",
-                Visibility = Visibility.Internal
+                Name = interfaceType.Name + "Native"
             };
 
             // Update nativeCallback from tag

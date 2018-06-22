@@ -89,3 +89,9 @@ struct CallbackInterface
 	virtual int Add(int i, int j) = 0;
 	virtual int MappedTypeTest(int i) = 0;
 };
+
+struct FastOutInterface {
+	virtual void DoNothing() = 0;
+};
+
+extern "C" __declspec(dllexport) void FastOutInterfaceTest(FastOutInterface** out);
