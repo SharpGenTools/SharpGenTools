@@ -83,3 +83,5 @@ DECL(PointerSize) PassThroughPointerSize(PointerSize param);
 DECL(void) StructArrayOut(StructWithMarshal in, StructWithMarshal out[]);
 
 DECL(int) SumInner(StructAsClass test[], int length);
+
+DECL(void) AddOne(SimpleStruct* param);

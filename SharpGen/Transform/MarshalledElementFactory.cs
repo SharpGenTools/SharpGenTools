@@ -280,6 +280,7 @@ namespace SharpGen.Transform
                         if ((cppAttribute & ParamAttribute.Optional) != 0)
                         {
                             publicType = typeRegistry.ImportType(typeof(IntPtr));
+                            marshalType = typeRegistry.ImportType(typeof(IntPtr));
                             parameterAttribute = CsParameterAttribute.In;
                         }
                         else

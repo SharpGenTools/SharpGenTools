@@ -42,5 +42,6 @@
         <map param="StructArrayOut::out" attribute="out buffer optional" />
         <map struct="StructAsClass" struct-to-class="true" />
         <map param="SumInner::test" attribute="in buffer" />
+        <map param="AddOne::param" attribute="inout optional" />
     </mapping>
 </config>

@@ -143,7 +143,7 @@ DECL(long long) SumValues(LargeStruct val)
 
 DECL(PointerSize) PassThroughPointerSize(PointerSize param)
 {
-	return param;
+    return param;
 }
 
 DECL(void) StructArrayOut(StructWithMarshal in, StructWithMarshal out[])
@@ -156,10 +156,15 @@ DECL(void) StructArrayOut(StructWithMarshal in, StructWithMarshal out[])
 
 DECL(int) SumInner(StructAsClass test[], int length)
 {
-	int sum = 0;
-	for (int i = 0; i < length; i++)
-	{
-		sum += test[i].i;
-	}
-	return sum;
+    int sum = 0;
+    for (int i = 0; i < length; i++)
+    {
+        sum += test[i].i;
+    }
+    return sum;
+}
+
+DECL(void) AddOne(SimpleStruct* param)
+{
+    if(param != nullptr) param->i++;
 }

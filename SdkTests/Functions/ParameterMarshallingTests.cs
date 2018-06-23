@@ -210,5 +210,17 @@ namespace Functions
             var test = new [] { new StructAsClass {I = 1}, new StructAsClass {I = 2}};
             Assert.Equal(3, NativeFunctions.SumInner(test, 2));
         }
+
+        [Fact]
+        public unsafe void OptionalInOutStructPointer()
+        {
+            var test = new SimpleStruct { I = 5 };
+
+            void* addr = &test;
+
+            NativeFunctions.AddOne((IntPtr)addr);
+
+            Assert.Equal(6, test.I);
+        }
     }
 }
