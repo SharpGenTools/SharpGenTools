@@ -3,7 +3,7 @@
 
 #define TestConstant 2018
 
-enum MyEnum {};
+enum MyEnum { TestValue = 1 };
 
 struct Interface
 {
@@ -85,3 +85,5 @@ DECL(void) StructArrayOut(StructWithMarshal in, StructWithMarshal out[]);
 DECL(int) SumInner(StructAsClass test[], int length);
 
 DECL(void) AddOne(SimpleStruct* param);
+
+DECL(void) EnumOut(MyEnum* test);

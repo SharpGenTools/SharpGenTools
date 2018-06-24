@@ -152,7 +152,7 @@ namespace SharpGen.Generator
             
             var managedArguments = new List<ArgumentSyntax>();
 
-            foreach (var param in csElement.Parameters)
+            foreach (var param in csElement.Parameters.Where(p => !p.UsedAsReturn))
             {
                 var managedArgument = Argument(IdentifierName(param.Name));
                 var managedParam = generators.Parameter.GenerateCode(param);
@@ -183,18 +183,29 @@ namespace SharpGen.Generator
 
             var returnValueNeedsMarshalling = NeedsMarshalling(csElement.ReturnValue);
 
-            if (!csElement.HasReturnType || (csElement.HideReturnType && !csElement.ForceReturnType))
+            if (!csElement.HasPublicReturnType || (csElement.HideReturnType && !csElement.ForceReturnType))
             {
                 statements.Add(ExpressionStatement(invocation));
             }
             else
             {
+                CsMarshalBase publicReturnValue;
+
+                if (csElement.HasReturnTypeParameter)
+                {
+                    publicReturnValue = csElement.Parameters.First(p => p.UsedAsReturn);
+                }
+                else
+                {
+                    publicReturnValue = csElement.ReturnValue;
+                }
+
                 statements.Add(ExpressionStatement(
                     AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                        IdentifierName(csElement.ReturnValue.Name),
+                        IdentifierName(publicReturnValue.Name),
                         invocation)));
 
-                if (returnValueNeedsMarshalling)
+                if (returnValueNeedsMarshalling && publicReturnValue == csElement.ReturnValue)
                 {
                     // Bool-to-int is special cased in marshalling so we need to special case it here as well.
                     if (csElement.ReturnValue.IsBoolToInt)

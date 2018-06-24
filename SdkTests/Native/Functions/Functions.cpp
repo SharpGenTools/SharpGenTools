@@ -168,3 +168,8 @@ DECL(void) AddOne(SimpleStruct* param)
 {
     if(param != nullptr) param->i++;
 }
+
+DECL(void) EnumOut(MyEnum *enumOut)
+{
+    *enumOut = TestValue;
+}

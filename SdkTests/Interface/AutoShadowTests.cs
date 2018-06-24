@@ -174,6 +174,15 @@ namespace Interface
             {
                 return (int)i;
             }
+
+            public IntPtr ModifyPointer(IntPtr ptr, MethodOperation op)
+            {
+                if (op != MethodOperation.PassThrough)
+                {
+                    return IntPtr.Add(ptr, 1);
+                }
+                return ptr;
+            }
         }
     }
 }

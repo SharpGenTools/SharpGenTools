@@ -97,7 +97,15 @@ namespace Functions
         [Fact]
         public void Enum()
         {
-            Assert.Equal(1, (int)NativeFunctions.PassThroughEnum((MyEnum)1));
+            Assert.Equal(1, (int)NativeFunctions.PassThroughEnum(MyEnum.TestValue));
+        }
+
+        [Fact]
+        public void EnumOut()
+        {
+            NativeFunctions.EnumOut(out MyEnum value);
+
+            Assert.Equal(MyEnum.TestValue, value);
         }
 
         [Fact]

@@ -76,6 +76,11 @@ struct LargeStructWithMarshalling
 	long long i[3];
 };
 
+enum MethodOperation : unsigned int
+{
+	PassThrough = 1u
+};
+
 struct CallbackInterface
 {
 	virtual void GetZero(int* ppValue) = 0;
@@ -88,6 +93,7 @@ struct CallbackInterface
 	virtual bool AreEqual(CallbackInterface* rhs) = 0;
 	virtual int Add(int i, int j) = 0;
 	virtual int MappedTypeTest(int i) = 0;
+	virtual void ModifyPointer(void* ptr, MethodOperation op, void** out) = 0;
 };
 
 struct FastOutInterface {

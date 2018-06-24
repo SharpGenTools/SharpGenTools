@@ -147,6 +147,20 @@ namespace SharpGen.Generator
                                 EqualsValueClause(
                                     nativeParameter))));
                 }
+                else if (publicElement.PublicType is CsEnum)
+                {
+                    yield return ExpressionStatement(
+                       AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                           IdentifierName(publicElement.Name),
+                           CastExpression(ParseTypeName(publicElement.PublicType.QualifiedName), nativeParameter)));
+                }
+                else if (publicElement.PublicType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr))
+                {
+                    yield return ExpressionStatement(
+                      AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                          IdentifierName(publicElement.Name),
+                          CastExpression(ParseTypeName("System.IntPtr"), nativeParameter)));
+                }
                 else
                 {
                     yield return ExpressionStatement(
