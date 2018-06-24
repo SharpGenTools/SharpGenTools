@@ -2,7 +2,7 @@
 Release Notes
 =====================
 
-1.vNext
+1.1
 ==========
 
 This release focuses on improving codegen of already supported features and autogenerating some code that previously required manual generation.
@@ -12,6 +12,14 @@ Features:
     * Flow information about callbacks to consuming projects.
     * Opt-in autogeneration of shadows for callback interfaces.
     * Miscellanous bug fixes.
+    * ``ShadowContainer`` initialization is thread-safe.
+    * Interface members of structs now causes native struct generation.
+    * SourceLink is now enabled in the package PDBs.
+
+Bug Fixes:
+
+    * Miscellanous bug fixes for marshallers.
+    * ``ShadowContainer`` correctly adds shadows to the container when initialized.
 
 Development Changes:
 

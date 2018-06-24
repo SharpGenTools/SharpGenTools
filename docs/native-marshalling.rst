@@ -19,6 +19,11 @@ String fields
 
 String fields are always marshalled across as a ``System.IntPtr``. As a result, any string fields force generation of a marshal structure.
 
+Interface fields
+------------------------
+
+Interface fields are mashalled across as a ``System.IntPtr`` but presented in the user structure as an instance of the interface type.
+
 Overridden User-facing Type
 ----------------------------
 
