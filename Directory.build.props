@@ -10,6 +10,6 @@
     <PackageProjectUrl>https://github.com/jkoritzinsky/SharpGenTools</PackageProjectUrl>
     <Tags>SharpGen;CodeGen;CPlusPlus;COM</Tags>
     <RepositoryUrl>https://github.com/jkoritzinsky/SharpGenTools</RepositoryUrl>
-    <LangVersion>7.2</LangVersion>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
 </Project>

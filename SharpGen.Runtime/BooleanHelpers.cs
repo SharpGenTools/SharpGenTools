@@ -47,7 +47,7 @@ namespace SharpGen.Runtime
         /// <param name="dest">The destination array of integers.</param>
         public unsafe static void ConvertToIntArray(Span<bool> array, byte* dest)
         {
-            fixed(void* src = &array.DangerousGetPinnableReference())
+            fixed(void* src = array)
             {
                 Unsafe.CopyBlockUnaligned(dest, src, (uint)array.Length);
             }
@@ -93,7 +93,7 @@ namespace SharpGen.Runtime
         /// <param name="array">The target bool array to fill.</param>
         public static unsafe void ConvertToBoolArray(byte* src, Span<bool> array)
         {
-            fixed (void* dest = &array.DangerousGetPinnableReference())
+            fixed (void* dest = array)
             {
                 Unsafe.CopyBlockUnaligned(dest, src, (uint)array.Length);
             }

@@ -60,16 +60,12 @@ namespace SharpGen.Runtime
         /// <param name="dest">The destination memory location.</param>
         /// <param name="src">The source memory location.</param>
         /// <param name="sizeInBytesToCopy">The byte count.</param>
-        public static void CopyMemory<T>(IntPtr dest, Span<T> src)
+        public static void CopyMemory<T>(IntPtr dest, ReadOnlySpan<T> src)
             where T : struct
         {
             unsafe
             {
-                var byteSpan = src.AsBytes();
-                fixed (void* source = &byteSpan[0])
-                {
-                    Unsafe.CopyBlockUnaligned((void*)dest, source, (uint)byteSpan.Length);
-                }
+                src.CopyTo(new Span<T>((void*)dest, src.Length));
             }
         }
 
@@ -96,11 +92,11 @@ namespace SharpGen.Runtime
         /// <param name="offset">The offset in the array to write to.</param>
         /// <param name="count">The number of T element to read from the memory location.</param>
         /// <returns>source pointer + sizeof(T) * count.</returns>
-        public static IntPtr Read<T>(IntPtr source, T[] data, int offset, int count) where T : struct
+        public static IntPtr Read<T>(IntPtr source, T[] data, int offset, int count) where T : unmanaged
         {
             unsafe
             {
-                return Read(source, new Span<T>(data).Slice(offset), count);
+                return Read(source, new ReadOnlySpan<T>(data).Slice(offset), count);
             }
         }
 
@@ -113,11 +109,11 @@ namespace SharpGen.Runtime
         /// <param name="offset">The offset in the array to write to.</param>
         /// <param name="count">The number of T element to read from the memory location.</param>
         /// <returns>source pointer + sizeof(T) * count.</returns>
-        public static IntPtr Read<T>(IntPtr source, Span<T> data, int count) where T : struct
+        public static IntPtr Read<T>(IntPtr source, ReadOnlySpan<T> data, int count) where T : unmanaged
         {
             unsafe
             {
-                fixed (void* dataPtr = &data.AsBytes()[0])
+                fixed (void* dataPtr = data)
                 {
                     Unsafe.CopyBlockUnaligned(dataPtr, (void*)source, (uint)(count * Unsafe.SizeOf<T>()));
                     return source + Unsafe.SizeOf<T>() * count;
@@ -134,11 +130,11 @@ namespace SharpGen.Runtime
         /// <param name="offset">The offset in the array to read from.</param>
         /// <param name="count">The number of T element to write to the memory location.</param>
         /// <returns>destination pointer + sizeof(T) * count.</returns>
-        public static IntPtr Write<T>(IntPtr destination, Span<T> data, int count) where T : struct
+        public static IntPtr Write<T>(IntPtr destination, Span<T> data, int count) where T : unmanaged
         {
             unsafe
             {
-                fixed (void* dataPtr = &data.AsBytes()[0])
+                fixed (void* dataPtr = data)
                 {
                     Unsafe.CopyBlockUnaligned((void*)destination, dataPtr, (uint)(count * Unsafe.SizeOf<T>()));
                     return destination + Unsafe.SizeOf<T>() * count;
