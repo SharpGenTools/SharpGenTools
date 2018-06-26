@@ -108,6 +108,16 @@ namespace Interface
             Assert.Throws<SharpGenException>(() => nativeView.CloneInstance(out var inst));
         }
 
+        [Fact]
+        public void ReturnMappings()
+        {
+            IntPtr val = new IntPtr(5);
+
+            Assert.Equal(val, nativeView.ModifyPointer(val, MethodOperation.PassThrough));
+
+            Assert.Equal(new IntPtr(6), nativeView.ModifyPointer(val, 0));
+        }
+
         class ManagedImplementation : CallbackBase, CallbackInterface
         {
             public bool ThrowExceptionInClone { get; set; }

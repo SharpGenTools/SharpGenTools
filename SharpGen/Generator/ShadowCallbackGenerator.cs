@@ -183,7 +183,9 @@ namespace SharpGen.Generator
 
             var returnValueNeedsMarshalling = NeedsMarshalling(csElement.ReturnValue);
 
-            if (!csElement.HasPublicReturnType || (csElement.HideReturnType && !csElement.ForceReturnType))
+            var hasReturnValue = csElement.HasReturnType && (!csElement.HideReturnType || csElement.ForceReturnType);
+
+            if (!hasReturnValue && !csElement.HasReturnTypeParameter)
             {
                 statements.Add(ExpressionStatement(invocation));
             }
@@ -205,7 +207,7 @@ namespace SharpGen.Generator
                         IdentifierName(publicReturnValue.Name),
                         invocation)));
 
-                if (returnValueNeedsMarshalling && publicReturnValue == csElement.ReturnValue)
+                if (returnValueNeedsMarshalling && !csElement.HasReturnTypeParameter)
                 {
                     // Bool-to-int is special cased in marshalling so we need to special case it here as well.
                     if (csElement.ReturnValue.IsBoolToInt)
