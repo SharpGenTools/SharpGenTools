@@ -13,6 +13,8 @@
     <bind from="short" to="System.Int16" />
     <bind from="unsigned short" to="System.UInt16" />
     <bind from="unsigned char" to="System.Byte" />
+    <bind from="long" to="SharpGen.Runtime.NativeLong" />
+    <bind from="unsigned long" to="SharpGen.Runtime.NativeULong" />
     <bind from="longlong" to="System.Int64" />
     <bind from="unsigned longlong" to="System.UInt64" />
     <bind from="float" to="System.Single" />
