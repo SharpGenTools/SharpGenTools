@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <VersionPrefix Condition="'$(APPVEYOR_REPO_TAG_NAME)' != ''">$(APPVEYOR_REPO_TAG_NAME)</VersionPrefix>
-    <VersionPrefix Condition="'$(VersionPrefix)' == ''">1.0.4</VersionPrefix>
+    <VersionPrefix Condition="'$(VersionPrefix)' == ''">1.1.1</VersionPrefix>
     <VersionSuffix Condition="'$(CI)' == ''">local</VersionSuffix>
     <VersionSuffix Condition="'$(CI)' != '' AND '$(APPVEYOR_REPO_TAG_NAME)' == ''">ci$(APPVEYOR_BUILD_NUMBER)</VersionSuffix>
     <Authors>jkoritzinsky</Authors>
