@@ -86,7 +86,8 @@ namespace SharpGen.Model
             {
                 if ((ReturnValue.MarshalType ?? ReturnValue.PublicType) is CsStruct csStruct)
                 {
-                    if (ReturnValue.MarshalType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr))
+                    if (ReturnValue.MarshalType is CsFundamentalType fundamental &&
+                        (fundamental.Type == typeof(IntPtr)|| fundamental.Type.IsPointer))
                         return false;
 
                     return csStruct.Size > MaxSizeReturnParameter;
