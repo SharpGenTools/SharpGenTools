@@ -4,6 +4,8 @@
     <define struct="SharpGen.Runtime.Result" sizeof="4" />
     <define struct="SharpGen.Runtime.FunctionCallback" sizeof="8" />
     <define struct="SharpGen.Runtime.PointerSize" sizeof="8" />
+    <define struct="SharpGen.Runtime.NativeLong" sizeof="8" />
+    <define struct="SharpGen.Runtime.NativeULong" sizeof="8" />
   </extension>
   <bindings>
     <!-- Primitive bindings -->
