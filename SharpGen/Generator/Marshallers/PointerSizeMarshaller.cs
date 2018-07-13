@@ -16,9 +16,9 @@ namespace SharpGen.Generator.Marshallers
         public bool CanMarshal(CsMarshalBase csElement)
         {
             return (csElement.PublicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.PointerSize)
-                    || (csElement.PublicType is CsFundamentalType fundamental
-                        && fundamental.Type == typeof(IntPtr) && !csElement.IsArray))
-                && ((csElement as CsMarshalCallableBase)?.PassedByNativeReference == false);
+                    || (csElement.PublicType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr)))
+                && !csElement.IsArray
+                && ((csElement is CsParameter param && param.IsIn) || csElement is CsReturnValue);
         }
 
         public ArgumentSyntax GenerateManagedArgument(CsParameter csElement)

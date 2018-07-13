@@ -358,7 +358,8 @@ namespace SharpGen.Generator
                 || value.IsInterface
                 || value.IsArray
                 || value.IsString
-                || value.MappedToDifferentPublicType;
+                || value.MappedToDifferentPublicType
+                && (value.PublicType.QualifiedName != globalNamespace.GetTypeName(WellKnownName.PointerSize));
         }
 
         protected TypeSyntax GetMarshalTypeSyntax(CsMarshalBase value)

@@ -25,8 +25,10 @@ namespace SharpGen.Generator
                 new StructWithNativeTypeMarshaller(globalNamespace),
                 new StructWithNativeTypeArrayMarshaller(globalNamespace),
                 new NullableInstanceMarshaller(globalNamespace),
-                new ValueTypeArrayMarshaller(globalNamespace),
+                new BitfieldMarshaller(globalNamespace),
+                new ValueTypeArrayFieldMarshaller(globalNamespace),
                 new FallbackFieldMarshaller(globalNamespace),
+                new ValueTypeArrayMarshaller(globalNamespace),
                 new ValueTypeMarshaller(globalNamespace)
             };
         }

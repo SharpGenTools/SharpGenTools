@@ -13,8 +13,11 @@ namespace SharpGen.Generator
     /// </summary>
     class CallablePrologCodeGenerator : MarshallingCodeGeneratorBase, IMultiCodeGenerator<CsMarshalCallableBase, StatementSyntax>
     {
+        private readonly GlobalNamespaceProvider globalNamespace;
+
         public CallablePrologCodeGenerator(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
         {
+            this.globalNamespace = globalNamespace;
         }
 
         public IEnumerable<StatementSyntax> GenerateCode(CsMarshalCallableBase csElement)
@@ -221,7 +224,8 @@ namespace SharpGen.Generator
                 }
             }
 
-            if (csElement.MappedToDifferentPublicType)
+            if (csElement.MappedToDifferentPublicType
+                && (csElement.PublicType.QualifiedName != globalNamespace.GetTypeName(WellKnownName.PointerSize)))
             {
                 yield return LocalDeclarationStatement(
                     VariableDeclaration(ParseTypeName(csElement.MarshalType.QualifiedName),

@@ -29,19 +29,6 @@ namespace SharpGen.Generator.Marshallers
 
         public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame)
         {
-            var field = (CsField)csElement;
-            if (field.IsBitField)
-            {
-                return ExpressionStatement(
-                    AssignmentExpression(SyntaxKind.OrAssignmentExpression,
-                    GetMarshalStorageLocation(csElement),
-                    CastExpression(ParseTypeName(csElement.MarshalType.QualifiedName),
-                        ParenthesizedExpression(BinaryExpression(SyntaxKind.BitwiseAndExpression,
-                            IdentifierName(csElement.IntermediateMarshalName),
-                            LiteralExpression(
-                                SyntaxKind.NumericLiteralExpression,
-                                Literal(field.BitMask << field.BitOffset)))))));
-            }
             return ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                     GetMarshalStorageLocation(csElement),
                     IdentifierName(csElement.Name)));
@@ -59,14 +46,6 @@ namespace SharpGen.Generator.Marshallers
 
         public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame)
         {
-            var field = (CsField)csElement;
-            if (field.IsBitField)
-            {
-                return ExpressionStatement(
-                    AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                    IdentifierName(csElement.IntermediateMarshalName),
-                    GetMarshalStorageLocation(csElement)));
-            }
             return ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                     IdentifierName(csElement.Name),
                     GetMarshalStorageLocation(csElement)));
