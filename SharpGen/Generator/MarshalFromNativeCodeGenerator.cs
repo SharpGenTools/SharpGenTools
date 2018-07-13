@@ -131,7 +131,7 @@ namespace SharpGen.Generator
                 {
                     if (MarshalPinnableElements)
                     {
-                        return GenerateCopyMemory(csElement, copyFromNative: true); 
+                        return GenerateCopyMemory(csElement, copyFromNative: true);
                     }
 
                     return null;

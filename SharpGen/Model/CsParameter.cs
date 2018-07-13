@@ -83,16 +83,25 @@ namespace SharpGen.Model
 
         public override bool IsOptional => OptionalParameter;
 
+        /// <summary>
+        /// Parameter is an Out parameter and passed by pointer.
+        /// </summary>
         public override bool IsOut
         {
             get { return Attribute == CsParameterAttribute.Out; }
         }
 
+        /// <summary>
+        /// Parameter is an In/Out parameter and passed by pointer.
+        /// </summary>
         public override bool IsRef
         {
             get { return Attribute == CsParameterAttribute.Ref; }
         }
 
+        /// <summary>
+        /// Parameter is an In parameter and passed by pointer.
+        /// </summary>
         public override bool IsRefIn
         {
             get { return Attribute == CsParameterAttribute.RefIn; }
@@ -106,6 +115,13 @@ namespace SharpGen.Model
                        && ((PublicType.Size <= SizeOfLimit && !HasNativeValueType) || ForcePassByValue);
             }
         }
+
+        public bool PassedByManagedReference
+            => (IsRef || IsRefIn)
+                && (!(PassedByNullableInstance || RefInPassedByValue)
+                && !IsStructClass);
+
+        public override bool PassedByNativeReference => IsRefIn || IsRef || IsOut || IsOptional;
 
         [DataMember]
         public bool IsUsedAsReturnType { get; set; }

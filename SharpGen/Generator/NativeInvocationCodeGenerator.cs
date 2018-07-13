@@ -35,10 +35,10 @@ namespace SharpGen.Generator
 
             if (callable.IsReturnStructLarge)
             {
-                arguments.Add(Generators.Argument.GenerateCode(callable.ReturnValue)); 
+                arguments.Add(Generators.Marshalling.GetMarshaller(callable.ReturnValue).GenerateNativeArgument(callable.ReturnValue)); 
             }
 
-            arguments.AddRange(callable.Parameters.Select(param => Generators.Argument.GenerateCode(param)));
+            arguments.AddRange(callable.Parameters.Select(param => Generators.Marshalling.GetMarshaller(param).GenerateNativeArgument(param)));
 
             if (callable is CsMethod method)
             {

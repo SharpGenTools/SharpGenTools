@@ -142,7 +142,7 @@ namespace SharpGen.Generator
             {
                 if (param.IsIn || param.IsRefIn || param.IsRef)
                 {
-                    var marshalFromNative = generators.MarshalFromNative.GenerateCode(param);
+                    var marshalFromNative = generators.Marshalling.GetMarshaller(param).GenerateNativeToManaged(param, false);
                     if (marshalFromNative != null)
                     {
                         statements.Add(marshalFromNative);
@@ -154,23 +154,7 @@ namespace SharpGen.Generator
 
             foreach (var param in csElement.Parameters.Where(p => !p.UsedAsReturn))
             {
-                var managedArgument = Argument(IdentifierName(param.Name));
-                var managedParam = generators.Parameter.GenerateCode(param);
-
-                if (managedParam.ChildTokens().Any(token => token.RawKind == (int)SyntaxKind.RefKeyword))
-                {
-                    managedArguments.Add(managedArgument
-                        .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)));
-                }
-                else if (managedParam.ChildTokens().Any(token => token.RawKind == (int)SyntaxKind.OutKeyword))
-                {
-                    managedArguments.Add(managedArgument
-                        .WithRefOrOutKeyword(Token(SyntaxKind.OutKeyword)));
-                }
-                else
-                {
-                    managedArguments.Add(managedArgument);
-                }
+                managedArguments.Add(generators.Marshalling.GetMarshaller(param).GenerateManagedArgument(param));
             }
 
             var callableName = csElement is CsFunction
@@ -227,7 +211,7 @@ namespace SharpGen.Generator
                     }
                     else
                     {
-                        statements.Add(generators.MarshalToNative.GenerateCode(csElement.ReturnValue));
+                        statements.Add(generators.Marshalling.GetMarshaller(csElement.ReturnValue).GenerateManagedToNative(csElement.ReturnValue, false));
                     }
                 }
             }
@@ -236,7 +220,7 @@ namespace SharpGen.Generator
             {
                 if (param.IsOut || param.IsRef)
                 {
-                    var marshalToNative = generators.MarshalToNative.GenerateCode(param);
+                    var marshalToNative = generators.Marshalling.GetMarshaller(param).GenerateManagedToNative(param, false);
                     if (marshalToNative != null)
                     {
                         statements.Add(marshalToNative);

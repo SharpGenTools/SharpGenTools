@@ -35,7 +35,7 @@ namespace SharpGen.Generator
                             SyntaxKind.UncheckedExpression,
                             CastExpression(
                                 ParseTypeName(csElement.MarshalType.QualifiedName),
-                                GenerateExpression(csElement)))); 
+                                GenerateExpression(csElement))));
             }
             else
             {

@@ -43,6 +43,7 @@ namespace SharpGen.Generator
             ReverseCallableProlog = new ReverseCallablePrologCodeGenerator(globalNamespace);
             Vtbl = new VtblGenerator(this, globalNamespace);
             Shadow = new ShadowGenerator(this, globalNamespace);
+            Marshalling = new MarshallingCodeGenerator(globalNamespace);
         }
 
         public IMultiCodeGenerator<CsVariable, MemberDeclarationSyntax> Constant { get; }
@@ -87,5 +88,7 @@ namespace SharpGen.Generator
         public IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> ShadowCallable { get; }
 
         public IMultiCodeGenerator<CsCallable, StatementSyntax> ReverseCallableProlog { get; }
+
+        public MarshallingCodeGenerator Marshalling { get; }
     }
 }

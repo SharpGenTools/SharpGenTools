@@ -19,5 +19,7 @@ namespace SharpGen.Model
         public virtual bool IsFixed => false;
 
         public virtual bool RefInPassedByValue => false;
+
+        public virtual bool PassedByNativeReference => false;
     }
 }
