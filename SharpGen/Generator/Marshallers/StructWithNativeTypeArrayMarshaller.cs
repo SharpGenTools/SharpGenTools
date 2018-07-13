@@ -51,6 +51,25 @@ namespace SharpGen.Generator.Marshallers
                 });
         }
 
+        public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
+        {
+            yield return LocalDeclarationStatement(
+                VariableDeclaration(
+                    ArrayType(ParseTypeName($"{csElement.PublicType.QualifiedName}.__Native"), SingletonList(ArrayRankSpecifier())),
+                    SingletonSeparatedList(
+                        VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement))
+                            .WithInitializer(EqualsValueClause(
+                                GenerateNullCheckIfNeeded(csElement,
+                                    ObjectCreationExpression(
+                                        ArrayType(ParseTypeName($"{csElement.PublicType.QualifiedName}.__Native"),
+                                        SingletonList(ArrayRankSpecifier(
+                                            SingletonSeparatedList<ExpressionSyntax>(
+                                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                                    IdentifierName(csElement.Name),
+                                                    IdentifierName("Length"))))))),
+                                    LiteralExpression(SyntaxKind.NullLiteralExpression)))))));
+        }
+
         public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement)
         {
             return Argument(IdentifierName(csElement.IntermediateMarshalName));
@@ -68,6 +87,11 @@ namespace SharpGen.Generator.Marshallers
             return LoopThroughArrayParameter(csElement,
                (publicElement, marshalElement) =>
                    CreateMarshalStructStatement(csElement, "__MarshalFrom", publicElement, marshalElement));
+        }
+
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        {
+            throw new NotImplementedException();
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)

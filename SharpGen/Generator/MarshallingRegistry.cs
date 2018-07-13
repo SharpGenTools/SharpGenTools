@@ -7,9 +7,9 @@ using System.Text;
 
 namespace SharpGen.Generator
 {
-    public class MarshallingCodeGenerator
+    public class MarshallingRegistry
     {
-        public MarshallingCodeGenerator(GlobalNamespaceProvider globalNamespace)
+        public MarshallingRegistry(GlobalNamespaceProvider globalNamespace)
         {
             Marshallers = new List<IMarshaller>
             {

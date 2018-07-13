@@ -29,12 +29,11 @@ namespace SharpGen.Generator
             Group = new GroupCodeGenerator(this, documentation, docReader);
             LocalInterop = new LocalInteropCodeGenerator(this);
             InteropMethod = new InteropMethodCodeGenerator();
-            CallableProlog = new CallablePrologCodeGenerator(globalNamespace);
             ShadowCallable = new ShadowCallbackGenerator(this, globalNamespace);
             ReverseCallableProlog = new ReverseCallablePrologCodeGenerator(globalNamespace);
             Vtbl = new VtblGenerator(this, globalNamespace);
             Shadow = new ShadowGenerator(this, globalNamespace);
-            Marshalling = new MarshallingCodeGenerator(globalNamespace);
+            Marshalling = new MarshallingRegistry(globalNamespace);
         }
 
         public IMultiCodeGenerator<CsVariable, MemberDeclarationSyntax> Constant { get; }
@@ -55,8 +54,6 @@ namespace SharpGen.Generator
 
         public IMultiCodeGenerator<InteropMethodSignature, MemberDeclarationSyntax> InteropMethod { get; }
 
-        public IMultiCodeGenerator<CsMarshalCallableBase, StatementSyntax> CallableProlog { get; }
-
         public ICodeGenerator<CsInterface, MemberDeclarationSyntax> Shadow { get; }
 
         public ICodeGenerator<CsInterface, MemberDeclarationSyntax> Vtbl { get; }
@@ -65,6 +62,6 @@ namespace SharpGen.Generator
 
         public IMultiCodeGenerator<CsCallable, StatementSyntax> ReverseCallableProlog { get; }
 
-        public MarshallingCodeGenerator Marshalling { get; }
+        public MarshallingRegistry Marshalling { get; }
     }
 }

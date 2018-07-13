@@ -193,26 +193,7 @@ namespace SharpGen.Generator
 
                 if (returnValueNeedsMarshalling && !csElement.HasReturnTypeParameter)
                 {
-                    // Bool-to-int is special cased in marshalling so we need to special case it here as well.
-                    if (csElement.ReturnValue.IsBoolToInt)
-                    {
-                        statements.Add(ExpressionStatement(
-                            AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                                GetMarshalStorageLocation(csElement.ReturnValue),
-                                CastExpression(GetMarshalTypeSyntax(csElement.ReturnValue),
-                                    ParenthesizedExpression(
-                                    ConditionalExpression(
-                                        IdentifierName(csElement.ReturnValue.Name),
-                                        LiteralExpression(SyntaxKind.NumericLiteralExpression,
-                                            Literal(1)),
-                                        LiteralExpression(SyntaxKind.NumericLiteralExpression,
-                                            Literal(0))
-                                ))))));
-                    }
-                    else
-                    {
-                        statements.Add(generators.Marshalling.GetMarshaller(csElement.ReturnValue).GenerateManagedToNative(csElement.ReturnValue, false));
-                    }
+                    statements.Add(generators.Marshalling.GetMarshaller(csElement.ReturnValue).GenerateManagedToNative(csElement.ReturnValue, false));
                 }
             }
 

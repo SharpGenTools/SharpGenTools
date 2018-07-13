@@ -16,7 +16,7 @@ namespace SharpGen.Generator.Marshallers
 
         public bool CanMarshal(CsMarshalBase csElement)
         {
-            return csElement.PassedByNullableInstance;
+            return csElement.PassedByNullableInstance && !csElement.HasNativeValueType;
         }
 
         public ArgumentSyntax GenerateManagedArgument(CsParameter csElement)
@@ -39,6 +39,14 @@ namespace SharpGen.Generator.Marshallers
                         IdentifierName("Value")))));
         }
 
+        public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
+        {
+            yield return LocalDeclarationStatement(
+               VariableDeclaration(ParseTypeName(csElement.PublicType.QualifiedName),
+                   SingletonSeparatedList(
+                       VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)))));
+        }
+
         public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement)
         {
             return Argument(GenerateNullCheckIfNeeded(csElement,
@@ -59,6 +67,11 @@ namespace SharpGen.Generator.Marshallers
             return ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                 IdentifierName(csElement.Name),
                 GetMarshalStorageLocation(csElement)));
+        }
+
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        {
+            throw new NotImplementedException();
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)

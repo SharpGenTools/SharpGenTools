@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SharpGen.Model;
 using Microsoft.CodeAnalysis.CSharp;
+using System.Linq;
 
 namespace SharpGen.Generator.Marshallers
 {
@@ -28,6 +29,11 @@ namespace SharpGen.Generator.Marshallers
         public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame)
         {
             return null;
+        }
+
+        public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
+        {
+            return Enumerable.Empty<StatementSyntax>();
         }
 
         public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement)
@@ -59,6 +65,11 @@ namespace SharpGen.Generator.Marshallers
         public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame)
         {
             return null;
+        }
+
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        {
+            throw new NotImplementedException();
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)

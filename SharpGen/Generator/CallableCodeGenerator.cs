@@ -54,11 +54,22 @@ namespace SharpGen.Generator
             }
 
             var statements = new List<StatementSyntax>();
-            
-            statements.AddRange(csElement.Parameters.SelectMany(param => Generators.CallableProlog.GenerateCode(param)));
+
+            foreach (var param in csElement.Parameters)
+            {
+                if (param.UsedAsReturn)
+                {
+                    statements.Add(GenerateManagedReturnProlog(param));
+                }
+                statements.AddRange(Generators.Marshalling.GetMarshaller(param).GenerateManagedToNativeProlog(param));
+            }
+
             if (csElement.HasReturnType)
             {
-                statements.AddRange(Generators.CallableProlog.GenerateCode(csElement.ReturnValue));
+                statements.Add(GenerateManagedReturnProlog(csElement.ReturnValue));
+                statements.AddRange(
+                    Generators.Marshalling.GetMarshaller(csElement.ReturnValue)
+                        .GenerateManagedToNativeProlog(csElement.ReturnValue));
             }
 
 
@@ -137,6 +148,15 @@ namespace SharpGen.Generator
             }
 
             yield return methodDeclaration.WithBody(Block(statements));
+        }
+
+        private StatementSyntax GenerateManagedReturnProlog(CsMarshalCallableBase csElement)
+        {
+            return LocalDeclarationStatement(
+                VariableDeclaration(
+                    csElement.IsArray ? ArrayType(ParseTypeName(csElement.PublicType.QualifiedName), SingletonList(ArrayRankSpecifier())) : ParseTypeName(csElement.PublicType.QualifiedName),
+                    SingletonSeparatedList(
+                        VariableDeclarator(csElement.Name))));
         }
     }
 }

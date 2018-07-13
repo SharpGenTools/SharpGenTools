@@ -16,7 +16,6 @@ namespace SharpGen.Generator
         IMultiCodeGenerator<CsField, MemberDeclarationSyntax> AutoLayoutField { get; }
         IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax> Struct { get; }
         ICodeGenerator<CsCallable, ExpressionSyntax> NativeInvocation { get; }
-        IMultiCodeGenerator<CsMarshalCallableBase, StatementSyntax> CallableProlog { get; }
         IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> Callable { get; }
         IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax> Method { get; }
         IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax> Function { get; }
@@ -29,6 +28,6 @@ namespace SharpGen.Generator
         ICodeGenerator<CsAssembly, NamespaceDeclarationSyntax> LocalInterop { get; }
 
         IMultiCodeGenerator<InteropMethodSignature, MemberDeclarationSyntax> InteropMethod { get; }
-        MarshallingCodeGenerator Marshalling { get; }
+        MarshallingRegistry Marshalling { get; }
     }
 }

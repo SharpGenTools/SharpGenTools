@@ -299,16 +299,6 @@ namespace SharpGen.Generator.Marshallers
                                     Literal(message)))))));
         }
 
-        protected bool NeedsMarshalling(CsMarshalBase value)
-        {
-            return value.HasNativeValueType
-                || value.IsBoolToInt
-                || value.IsInterface
-                || value.IsArray
-                || value.IsString
-                || value.MappedToDifferentPublicType;
-        }
-
         protected TypeSyntax GetMarshalTypeSyntax(CsMarshalBase value)
         {
             if (value.HasNativeValueType)

@@ -55,6 +55,25 @@ namespace SharpGen.Generator.Marshallers
             return marshalToStatement;
         }
 
+        public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
+        {
+            yield return LocalDeclarationStatement(
+                VariableDeclaration(ParseTypeName($"{csElement.PublicType.QualifiedName}.__Native"),
+                   SingletonSeparatedList(
+                       VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement))
+                       .WithInitializer(
+                           EqualsValueClause(
+                               DefaultExpression(ParseTypeName($"{csElement.PublicType.QualifiedName}.__Native")))))));
+            if (csElement.IsOut)
+            {
+                yield return ExpressionStatement(
+                    AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                        IdentifierName(csElement.Name),
+                        DefaultExpression(ParseTypeName(csElement.PublicType.QualifiedName))
+                ));
+            }
+        }
+
         public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement)
         {
             if (csElement.PassedByNativeReference)
@@ -113,6 +132,11 @@ namespace SharpGen.Generator.Marshallers
                     publicElementExpression,
                     GetMarshalStorageLocation(csElement)
             );
+        }
+
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        {
+            throw new NotImplementedException();
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)

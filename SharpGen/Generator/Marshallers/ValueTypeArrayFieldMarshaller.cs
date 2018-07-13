@@ -32,6 +32,11 @@ namespace SharpGen.Generator.Marshallers
             return GenerateCopyMemory(csElement, copyFromNative: false);
         }
 
+        public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
+        {
+            throw new InvalidOperationException();
+        }
+
         public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement)
         {
             throw new InvalidOperationException();
@@ -45,6 +50,11 @@ namespace SharpGen.Generator.Marshallers
         public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame)
         {
             return GenerateCopyMemory(csElement, copyFromNative: true);
+        }
+
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        {
+            throw new InvalidOperationException();
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)

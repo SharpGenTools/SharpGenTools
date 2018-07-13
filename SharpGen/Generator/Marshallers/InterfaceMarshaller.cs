@@ -3,6 +3,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SharpGen.Model;
 using Microsoft.CodeAnalysis.CSharp;
 using System;
+using System.Collections.Generic;
 
 namespace SharpGen.Generator.Marshallers
 {
@@ -67,6 +68,24 @@ namespace SharpGen.Generator.Marshallers
                GetMarshalStorageLocation(csElement));
         }
 
+        public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
+        {
+            yield return LocalDeclarationStatement(
+               VariableDeclaration(
+                   QualifiedName(
+                       IdentifierName("System"),
+                       IdentifierName("IntPtr")),
+                   SingletonSeparatedList(
+                       VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement))
+                           .WithInitializer(
+                               EqualsValueClause(
+                                   MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                       MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                           IdentifierName("System"),
+                                           IdentifierName("IntPtr")),
+                                       IdentifierName("Zero")))))));
+        }
+
         public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement)
         {
             if (csElement.IsOut)
@@ -91,6 +110,11 @@ namespace SharpGen.Generator.Marshallers
                 csElement,
                 IdentifierName(csElement.Name),
                 GetMarshalStorageLocation(csElement));
+        }
+
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        {
+            throw new NotImplementedException();
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)

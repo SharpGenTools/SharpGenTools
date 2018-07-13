@@ -37,6 +37,60 @@ namespace SharpGen.Generator.Marshallers
                    MarshalInterfaceInstanceToNative(csElement, publicElement, marshalElement));
         }
 
+        public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
+        {
+            yield return LocalDeclarationStatement(
+               VariableDeclaration(
+                   PointerType(
+                       QualifiedName(
+                           IdentifierName("System"),
+                           IdentifierName("IntPtr"))),
+                   SingletonSeparatedList(
+                       VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)))));
+                    yield return ExpressionStatement(
+                        AssignmentExpression(
+                            SyntaxKind.SimpleAssignmentExpression,
+                            IdentifierName(GetMarshalStorageLocationIdentifier(csElement)),
+                            CastExpression(
+                                PointerType(
+                                    QualifiedName(
+                                        IdentifierName("System"),
+                                        IdentifierName("IntPtr"))),
+                                LiteralExpression(
+                                    SyntaxKind.NumericLiteralExpression,
+                                    Literal(0)))));
+            yield return GenerateNullCheckIfNeeded(csElement,
+                Block(
+                    LocalDeclarationStatement(
+                        VariableDeclaration(
+                            PointerType(
+                                QualifiedName(
+                                    IdentifierName("System"),
+                                    IdentifierName("IntPtr"))),
+                            SingletonSeparatedList(
+                                VariableDeclarator(
+                                    Identifier(csElement.IntermediateMarshalName))
+                                .WithInitializer(
+                                    EqualsValueClause(
+                                        StackAllocArrayCreationExpression(
+                                            ArrayType(
+                                                QualifiedName(
+                                                    IdentifierName("System"),
+                                                    IdentifierName("IntPtr")),
+                                                SingletonList(
+                                                        ArrayRankSpecifier(
+                                                            SingletonSeparatedList<ExpressionSyntax>(
+                                                                MemberAccessExpression(
+                                                                    SyntaxKind.SimpleMemberAccessExpression,
+                                                                    IdentifierName(csElement.Name),
+                                                                    IdentifierName("Length")))))))))))),
+                    ExpressionStatement(
+                        AssignmentExpression(
+                            SyntaxKind.SimpleAssignmentExpression,
+                            IdentifierName(GetMarshalStorageLocationIdentifier(csElement)),
+                            IdentifierName(csElement.IntermediateMarshalName)))));
+        }
+
         public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement)
         {
             return Argument(CastExpression(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))), GetMarshalStorageLocation(csElement)));
@@ -53,6 +107,11 @@ namespace SharpGen.Generator.Marshallers
                csElement,
                (publicElement, marshalElement) =>
                    MarshalInterfaceInstanceFromNative(csElement, publicElement, marshalElement));
+        }
+
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        {
+            throw new NotImplementedException();
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)

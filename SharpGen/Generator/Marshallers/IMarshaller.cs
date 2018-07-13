@@ -8,6 +8,9 @@ namespace SharpGen.Generator.Marshallers
 {
     public interface IMarshaller
     {
+        IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement);
+
+        IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement);
 
         StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame);
 

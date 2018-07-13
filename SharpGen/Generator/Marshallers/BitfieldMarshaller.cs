@@ -43,6 +43,11 @@ namespace SharpGen.Generator.Marshallers
                             Literal(field.BitMask << field.BitOffset)))))));
         }
 
+        public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
+        {
+            throw new InvalidOperationException();
+        }
+
         public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement)
         {
             throw new InvalidOperationException();
@@ -60,6 +65,11 @@ namespace SharpGen.Generator.Marshallers
                 AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                 IdentifierName(csElement.IntermediateMarshalName),
                 GetMarshalStorageLocation(csElement)));
+        }
+
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        {
+            throw new InvalidOperationException();
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)

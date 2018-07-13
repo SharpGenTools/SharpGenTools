@@ -2,6 +2,7 @@
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SharpGen.Model;
 using Microsoft.CodeAnalysis.CSharp;
+using System.Collections.Generic;
 
 namespace SharpGen.Generator.Marshallers
 {
@@ -69,6 +70,18 @@ namespace SharpGen.Generator.Marshallers
                                                 IdentifierName(csElement.Name)))))));
                 }
                 return null;
+            }
+        }
+
+        public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
+        {
+            if (!csElement.IsWideChar || csElement.UsedAsReturn)
+            {
+                yield return LocalDeclarationStatement(
+                    VariableDeclaration(
+                        IntPtrType,
+                        SingletonSeparatedList(
+                            VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)))));
             }
         }
 
@@ -145,6 +158,11 @@ namespace SharpGen.Generator.Marshallers
                                             GetMarshalStorageLocation(csElement)))))));
             }
             return null;
+        }
+
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        {
+            throw new System.NotImplementedException();
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)
