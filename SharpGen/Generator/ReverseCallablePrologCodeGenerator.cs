@@ -35,27 +35,9 @@ namespace SharpGen.Generator
             }
             else if (csElement.HasReturnType && (!csElement.HideReturnType || csElement.ForceReturnType))
             {
-                var returnValueMarshaller = generators.Marshalling.GetMarshaller(csElement.ReturnValue);
-                if (returnValueMarshaller.GeneratesMarshalVariable(csElement.ReturnValue))
+                foreach (var statement in GenerateProlog(csElement.ReturnValue, null))
                 {
-                    yield return LocalDeclarationStatement(
-                        VariableDeclaration(returnValueMarshaller.GetMarshalTypeSyntax(csElement.ReturnValue))
-                        .AddVariables(
-                            VariableDeclarator(generators.Marshalling.GetMarshalStorageLocationIdentifier(csElement.ReturnValue))));
-                    yield return LocalDeclarationStatement(
-                         VariableDeclaration(ParseTypeName(csElement.ReturnValue.PublicType.QualifiedName))
-                         .AddVariables(
-                             VariableDeclarator(Identifier(csElement.ReturnValue.Name))));
-                }
-                else
-                {
-                    yield return LocalDeclarationStatement(
-                        VariableDeclaration(ParseTypeName(csElement.ReturnValue.PublicType.QualifiedName))
-                        .AddVariables(
-                            VariableDeclarator(Identifier(csElement.ReturnValue.Name))
-                                .WithInitializer(EqualsValueClause(
-                                    DefaultExpression(
-                                        ParseTypeName(csElement.ReturnValue.PublicType.QualifiedName))))));
+                    yield return statement;
                 }
             }
 
@@ -85,6 +67,7 @@ namespace SharpGen.Generator
                         .WithInitializer(
                             EqualsValueClause(
                                 DefaultExpression(ParseTypeName(publicElement.PublicType.QualifiedName))))));
+
             if (marshaller.GeneratesMarshalVariable(publicElement))
             {
                 yield return LocalDeclarationStatement(
@@ -92,20 +75,25 @@ namespace SharpGen.Generator
                     .AddVariables(
                         VariableDeclarator(generators.Marshalling.GetMarshalStorageLocationIdentifier(publicElement))
                         .WithInitializer(
-                            EqualsValueClause(
+                            nativeParameter != null
+                            ? EqualsValueClause(
                                 CastExpression(
                                     marshaller.GetMarshalTypeSyntax(publicElement),
-                                    nativeParameter)))));
+                                    nativeParameter))
+                            : null)));
             }
             else
             {
-                yield return ExpressionStatement(
-                   AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                       IdentifierName(publicElement.Name),
-                       CastExpression(
-                            ParseTypeName(publicElement.PublicType.QualifiedName),
-                            nativeParameter)
-               ));
+                if (nativeParameter != null)
+                {
+                    yield return ExpressionStatement(
+                       AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                           IdentifierName(publicElement.Name),
+                           CastExpression(
+                                ParseTypeName(publicElement.PublicType.QualifiedName),
+                                nativeParameter)
+                   )); 
+                }
             }
         }
 
