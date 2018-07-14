@@ -10,7 +10,7 @@ namespace SharpGen.Generator.Marshallers
     {
         IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement);
 
-        IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement);
+        IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement);
 
         StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame);
 
@@ -27,5 +27,9 @@ namespace SharpGen.Generator.Marshallers
         FixedStatementSyntax GeneratePin(CsParameter csElement);
 
         bool CanMarshal(CsMarshalBase csElement);
+
+        bool GeneratesMarshalVariable(CsMarshalCallableBase csElement);
+
+        TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement);
     }
 }

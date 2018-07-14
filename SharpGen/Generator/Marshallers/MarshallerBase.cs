@@ -198,7 +198,7 @@ namespace SharpGen.Generator.Marshallers
                                         ))));
         }
 
-        protected SyntaxToken GetMarshalStorageLocationIdentifier(CsMarshalBase marshallable)
+        internal static SyntaxToken GetMarshalStorageLocationIdentifier(CsMarshalBase marshallable)
         {
             switch (marshallable)
             {
@@ -297,19 +297,6 @@ namespace SharpGen.Generator.Marshallers
                                 LiteralExpression(
                                     SyntaxKind.StringLiteralExpression,
                                     Literal(message)))))));
-        }
-
-        protected TypeSyntax GetMarshalTypeSyntax(CsMarshalBase value)
-        {
-            if (value.HasNativeValueType)
-            {
-                return ParseTypeName($"{value.MarshalType.QualifiedName}.__Native");
-            }
-            else if (value.IsInterface)
-            {
-                return ParseTypeName("System.IntPtr");
-            }
-            return ParseTypeName(value.MarshalType.QualifiedName);
         }
 
         protected ArgumentSyntax GenerateManagedValueTypeArgument(CsParameter csElement)

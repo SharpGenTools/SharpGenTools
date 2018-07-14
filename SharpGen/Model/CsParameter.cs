@@ -121,7 +121,7 @@ namespace SharpGen.Model
                 && (!(PassedByNullableInstance || RefInPassedByValue)
                 && !IsStructClass);
 
-        public override bool PassedByNativeReference => IsRefIn || IsRef || IsOut || IsOptional;
+        public override bool PassedByNativeReference => IsRefIn || IsRef || IsOut;
 
         [DataMember]
         public bool IsUsedAsReturnType { get; set; }

@@ -109,14 +109,24 @@ namespace SharpGen.Generator.Marshallers
                    MarshalInterfaceInstanceFromNative(csElement, publicElement, marshalElement));
         }
 
-        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
         {
-            throw new NotImplementedException();
+            yield return NotImplemented("Array of interfaces");
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)
         {
             return null;
+        }
+
+        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement)
+        {
+            return true;
+        }
+
+        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement)
+        {
+            return PointerType(IntPtrType);
         }
     }
 }

@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SharpGen.Model;
 using Microsoft.CodeAnalysis.CSharp;
+using System.Linq;
 
 namespace SharpGen.Generator.Marshallers
 {
@@ -89,9 +90,9 @@ namespace SharpGen.Generator.Marshallers
                    CreateMarshalStructStatement(csElement, "__MarshalFrom", publicElement, marshalElement));
         }
 
-        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
         {
-            throw new NotImplementedException();
+            yield return NotImplemented("Array of structs with native type");
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)
@@ -101,6 +102,16 @@ namespace SharpGen.Generator.Marshallers
                    VariableDeclarator(Identifier(csElement.IntermediateMarshalName)).WithInitializer(EqualsValueClause(
                        GetMarshalStorageLocation(csElement)
                        )))), EmptyStatement());
+        }
+
+        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement)
+        {
+            return true;
+        }
+
+        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement)
+        {
+            return PointerType(ParseTypeName($"{csElement.PublicType.QualifiedName}.__Native"));
         }
     }
 }

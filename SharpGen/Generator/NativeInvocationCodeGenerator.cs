@@ -9,10 +9,9 @@ using System.Linq;
 
 namespace SharpGen.Generator
 {
-    class NativeInvocationCodeGenerator : MarshallingCodeGeneratorBase, ICodeGenerator<CsCallable, ExpressionSyntax>
+    class NativeInvocationCodeGenerator: ICodeGenerator<CsCallable, ExpressionSyntax>
     {
         public NativeInvocationCodeGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
-            :base(globalNamespace)
         {
             Generators = generators;
             this.globalNamespace = globalNamespace;
@@ -70,8 +69,8 @@ namespace SharpGen.Generator
             return callable.IsReturnStructLarge || !callable.HasReturnType ?
                 (ExpressionSyntax)call
                 : AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                    NeedsMarshalling(callable.ReturnValue) ?
-                        GetMarshalStorageLocation(callable.ReturnValue)
+                    Generators.Marshalling.GetMarshaller(callable.ReturnValue).GeneratesMarshalVariable(callable.ReturnValue) ?
+                        IdentifierName(Generators.Marshalling.GetMarshalStorageLocationIdentifier(callable.ReturnValue))
                         : IdentifierName(callable.ReturnValue.Name),
                     call
                     );

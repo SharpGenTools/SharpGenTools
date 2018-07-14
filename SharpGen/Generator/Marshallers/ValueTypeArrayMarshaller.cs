@@ -55,9 +55,9 @@ namespace SharpGen.Generator.Marshallers
             return null;
         }
 
-        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
         {
-            throw new NotImplementedException();
+            yield return NotImplemented("Array of value types");
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)
@@ -67,6 +67,16 @@ namespace SharpGen.Generator.Marshallers
                    VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)).WithInitializer(EqualsValueClause(
                        IdentifierName(csElement.Name)
                        )))), EmptyStatement());
+        }
+
+        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement)
+        {
+            return true;
+        }
+
+        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement)
+        {
+            return PointerType(ParseTypeName(csElement.PublicType.QualifiedName));
         }
     }
 }

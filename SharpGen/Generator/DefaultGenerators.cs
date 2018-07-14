@@ -30,7 +30,7 @@ namespace SharpGen.Generator
             LocalInterop = new LocalInteropCodeGenerator(this);
             InteropMethod = new InteropMethodCodeGenerator();
             ShadowCallable = new ShadowCallbackGenerator(this, globalNamespace);
-            ReverseCallableProlog = new ReverseCallablePrologCodeGenerator(globalNamespace);
+            ReverseCallableProlog = new ReverseCallablePrologCodeGenerator(this, globalNamespace);
             Vtbl = new VtblGenerator(this, globalNamespace);
             Shadow = new ShadowGenerator(this, globalNamespace);
             Marshalling = new MarshallingRegistry(globalNamespace);

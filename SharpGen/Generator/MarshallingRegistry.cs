@@ -1,4 +1,5 @@
-﻿using SharpGen.Generator.Marshallers;
+﻿using Microsoft.CodeAnalysis;
+using SharpGen.Generator.Marshallers;
 using SharpGen.Model;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,7 @@ namespace SharpGen.Generator
         {
             Marshallers = new List<IMarshaller>
             {
-                new InterfaceArrayMarshaller(),
+                new InterfaceArrayMarshaller(globalNamespace),
                 new ArrayOfInterfaceMarshaller(globalNamespace),
                 new BoolToIntArrayMarshaller(globalNamespace),
                 new BoolToIntMarshaller(globalNamespace),
@@ -43,6 +44,11 @@ namespace SharpGen.Generator
                 throw new InvalidOperationException($"No marshaller found for {csElement}");
             }
             return marshaller;
+        }
+
+        public SyntaxToken GetMarshalStorageLocationIdentifier(CsMarshalBase csElement)
+        {
+            return MarshallerBase.GetMarshalStorageLocationIdentifier(csElement);
         }
     }
 }

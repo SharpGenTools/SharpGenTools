@@ -9,13 +9,12 @@ using System.Linq;
 
 namespace SharpGen.Generator
 {
-    class ShadowCallbackGenerator : MarshallingCodeGeneratorBase, IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax>
+    class ShadowCallbackGenerator : IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax>
     {
         private readonly GlobalNamespaceProvider globalNamespace;
         private readonly IGeneratorRegistry generators;
 
         public ShadowCallbackGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
-            : base(globalNamespace)
         {
             this.generators = generators;
             this.globalNamespace = globalNamespace;
@@ -107,6 +106,17 @@ namespace SharpGen.Generator
             var statements = new List<StatementSyntax>();
 
             statements.AddRange(generators.ReverseCallableProlog.GenerateCode(csElement));
+
+            statements.AddRange(
+                generators.Marshalling.GetMarshaller(csElement.ReturnValue).
+                    GenerateNativeToManagedExtendedProlog(csElement.ReturnValue));
+
+            foreach (var param in csElement.Parameters)
+            {
+                statements.AddRange(
+                   generators.Marshalling.GetMarshaller(param).
+                       GenerateNativeToManagedExtendedProlog(param));
+            }
             
             if (csElement is CsMethod)
             {
@@ -165,7 +175,9 @@ namespace SharpGen.Generator
 
             var invocation = InvocationExpression(callableName, ArgumentList(SeparatedList(managedArguments)));
 
-            var returnValueNeedsMarshalling = NeedsMarshalling(csElement.ReturnValue);
+            var returnValueMarshaller = generators.Marshalling.GetMarshaller(csElement.ReturnValue);
+
+            var returnValueNeedsMarshalling = returnValueMarshaller.GeneratesMarshalVariable(csElement.ReturnValue);
 
             var hasReturnValue = csElement.HasReturnType && (!csElement.HideReturnType || csElement.ForceReturnType);
 
@@ -210,7 +222,7 @@ namespace SharpGen.Generator
             }
 
             var nativeReturnLocation = returnValueNeedsMarshalling
-                                ? GetMarshalStorageLocation(csElement.ReturnValue)
+                                ? IdentifierName(generators.Marshalling.GetMarshalStorageLocationIdentifier(csElement.ReturnValue))
                                 : IdentifierName(csElement.ReturnValue.Name);
 
             if (csElement.HasReturnType && (!csElement.HideReturnType || csElement.ForceReturnType))
@@ -265,7 +277,7 @@ namespace SharpGen.Generator
             {
                 var returnStatement = csElement.IsReturnStructLarge ?
                     ReturnStatement(IdentifierName("returnSlot"))
-                    : ReturnStatement(DefaultExpression(GetMarshalTypeSyntax(csElement.ReturnValue)));
+                    : ReturnStatement(DefaultExpression(returnValueMarshaller.GetMarshalTypeSyntax(csElement.ReturnValue)));
                 catchClause = catchClause.WithBlock(Block(returnStatement));
             }
 

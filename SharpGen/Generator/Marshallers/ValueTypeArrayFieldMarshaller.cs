@@ -52,12 +52,22 @@ namespace SharpGen.Generator.Marshallers
             return GenerateCopyMemory(csElement, copyFromNative: true);
         }
 
-        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
         {
             throw new InvalidOperationException();
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement)
         {
             throw new InvalidOperationException();
         }

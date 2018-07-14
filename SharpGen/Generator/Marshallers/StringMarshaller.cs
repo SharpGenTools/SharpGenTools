@@ -3,6 +3,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SharpGen.Model;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SharpGen.Generator.Marshallers
 {
@@ -160,9 +161,9 @@ namespace SharpGen.Generator.Marshallers
             return null;
         }
 
-        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
         {
-            throw new System.NotImplementedException();
+            return Enumerable.Empty<StatementSyntax>();
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)
@@ -178,7 +179,17 @@ namespace SharpGen.Generator.Marshallers
 
             return null;
         }
-        
+
+        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement)
+        {
+            return true;
+        }
+
+        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement)
+        {
+            return IntPtrType;
+        }
+
         private StatementSyntax GenerateAnsiStringToArray(CsMarshalBase marshallable)
         {
             return Block(

@@ -10,12 +10,14 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace SharpGen.Generator
 {
-    class ReverseCallablePrologCodeGenerator : MarshallingCodeGeneratorBase, IMultiCodeGenerator<CsCallable, StatementSyntax>
+    class ReverseCallablePrologCodeGenerator : IMultiCodeGenerator<CsCallable, StatementSyntax>
     {
+        private readonly IGeneratorRegistry generators;
         private readonly GlobalNamespaceProvider globalNamespace;
 
-        public ReverseCallablePrologCodeGenerator(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
+        public ReverseCallablePrologCodeGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
         {
+            this.generators = generators;
             this.globalNamespace = globalNamespace;
         }
 
@@ -26,19 +28,20 @@ namespace SharpGen.Generator
             if (csElement.IsReturnStructLarge)
             {
                 ++realParameterStart;
-                foreach (var statement in GenerateProlog(csElement.ReturnValue, IdentifierName("returnSlot")))
+                foreach (var statement in GenerateNativeByRefProlog(csElement.ReturnValue, IdentifierName("returnSlot")))
                 {
                     yield return statement;
                 }
             }
             else if (csElement.HasReturnType && (!csElement.HideReturnType || csElement.ForceReturnType))
             {
-                if (NeedsMarshalling(csElement.ReturnValue))
+                var returnValueMarshaller = generators.Marshalling.GetMarshaller(csElement.ReturnValue);
+                if (returnValueMarshaller.GeneratesMarshalVariable(csElement.ReturnValue))
                 {
                     yield return LocalDeclarationStatement(
-                        VariableDeclaration(GetMarshalTypeSyntax(csElement.ReturnValue))
+                        VariableDeclaration(returnValueMarshaller.GetMarshalTypeSyntax(csElement.ReturnValue))
                         .AddVariables(
-                            VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement.ReturnValue))));
+                            VariableDeclarator(generators.Marshalling.GetMarshalStorageLocationIdentifier(csElement.ReturnValue))));
                     yield return LocalDeclarationStatement(
                          VariableDeclaration(ParseTypeName(csElement.ReturnValue.PublicType.QualifiedName))
                          .AddVariables(
@@ -59,7 +62,11 @@ namespace SharpGen.Generator
             for (int i = 0; i < csElement.Parameters.Count; i++)
             {
                 var publicParameter = csElement.Parameters[i];
-                foreach (var statement in GenerateProlog(publicParameter, IdentifierName($"param{i}")))
+                var nativeParameter = IdentifierName($"param{i}");
+                var prologBuilder = publicParameter.PassedByNativeReference
+                    ? (Func<CsMarshalCallableBase, ExpressionSyntax, IEnumerable<StatementSyntax>>)GenerateNativeByRefProlog
+                    : GenerateProlog;
+                foreach (var statement in prologBuilder(publicParameter, nativeParameter))
                 {
                     yield return statement;
                 }
@@ -70,109 +77,41 @@ namespace SharpGen.Generator
             CsMarshalCallableBase publicElement,
             ExpressionSyntax nativeParameter)
         {
-            if (publicElement.IsRefIn || publicElement.IsRef || publicElement.IsOut)
-            {
-                foreach (var statements in GenerateNativeByRefProlog(publicElement, nativeParameter))
-                {
-                    yield return statements;
-                }
-            }
-            else
+            var marshaller = generators.Marshalling.GetMarshaller(publicElement);
+            yield return LocalDeclarationStatement(
+                VariableDeclaration(ParseTypeName(publicElement.PublicType.QualifiedName))
+                .AddVariables(
+                    VariableDeclarator(Identifier(publicElement.Name))
+                        .WithInitializer(
+                            EqualsValueClause(
+                                DefaultExpression(ParseTypeName(publicElement.PublicType.QualifiedName))))));
+            if (marshaller.GeneratesMarshalVariable(publicElement))
             {
                 yield return LocalDeclarationStatement(
-                    VariableDeclaration(ParseTypeName(publicElement.PublicType.QualifiedName))
+                    VariableDeclaration(marshaller.GetMarshalTypeSyntax(publicElement))
                     .AddVariables(
-                        VariableDeclarator(Identifier(publicElement.Name)))); 
-            }
-
-            if (publicElement.IsValueType && !publicElement.IsPrimitive && !publicElement.IsArray)
-            {
-                yield return ExpressionStatement(
-                    AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                        IdentifierName(publicElement.Name),
-                        DefaultExpression(ParseTypeName(publicElement.PublicType.QualifiedName))
-                ));
-            }
-
-            if (publicElement.IsInterfaceArray)
-            {
-                yield return NotImplemented("Arrays of interfaces");
-            }
-            else if (publicElement.IsArray)
-            {
-                yield return NotImplemented("Arrays");
-            }
-            else if (publicElement.IsInterface && publicElement.IsIn)
-            {
-                yield return LocalDeclarationStatement(
-                    VariableDeclaration(
-                        QualifiedName(
-                            IdentifierName("System"),
-                            IdentifierName("IntPtr")))
-                    .WithVariables(
-                        SingletonSeparatedList(
-                            VariableDeclarator(
-                                GetMarshalStorageLocationIdentifier(publicElement))
-                            .WithInitializer(
-                                EqualsValueClause(
-                                    CastExpression(
-                                        QualifiedName(
-                                            IdentifierName("System"),
-                                            IdentifierName("IntPtr")),
-                                        nativeParameter))))));
-            }
-            else if (publicElement.IsString)
-            {
-                yield return LocalDeclarationStatement(
-                    VariableDeclaration(GetMarshalTypeSyntax(publicElement))
-                    .AddVariables(
-                        VariableDeclarator(GetMarshalStorageLocationIdentifier(publicElement))
+                        VariableDeclarator(generators.Marshalling.GetMarshalStorageLocationIdentifier(publicElement))
                         .WithInitializer(
                             EqualsValueClause(
                                 CastExpression(
-                                    QualifiedName(
-                                        IdentifierName("System"),
-                                        IdentifierName("IntPtr")),
+                                    marshaller.GetMarshalTypeSyntax(publicElement),
                                     nativeParameter)))));
             }
-            else if (!publicElement.IsRefIn && !publicElement.IsRef && !publicElement.IsOut)
+            else
             {
-                if (NeedsMarshalling(publicElement))
-                {
-                    yield return LocalDeclarationStatement(
-                        VariableDeclaration(GetMarshalTypeSyntax(publicElement))
-                        .AddVariables(
-                            VariableDeclarator(GetMarshalStorageLocationIdentifier(publicElement))
-                            .WithInitializer(
-                                EqualsValueClause(
-                                    nativeParameter))));
-                }
-                else if (publicElement.PublicType is CsEnum)
-                {
-                    yield return ExpressionStatement(
-                       AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                           IdentifierName(publicElement.Name),
-                           CastExpression(ParseTypeName(publicElement.PublicType.QualifiedName), nativeParameter)));
-                }
-                else if (publicElement.PublicType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr))
-                {
-                    yield return ExpressionStatement(
-                      AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                          IdentifierName(publicElement.Name),
-                          CastExpression(ParseTypeName("System.IntPtr"), nativeParameter)));
-                }
-                else
-                {
-                    yield return ExpressionStatement(
-                        AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                            IdentifierName(publicElement.Name),
-                            nativeParameter));
-                }
+                yield return ExpressionStatement(
+                   AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                       IdentifierName(publicElement.Name),
+                       CastExpression(
+                            ParseTypeName(publicElement.PublicType.QualifiedName),
+                            nativeParameter)
+               ));
             }
         }
 
         private IEnumerable<StatementSyntax> GenerateNativeByRefProlog(CsMarshalCallableBase publicElement, ExpressionSyntax nativeParameter)
         {
+            var marshaller = generators.Marshalling.GetMarshaller(publicElement);
             var localByRef = publicElement.IsRef || publicElement.IsOut;
             ExpressionSyntax refToNativeExpression = InvocationExpression(
                 MemberAccessExpression(
@@ -182,7 +121,7 @@ namespace SharpGen.Generator
                     .WithTypeArgumentList(
                         TypeArgumentList(
                             SingletonSeparatedList(
-                                GetMarshalTypeSyntax(publicElement))))))
+                                marshaller.GetMarshalTypeSyntax(publicElement))))))
             .WithArgumentList(
                 ArgumentList(
                     SingletonSeparatedList(
@@ -193,7 +132,7 @@ namespace SharpGen.Generator
 
             if (localByRef)
             {
-                if (!NeedsMarshalling(publicElement))
+                if (!marshaller.GeneratesMarshalVariable(publicElement))
                 {
                     publicType = RefType(publicType);
                 }
@@ -201,15 +140,15 @@ namespace SharpGen.Generator
                 refToNativeExpression = RefExpression(refToNativeExpression);
             }
 
-            if (NeedsMarshalling(publicElement))
+            if (marshaller.GeneratesMarshalVariable(publicElement))
             {
                 yield return LocalDeclarationStatement(
                     VariableDeclaration(
-                        RefType(GetMarshalTypeSyntax(publicElement)))
+                        RefType(marshaller.GetMarshalTypeSyntax(publicElement)))
                     .WithVariables(
                         SingletonSeparatedList(
                             VariableDeclarator(
-                                GetMarshalStorageLocationIdentifier(publicElement))
+                                generators.Marshalling.GetMarshalStorageLocationIdentifier(publicElement))
                             .WithInitializer(
                                 EqualsValueClause(
                                     refToNativeExpression)))));

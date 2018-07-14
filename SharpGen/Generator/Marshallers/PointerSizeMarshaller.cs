@@ -59,14 +59,24 @@ namespace SharpGen.Generator.Marshallers
             return null;
         }
 
-        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
         {
-            throw new NotImplementedException();
+            return Enumerable.Empty<StatementSyntax>();
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)
         {
             return null;
+        }
+
+        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement)
+        {
+            return false;
+        }
+
+        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement)
+        {
+            return ParseTypeName(csElement.MarshalType.QualifiedName);
         }
     }
 }

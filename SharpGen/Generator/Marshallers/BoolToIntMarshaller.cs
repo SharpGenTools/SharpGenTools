@@ -4,6 +4,7 @@ using SharpGen.Model;
 using Microsoft.CodeAnalysis.CSharp;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SharpGen.Generator.Marshallers
 {
@@ -96,14 +97,24 @@ namespace SharpGen.Generator.Marshallers
             }
         }
 
-        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
         {
-            throw new NotImplementedException();
+            return Enumerable.Empty<StatementSyntax>();
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)
         {
             return null;
+        }
+
+        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement)
+        {
+            return true;
+        }
+
+        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement)
+        {
+            return ParseTypeName(csElement.MarshalType.QualifiedName);
         }
     }
 }

@@ -9,8 +9,12 @@ using System.Linq;
 
 namespace SharpGen.Generator.Marshallers
 {
-    class InterfaceArrayMarshaller : IMarshaller
+    class InterfaceArrayMarshaller : MarshallerBase, IMarshaller
     {
+        public InterfaceArrayMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
+        {
+        }
+
         public bool CanMarshal(CsMarshalBase csElement)
         {
             return csElement.IsInterfaceArray;
@@ -67,14 +71,24 @@ namespace SharpGen.Generator.Marshallers
             return null;
         }
 
-        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
         {
-            throw new NotImplementedException();
+            yield return NotImplemented("Interface Arrays");
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)
         {
             return null;
+        }
+
+        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement)
+        {
+            return true;
+        }
+
+        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement)
+        {
+            return IntPtrType;
         }
     }
 }

@@ -57,7 +57,7 @@ namespace SharpGen.Generator.Marshallers
                     GetMarshalStorageLocation(csElement)));
         }
 
-        public IEnumerable<StatementSyntax> GenerateNativeToManagedProlog(CsMarshalCallableBase csElement)
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
         {
             throw new InvalidOperationException();
         }
@@ -65,6 +65,16 @@ namespace SharpGen.Generator.Marshallers
         public FixedStatementSyntax GeneratePin(CsParameter csElement)
         {
             throw new InvalidOperationException();
+        }
+
+        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement)
+        {
+            return ParseTypeName(csElement.PublicType.QualifiedName);
         }
     }
 }
