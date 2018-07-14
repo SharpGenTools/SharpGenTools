@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
+using System;
+using System.Collections.Generic;
 
 namespace SharpGen.Generator.Marshallers
 {
