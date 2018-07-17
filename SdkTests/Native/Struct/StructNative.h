@@ -87,6 +87,11 @@ struct StructWithInterface
 	Interface* test;
 };
 
+struct PointerSizeMember
+{
+	size_t pointerSize;
+};
+
 static_assert(sizeof(wchar_t) == 2, "Wide character isn't wide.");
 
 STRUCTLIB_FUNC(SimpleStruct) GetSimpleStruct();
@@ -116,3 +121,5 @@ STRUCTLIB_FUNC(void) CustomNativeNewTest(CustomNativeNew param);
 STRUCTLIB_FUNC(StructWithInterface) GetStructWithInterface();
 
 STRUCTLIB_FUNC(StructWithInterface) PassThroughStructWithInterface(StructWithInterface param); 
+
+STRUCTLIB_FUNC(PointerSizeMember) PassThroughPointerSizeMember(PointerSizeMember param);

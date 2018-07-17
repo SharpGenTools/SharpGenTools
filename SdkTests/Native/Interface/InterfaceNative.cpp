@@ -104,6 +104,13 @@ class FastOutInterfaceImplementation : public FastOutInterface
 	virtual void DoNothing() {}
 };
 
+struct PointerSizeMethodTestImpl: public PointerSizeMethodTest
+{
+	virtual size_t PassThrough(size_t test)
+	{
+		return test;
+	}
+};
 
 extern "C" __declspec(dllexport) IInterface2 * __stdcall CreateInstance(void)
 {
@@ -132,4 +139,9 @@ extern "C" __declspec(dllexport) InterfaceWithProperties* CreatePropertyTest(boo
 extern "C" __declspec(dllexport) void FastOutInterfaceTest(FastOutInterface** out)
 {
 	*out = new FastOutInterfaceImplementation();
+}
+
+extern "C" __declspec(dllexport) PointerSizeMethodTest* GetPointerSizeTest()
+{
+	return new PointerSizeMethodTestImpl();
 }

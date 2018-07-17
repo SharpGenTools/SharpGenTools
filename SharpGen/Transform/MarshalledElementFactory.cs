@@ -154,7 +154,7 @@ namespace SharpGen.Transform
 
             if (publicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.PointerSize))
             {
-                marshalType = typeRegistry.ImportType(typeof(void*));
+                marshalType = typeRegistry.ImportType(typeof(IntPtr));
             }
 
             // Present void* elements as IntPtr. Marshal strings as IntPtr

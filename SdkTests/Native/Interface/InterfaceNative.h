@@ -101,3 +101,9 @@ struct FastOutInterface {
 };
 
 extern "C" __declspec(dllexport) void FastOutInterfaceTest(FastOutInterface** out);
+
+struct PointerSizeMethodTest {
+    virtual size_t PassThrough(size_t value) = 0;
+};
+
+extern "C" __declspec(dllexport) PointerSizeMethodTest* GetPointerSizeTest();
