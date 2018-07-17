@@ -18,5 +18,7 @@ namespace SharpGen.Model
         public override bool IsOut => true;
 
         public override bool UsedAsReturn => true;
+
+        public override bool PassedByNativeReference => true;
     }
 }

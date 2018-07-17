@@ -36,7 +36,7 @@ namespace SharpGen.Generator
                     ParameterList(
                         SeparatedList(
                             csElement.PublicParameters.Select(param =>
-                                Generators.Parameter.GenerateCode(param)
+                                Generators.Marshalling.GetMarshaller(param).GenerateManagedParameter(param)
                                     .WithDefault(param.DefaultValue == null ? default
                                         : EqualsValueClause(ParseExpression(param.DefaultValue)))
                                 )
@@ -54,11 +54,22 @@ namespace SharpGen.Generator
             }
 
             var statements = new List<StatementSyntax>();
-            
-            statements.AddRange(csElement.Parameters.SelectMany(param => Generators.CallableProlog.GenerateCode(param)));
+
+            foreach (var param in csElement.Parameters)
+            {
+                if (param.UsedAsReturn)
+                {
+                    statements.Add(GenerateManagedReturnProlog(param));
+                }
+                statements.AddRange(Generators.Marshalling.GetMarshaller(param).GenerateManagedToNativeProlog(param));
+            }
+
             if (csElement.HasReturnType)
             {
-                statements.AddRange(Generators.CallableProlog.GenerateCode(csElement.ReturnValue)); 
+                statements.Add(GenerateManagedReturnProlog(csElement.ReturnValue));
+                statements.AddRange(
+                    Generators.Marshalling.GetMarshaller(csElement.ReturnValue)
+                        .GenerateManagedToNativeProlog(csElement.ReturnValue));
             }
 
 
@@ -66,7 +77,8 @@ namespace SharpGen.Generator
             {
                 if (param.IsIn || param.IsRefIn || param.IsRef)
                 {
-                    var marshalToNative = Generators.MarshalToNativeSingleFrame.GenerateCode(param);
+                    var marshaller = Generators.Marshalling.GetMarshaller(param);
+                    var marshalToNative = marshaller.GenerateManagedToNative(param, true);
                     if (marshalToNative != null)
                     {
                         statements.Add(marshalToNative);
@@ -75,7 +87,7 @@ namespace SharpGen.Generator
             }
 
             var fixedStatements = csElement.PublicParameters
-                .Select(Generators.Pinning.GenerateCode)
+                .Select(param => Generators.Marshalling.GetMarshaller(param).GeneratePin(param))
                 .Where(stmt => stmt != null).ToList();
 
             var callStmt = ExpressionStatement(Generators.NativeInvocation.GenerateCode(csElement));
@@ -92,7 +104,8 @@ namespace SharpGen.Generator
             {
                 if (param.IsRef || param.IsOut)
                 {
-                    var marshalFromNative = Generators.MarshalFromNativeSingleFrame.GenerateCode(param);
+                    var marshaller = Generators.Marshalling.GetMarshaller(param);
+                    var marshalFromNative = marshaller.GenerateNativeToManaged(param, true);
                     if (marshalFromNative != null)
                     {
                         statements.Add(marshalFromNative);
@@ -102,7 +115,8 @@ namespace SharpGen.Generator
 
             if (csElement.HasReturnType)
             {
-                var marshalReturnType = Generators.MarshalFromNativeSingleFrame.GenerateCode(csElement.ReturnValue);
+                var marshaller = Generators.Marshalling.GetMarshaller(csElement.ReturnValue);
+                var marshalReturnType = marshaller.GenerateNativeToManaged(csElement.ReturnValue, true);
                 if (marshalReturnType != null)
                 {
                     statements.Add(marshalReturnType);
@@ -111,7 +125,7 @@ namespace SharpGen.Generator
             
             statements.AddRange(csElement.Parameters
                 .Where(param => !param.IsOut)
-                .Select(Generators.MarshalCleanupSingleFrame.GenerateCode)
+                .Select(param => Generators.Marshalling.GetMarshaller(param).GenerateNativeCleanup(param, true))
                 .Where(param => param != null));
 
 
@@ -134,6 +148,15 @@ namespace SharpGen.Generator
             }
 
             yield return methodDeclaration.WithBody(Block(statements));
+        }
+
+        private StatementSyntax GenerateManagedReturnProlog(CsMarshalCallableBase csElement)
+        {
+            return LocalDeclarationStatement(
+                VariableDeclaration(
+                    csElement.IsArray ? ArrayType(ParseTypeName(csElement.PublicType.QualifiedName), SingletonList(ArrayRankSpecifier())) : ParseTypeName(csElement.PublicType.QualifiedName),
+                    SingletonSeparatedList(
+                        VariableDeclarator(csElement.Name))));
         }
     }
 }

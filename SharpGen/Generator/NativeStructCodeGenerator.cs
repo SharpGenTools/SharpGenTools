@@ -119,7 +119,7 @@ namespace SharpGen.Generator
                 Block(
                     List(csStruct.Fields
                         .Where(field => !field.IsArray)
-                    .Select(Generators.MarshalCleanup.GenerateCode)
+                    .Select(field => Generators.Marshalling.GetMarshaller(field).GenerateNativeCleanup(field, false))
                         .Where(statement => statement != null))))
             .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)));
 
@@ -132,7 +132,7 @@ namespace SharpGen.Generator
                 .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)))
                 .WithBody(
                 Block(csStruct.Fields
-                    .Select(Generators.MarshalToNative.GenerateCode)
+                    .Select(field => Generators.Marshalling.GetMarshaller(field).GenerateManagedToNative(field, false))
                     .Where(statement => statement != null)));
         }
 
@@ -144,7 +144,7 @@ namespace SharpGen.Generator
                 .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)))
                 .WithBody(Block(
                     csStruct.Fields
-                    .Select(Generators.MarshalFromNative.GenerateCode)
+                    .Select(field => Generators.Marshalling.GetMarshaller(field).GenerateNativeToManaged(field, false))
                     .Where(statement => statement != null)));
         }
     }

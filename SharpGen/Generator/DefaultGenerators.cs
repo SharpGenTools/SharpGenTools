@@ -23,26 +23,17 @@ namespace SharpGen.Generator
             NativeStruct = new NativeStructCodeGenerator(this, globalNamespace);
             NativeInvocation = new NativeInvocationCodeGenerator(this, globalNamespace);
             Callable = new CallableCodeGenerator(this, documentation, docReader, globalNamespace);
-            Pinning = new PinningCodeGenerator(globalNamespace);
             Method = new MethodCodeGenerator(this);
             Function = new FunctionCodeGenerator(this);
             Interface = new InterfaceCodeGenerator(this, documentation, docReader, globalNamespace);
-            Parameter = new ParameterCodeGenerator();
-            Argument = new ArgumentGenerator(globalNamespace);
             Group = new GroupCodeGenerator(this, documentation, docReader);
             LocalInterop = new LocalInteropCodeGenerator(this);
             InteropMethod = new InteropMethodCodeGenerator();
-            CallableProlog = new CallablePrologCodeGenerator(globalNamespace);
-            MarshalToNativeSingleFrame = new MarshalToNativeCodeGenerator(true, globalNamespace);
-            MarshalToNative = new MarshalToNativeCodeGenerator(false, globalNamespace);
-            MarshalFromNativeSingleFrame = new MarshalFromNativeCodeGenerator(true, globalNamespace);
-            MarshalFromNative = new MarshalFromNativeCodeGenerator(false, globalNamespace);
-            MarshalCleanupSingleFrame = new MarshalCleanupCodeGenerator(true, globalNamespace);
-            MarshalCleanup = new MarshalCleanupCodeGenerator(false, globalNamespace);
             ShadowCallable = new ShadowCallbackGenerator(this, globalNamespace);
-            ReverseCallableProlog = new ReverseCallablePrologCodeGenerator(globalNamespace);
+            ReverseCallableProlog = new ReverseCallablePrologCodeGenerator(this, globalNamespace);
             Vtbl = new VtblGenerator(this, globalNamespace);
             Shadow = new ShadowGenerator(this, globalNamespace);
+            Marshalling = new MarshallingRegistry(globalNamespace);
         }
 
         public IMultiCodeGenerator<CsVariable, MemberDeclarationSyntax> Constant { get; }
@@ -53,32 +44,15 @@ namespace SharpGen.Generator
         public IMultiCodeGenerator<CsField, MemberDeclarationSyntax> AutoLayoutField { get; }
         public IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax> Struct { get; }
         public ICodeGenerator<CsCallable, ExpressionSyntax> NativeInvocation { get; }
-        public ICodeGenerator<CsParameter, FixedStatementSyntax> Pinning { get; }
         public IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> Callable { get; }
         public IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax> Method { get; }
         public IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax> Function { get; }
         public IMultiCodeGenerator<CsInterface, MemberDeclarationSyntax> Interface { get; }
-        public ICodeGenerator<CsParameter, ParameterSyntax> Parameter { get; }
-        public ICodeGenerator<CsMarshalCallableBase, ArgumentSyntax> Argument { get; }
         public IMultiCodeGenerator<CsGroup, MemberDeclarationSyntax> Group { get; }
 
         public ICodeGenerator<CsAssembly, NamespaceDeclarationSyntax> LocalInterop { get; }
 
         public IMultiCodeGenerator<InteropMethodSignature, MemberDeclarationSyntax> InteropMethod { get; }
-
-        public IMultiCodeGenerator<CsMarshalCallableBase, StatementSyntax> CallableProlog { get; }
-
-        public ICodeGenerator<CsMarshalBase, StatementSyntax> MarshalToNativeSingleFrame { get; }
-
-        public ICodeGenerator<CsMarshalBase, StatementSyntax> MarshalFromNativeSingleFrame { get; }
-
-        public ICodeGenerator<CsMarshalBase, StatementSyntax> MarshalCleanupSingleFrame { get; }
-
-        public ICodeGenerator<CsMarshalBase, StatementSyntax> MarshalToNative { get; }
-
-        public ICodeGenerator<CsMarshalBase, StatementSyntax> MarshalFromNative { get; }
-
-        public ICodeGenerator<CsMarshalBase, StatementSyntax> MarshalCleanup { get; }
 
         public ICodeGenerator<CsInterface, MemberDeclarationSyntax> Shadow { get; }
 
@@ -87,5 +61,7 @@ namespace SharpGen.Generator
         public IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> ShadowCallable { get; }
 
         public IMultiCodeGenerator<CsCallable, StatementSyntax> ReverseCallableProlog { get; }
+
+        public MarshallingRegistry Marshalling { get; }
     }
 }

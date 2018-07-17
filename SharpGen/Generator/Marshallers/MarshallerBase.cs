@@ -1,22 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
+using System;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-namespace SharpGen.Generator
+namespace SharpGen.Generator.Marshallers
 {
-    class MarshallingCodeGeneratorBase
+    class MarshallerBase
     {
-        private readonly GlobalNamespaceProvider globalNamespace;
+        protected readonly GlobalNamespaceProvider globalNamespace;
 
-        protected MarshallingCodeGeneratorBase(GlobalNamespaceProvider globalNamespace)
+        public MarshallerBase(GlobalNamespaceProvider globalNamespace)
         {
             this.globalNamespace = globalNamespace;
         }
+
+        protected TypeSyntax IntPtrType { get; } = ParseTypeName("System.IntPtr");
 
         protected StatementSyntax GenerateNullCheckIfNeeded(CsMarshalBase marshallable, StatementSyntax statement)
         {
@@ -129,6 +129,18 @@ namespace SharpGen.Generator
             }
         }
 
+        protected ExpressionStatementSyntax CreateMarshalCustomNewStatement(CsMarshalBase csElement, ExpressionSyntax marshalElement)
+        {
+            return ExpressionStatement(
+                AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                    marshalElement,
+                    InvocationExpression(
+                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                            ParseTypeName(csElement.PublicType.QualifiedName),
+                            IdentifierName("__NewNative")))
+                    .WithArgumentList(ArgumentList())));
+        }
+
         protected StatementSyntax GenerateCopyMemory(CsMarshalBase marshallable, bool copyFromNative, bool useIntermediate = false)
         {
             return FixedStatement(
@@ -166,128 +178,7 @@ namespace SharpGen.Generator
                 )));
         }
 
-        protected StatementSyntax GenerateAnsiStringToArray(CsMarshalBase marshallable)
-        {
-            return Block(
-                    LocalDeclarationStatement(
-                        VariableDeclaration(
-                            PredefinedType(Token(SyntaxKind.IntKeyword)),
-                            SingletonSeparatedList(
-                                VariableDeclarator(Identifier($"{marshallable.Name}_length"))
-                                .WithInitializer(EqualsValueClause(
-                                    InvocationExpression(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                        globalNamespace.GetTypeNameSyntax(BuiltinType.Math),
-                                        IdentifierName("Min")),
-                                        ArgumentList(
-                                            SeparatedList(
-                                                new[]
-                                                {
-                                                    Argument(
-                                                        BinaryExpression(SyntaxKind.CoalesceExpression,
-                                                                ConditionalAccessExpression(
-                                                                    IdentifierName(marshallable.Name),
-                                                                    MemberBindingExpression(IdentifierName("Length"))),
-                                                                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)))),
-                                                    Argument(
-                                                        LiteralExpression(SyntaxKind.NumericLiteralExpression,
-                                                        Literal(marshallable.ArrayDimensionValue - 1)))
-                                                }
-                                            )
-                                    ))))))),
-                    LocalDeclarationStatement(
-                        VariableDeclaration(
-                            ParseTypeName("System.IntPtr"),
-                            SingletonSeparatedList(
-                                VariableDeclarator(Identifier("__from"))
-                                    .WithInitializer(EqualsValueClause(
-                                        InvocationExpression(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            globalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
-                                            IdentifierName("StringToHGlobalAnsi")))
-                                        .WithArgumentList(
-                                            ArgumentList(SingletonSeparatedList(Argument(IdentifierName(marshallable.Name)))))))))),
-                    FixedStatement(
-                        VariableDeclaration(
-                            PointerType(PredefinedType(Token(SyntaxKind.ByteKeyword))),
-                            SingletonSeparatedList(
-                                VariableDeclarator("__to")
-                                        .WithInitializer(EqualsValueClause(
-                                            PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
-                                            GetMarshalStorageLocation(marshallable)))))
-                            ),
-                        Block(
-                            GenerateCopyMemoryInvocation(IdentifierName($"{marshallable.Name}_length")),
-                            ExpressionStatement(
-                                AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                                    ElementAccessExpression(IdentifierName("__to"),
-                                        BracketedArgumentList(
-                                            SingletonSeparatedList(
-                                                Argument(IdentifierName($"{marshallable.Name}_length"))))),
-                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)))))),
-                    ExpressionStatement(InvocationExpression(
-                                            ParseExpression("System.Runtime.InteropServices.Marshal.FreeHGlobal"),
-                                            ArgumentList(SingletonSeparatedList(
-                                                Argument(IdentifierName($"__from"))))))
-                );
-        }
-
-        protected StatementSyntax GenerateStringToArray(CsMarshalBase marshallable)
-        {
-            return FixedStatement(
-                VariableDeclaration(
-                    PointerType(PredefinedType(Token(SyntaxKind.CharKeyword))),
-                    SeparatedList(
-                        new[]
-                        {
-                            VariableDeclarator("__from")
-                                .WithInitializer(EqualsValueClause(IdentifierName(marshallable.Name))),
-                            VariableDeclarator("__to")
-                                .WithInitializer(EqualsValueClause(
-                                    PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
-                                    GetMarshalStorageLocation(marshallable))))
-                        })
-                    ),
-                Block(
-                    LocalDeclarationStatement(
-                        VariableDeclaration(
-                            PredefinedType(Token(SyntaxKind.IntKeyword)),
-                            SingletonSeparatedList(
-                                VariableDeclarator(Identifier($"{marshallable.Name}_length"))
-                                .WithInitializer(EqualsValueClause(
-                                    InvocationExpression(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                        globalNamespace.GetTypeNameSyntax(BuiltinType.Math),
-                                        IdentifierName("Min")),
-                                        ArgumentList(
-                                            SeparatedList(
-                                                new[]
-                                                {
-                                                    Argument(
-                                                        BinaryExpression(SyntaxKind.MultiplyExpression,
-                                                            ParenthesizedExpression(
-                                                                BinaryExpression(SyntaxKind.CoalesceExpression,
-                                                                ConditionalAccessExpression(
-                                                                    IdentifierName(marshallable.Name),
-                                                                    MemberBindingExpression(IdentifierName("Length"))),
-                                                                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)))),
-                                                            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(2))
-                                                        )),
-                                                    Argument(
-                                                        BinaryExpression(SyntaxKind.MultiplyExpression,
-                                                            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(marshallable.ArrayDimensionValue - 1)),
-                                                            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(2))))
-                                                }
-                                            )
-                                    ))))))),
-                    GenerateCopyMemoryInvocation(IdentifierName($"{marshallable.Name}_length")),
-                    ExpressionStatement(
-                        AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                            ElementAccessExpression(IdentifierName("__to"),
-                                BracketedArgumentList(
-                                    SingletonSeparatedList(
-                                        Argument(IdentifierName($"{marshallable.Name}_length"))))),
-                            LiteralExpression(SyntaxKind.CharacterLiteralExpression, Literal('\0'))))));
-        }
-
-        private ExpressionStatementSyntax GenerateCopyMemoryInvocation(ExpressionSyntax numBytesExpression)
+        protected ExpressionStatementSyntax GenerateCopyMemoryInvocation(ExpressionSyntax numBytesExpression)
         {
             return ExpressionStatement(
                                 InvocationExpression(
@@ -305,7 +196,7 @@ namespace SharpGen.Generator
                                         ))));
         }
 
-        protected SyntaxToken GetMarshalStorageLocationIdentifier(CsMarshalBase marshallable)
+        internal static SyntaxToken GetMarshalStorageLocationIdentifier(CsMarshalBase marshallable)
         {
             switch (marshallable)
             {
@@ -336,6 +227,61 @@ namespace SharpGen.Generator
             }
         }
 
+        protected StatementSyntax MarshalInterfaceInstanceFromNative(CsMarshalBase csElement, ExpressionSyntax publicElement, ExpressionSyntax marshalElement)
+        {
+            var interfaceType = (CsInterface)csElement.PublicType;
+
+            if (csElement.IsFastOut)
+            {
+                return ExpressionStatement(
+                        AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                ParenthesizedExpression(publicElement),
+                                IdentifierName("NativePointer")),
+                            marshalElement));
+            }
+
+            return IfStatement(
+                    BinaryExpression(SyntaxKind.NotEqualsExpression,
+                        marshalElement,
+                        ParseExpression("System.IntPtr.Zero")),
+                    ExpressionStatement(
+                        AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                        publicElement,
+                        ObjectCreationExpression(ParseTypeName(interfaceType.GetNativeImplementationOrThis().QualifiedName))
+                        .WithArgumentList(
+                            ArgumentList(SingletonSeparatedList(
+                                Argument(marshalElement)))))),
+                    ElseClause(
+                        ExpressionStatement(
+                        AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                            publicElement,
+                            LiteralExpression(SyntaxKind.NullLiteralExpression,
+                                Token(SyntaxKind.NullKeyword))))));
+        }
+
+        protected ExpressionStatementSyntax MarshalInterfaceInstanceToNative(CsMarshalBase csElement, ExpressionSyntax publicElement, ExpressionSyntax marshalElement)
+        {
+            return ExpressionStatement(
+                AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    marshalElement,
+                    InvocationExpression(
+                        MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            globalNamespace.GetTypeNameSyntax(WellKnownName.CppObject),
+                            GenericName(
+                                Identifier("ToCallbackPtr"))
+                            .WithTypeArgumentList(
+                                TypeArgumentList(
+                                    SingletonSeparatedList<TypeSyntax>(
+                                        IdentifierName(csElement.PublicType.QualifiedName))))),
+                        ArgumentList(
+                            SingletonSeparatedList(
+                                Argument(
+                                    publicElement))))));
+        }
+
         protected StatementSyntax NotImplemented(string message)
         {
             return ThrowStatement(
@@ -351,27 +297,55 @@ namespace SharpGen.Generator
                                     Literal(message)))))));
         }
 
-        protected bool NeedsMarshalling(CsMarshalBase value)
+        protected ArgumentSyntax GenerateManagedValueTypeArgument(CsParameter csElement)
         {
-            return value.HasNativeValueType
-                || value.IsBoolToInt
-                || value.IsInterface
-                || value.IsArray
-                || value.IsString
-                || value.MappedToDifferentPublicType;
+            var arg = Argument(IdentifierName(csElement.Name));
+
+            if (csElement.IsOut)
+            {
+                return arg.WithRefOrOutKeyword(Token(SyntaxKind.OutKeyword));
+            }
+            else if (csElement.PassedByManagedReference)
+            {
+                return arg.WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword));
+            }
+
+            return arg;
         }
 
-        protected TypeSyntax GetMarshalTypeSyntax(CsMarshalBase value)
+        protected ParameterSyntax GenerateManagedValueTypeParameter(CsParameter csElement)
         {
-            if (value.HasNativeValueType)
+            var param = Parameter(Identifier(csElement.Name));
+            if (csElement.IsOut)
             {
-                return ParseTypeName($"{value.MarshalType.QualifiedName}.__Native");
+                param = param.AddModifiers(Token(SyntaxKind.OutKeyword));
             }
-            else if (value.IsInterface)
+            else if (csElement.PassedByManagedReference)
             {
-                return ParseTypeName("System.IntPtr");
+                param = param.AddModifiers(Token(SyntaxKind.RefKeyword));
             }
-            return ParseTypeName(value.MarshalType.QualifiedName);
+
+            var type = ParseTypeName(csElement.PublicType.QualifiedName);
+
+            if (csElement.IsNullableStruct)
+            {
+                type = NullableType(type);
+            }
+
+            return param.WithType(type);
+        }
+
+        protected ParameterSyntax GenerateManagedArrayParameter(CsParameter csElement)
+        {
+            var param = Parameter(Identifier(csElement.Name))
+                .WithType(ArrayType(ParseTypeName(csElement.PublicType.QualifiedName), SingletonList(ArrayRankSpecifier())));
+
+            if (csElement.HasParams)
+            {
+                param = param.AddModifiers(Token(SyntaxKind.ParamsKeyword));
+            }
+
+            return param;
         }
     }
 }

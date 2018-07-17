@@ -1,18 +1,15 @@
 ﻿using Microsoft.CodeAnalysis.CSharp;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    class NativeInvocationCodeGenerator : MarshallingCodeGeneratorBase, ICodeGenerator<CsCallable, ExpressionSyntax>
+    class NativeInvocationCodeGenerator: ICodeGenerator<CsCallable, ExpressionSyntax>
     {
         public NativeInvocationCodeGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
-            :base(globalNamespace)
         {
             Generators = generators;
             this.globalNamespace = globalNamespace;
@@ -35,10 +32,10 @@ namespace SharpGen.Generator
 
             if (callable.IsReturnStructLarge)
             {
-                arguments.Add(Generators.Argument.GenerateCode(callable.ReturnValue)); 
+                arguments.Add(Generators.Marshalling.GetMarshaller(callable.ReturnValue).GenerateNativeArgument(callable.ReturnValue)); 
             }
 
-            arguments.AddRange(callable.Parameters.Select(param => Generators.Argument.GenerateCode(param)));
+            arguments.AddRange(callable.Parameters.Select(param => Generators.Marshalling.GetMarshaller(param).GenerateNativeArgument(param)));
 
             if (callable is CsMethod method)
             {
@@ -70,8 +67,8 @@ namespace SharpGen.Generator
             return callable.IsReturnStructLarge || !callable.HasReturnType ?
                 (ExpressionSyntax)call
                 : AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                    NeedsMarshalling(callable.ReturnValue) ?
-                        GetMarshalStorageLocation(callable.ReturnValue)
+                    Generators.Marshalling.GetMarshaller(callable.ReturnValue).GeneratesMarshalVariable(callable.ReturnValue) ?
+                        IdentifierName(Generators.Marshalling.GetMarshalStorageLocationIdentifier(callable.ReturnValue))
                         : IdentifierName(callable.ReturnValue.Name),
                     call
                     );
