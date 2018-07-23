@@ -23,7 +23,7 @@ namespace SharpGen.Generator
         {
             Logger = logger;
             this.globalNamespace = globalNamespace;
-            Generators = new DefaultGenerators(globalNamespace, documentation, docReader);
+            Generators = new DefaultGenerators(globalNamespace, documentation, docReader, logger);
         }
 
         public Logger Logger { get; }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Logging;
 using SharpGen.Model;
 using SharpGen.Transform;
 using System;
@@ -12,7 +13,8 @@ namespace SharpGen.Generator
         public DefaultGenerators(
             GlobalNamespaceProvider globalNamespace,
             IDocumentationLinker documentation,
-            ExternalDocCommentsReader docReader)
+            ExternalDocCommentsReader docReader,
+            Logger logger)
         {
             Constant = new ConstantCodeGenerator();
             Property = new PropertyCodeGenerator(this, documentation, docReader);
@@ -33,7 +35,7 @@ namespace SharpGen.Generator
             ReverseCallableProlog = new ReverseCallablePrologCodeGenerator(this, globalNamespace);
             Vtbl = new VtblGenerator(this, globalNamespace);
             Shadow = new ShadowGenerator(this, globalNamespace);
-            Marshalling = new MarshallingRegistry(globalNamespace);
+            Marshalling = new MarshallingRegistry(globalNamespace, logger);
         }
 
         public IMultiCodeGenerator<CsVariable, MemberDeclarationSyntax> Constant { get; }
