@@ -42,6 +42,8 @@ namespace SharpGen.Logging
 
         public const string UnusedMappingRule = "SG0019";
 
+        public const string CannotMarshalUnknownType = "SG0020";
+
         public const string CastXmlError = "CX0001";
 
         public const string CastXmlWarning = "CX0002";
