@@ -87,3 +87,5 @@ DECL(int) SumInner(StructAsClass test[], int length);
 DECL(void) AddOne(SimpleStruct* param);
 
 DECL(void) EnumOut(MyEnum* test);
+
+DECL(MyEnum) FirstEnumElement(MyEnum test[]);

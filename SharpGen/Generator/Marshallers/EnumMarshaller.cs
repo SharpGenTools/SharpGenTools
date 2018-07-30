@@ -15,7 +15,7 @@ namespace SharpGen.Generator.Marshallers
 
         public bool CanMarshal(CsMarshalBase csElement)
         {
-            return csElement.PublicType is CsEnum;
+            return csElement.PublicType is CsEnum && !csElement.IsArray;
         }
 
         public ArgumentSyntax GenerateManagedArgument(CsParameter csElement)

@@ -230,5 +230,13 @@ namespace Functions
 
             Assert.Equal(6, test.I);
         }
+
+        [Fact]
+        public void EnumArrayTest()
+        {
+            var test = new [] { MyEnum.TestValue, MyEnum.TestValue };
+
+            Assert.Equal(MyEnum.TestValue, NativeFunctions.FirstEnumElement(test));
+        }
     }
 }

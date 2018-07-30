@@ -173,3 +173,8 @@ DECL(void) EnumOut(MyEnum *enumOut)
 {
     *enumOut = TestValue;
 }
+
+DECL(MyEnum) FirstEnumElement(MyEnum test[])
+{
+    return test[0];
+}
