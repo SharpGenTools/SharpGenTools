@@ -589,10 +589,12 @@ namespace SharpGen.Transform
         /// <param name="checkFilesPath">The path for the check files.</param>
         public (CsSolution solution, IEnumerable<DefineExtensionRule> consumerExtensions) Transform(CppModule cppModule, ConfigFile configFile, string checkFilesPath)
         {
+            Init(configFile.ConfigFilesLoaded);
+
             var checkFileNodes = CheckIfUpdated(configFile.ConfigFilesLoaded, checkFilesPath);
+
             var moduleToTransform = MapModule(cppModule, configFile.ConfigFilesLoaded.Where(cfg => cfg.ProcessMappings));
 
-            Init(configFile.ConfigFilesLoaded);
 
             var selectedCSharpType = new List<CsBase>();
 
