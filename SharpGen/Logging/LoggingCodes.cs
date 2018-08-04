@@ -44,6 +44,8 @@ namespace SharpGen.Logging
 
         public const string CannotMarshalUnknownType = "SG0020";
 
+        public const string InvalidRelation = "SG0021";
+
         public const string CastXmlError = "CX0001";
 
         public const string CastXmlWarning = "CX0002";

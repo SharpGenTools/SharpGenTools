@@ -89,3 +89,5 @@ DECL(void) AddOne(SimpleStruct* param);
 DECL(void) EnumOut(MyEnum* test);
 
 DECL(MyEnum) FirstEnumElement(MyEnum test[]);
+
+DECL(int) ArrayRelationSum(int length, SimpleStruct array[]);

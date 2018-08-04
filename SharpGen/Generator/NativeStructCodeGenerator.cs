@@ -132,7 +132,18 @@ namespace SharpGen.Generator
                 .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)))
                 .WithBody(
                 Block(csStruct.Fields
-                    .Select(field => Generators.Marshalling.GetMarshaller(field).GenerateManagedToNative(field, false))
+                    .Select(field =>
+                    {
+                        if (field.Relation == null)
+                        {
+                            return Generators.Marshalling.GetMarshaller(field).GenerateManagedToNative(field, false); 
+                        }
+                        else
+                        {
+                            var marshaller = Generators.Marshalling.GetRelationMarshaller(field.Relation);
+                            return marshaller.GenerateManagedToNative((field.Relation as IHasRelatedMarshallable)?.RelatedMarshallable, field);
+                        }
+                    })
                     .Where(statement => statement != null)));
         }
 

@@ -178,3 +178,44 @@ DECL(MyEnum) FirstEnumElement(MyEnum test[])
 {
     return test[0];
 }
+
+DECL(int) ArrayRelationSum(int numElements, SimpleStruct elements[])
+{
+    return Sum(numElements, elements);
+}
+
+DECL(void) ArrayRelationOutInitBoolArray(bool out[], int numElements)
+{
+    for(size_t i = 0; i < numElements; i++)
+    {
+        out[i] = true;
+    }
+}
+
+DECL(void) ArrayRelationOutGetInterfaces(int numInstances, Interface** results)
+{
+    GetInterfaces(numInstances, results);
+}
+
+
+DECL(void) ArrayRelationInInterfaceArray(int length, Interface* array[])
+{
+    for(size_t i = 0; i < length; i++)
+    {
+        array[i]->Method();
+    }
+}
+
+
+DECL(int) ArrayRelationSumStructWithMarshal(int length, StructWithMarshal array[])
+{
+    int sum = 0;
+    for(size_t i = 0; i < length; i++)
+    {
+        for(size_t j = 0; j < 3; j++)
+        {
+            sum += array[i].i[j];
+        }
+    }
+    return sum;
+}

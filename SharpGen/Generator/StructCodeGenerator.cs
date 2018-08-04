@@ -46,7 +46,7 @@ namespace SharpGen.Generator
 
             var constants = csElement.Variables.SelectMany(var => Generators.Constant.GenerateCode(var));
 
-            var fields = csElement.Fields.SelectMany(field =>
+            var fields = csElement.Fields.Where(field => field.Relation == null).SelectMany(field =>
             {
                 var explicitLayout = !csElement.HasMarshalType && csElement.ExplicitLayout;
                 var generator = explicitLayout ? Generators.ExplicitOffsetField : Generators.AutoLayoutField;

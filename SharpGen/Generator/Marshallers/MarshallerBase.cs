@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
 using System;
+using System.Linq;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
@@ -297,6 +298,21 @@ namespace SharpGen.Generator.Marshallers
                                     Literal(message)))))));
         }
 
+        protected StatementSyntax NotSupported(string message)
+        {
+            return ThrowStatement(
+                ObjectCreationExpression(
+                    ParseTypeName("System.NotSupportedException"))
+                .WithArgumentList(
+                    ArgumentList(
+                        message == null ? default
+                        : SingletonSeparatedList(
+                            Argument(
+                                LiteralExpression(
+                                    SyntaxKind.StringLiteralExpression,
+                                    Literal(message)))))));
+        }
+
         protected ArgumentSyntax GenerateManagedValueTypeArgument(CsParameter csElement)
         {
             var arg = Argument(IdentifierName(csElement.Name));
@@ -346,6 +362,24 @@ namespace SharpGen.Generator.Marshallers
             }
 
             return param;
+        }
+
+        protected StatementSyntax GenerateArrayNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
+        {
+            var callable = (CsCallable)csElement.Parent;
+            var lengthParam = callable.Parameters
+                .FirstOrDefault(param
+                    => param.Relation is ArrayLengthRelation relation
+                        && relation.RelatedMarshallable == csElement);
+            if (lengthParam == null)
+            {
+                var marshaller = new ArrayLengthRelationMarshaller(globalNamespace);
+                return marshaller.GenerateNativeToManaged(csElement, lengthParam);
+            }
+            else
+            {
+                return NotSupported("Cannot marshal a native array to a managed array when length is not specified");
+            }
         }
     }
 }

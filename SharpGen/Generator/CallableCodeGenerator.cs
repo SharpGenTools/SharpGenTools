@@ -57,16 +57,34 @@ namespace SharpGen.Generator
 
             foreach (var param in csElement.Parameters)
             {
-                if (param.UsedAsReturn)
+                if (param.Relation != null)
                 {
-                    statements.Add(GenerateManagedReturnProlog(param));
+                    if (param.UsedAsReturn)
+                    {
+                        statements.Add(GenerateManagedHiddenMarshallableProlog(param));
+                    }
+                    statements.AddRange(Generators.Marshalling.GetMarshaller(param).GenerateManagedToNativeProlog(param)); 
                 }
-                statements.AddRange(Generators.Marshalling.GetMarshaller(param).GenerateManagedToNativeProlog(param));
+                else
+                {
+                    statements.Add(GenerateManagedHiddenMarshallableProlog(param));
+
+                    var marshaller = Generators.Marshalling.GetRelationMarshaller(param.Relation);
+                    var marshalToNative = marshaller.GenerateManagedToNative(
+                        (param.Relation as IHasRelatedMarshallable)?.RelatedMarshallable,
+                        param);
+                    if (marshalToNative != null)
+                    {
+                        statements.Add(marshalToNative);
+                    }
+
+                    statements.AddRange(Generators.Marshalling.GetMarshaller(param).GenerateManagedToNativeProlog(param));
+                }
             }
 
             if (csElement.HasReturnType)
             {
-                statements.Add(GenerateManagedReturnProlog(csElement.ReturnValue));
+                statements.Add(GenerateManagedHiddenMarshallableProlog(csElement.ReturnValue));
                 statements.AddRange(
                     Generators.Marshalling.GetMarshaller(csElement.ReturnValue)
                         .GenerateManagedToNativeProlog(csElement.ReturnValue));
@@ -75,7 +93,7 @@ namespace SharpGen.Generator
 
             foreach (var param in csElement.Parameters)
             {
-                if (param.IsIn || param.IsRefIn || param.IsRef)
+                if ((param.IsIn || param.IsRefIn || param.IsRef) && param.Relation == null)
                 {
                     var marshaller = Generators.Marshalling.GetMarshaller(param);
                     var marshalToNative = marshaller.GenerateManagedToNative(param, true);
@@ -150,7 +168,7 @@ namespace SharpGen.Generator
             yield return methodDeclaration.WithBody(Block(statements));
         }
 
-        private StatementSyntax GenerateManagedReturnProlog(CsMarshalCallableBase csElement)
+        private StatementSyntax GenerateManagedHiddenMarshallableProlog(CsMarshalCallableBase csElement)
         {
             return LocalDeclarationStatement(
                 VariableDeclaration(

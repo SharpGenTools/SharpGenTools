@@ -47,7 +47,7 @@ namespace SharpGen.Model
         {
             get
             {
-                return Items.OfType<CsParameter>().Where(param => !param.IsUsedAsReturnType);
+                return Items.OfType<CsParameter>().Where(param => !param.IsUsedAsReturnType && param.Relation != null);
             }
         }
 

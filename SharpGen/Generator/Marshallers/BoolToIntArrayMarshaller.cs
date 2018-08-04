@@ -196,7 +196,7 @@ namespace SharpGen.Generator.Marshallers
 
         public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
         {
-            yield return NotImplemented("Bool-to-int arrays");
+            yield return GenerateArrayNativeToManagedExtendedProlog(csElement);
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)

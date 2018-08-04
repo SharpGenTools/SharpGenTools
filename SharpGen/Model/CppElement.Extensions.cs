@@ -174,6 +174,7 @@ namespace SharpGen.Model
                 tag.ParameterAttribute = newRule.ParameterAttribute.Value;
             }
             if (newRule.ParameterUsedAsReturnType != null) tag.ParameterUsedAsReturnType = newRule.ParameterUsedAsReturnType;
+            if (newRule.Relation != null) tag.Relation = newRule.Relation;
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using FakeItEasy;
 using SharpGen.Config;
 using SharpGen.CppModel;
+using SharpGen.Logging;
 using SharpGen.Model;
 using SharpGen.Transform;
 using System;
@@ -365,6 +366,24 @@ namespace SharpGen.UnitTests
             Assert.Equal(typeRegistry.ImportType(typeof(byte)), csParameter.MarshalType);
             Assert.True(csParameter.IsArray);
             Assert.True(csParameter.IsBoolToInt);
+        }
+
+        [Fact]
+        public void ParameterWithStructSizeRelationLogsError()
+        {
+            var cppParameter = new CppParameter
+            {
+                TypeName = "int"
+            };
+
+            cppParameter.GetMappingRule().Relation = "struct_size()";
+
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
+            typeRegistry.BindType("int", typeRegistry.ImportType(typeof(int)));
+            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
+            var csParameter = marshalledElementFactory.Create(cppParameter);
+
+            AssertLoggingCodeLogged(LoggingCodes.InvalidRelation);
         }
     }
 }
