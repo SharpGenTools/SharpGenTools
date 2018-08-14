@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.Build.Framework;
+﻿using Microsoft.Build.Framework;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Parser;
+using System;
 
 namespace SharpGenTools.Sdk.Tasks
 {
@@ -21,6 +19,8 @@ namespace SharpGenTools.Sdk.Tasks
 
         [Required]
         public ITaskItem ParsedCppModule { get; set; }
+
+        public string[] CastXmlArguments { get; set; }
 
         protected override bool Execute(ConfigFile config)
         {
@@ -45,7 +45,7 @@ namespace SharpGenTools.Sdk.Tasks
             var module = CppModule.Read(PartialCppModuleCache.ItemSpec);
 
             // Run the parser
-            var group = parser.Run(module);
+            var group = parser.Run(module, CastXmlArguments ?? Array.Empty<string>());
 
             if (SharpGenLogger.HasErrors)
                 return false;
