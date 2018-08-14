@@ -144,7 +144,7 @@ namespace SharpGen.Parser
                 if (!File.Exists(headerFile))
                     Logger.Fatal("C++ Header file [{0}] not found", headerFile);
 
-                RunCastXml(headerFile, handler, "-E -dD");
+                RunCastXml(headerFile, handler, $"-E -dD");
             });
         }
 
@@ -153,7 +153,7 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="headerFile">The header headerFile.</param>
         /// <returns></returns>
-        public StreamReader Process(string headerFile)
+        public StreamReader Process(string headerFile, string[] additionalArguments)
         {
             StreamReader result = null;
 
@@ -168,7 +168,7 @@ namespace SharpGen.Parser
                 // Delete any previously generated xml file
                 File.Delete(xmlFile);
 
-                RunCastXml(headerFile, LogCastXmlOutput, $"-o {xmlFile}");
+                RunCastXml(headerFile, LogCastXmlOutput, $"-o {xmlFile} {string.Join(" ", additionalArguments)}");
 
                 if (!File.Exists(xmlFile) || Logger.HasErrors)
                 {

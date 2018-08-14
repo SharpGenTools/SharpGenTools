@@ -406,7 +406,7 @@ namespace SharpGen.Interactive
                 Logger.Fatal("Initializing parser failed");
 
             // Run the parser
-            group = parser.Run(group);
+            group = parser.Run(group, Array.Empty<string>());
 
             if (Logger.HasErrors)
             {

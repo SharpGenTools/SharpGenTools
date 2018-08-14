@@ -166,6 +166,7 @@
       OutputPath="$(MSBuildProjectDirectory)/$(SharpGenIntermediateDir)"
       PartialCppModuleCache="@(PartialCppModule)"
       ParsedCppModule="@(ParsedCppModule)"
+      CastXmlArguments="@(CastXmlArg)"
     />
   </Target>
 

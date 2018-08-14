@@ -44,7 +44,7 @@ namespace SharpGen.UnitTests.Parsing
             };
         }
 
-        protected CppModule ParseCpp(ConfigFile config)
+        protected CppModule ParseCpp(ConfigFile config, string[] additionalArguments = null)
         {
             var loaded = ConfigFile.Load(config, new string[0], Logger);
 
@@ -84,7 +84,7 @@ namespace SharpGen.UnitTests.Parsing
 
             parser.Initialize(loaded);
 
-            return parser.Run(skeleton);
+            return parser.Run(skeleton, additionalArguments ?? Array.Empty<string>());
         }
     }
 }
