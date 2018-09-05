@@ -35,7 +35,7 @@ namespace SharpGen.Generator.Marshallers
                 {
                     var marshalTo = CreateMarshalStructStatement(
                         csElement,
-                        "__MarshalTo",
+                        StructMarshalMethod.To,
                         publicElement,
                         marshalElement);
                     if (((CsStruct)csElement.PublicType).HasCustomNew)
@@ -77,14 +77,14 @@ namespace SharpGen.Generator.Marshallers
         {
             return LoopThroughArrayParameter(csElement,
                (publicElement, marshalElement) =>
-                   CreateMarshalStructStatement(csElement, "__MarshalFree", publicElement, marshalElement));
+                   CreateMarshalStructStatement(csElement, StructMarshalMethod.Free, publicElement, marshalElement));
         }
 
         public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame)
         {
             return LoopThroughArrayParameter(csElement,
                (publicElement, marshalElement) =>
-                   CreateMarshalStructStatement(csElement, "__MarshalFrom", publicElement, marshalElement));
+                   CreateMarshalStructStatement(csElement, StructMarshalMethod.From, publicElement, marshalElement));
         }
 
         public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)

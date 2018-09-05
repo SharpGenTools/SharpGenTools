@@ -220,6 +220,12 @@ namespace Functions
         }
 
         [Fact]
+        public void WrappedStructAsClass()
+        {
+            Assert.Equal(1, NativeFunctions.GetWrapper().Wrapped.I);
+        }
+
+        [Fact]
         public unsafe void OptionalInOutStructPointer()
         {
             var test = new SimpleStruct { I = 5 };

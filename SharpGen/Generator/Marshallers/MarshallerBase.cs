@@ -3,10 +3,18 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
 using System;
+using System.Collections.Generic;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
+    enum StructMarshalMethod
+    {
+        From,
+        To,
+        Free
+    }
+
     class MarshallerBase
     {
         protected readonly GlobalNamespaceProvider globalNamespace;
@@ -94,17 +102,29 @@ namespace SharpGen.Generator.Marshallers
 
         protected StatementSyntax CreateMarshalStructStatement(
             CsMarshalBase marshallable,
-            string marshalMethod,
+            StructMarshalMethod marshalMethod,
             ExpressionSyntax publicElementExpr,
             ExpressionSyntax marshalElementExpr)
         {
+            var statements = new List<StatementSyntax>();
+
+            if (marshallable.IsStructClass && marshalMethod == StructMarshalMethod.From)
+            {
+                statements.Add(ExpressionStatement(
+                    AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression,
+                        publicElementExpr,
+                        ObjectCreationExpression(ParseTypeName(marshallable.PublicType.QualifiedName))
+                            .WithArgumentList(ArgumentList()))));
+            }
+
             if (marshallable.IsStaticMarshal)
             {
-                return GenerateNullCheckIfNeeded(marshallable,
+                statements.Add(GenerateNullCheckIfNeeded(marshallable,
                     ExpressionStatement(InvocationExpression(
                         MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                             ParseTypeName(marshallable.PublicType.QualifiedName),
-                            IdentifierName(marshalMethod)),
+                            IdentifierName($"__Marshal{marshalMethod}")),
                         ArgumentList(
                             SeparatedList(
                                 new[]
@@ -113,20 +133,22 @@ namespace SharpGen.Generator.Marshallers
                                         .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)),
                                     Argument(marshalElementExpr)
                                         .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword))
-                                })))));
+                                }))))));
             }
             else
             {
-                return GenerateNullCheckIfNeeded(marshallable,
+                statements.Add(GenerateNullCheckIfNeeded(marshallable,
                     ExpressionStatement(InvocationExpression(
                         MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                             publicElementExpr,
-                            IdentifierName(marshalMethod)),
+                            IdentifierName($"__Marshal{marshalMethod}")),
                         ArgumentList(
                             SingletonSeparatedList(
                                 Argument(marshalElementExpr)
-                                    .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)))))));
+                                    .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword))))))));
             }
+
+            return statements.Count == 1 ? statements[0] : Block(statements);
         }
 
         protected ExpressionStatementSyntax CreateMarshalCustomNewStatement(CsMarshalBase csElement, ExpressionSyntax marshalElement)
