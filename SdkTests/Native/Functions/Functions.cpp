@@ -178,3 +178,8 @@ DECL(MyEnum) FirstEnumElement(MyEnum test[])
 {
     return test[0];
 }
+
+DECL(StructAsClassWrapper) GetWrapper()
+{
+    return {{1}};
+}

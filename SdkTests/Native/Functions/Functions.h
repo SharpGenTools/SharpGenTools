@@ -40,6 +40,11 @@ struct StructAsClass
 	int i;
 };
 
+struct StructAsClassWrapper
+{
+	StructAsClass wrapped;
+};
+
 DECL(void) GetInterfaces(int numInstances, Interface** results);
 
 DECL(void) GetInterfacesOptional(int numInstances, Interface** results);
@@ -89,3 +94,5 @@ DECL(void) AddOne(SimpleStruct* param);
 DECL(void) EnumOut(MyEnum* test);
 
 DECL(MyEnum) FirstEnumElement(MyEnum test[]);
+
+DECL(StructAsClassWrapper) GetWrapper();
