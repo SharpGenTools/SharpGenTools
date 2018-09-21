@@ -25,11 +25,17 @@ namespace SharpGen.Transform
             string externalDocCommentId = GetExternalDocCommentId(element);
             foreach (var document in ExternalCommentsDocuments)
             {
-                foreach (XmlNode node in document.Value.ChildNodes)
+                foreach (XmlNode topLevelNode in document.Value.ChildNodes)
                 {
-                    if (node.Name == "comment" && node.Attributes["id"].Value == externalDocCommentId)
+                    if (topLevelNode.Name == "comments")
                     {
-                        return document.Key;
+                        foreach (XmlNode node in topLevelNode.ChildNodes)
+                        {
+                            if (node.Name == "comment" && node.Attributes["id"].Value == externalDocCommentId)
+                            {
+                                return document.Key;
+                            }
+                        }
                     }
                 }
             }
