@@ -20,11 +20,23 @@
 #define TO_DEFINE(x) "#define " #x " " TO_STRING(x)
 
 #pragma message("")
+#ifdef __ATOM__
+# pragma message(TO_DEFINE(__ATOM__))
+#endif
+#ifdef __AVX__
+# pragma message(TO_DEFINE(__AVX__))
+#endif
+#ifdef __AVX2__
+# pragma message(TO_DEFINE(__AVX2__))
+#endif
 #ifdef _ATL_VER
 # pragma message(TO_DEFINE(_ATL_VER))
 #endif
 #ifdef _CHAR_UNSIGNED
 # pragma message(TO_DEFINE(_CHAR_UNSIGNED))
+#endif
+#ifdef _CONTROL_FLOW_GUARD
+# pragma message(TO_DEFINE(_CONTROL_FLOW_GUARD))
 #endif
 #ifdef _CPPRTTI
 # pragma message(TO_DEFINE(_CPPRTTI))
@@ -40,6 +52,12 @@
 #endif
 #ifdef _INTEGRAL_MAX_BITS
 # pragma message(TO_DEFINE(_INTEGRAL_MAX_BITS))
+#endif
+#ifdef _ISO_VOLATILE
+# pragma message(TO_DEFINE(_ISO_VOLATILE))
+#endif
+#ifdef _KERNEL_MODE
+# pragma message(TO_DEFINE(_KERNEL_MODE))
 #endif
 #ifdef _MANAGED
 # pragma message(TO_DEFINE(_MANAGED))
@@ -59,6 +77,9 @@
 #ifdef _MSC_VER
 # pragma message(TO_DEFINE(_MSC_VER))
 #endif
+#ifdef _MSVC_LANG
+# pragma message(TO_DEFINE(_MSVC_LANG))
+#endif
 #ifdef _MT
 # pragma message(TO_DEFINE(_MT))
 #endif
@@ -67,6 +88,15 @@
 #endif
 #ifdef _M_AMD64
 # pragma message(TO_DEFINE(_M_AMD64))
+#endif
+#ifdef _M_ARM
+# pragma message(TO_DEFINE(_M_ARM))
+#endif
+#ifdef _M_ARM64
+# pragma message(TO_DEFINE(_M_ARM64))
+#endif
+#ifdef _M_ARM_ARMV7VE
+# pragma message(TO_DEFINE(_M_ARM_ARMV7VE))
 #endif
 #ifdef _M_ARM_FP
 # pragma message(TO_DEFINE(_M_ARM_FP))
@@ -79,6 +109,18 @@
 #endif
 #ifdef _M_CEE_SAFE
 # pragma message(TO_DEFINE(_M_CEE_SAFE))
+#endif
+#ifdef _M_FP_EXCEPT
+# pragma message(TO_DEFINE(_M_FP_EXCEPT))
+#endif
+#ifdef _M_FP_FAST
+# pragma message(TO_DEFINE(_M_FP_FAST))
+#endif
+#ifdef _M_FP_PRECISE
+# pragma message(TO_DEFINE(_M_FP_PRECISE))
+#endif
+#ifdef _M_FP_STRICT
+# pragma message(TO_DEFINE(_M_FP_STRICT))
 #endif
 #ifdef _M_IA64
 # pragma message(TO_DEFINE(_M_IA64))
@@ -107,6 +149,9 @@
 #ifdef _OPENMP
 # pragma message(TO_DEFINE(_OPENMP))
 #endif
+#ifdef _PREFAST_
+# pragma message(TO_DEFINE(_PREFAST_))
+#endif
 #ifdef _VC_NODEFAULTLIB
 # pragma message(TO_DEFINE(_VC_NODEFAULTLIB))
 #endif
@@ -119,6 +164,9 @@
 #ifdef _WIN64
 # pragma message(TO_DEFINE(_WIN64))
 #endif
+#ifdef _WINRT_DLL
+# pragma message(TO_DEFINE(_WINRT_DLL))
+#endif
 #ifdef _Wp64
 # pragma message(TO_DEFINE(_Wp64))
 #endif
@@ -128,10 +176,22 @@
 #ifdef __MSVC_RUNTIME_CHECKS
 # pragma message(TO_DEFINE(__MSVC_RUNTIME_CHECKS))
 #endif
+#ifdef __STDCPP_DEFAULT_NEW_ALIGNMENT__
+# pragma message(TO_DEFINE(__STDCPP_DEFAULT_NEW_ALIGNMENT__))
+#endif
+#ifdef __STDCPP_STRICT_POINTER_SAFETY__
+# pragma message(TO_DEFINE(__STDCPP_STRICT_POINTER_SAFETY__))
+#endif
+#ifdef __STDCPP_THREADS__
+# pragma message(TO_DEFINE(__STDCPP_THREADS__))
+#endif
 #ifdef __cplusplus
 # pragma message(TO_DEFINE(__cplusplus))
 #endif
 #ifdef __cplusplus_cli
 # pragma message(TO_DEFINE(__cplusplus_cli))
+#endif
+#ifdef __cplusplus_winrt
+# pragma message(TO_DEFINE(__cplusplus_winrt))
 #endif
 #pragma message("class type_info;")
