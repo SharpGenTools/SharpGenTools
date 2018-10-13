@@ -53,6 +53,11 @@ namespace SharpGen.Parser
         public const string TagStruct = "Struct";
 
         /// <summary>
+        /// CastXML tag for Class
+        /// </summary>
+        public const string TagClass = "Class";
+
+        /// <summary>
         /// GccXml tag for Field
         /// </summary>
         public const string TagField = "Field";
