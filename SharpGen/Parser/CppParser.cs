@@ -156,7 +156,7 @@ namespace SharpGen.Parser
         /// Runs this instance.
         /// </summary>
         /// <returns></returns>
-        public CppModule Run(CppModule groupSkeleton, string[] additionalCompilationArguments)
+        public CppModule Run(CppModule groupSkeleton)
         {
             _group = groupSkeleton;
             Logger.Message("Config files changed.");
@@ -171,7 +171,7 @@ namespace SharpGen.Parser
 
                 var configRootHeader = Path.Combine(OutputPath, _configRoot.Id + ".h");
 
-                xmlReader = _gccxml.Process(configRootHeader, additionalCompilationArguments);
+                xmlReader = _gccxml.Process(configRootHeader);
                 if (xmlReader != null)
                 {
                     Parse(xmlReader);
@@ -954,6 +954,7 @@ namespace SharpGen.Parser
                     if (xElement.AttributeValue("inline") == null)
                         return ParseFunction(xElement);
                     break;
+                case CastXml.TagClass:
                 case CastXml.TagStruct:
                     return xElement.AttributeValue("abstract") != null ? (CppElement)ParseInterface(xElement) : ParseStructOrUnion(xElement);
                 case CastXml.TagUnion:
@@ -1018,6 +1019,7 @@ namespace SharpGen.Parser
                         type.TypeName = ConvertFundamentalType(name);
                         isTypeResolved = true;
                         break;
+                    case CastXml.TagClass:
                     case CastXml.TagEnumeration:
                     case CastXml.TagStruct:
                     case CastXml.TagUnion:

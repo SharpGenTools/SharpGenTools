@@ -68,7 +68,7 @@ namespace SharpGen.UnitTests.Parsing
 
             resolver.Configure(loaded);
 
-            var castXml = new CastXml(Logger, resolver, CastXmlExecutablePath)
+            var castXml = new CastXml(Logger, resolver, CastXmlExecutablePath, additionalArguments ?? Array.Empty<string>())
             {
                 OutputPath = TestDirectory.FullName
             };
@@ -84,7 +84,7 @@ namespace SharpGen.UnitTests.Parsing
 
             parser.Initialize(loaded);
 
-            return parser.Run(skeleton, additionalArguments ?? Array.Empty<string>());
+            return parser.Run(skeleton);
         }
     }
 }
