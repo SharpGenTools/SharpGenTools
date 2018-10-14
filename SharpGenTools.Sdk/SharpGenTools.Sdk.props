@@ -5,5 +5,6 @@
     <SharpGenGlobalNamespace Condition="'$(SharpGenGlobalNamespace)' == ''">SharpGen.Runtime</SharpGenGlobalNamespace>
     <CastXmlPath Condition="'$(CastXmlPath)' == ''">$(MSBuildThisFileDirectory)../tools/CastXML/bin/castxml.exe</CastXmlPath>
     <SharpGenIncludeAssemblyNameFolder Condition="'$(SharpGenIncludeAssemblyNameFolder)' == ''">false</SharpGenIncludeAssemblyNameFolder>
+    <CppStandard Condition="'$(CppStandard)' == ''">c++14</CppStandard>
   </PropertyGroup>
 </Project>

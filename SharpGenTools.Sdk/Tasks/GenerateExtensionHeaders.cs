@@ -27,6 +27,9 @@ namespace SharpGenTools.Sdk.Tasks
         [Required]
         public ITaskItem[] UpdatedConfigs { get; set; }
 
+        [Required]
+        public string[] CastXmlArguments { get; set; }
+
         protected override bool Execute(ConfigFile config)
         {
             var configsWithExtensions = new HashSet<string>();
@@ -47,7 +50,7 @@ namespace SharpGenTools.Sdk.Tasks
             var resolver = new IncludeDirectoryResolver(SharpGenLogger);
             resolver.Configure(config);
 
-            var castXml = new CastXml(SharpGenLogger, resolver, CastXmlExecutablePath)
+            var castXml = new CastXml(SharpGenLogger, resolver, CastXmlExecutablePath, CastXmlArguments)
             {
                 OutputPath = OutputPath
             };

@@ -211,7 +211,7 @@ namespace SharpGen.Interactive
                     var resolver = new IncludeDirectoryResolver(Logger);
                     resolver.Configure(Config);
 
-                    var castXml = new CastXml(Logger, resolver, CastXmlExecutablePath)
+                    var castXml = new CastXml(Logger, resolver, CastXmlExecutablePath, Array.Empty<string>())
                     {
                         OutputPath = IntermediateOutputPath,
                     };
@@ -406,7 +406,7 @@ namespace SharpGen.Interactive
                 Logger.Fatal("Initializing parser failed");
 
             // Run the parser
-            group = parser.Run(group, Array.Empty<string>());
+            group = parser.Run(group);
 
             if (Logger.HasErrors)
             {

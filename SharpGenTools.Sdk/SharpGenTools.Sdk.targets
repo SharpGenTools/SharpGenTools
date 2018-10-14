@@ -19,6 +19,17 @@
     <SharpGenDocumentationCache Include="$(SharpGenDocumentationOutputDir)DocumentationCache.xml" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(CastXmlMSVCCompat)' != 'false'">
+    <CastXmlArg Include="-fmsc-version=1900" />
+    <CastXmlArg Include="-fms-extensions" />
+    <CastXmlArg Include="-fms-compatibility" />
+    <CastXmlArg Include="-Wno-microsoft-enum-value" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <CastXmlArg Include="-std=$(CppStandard)" />
+  </ItemGroup>
+
   <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="SharpPatch" />
   <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="GetGeneratedHeaderNames" />
   <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="GenerateHeaders" />
@@ -150,6 +161,7 @@
       OutputPath="$(MSBuildProjectDirectory)/$(SharpGenIntermediateDir)"
       PartialCppModuleCache="@(PartialCppModule)"
       UpdatedConfigs="@(UpdatedConfigs)"
+      CastXmlArguments="@(CastXmlArg)"
     />
   </Target>
 

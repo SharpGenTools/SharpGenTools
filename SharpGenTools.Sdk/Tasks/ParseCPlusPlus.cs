@@ -27,7 +27,7 @@ namespace SharpGenTools.Sdk.Tasks
             var resolver = new IncludeDirectoryResolver(SharpGenLogger);
             resolver.Configure(config);
 
-            var castXml = new CastXml(SharpGenLogger, resolver, CastXmlExecutablePath)
+            var castXml = new CastXml(SharpGenLogger, resolver, CastXmlExecutablePath, CastXmlArguments ?? Array.Empty<string>())
             {
                 OutputPath = OutputPath
             };
@@ -45,7 +45,7 @@ namespace SharpGenTools.Sdk.Tasks
             var module = CppModule.Read(PartialCppModuleCache.ItemSpec);
 
             // Run the parser
-            var group = parser.Run(module, CastXmlArguments ?? Array.Empty<string>());
+            var group = parser.Run(module);
 
             if (SharpGenLogger.HasErrors)
                 return false;

@@ -117,7 +117,7 @@ namespace SharpGen.Parser
         /// </summary>
         /// <value>The executable path.</value>
         public string ExecutablePath { get; }
-
+        public IReadOnlyList<string> AdditionalArguments { get; }
         public string OutputPath { get; set; }
 
         private readonly IncludeDirectoryResolver directoryResolver;
@@ -127,10 +127,11 @@ namespace SharpGen.Parser
         /// <summary>
         /// Initializes a new instance of the <see cref="CastXml"/> class.
         /// </summary>
-        public CastXml(Logger logger, IncludeDirectoryResolver resolver, string executablePath)
+        public CastXml(Logger logger, IncludeDirectoryResolver resolver, string executablePath, string[] additionalArguments)
         {
             Logger = logger;
             ExecutablePath = executablePath;
+            AdditionalArguments = additionalArguments;
             directoryResolver = resolver;
         }
 
@@ -158,7 +159,7 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="headerFile">The header headerFile.</param>
         /// <returns></returns>
-        public StreamReader Process(string headerFile, string[] additionalArguments)
+        public StreamReader Process(string headerFile)
         {
             StreamReader result = null;
 
@@ -173,7 +174,7 @@ namespace SharpGen.Parser
                 // Delete any previously generated xml file
                 File.Delete(xmlFile);
 
-                RunCastXml(headerFile, LogCastXmlOutput, $"-o {xmlFile} {string.Join(" ", additionalArguments)}");
+                RunCastXml(headerFile, LogCastXmlOutput, $"-o {xmlFile}");
 
                 if (!File.Exists(xmlFile) || Logger.HasErrors)
                 {
@@ -229,12 +230,11 @@ namespace SharpGen.Parser
             }
         }
 
-        private static string GetCastXmlArgs()
+        private string GetCastXmlArgs()
         {
-            var arguments = "";
-            arguments += " --castxml-gccxml";
-            arguments += " -x c++ -std=c++11 -fmsc-version=1900 -fms-extensions -fms-compatibility";
-            arguments += " -Wno-microsoft-enum-value -Wmacro-redefined -Wno-invalid-token-paste -Wno-ignored-attributes";
+            var arguments = string.Join(" ", AdditionalArguments);
+            arguments += " --castxml-gccxml -x c++";
+            arguments += " -Wmacro-redefined -Wno-invalid-token-paste -Wno-ignored-attributes";
             return arguments;
         }
 

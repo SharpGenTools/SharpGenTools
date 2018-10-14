@@ -156,7 +156,7 @@ namespace SharpGen.Parser
         /// Runs this instance.
         /// </summary>
         /// <returns></returns>
-        public CppModule Run(CppModule groupSkeleton, string[] additionalCompilationArguments)
+        public CppModule Run(CppModule groupSkeleton)
         {
             _group = groupSkeleton;
             Logger.Message("Config files changed.");
@@ -171,7 +171,7 @@ namespace SharpGen.Parser
 
                 var configRootHeader = Path.Combine(OutputPath, _configRoot.Id + ".h");
 
-                xmlReader = _gccxml.Process(configRootHeader, additionalCompilationArguments);
+                xmlReader = _gccxml.Process(configRootHeader);
                 if (xmlReader != null)
                 {
                     Parse(xmlReader);
