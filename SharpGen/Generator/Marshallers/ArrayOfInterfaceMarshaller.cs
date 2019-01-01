@@ -96,7 +96,7 @@ namespace SharpGen.Generator.Marshallers
 
         public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame)
         {
-            return null;
+            return GenerateGCKeepAlive(csElement);
         }
 
         public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame)

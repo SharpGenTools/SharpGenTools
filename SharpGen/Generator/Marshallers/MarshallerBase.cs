@@ -369,5 +369,19 @@ namespace SharpGen.Generator.Marshallers
 
             return param;
         }
+
+        protected StatementSyntax GenerateGCKeepAlive(CsMarshalBase csElement)
+        {
+            return ExpressionStatement(
+                InvocationExpression(
+                    ParseName("System.GC.KeepAlive"),
+                    ArgumentList(
+                        SingletonSeparatedList(
+                            Argument(IdentifierName(csElement.Name))
+                        )
+                    )
+                )
+            );
+        }
     }
 }
