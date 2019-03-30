@@ -57,7 +57,7 @@ namespace SharpGen.Generator
 
             foreach (var param in csElement.Parameters)
             {
-                if (param.Relation != null)
+                if (param.Relation == null)
                 {
                     if (param.UsedAsReturn)
                     {
@@ -70,8 +70,9 @@ namespace SharpGen.Generator
                     statements.Add(GenerateManagedHiddenMarshallableProlog(param));
 
                     var marshaller = Generators.Marshalling.GetRelationMarshaller(param.Relation);
+                    var relatedMarshallableName = (param.Relation as IHasRelatedMarshallable)?.RelatedMarshallableName;
                     var marshalToNative = marshaller.GenerateManagedToNative(
-                        (param.Relation as IHasRelatedMarshallable)?.RelatedMarshallable,
+                        csElement.Parameters.First(p => p.CppElementName == relatedMarshallableName),
                         param);
                     if (marshalToNative != null)
                     {

@@ -369,11 +369,11 @@ namespace SharpGen.Generator.Marshallers
             var callable = (CsCallable)csElement.Parent;
             var lengthParam = callable.Parameters
                 .FirstOrDefault(param
-                    => param.Relation is ArrayLengthRelation relation
-                        && relation.RelatedMarshallable == csElement);
+                    => param.Relation is LengthRelation relation
+                        && relation.RelatedMarshallableName == csElement.CppElementName);
             if (lengthParam == null)
             {
-                var marshaller = new ArrayLengthRelationMarshaller(globalNamespace);
+                var marshaller = new LengthRelationMarshaller(globalNamespace);
                 return marshaller.GenerateNativeToManaged(csElement, lengthParam);
             }
             else

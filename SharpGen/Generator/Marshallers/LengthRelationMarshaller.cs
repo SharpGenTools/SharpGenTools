@@ -8,9 +8,9 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace SharpGen.Generator.Marshallers
 {
-    class ArrayLengthRelationMarshaller : MarshallerBase, IRelationMarshaller
+    class LengthRelationMarshaller : MarshallerBase, IRelationMarshaller
     {
-        public ArrayLengthRelationMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
+        public LengthRelationMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
         {
         }
 
@@ -18,7 +18,7 @@ namespace SharpGen.Generator.Marshallers
         {
             return ExpressionStatement(
                 AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                GetMarshalStorageLocation(relatedElement),
+                IdentifierName(relatedElement.Name),
                 MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                     IdentifierName(publicElement.Name),
                     IdentifierName("Length"))));
@@ -34,8 +34,8 @@ namespace SharpGen.Generator.Marshallers
                         ParseTypeName(publicElement.PublicType.QualifiedName),
                         SingletonList(
                             ArrayRankSpecifier(
-                                SingletonSeparatedList(
-                                    GetMarshalStorageLocation(relatedElement))))))));
+                                SingletonSeparatedList<ExpressionSyntax>(
+                                    IdentifierName(relatedElement.Name))))))));
         }
     }
 }

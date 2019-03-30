@@ -141,7 +141,8 @@ namespace SharpGen.Generator
                         else
                         {
                             var marshaller = Generators.Marshalling.GetRelationMarshaller(field.Relation);
-                            return marshaller.GenerateManagedToNative((field.Relation as IHasRelatedMarshallable)?.RelatedMarshallable, field);
+                            var relatedMarshalableName = (field.Relation as IHasRelatedMarshallable)?.RelatedMarshallableName;
+                            return marshaller.GenerateManagedToNative(csStruct.Fields.First(fld => fld.CppElementName == relatedMarshalableName), field);
                         }
                     })
                     .Where(statement => statement != null)));

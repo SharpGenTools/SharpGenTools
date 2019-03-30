@@ -38,7 +38,7 @@ namespace SharpGen.Generator
             RelationMarshallers = new Dictionary<Type, IRelationMarshaller>
             {
                 { typeof(StructSizeRelation), new StructSizeRelationMarshaller(globalNamespace) },
-                { typeof(ArrayLengthRelation), new ArrayLengthRelationMarshaller(globalNamespace) },
+                { typeof(LengthRelation), new LengthRelationMarshaller(globalNamespace) },
                 { typeof(ConstantValueRelation), new ConstantValueRelationMarshaller(globalNamespace) }
             };
             this.logger = logger;

@@ -12,7 +12,7 @@ namespace SharpGen.Model
 
     internal interface IHasRelatedMarshallable
     {
-        CsMarshalBase RelatedMarshallable { get; set; }
+        string RelatedMarshallableName { get; set; }
     }
 
     [DataContract(Name = "Struct-Size")]
@@ -20,15 +20,17 @@ namespace SharpGen.Model
     {
     }
 
-    [DataContract(Name = "Array-Length")]
-    public sealed class ArrayLengthRelation : MarshallableRelation, IHasRelatedMarshallable
+    [DataContract(Name = "Length")]
+    public sealed class LengthRelation : MarshallableRelation, IHasRelatedMarshallable
     {
-        public CsMarshalBase RelatedMarshallable { get; set; }
+        [DataMember]
+        public string RelatedMarshallableName { get; set; }
     }
 
     [DataContract(Name = "Constant-Value")]
     public sealed class ConstantValueRelation : MarshallableRelation
     {
+        [DataMember]
         public string Value { get; set; }
     }
 }

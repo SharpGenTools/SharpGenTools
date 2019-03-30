@@ -114,6 +114,7 @@ namespace SharpGen.Model
             }
         }
 
+        [DataMember]
         public MarshallableRelation Relation { get; set; }
     }
 }

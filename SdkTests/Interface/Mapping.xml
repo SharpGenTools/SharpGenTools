@@ -35,6 +35,8 @@
     <map method="CallbackInterface::.*" property="false" />
     <map param="CallbackInterface::MappedTypeTest::i" type="unsigned int" />
     <map param="CallbackInterface::ModifyPointer::out" attribute="out" return="true" />
+    <map param="CallbackInterface::ArrayRelation(.*)::array" attribute="in buffer" />
+    <map param="CallbackInterface::ArrayRelation(.*)::length" relation="length(array)" />
   
     <!-- Issue #67 -->
     <map interface="FastOutInterface" callback="true" callback-dual="true" autogen-shadow="true" />
