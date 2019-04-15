@@ -30,6 +30,9 @@ namespace SharpGenTools.Sdk.Tasks
         [Required]
         public string[] CastXmlArguments { get; set; }
 
+        [Output]
+        public ITaskItem[] ReferencedHeaders { get; set; }
+
         protected override bool Execute(ConfigFile config)
         {
             var configsWithExtensions = new HashSet<string>();
@@ -55,9 +58,13 @@ namespace SharpGenTools.Sdk.Tasks
                 OutputPath = OutputPath
             };
 
-            var cppExtensionGenerator = new CppExtensionHeaderGenerator(new MacroManager(castXml));
+            var macroManager = new MacroManager(castXml);
+
+            var cppExtensionGenerator = new CppExtensionHeaderGenerator(macroManager);
 
             var module = cppExtensionGenerator.GenerateExtensionHeaders(config, OutputPath, configsWithExtensions, updatedConfigs);
+
+            ReferencedHeaders = macroManager.IncludedFiles.Select(file => new TaskItem(file)).ToArray();
 
             if (SharpGenLogger.HasErrors)
             {

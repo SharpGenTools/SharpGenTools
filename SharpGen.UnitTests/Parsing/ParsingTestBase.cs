@@ -44,6 +44,20 @@ namespace SharpGen.UnitTests.Parsing
             };
         }
 
+        protected CastXml GetCastXml(ConfigFile config, string[] additionalArguments = null)
+        {
+            var resolver = new IncludeDirectoryResolver(Logger);
+            resolver.Configure(config);
+            return new CastXml(
+                Logger,
+                resolver,
+                CastXmlExecutablePath,
+                additionalArguments ?? Array.Empty<string>())
+            {
+                OutputPath = TestDirectory.FullName
+            };
+        }
+
         protected CppModule ParseCpp(ConfigFile config, string[] additionalArguments = null)
         {
             var loaded = ConfigFile.Load(config, new string[0], Logger);
@@ -64,14 +78,7 @@ namespace SharpGen.UnitTests.Parsing
 
             var (updated, _) = cppHeaderGenerator.GenerateCppHeaders(loaded, configsWithIncludes, filesWithExtensionHeaders);
 
-            var resolver = new IncludeDirectoryResolver(Logger);
-
-            resolver.Configure(loaded);
-
-            var castXml = new CastXml(Logger, resolver, CastXmlExecutablePath, additionalArguments ?? Array.Empty<string>())
-            {
-                OutputPath = TestDirectory.FullName
-            };
+            var castXml = GetCastXml(loaded);
 
             var extensionGenerator = new CppExtensionHeaderGenerator(new MacroManager(castXml));
 

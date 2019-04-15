@@ -1,5 +1,9 @@
 <Project>
-    <Target Name="GetSnPath" Condition="'$(SnPath)' == '' OR !Exists('$(SnPath)')">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+  </PropertyGroup>
+
+  <Target Name="GetSnPath" Condition="'$(SnPath)' == '' OR !Exists('$(SnPath)')">
         <Exec Command="where sn &gt; sn-path.txt" ContinueOnError="true" Condition="'$(OS)' == 'Windows_NT'" WorkingDirectory="$(IntermediateOutputPath)" />
         <Exec Command="which sn &gt; sn-path.txt" ContinueOnError="true" Condition="'$(OS)' == 'Unix'" WorkingDirectory="$(IntermediateOutputPath)"  />
         <ReadLinesFromFile File="$(IntermediateOutputPath)/sn-path.txt">

@@ -1,5 +1,9 @@
 ﻿<Project>
   <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <SharpGenGenerateConsumerBindMapping Condition="'$(SharpGenGenerateConsumerBindMapping)' == ''">true</SharpGenGenerateConsumerBindMapping>
     <SharpGenGenerateDoc Condition="'$(SharpGenGenerateDoc)' == ''">false</SharpGenGenerateDoc>
     <SharpGenGlobalNamespace Condition="'$(SharpGenGlobalNamespace)' == ''">SharpGen.Runtime</SharpGenGlobalNamespace>

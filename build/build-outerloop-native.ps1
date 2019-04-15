@@ -1,7 +1,7 @@
 Push-Location SdkTests/Native
 
 try {
-    cmake -A x64 | Write-Host
+    cmake . -A x64 | Write-Host
 
     if ($LastExitCode -ne 0) {
         Write-Error "Failed to generate native projects"
