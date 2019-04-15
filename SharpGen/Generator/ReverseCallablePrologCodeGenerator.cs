@@ -42,7 +42,7 @@ namespace SharpGen.Generator
             {
                 var publicParameter = csElement.Parameters[i];
                 var nativeParameter = IdentifierName($"param{i}");
-                var prologBuilder = publicParameter.PassedByNativeReference
+                var prologBuilder = publicParameter.PassedByNativeReference && !publicParameter.IsArray
                     ? (Func<CsMarshalCallableBase, ExpressionSyntax, IEnumerable<StatementSyntax>>)GenerateNativeByRefProlog
                     : GenerateProlog;
                 foreach (var statement in prologBuilder(publicParameter, nativeParameter))
