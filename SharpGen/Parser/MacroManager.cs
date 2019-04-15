@@ -94,7 +94,6 @@ namespace SharpGen.Parser
                         _includedFiles.Add(result.Groups[1].Value.Replace(@"\\", @"\"));
                         var currentFile = Path.GetFileName(result.Groups[1].Value);
 
-
                         if (!_mapIncludeToMacros.TryGetValue(currentFile, out _currentMacros))
                         {
                             _currentMacros = new Dictionary<string,string>();
@@ -103,7 +102,7 @@ namespace SharpGen.Parser
                     }
                 }
                 else if (_currentMacros != null)
-                {                    
+                {
                     result = MatchDefine.Match(line);
                     if (result.Success)
                     {
