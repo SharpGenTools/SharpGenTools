@@ -57,13 +57,18 @@ namespace SharpGen.Generator
             ExpressionSyntax nativeParameter)
         {
             var marshaller = generators.Marshalling.GetMarshaller(publicElement);
+            var publicType = ParseTypeName(publicElement.PublicType.QualifiedName);
+            if (publicElement.IsArray)
+            {
+                publicType = ArrayType(publicType, SingletonList(ArrayRankSpecifier()));
+            }
             yield return LocalDeclarationStatement(
-                VariableDeclaration(ParseTypeName(publicElement.PublicType.QualifiedName))
+                VariableDeclaration(publicType)
                 .AddVariables(
                     VariableDeclarator(Identifier(publicElement.Name))
                         .WithInitializer(
                             EqualsValueClause(
-                                DefaultExpression(ParseTypeName(publicElement.PublicType.QualifiedName))))));
+                                DefaultExpression(publicType)))));
 
             if (marshaller.GeneratesMarshalVariable(publicElement))
             {

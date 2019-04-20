@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using SharpGen.Runtime;
 using Xunit;
@@ -192,6 +193,21 @@ namespace Interface
                     return IntPtr.Add(ptr, 1);
                 }
                 return ptr;
+            }
+
+            public bool ArrayRelationAnd(bool[] arr)
+            {
+                return arr.Aggregate(true, (agg, val) => agg && val);
+            }
+
+            public int ArrayRelationSum(int[] arr)
+            {
+                return arr.Sum();
+            }
+
+            public long ArrayRelationSumStruct(LargeStructWithMarshalling[] arr)
+            {
+                return arr.SelectMany(x => x.I).Sum();
             }
         }
     }
