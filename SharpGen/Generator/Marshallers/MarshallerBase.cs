@@ -371,7 +371,7 @@ namespace SharpGen.Generator.Marshallers
                 .FirstOrDefault(param
                     => param.Relation is LengthRelation relation
                         && relation.RelatedMarshallableName == csElement.CppElementName);
-            if (lengthParam == null)
+            if (lengthParam != null)
             {
                 var marshaller = new LengthRelationMarshaller(globalNamespace);
                 return marshaller.GenerateNativeToManaged(csElement, lengthParam);
