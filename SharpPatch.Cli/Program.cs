@@ -18,7 +18,6 @@ namespace SharpPatch.Cli
                 var file = args[0];
                 var program = new InteropApp
                 {
-                    GlobalNamespace = "SharpDX",
                     Logger = new Logger()
                 };
                 program.PatchFile(file);
