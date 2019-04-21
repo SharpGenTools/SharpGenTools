@@ -63,7 +63,7 @@ namespace SharpGen.UnitTests
             };
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("Interface", new CsInterface {Name = "Interface"});
+            typeRegistry.BindType("Interface", new CsInterface { Name = "Interface" });
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
 
@@ -117,7 +117,7 @@ namespace SharpGen.UnitTests
             Assert.True(csMarshallable.IsWideChar);
         }
 
-        
+
 
         [Fact]
         public void CharPointerMappedToStringMarshalledWithIntPtr()
@@ -345,7 +345,7 @@ namespace SharpGen.UnitTests
             Assert.True(csParameter.IsArray);
             Assert.True(csParameter.IsBoolToInt);
         }
-        
+
         [Fact]
         public void BoolToIntArrayMarshalTypeIsIntegerArray()
         {

@@ -100,7 +100,13 @@ namespace SharpGen.Config
         public string Namespace { get; set; }
 
         [XmlElement("assembly")]
-        public string Assembly { get; set; }
+        public string Assembly
+        {
+            // The assembly attribute is no longer supported, but we leave the option
+            // so that config files don't break when the option is specified.
+            get => string.Empty;
+            set { }
+        }
 
         [XmlElement("var")]
         public List<KeyValue> Variables { get; set; }

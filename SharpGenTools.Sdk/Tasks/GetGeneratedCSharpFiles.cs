@@ -20,24 +20,19 @@ namespace SharpGenTools.Sdk.Tasks
         [Required]
         public string GeneratedCodeFolder { get; set; }
 
-        public bool IncludeAssemblyNameFolder { get; set; }
-
         [Output]
         public ITaskItem[] GeneratedFiles { get; set; }
 
         public override bool Execute()
         {
-            var solution = CsSolution.Read(Model.ItemSpec);
+            var asm = CsAssembly.Read(Model.ItemSpec);
             
-            var files = RoslynGenerator.GetFilePathsForGeneratedFiles(solution, OutputDirectory, GeneratedCodeFolder, IncludeAssemblyNameFolder);
+            var files = RoslynGenerator.GetFilePathsForGeneratedFiles(asm, OutputDirectory, GeneratedCodeFolder);
 
             GeneratedFiles = files
-                .SelectMany(assembly =>
-                    assembly.Value.Select(file => (assembly: assembly.Key, file)))
                 .Select(file =>
                 {
-                    var item = new TaskItem(file.file);
-                    item.SetMetadata("Assembly", file.assembly);
+                    var item = new TaskItem(file);
                     return item;
                 }).ToArray();
             return true;

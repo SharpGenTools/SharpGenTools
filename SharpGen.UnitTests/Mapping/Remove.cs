@@ -21,7 +21,6 @@ namespace SharpGen.UnitTests.Mapping
             var config = new Config.ConfigFile
             {
                 Id = nameof(Enum),
-                Assembly = nameof(Enum),
                 Namespace = nameof(Enum),
                 Includes =
                 {
@@ -72,7 +71,6 @@ namespace SharpGen.UnitTests.Mapping
             var config = new Config.ConfigFile
             {
                 Id = nameof(RemoveParentDoesNotRemoveAllParents),
-                Assembly = nameof(RemoveParentDoesNotRemoveAllParents),
                 Namespace = nameof(RemoveParentDoesNotRemoveAllParents),
                 Includes =
                 {

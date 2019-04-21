@@ -20,7 +20,6 @@ namespace SharpGen.UnitTests.Parsing
             var config = new Config.ConfigFile
             {
                 Id = nameof(Inheriting),
-                Assembly = nameof(Inheriting),
                 Namespace = nameof(Inheriting),
                 IncludeDirs =
                 {
@@ -61,7 +60,6 @@ namespace SharpGen.UnitTests.Parsing
             var config = new Config.ConfigFile
             {
                 Id = nameof(GuidAttribute),
-                Assembly = nameof(GuidAttribute),
                 Namespace = nameof(GuidAttribute),
                 IncludeProlog =
                 {
@@ -107,7 +105,6 @@ namespace SharpGen.UnitTests.Parsing
             var config = new Config.ConfigFile
             {
                 Id = nameof(GuidAttribute),
-                Assembly = nameof(GuidAttribute),
                 Namespace = nameof(GuidAttribute),
                 IncludeProlog =
                 {
@@ -143,7 +140,6 @@ namespace SharpGen.UnitTests.Parsing
             var config = new Config.ConfigFile
             {
                 Id = nameof(OverloadedMethodsCorrectlyOrderedInVtable),
-                Assembly = nameof(OverloadedMethodsCorrectlyOrderedInVtable),
                 Namespace = nameof(OverloadedMethodsCorrectlyOrderedInVtable),
                 IncludeDirs =
                 {
@@ -187,7 +183,6 @@ namespace SharpGen.UnitTests.Parsing
             var config = new Config.ConfigFile
             {
                 Id = nameof(DefaultMethodCallingConventionIsThisCall),
-                Assembly = nameof(DefaultMethodCallingConventionIsThisCall),
                 Namespace = nameof(DefaultMethodCallingConventionIsThisCall),
                 IncludeDirs =
                 {

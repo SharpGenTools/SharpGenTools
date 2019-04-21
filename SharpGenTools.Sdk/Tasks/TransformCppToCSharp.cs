@@ -68,8 +68,7 @@ namespace SharpGenTools.Sdk.Tasks
                 SharpGenLogger,
                 typeRegistry,
                 docLinker,
-                new ConstantManager(namingRules, docLinker),
-                new AssemblyManager())
+                new ConstantManager(namingRules, docLinker))
             {
                 ForceGenerator = ForceGenerator
             };

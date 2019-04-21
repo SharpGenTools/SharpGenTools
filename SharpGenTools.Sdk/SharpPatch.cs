@@ -13,9 +13,6 @@ namespace SharpGenTools.Sdk
         [Required]
         public ITaskItem[] References { get; set; }
 
-        [Required]
-        public string GlobalNamespace { get; private set; }
-
         public override bool Execute()
         {
             BindingRedirectResolution.Enable();
@@ -24,7 +21,6 @@ namespace SharpGenTools.Sdk
                 var patchApp = new InteropApp
                 {
                     AssemblyResolver = new MSBuildAssemblyResolver(References),
-                    GlobalNamespace = GlobalNamespace,
                     Logger = new MSBuildSharpPatchLogger(Log),
                 };
                 patchApp.PatchFile(AssemblyToPatch);

@@ -61,7 +61,7 @@ namespace SharpGen.Generator
             var call = InvocationExpression(
                     IdentifierName(callable is CsFunction ?
                         callable.CppElementName + "_"
-                    : callable.GetParent<CsAssembly>().QualifiedName + ".LocalInterop." + callable.Interop.Name),
+                    : "LocalInterop." + callable.Interop.Name),
                     ArgumentList(SeparatedList(arguments)));
 
             return callable.IsReturnStructLarge || !callable.HasReturnType ?

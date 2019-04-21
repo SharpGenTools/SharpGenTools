@@ -23,7 +23,6 @@ namespace SharpGen.UnitTests.Mapping
             {
                 Id = nameof(Basic),
                 Namespace = nameof(Basic),
-                Assembly = nameof(Basic),
                 Includes =
                 {
                     new Config.IncludeRule
@@ -77,7 +76,7 @@ namespace SharpGen.UnitTests.Mapping
             var (solution, _) = MapModel(module, config);
 
             Assert.Single(solution.EnumerateDescendants().OfType<CsGroup>());
-            
+
             var group = solution.EnumerateDescendants().OfType<CsGroup>().First();
             Assert.Equal("Functions", group.Name);
 
@@ -95,7 +94,6 @@ namespace SharpGen.UnitTests.Mapping
             var config = new Config.ConfigFile
             {
                 Id = nameof(PointerSizeReturnValueNotLarge),
-                Assembly = nameof(PointerSizeReturnValueNotLarge),
                 Namespace = nameof(PointerSizeReturnValueNotLarge),
                 Includes =
                 {

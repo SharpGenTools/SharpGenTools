@@ -52,7 +52,7 @@ namespace SharpGen.Generator
         public IMultiCodeGenerator<CsInterface, MemberDeclarationSyntax> Interface { get; }
         public IMultiCodeGenerator<CsGroup, MemberDeclarationSyntax> Group { get; }
 
-        public ICodeGenerator<CsAssembly, NamespaceDeclarationSyntax> LocalInterop { get; }
+        public ICodeGenerator<CsAssembly, ClassDeclarationSyntax> LocalInterop { get; }
 
         public IMultiCodeGenerator<InteropMethodSignature, MemberDeclarationSyntax> InteropMethod { get; }
 

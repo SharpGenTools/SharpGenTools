@@ -20,7 +20,6 @@ namespace SharpGen.UnitTests.Parsing
             {
                 Id = nameof(SequentialFieldsOffsets),
                 Namespace = nameof(SequentialFieldsOffsets),
-                Assembly = nameof(SequentialFieldsOffsets),
                 IncludeDirs = { GetTestFileIncludeRule() },
                 Includes =
                 {
@@ -55,7 +54,6 @@ namespace SharpGen.UnitTests.Parsing
             {
                 Id = nameof(UnionFieldOffsets0),
                 Namespace = nameof(UnionFieldOffsets0),
-                Assembly = nameof(UnionFieldOffsets0),
                 IncludeDirs = { GetTestFileIncludeRule() },
                 Includes =
                 {
@@ -92,7 +90,6 @@ namespace SharpGen.UnitTests.Parsing
             {
                 Id = nameof(BitfieldStructHasCorrectBitOffsets),
                 Namespace = nameof(BitfieldStructHasCorrectBitOffsets),
-                Assembly = nameof(BitfieldStructHasCorrectBitOffsets),
                 IncludeDirs = { GetTestFileIncludeRule() },
                 Includes =
                 {
@@ -130,7 +127,6 @@ namespace SharpGen.UnitTests.Parsing
             {
                 Id = nameof(MultipleBitfieldsHaveCorrectBitOffsets),
                 Namespace = nameof(MultipleBitfieldsHaveCorrectBitOffsets),
-                Assembly = nameof(MultipleBitfieldsHaveCorrectBitOffsets),
                 IncludeDirs = { GetTestFileIncludeRule() },
                 Includes =
                 {
@@ -173,7 +169,6 @@ namespace SharpGen.UnitTests.Parsing
             {
                 Id = nameof(InnerStructGivenExpectedName),
                 Namespace = nameof(InnerStructGivenExpectedName),
-                Assembly = nameof(InnerStructGivenExpectedName),
                 IncludeDirs = { GetTestFileIncludeRule() },
                 Includes =
                 {
@@ -202,7 +197,6 @@ namespace SharpGen.UnitTests.Parsing
             {
                 Id = nameof(TypedefedStructAdjustsNameToTypedef),
                 Namespace = nameof(TypedefedStructAdjustsNameToTypedef),
-                Assembly = nameof(TypedefedStructAdjustsNameToTypedef),
                 IncludeDirs = { GetTestFileIncludeRule() },
                 Includes =
                 {
@@ -239,7 +233,6 @@ namespace SharpGen.UnitTests.Parsing
             {
                 Id = nameof(InheritingStructHasBaseMemberSetCorrectly),
                 Namespace = nameof(InheritingStructHasBaseMemberSetCorrectly),
-                Assembly = nameof(InheritingStructHasBaseMemberSetCorrectly),
                 IncludeDirs = { GetTestFileIncludeRule() },
                 Includes =
                 {
@@ -271,7 +264,6 @@ namespace SharpGen.UnitTests.Parsing
             {
                 Id = nameof(AnonymousNestedStructureMembersInlined),
                 Namespace = nameof(AnonymousNestedStructureMembersInlined),
-                Assembly = nameof(AnonymousNestedStructureMembersInlined),
                 IncludeDirs = { GetTestFileIncludeRule() },
                 Includes =
                 {

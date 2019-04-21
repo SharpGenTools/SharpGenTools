@@ -170,7 +170,7 @@ namespace SharpGen.UnitTests
                     PublicType = new CsFundamentalType(typeof(void))
                 }
             };
-            
+
             Assert.Empty(propertyBuilder.CreateProperties(new[] { getMethod, invalidSetMethod }));
 
             Assert.Empty(propertyBuilder.CreateProperties(new[] { invalidSetMethod, getMethod }));
@@ -211,7 +211,7 @@ namespace SharpGen.UnitTests
                     PublicType = new CsFundamentalType(typeof(void))
                 }
             };
-            
+
             Assert.Empty(propertyBuilder.CreateProperties(new[] { setMethod }));
         }
 
@@ -293,7 +293,7 @@ namespace SharpGen.UnitTests
             var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
 
             var paramType = new CsFundamentalType(typeof(int));
-            
+
             var getMethod = new CsMethod
             {
                 Name = "GetActive",
@@ -402,7 +402,7 @@ namespace SharpGen.UnitTests
             };
 
             propertyBuilder.AttachPropertyToParent(prop);
-            
+
             Assert.Equal(iface, prop.Parent);
         }
 

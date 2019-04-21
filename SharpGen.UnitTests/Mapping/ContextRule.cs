@@ -21,7 +21,6 @@ namespace SharpGen.UnitTests.Mapping
             var config = new Config.ConfigFile
             {
                 Id = nameof(ContextRuleLimitsWhereMappingRuleExecutes),
-                Assembly = nameof(ContextRuleLimitsWhereMappingRuleExecutes),
                 Namespace = nameof(ContextRuleLimitsWhereMappingRuleExecutes),
                 Includes =
                 {

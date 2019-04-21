@@ -19,7 +19,6 @@ namespace SharpGen.UnitTests.Mapping
             {
                 Id = nameof(MappingNameRuleRenamesStruct),
                 Namespace = nameof(MappingNameRuleRenamesStruct),
-                Assembly = nameof(MappingNameRuleRenamesStruct),
                 Includes =
                 {
                     new Config.IncludeRule
@@ -74,7 +73,6 @@ namespace SharpGen.UnitTests.Mapping
             {
                 Id = nameof(MappingNameRuleRenamesStructMember),
                 Namespace = nameof(MappingNameRuleRenamesStructMember),
-                Assembly = nameof(MappingNameRuleRenamesStructMember),
                 Includes =
                 {
                     new Config.IncludeRule
@@ -130,7 +128,6 @@ namespace SharpGen.UnitTests.Mapping
             var config = new Config.ConfigFile
             {
                 Id = nameof(ShortNameRuleReplacesAcronym),
-                Assembly = nameof(ShortNameRuleReplacesAcronym),
                 Namespace = nameof(ShortNameRuleReplacesAcronym),
                 Includes =
                 {

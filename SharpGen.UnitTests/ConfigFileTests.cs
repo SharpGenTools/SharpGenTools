@@ -15,7 +15,7 @@ namespace SharpGen.UnitTests
         {
             var config = new ConfigFile
             {
-                IncludeDirs = 
+                IncludeDirs =
                 {
                     new IncludeDirRule("$(TEST_VARIABLE)")
                 }
@@ -24,7 +24,7 @@ namespace SharpGen.UnitTests
             config.Variables.Add(new KeyValue("TEST_VARIABLE", "Hello World!"));
 
             config.ExpandVariables(false, Logger);
-            
+
             Assert.Equal("Hello World!", config.IncludeDirs[0].Path);
         }
 
@@ -33,7 +33,7 @@ namespace SharpGen.UnitTests
         {
             var config = new ConfigFile
             {
-                IncludeDirs = 
+                IncludeDirs =
                 {
                     new IncludeDirRule("#(TEST_VARIABLE)")
                 }
@@ -42,7 +42,7 @@ namespace SharpGen.UnitTests
             config.DynamicVariables.Add("TEST_VARIABLE", "Hello World!");
 
             config.ExpandVariables(false, Logger);
-            
+
             Assert.Equal("#(TEST_VARIABLE)", config.IncludeDirs[0].Path);
         }
 
@@ -51,7 +51,7 @@ namespace SharpGen.UnitTests
         {
             var config = new ConfigFile
             {
-                IncludeDirs = 
+                IncludeDirs =
                 {
                     new IncludeDirRule("#(TEST_VARIABLE)")
                 }
@@ -60,7 +60,7 @@ namespace SharpGen.UnitTests
             config.DynamicVariables.Add("TEST_VARIABLE", "Hello World!");
 
             config.ExpandVariables(true, Logger);
-            
+
             Assert.Equal("Hello World!", config.IncludeDirs[0].Path);
         }
     }
