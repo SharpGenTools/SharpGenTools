@@ -92,6 +92,21 @@ struct PointerSizeMember
 	size_t pointerSize;
 };
 
+struct StructSizeRelation
+{
+	int cbSize;
+	int field1;
+	int field2;
+	long long field3;
+};
+
+struct ReservedRelation
+{
+	int field1;
+	int field2;
+	int reserved;
+};
+
 static_assert(sizeof(wchar_t) == 2, "Wide character isn't wide.");
 
 STRUCTLIB_FUNC(SimpleStruct) GetSimpleStruct();
