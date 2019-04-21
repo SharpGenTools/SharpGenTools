@@ -99,3 +99,5 @@ DECL(void) ArrayRelationOutGetInterfacesWithRelation(int length, Interface** arr
 DECL(void) ArrayRelationInInterfaceArray(int length, Interface* array[]);
 
 DECL(int) ArrayRelationSumStructWithMarshal(int length, StructWithMarshal array[]);
+
+DECL(bool) VerifyReservedParam(int reserved);

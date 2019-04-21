@@ -65,5 +65,11 @@ namespace Functions
             int result = NativeFunctions.SumStructWithMarshal(array);
             Assert.Equal(array.SelectMany(x => x.I).Aggregate((x, a) => x + a), result);
         }
+
+        [Fact]
+        public void ReservedParameter()
+        {
+            Assert.True(NativeFunctions.VerifyReservedParam());
+        }
     }
 }

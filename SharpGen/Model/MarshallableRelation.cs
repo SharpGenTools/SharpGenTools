@@ -18,6 +18,10 @@ namespace SharpGen.Model
     [DataContract(Name = "Struct-Size")]
     public sealed class StructSizeRelation : MarshallableRelation
     {
+        public override string ToString()
+        {
+            return $"Size of enclosing structure";
+        }
     }
 
     [DataContract(Name = "Length")]
@@ -25,6 +29,11 @@ namespace SharpGen.Model
     {
         [DataMember]
         public string RelatedMarshallableName { get; set; }
+
+        public override string ToString()
+        {
+            return $"Length of '{RelatedMarshallableName}'";
+        }
     }
 
     [DataContract(Name = "Constant-Value")]
@@ -32,5 +41,10 @@ namespace SharpGen.Model
     {
         [DataMember]
         public string Value { get; set; }
+
+        public override string ToString()
+        {
+            return $"Constant Value '{Value}'";
+        }
     }
 }

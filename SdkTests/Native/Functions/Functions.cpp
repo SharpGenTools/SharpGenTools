@@ -217,3 +217,8 @@ DECL(int) ArrayRelationSumStructWithMarshal(int length, StructWithMarshal array[
     }
     return sum;
 }
+
+DECL(bool) VerifyReservedParam(int reserved)
+{
+    return reserved == 42;
+}

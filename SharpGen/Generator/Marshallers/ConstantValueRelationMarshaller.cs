@@ -18,7 +18,9 @@ namespace SharpGen.Generator.Marshallers
         {
             return ExpressionStatement(
                 AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                    GetMarshalStorageLocation(relatedElement),
+                    relatedElement is CsField ?
+                        GetMarshalStorageLocation(relatedElement)
+                        : IdentifierName(relatedElement.Name),
                     ParseExpression(((ConstantValueRelation)relatedElement.Relation).Value)));
         }
 

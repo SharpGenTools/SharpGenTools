@@ -8,19 +8,22 @@ using Microsoft.CodeAnalysis.CSharp;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using SharpGen.Transform;
+using SharpGen.Logging;
 
 namespace SharpGen.Generator
 {
     class CallableCodeGenerator : MemberCodeGeneratorBase<CsCallable>
     {
-        public CallableCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation, ExternalDocCommentsReader docReader, GlobalNamespaceProvider globalNamespace)
+        public CallableCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation, ExternalDocCommentsReader docReader, GlobalNamespaceProvider globalNamespace, Logger logger)
             :base(documentation, docReader)
         {
             Generators = generators;
             this.globalNamespace = globalNamespace;
+            this.logger = logger;
         }
 
-        readonly GlobalNamespaceProvider globalNamespace;
+        private readonly GlobalNamespaceProvider globalNamespace;
+        private readonly Logger logger;
 
         public IGeneratorRegistry Generators { get; }
 
@@ -69,11 +72,26 @@ namespace SharpGen.Generator
                 {
                     statements.Add(GenerateManagedHiddenMarshallableProlog(param));
 
+                    if (!ValidRelationInScenario(param.Relation))
+                    {
+                        logger.Error(LoggingCodes.InvalidRelationInScenario, $"The relation \"{param.Relation}\" is invalid in a method/function.");
+                        continue;
+                    }
+
                     var marshaller = Generators.Marshalling.GetRelationMarshaller(param.Relation);
+                    StatementSyntax marshalToNative;
                     var relatedMarshallableName = (param.Relation as IHasRelatedMarshallable)?.RelatedMarshallableName;
-                    var marshalToNative = marshaller.GenerateManagedToNative(
-                        csElement.Parameters.First(p => p.CppElementName == relatedMarshallableName),
-                        param);
+                    if (relatedMarshallableName is null)
+                    {
+                        marshalToNative = marshaller.GenerateManagedToNative(null, param);
+                    }
+                    else
+                    {
+                        marshalToNative = marshaller.GenerateManagedToNative(
+                            csElement.Parameters.First(p => p.CppElementName == relatedMarshallableName),
+                            param);
+                    }
+
                     if (marshalToNative != null)
                     {
                         statements.Add(marshalToNative);
@@ -176,6 +194,11 @@ namespace SharpGen.Generator
                     csElement.IsArray ? ArrayType(ParseTypeName(csElement.PublicType.QualifiedName), SingletonList(ArrayRankSpecifier())) : ParseTypeName(csElement.PublicType.QualifiedName),
                     SingletonSeparatedList(
                         VariableDeclarator(csElement.Name))));
+        }
+
+        private bool ValidRelationInScenario(MarshallableRelation relation)
+        {
+            return relation is ConstantValueRelation || relation is IHasRelatedMarshallable;
         }
     }
 }

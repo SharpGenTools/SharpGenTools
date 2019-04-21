@@ -51,5 +51,6 @@
         <map function="ArrayRelation(.*)" name="$1" />
         <map function="ArrayRelationOut(.*)" name="$1" />
         <map param="ArrayRelationInInterfaceArray::length" type="longlong" />
+        <map param="VerifyReservedParam::reserved" relation="const(42)" />
     </mapping>
 </config>
