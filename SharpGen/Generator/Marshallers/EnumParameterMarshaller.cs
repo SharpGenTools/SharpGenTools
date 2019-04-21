@@ -7,15 +7,15 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    class EnumMarshaller : MarshallerBase, IMarshaller
+    class EnumParameterMarshaller : MarshallerBase, IMarshaller
     {
-        public EnumMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
+        public EnumParameterMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
         {
         }
 
         public bool CanMarshal(CsMarshalBase csElement)
         {
-            return csElement.PublicType is CsEnum && !csElement.IsArray;
+            return csElement.PublicType is CsEnum && !csElement.IsArray && csElement is CsParameter;
         }
 
         public ArgumentSyntax GenerateManagedArgument(CsParameter csElement)

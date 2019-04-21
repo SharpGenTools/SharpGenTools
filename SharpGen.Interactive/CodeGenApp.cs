@@ -211,7 +211,7 @@ namespace SharpGen.Interactive
                     var resolver = new IncludeDirectoryResolver(Logger);
                     resolver.Configure(Config);
 
-                    var castXml = new CastXml(Logger, resolver, CastXmlExecutablePath)
+                    var castXml = new CastXml(Logger, resolver, CastXmlExecutablePath, Array.Empty<string>())
                     {
                         OutputPath = IntermediateOutputPath,
                     };

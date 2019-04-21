@@ -77,18 +77,18 @@
  * C99 7.18.1.2 Minimum-width integer types.
  * C99 7.18.1.3 Fastest minimum-width integer types.
  *
- * The standard requires that exact-width type be defined for 8-, 16-, 32-, and 
+ * The standard requires that exact-width type be defined for 8-, 16-, 32-, and
  * 64-bit types if they are implemented. Other exact width types are optional.
  * This implementation defines an exact-width types for every integer width
  * that is represented in the standard integer types.
  *
  * The standard also requires minimum-width types be defined for 8-, 16-, 32-,
  * and 64-bit widths regardless of whether there are corresponding exact-width
- * types. 
+ * types.
  *
  * To accommodate targets that are missing types that are exactly 8, 16, 32, or
  * 64 bits wide, this implementation takes an approach of cascading
- * redefintions, redefining __int_leastN_t to successively smaller exact-width
+ * redefinitions, redefining __int_leastN_t to successively smaller exact-width
  * types. It is therefore important that the types are defined in order of
  * descending widths.
  *
@@ -97,7 +97,7 @@
  * suboptimal.
  *
  * In violation of the standard, some targets do not implement a type that is
- * wide enough to represent all of the required widths (8-, 16-, 32-, 64-bit).  
+ * wide enough to represent all of the required widths (8-, 16-, 32-, 64-bit).
  * To accommodate these targets, a required minimum-width type is only
  * defined if there exists an exact-width type of equal or greater width.
  */
@@ -247,7 +247,7 @@ typedef __uint_least8_t uint_fast8_t;
 #endif /* __int_least8_t */
 
 /* prevent glibc sys/types.h from defining conflicting types */
-#ifndef __int8_t_defined  
+#ifndef __int8_t_defined
 # define __int8_t_defined
 #endif /* __int8_t_defined */
 
@@ -255,19 +255,16 @@ typedef __uint_least8_t uint_fast8_t;
  */
 #define __stdint_join3(a,b,c) a ## b ## c
 
-#define  __intn_t(n) __stdint_join3( int, n, _t)
-#define __uintn_t(n) __stdint_join3(uint, n, _t)
-
 #ifndef _INTPTR_T
 #ifndef __intptr_t_defined
-typedef  __intn_t(__INTPTR_WIDTH__)  intptr_t;
+typedef __INTPTR_TYPE__ intptr_t;
 #define __intptr_t_defined
 #define _INTPTR_T
 #endif
 #endif
 
 #ifndef _UINTPTR_T
-typedef __uintn_t(__INTPTR_WIDTH__) uintptr_t;
+typedef __UINTPTR_TYPE__ uintptr_t;
 #define _UINTPTR_T
 #endif
 
@@ -280,9 +277,9 @@ typedef __UINTMAX_TYPE__ uintmax_t;
  *
  * The standard requires that integer constant macros be defined for all the
  * minimum-width types defined above. As 8-, 16-, 32-, and 64-bit minimum-width
- * types are required, the corresponding integer constant macros are defined 
+ * types are required, the corresponding integer constant macros are defined
  * here. This implementation also defines minimum-width types for every other
- * integer width that the target implements, so corresponding macros are 
+ * integer width that the target implements, so corresponding macros are
  * defined below, too.
  *
  * These macros are defined using the same successive-shrinking approach as
@@ -452,7 +449,7 @@ typedef __UINTMAX_TYPE__ uintmax_t;
 #endif /* __int_least8_t */
 
 
-/* C99 7.18.2.1 Limits of exact-width integer types. 
+/* C99 7.18.2.1 Limits of exact-width integer types.
  * C99 7.18.2.2 Limits of minimum-width integer types.
  * C99 7.18.2.3 Limits of fastest minimum-width integer types.
  *
@@ -464,7 +461,7 @@ typedef __UINTMAX_TYPE__ uintmax_t;
  * As in the type definitions, this section takes an approach of
  * successive-shrinking to determine which limits to use for the standard (8,
  * 16, 32, 64) bit widths when they don't have exact representations. It is
- * therefore important that the defintions be kept in order of decending
+ * therefore important that the definitions be kept in order of decending
  * widths.
  *
  * Note that C++ should not check __STDC_LIMIT_MACROS here, contrary to the
@@ -659,12 +656,12 @@ typedef __UINTMAX_TYPE__ uintmax_t;
 /* C99 7.18.2.4 Limits of integer types capable of holding object pointers. */
 /* C99 7.18.3 Limits of other integer types. */
 
-#define  INTPTR_MIN  __INTN_MIN(__INTPTR_WIDTH__)
-#define  INTPTR_MAX  __INTN_MAX(__INTPTR_WIDTH__)
-#define UINTPTR_MAX __UINTN_MAX(__INTPTR_WIDTH__)
-#define PTRDIFF_MIN  __INTN_MIN(__PTRDIFF_WIDTH__)
-#define PTRDIFF_MAX  __INTN_MAX(__PTRDIFF_WIDTH__)
-#define    SIZE_MAX __UINTN_MAX(__SIZE_WIDTH__)
+#define  INTPTR_MIN  (-__INTPTR_MAX__-1)
+#define  INTPTR_MAX    __INTPTR_MAX__
+#define UINTPTR_MAX   __UINTPTR_MAX__
+#define PTRDIFF_MIN (-__PTRDIFF_MAX__-1)
+#define PTRDIFF_MAX   __PTRDIFF_MAX__
+#define    SIZE_MAX      __SIZE_MAX__
 
 /* ISO9899:2011 7.20 (C11 Annex K): Define RSIZE_MAX if __STDC_WANT_LIB_EXT1__
  * is enabled. */
@@ -673,9 +670,9 @@ typedef __UINTMAX_TYPE__ uintmax_t;
 #endif
 
 /* C99 7.18.2.5 Limits of greatest-width integer types. */
-#define INTMAX_MIN   __INTN_MIN(__INTMAX_WIDTH__)
-#define INTMAX_MAX   __INTN_MAX(__INTMAX_WIDTH__)
-#define UINTMAX_MAX __UINTN_MAX(__INTMAX_WIDTH__)
+#define  INTMAX_MIN (-__INTMAX_MAX__-1)
+#define  INTMAX_MAX   __INTMAX_MAX__
+#define UINTMAX_MAX  __UINTMAX_MAX__
 
 /* C99 7.18.3 Limits of other integer types. */
 #define SIG_ATOMIC_MIN __INTN_MIN(__SIG_ATOMIC_WIDTH__)
@@ -700,8 +697,8 @@ typedef __UINTMAX_TYPE__ uintmax_t;
 #endif
 
 /* 7.18.4.2 Macros for greatest-width integer constants. */
-#define INTMAX_C(v)   __INTN_C(__INTMAX_WIDTH__, v)
-#define UINTMAX_C(v) __UINTN_C(__INTMAX_WIDTH__, v)
+#define  INTMAX_C(v) __int_c(v,  __INTMAX_C_SUFFIX__)
+#define UINTMAX_C(v) __int_c(v, __UINTMAX_C_SUFFIX__)
 
 #endif /* __STDC_HOSTED__ */
 #endif /* __CLANG_STDINT_H */

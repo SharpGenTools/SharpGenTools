@@ -954,6 +954,7 @@ namespace SharpGen.Parser
                     if (xElement.AttributeValue("inline") == null)
                         return ParseFunction(xElement);
                     break;
+                case CastXml.TagClass:
                 case CastXml.TagStruct:
                     return xElement.AttributeValue("abstract") != null ? (CppElement)ParseInterface(xElement) : ParseStructOrUnion(xElement);
                 case CastXml.TagUnion:
@@ -1018,6 +1019,7 @@ namespace SharpGen.Parser
                         type.TypeName = ConvertFundamentalType(name);
                         isTypeResolved = true;
                         break;
+                    case CastXml.TagClass:
                     case CastXml.TagEnumeration:
                     case CastXml.TagStruct:
                     case CastXml.TagUnion:

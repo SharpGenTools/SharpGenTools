@@ -53,6 +53,11 @@ namespace SharpGen.Parser
         public const string TagStruct = "Struct";
 
         /// <summary>
+        /// CastXML tag for Class
+        /// </summary>
+        public const string TagClass = "Class";
+
+        /// <summary>
         /// GccXml tag for Field
         /// </summary>
         public const string TagField = "Field";
@@ -112,7 +117,7 @@ namespace SharpGen.Parser
         /// </summary>
         /// <value>The executable path.</value>
         public string ExecutablePath { get; }
-
+        public IReadOnlyList<string> AdditionalArguments { get; }
         public string OutputPath { get; set; }
 
         private readonly IncludeDirectoryResolver directoryResolver;
@@ -122,10 +127,11 @@ namespace SharpGen.Parser
         /// <summary>
         /// Initializes a new instance of the <see cref="CastXml"/> class.
         /// </summary>
-        public CastXml(Logger logger, IncludeDirectoryResolver resolver, string executablePath)
+        public CastXml(Logger logger, IncludeDirectoryResolver resolver, string executablePath, string[] additionalArguments)
         {
             Logger = logger;
             ExecutablePath = executablePath;
+            AdditionalArguments = additionalArguments;
             directoryResolver = resolver;
         }
 
@@ -144,7 +150,7 @@ namespace SharpGen.Parser
                 if (!File.Exists(headerFile))
                     Logger.Fatal("C++ Header file [{0}] not found", headerFile);
 
-                RunCastXml(headerFile, handler, "-E -dD");
+                RunCastXml(headerFile, handler, $"-E -dD");
             });
         }
 
@@ -224,12 +230,11 @@ namespace SharpGen.Parser
             }
         }
 
-        private static string GetCastXmlArgs()
+        private string GetCastXmlArgs()
         {
-            var arguments = "";
-            arguments += " --castxml-gccxml";
-            arguments += " -x c++ -std=c++11 -fmsc-version=1900 -fms-extensions -fms-compatibility";
-            arguments += " -Wno-microsoft-enum-value -Wmacro-redefined -Wno-invalid-token-paste -Wno-ignored-attributes";
+            var arguments = string.Join(" ", AdditionalArguments);
+            arguments += " --castxml-gccxml -x c++";
+            arguments += " -Wmacro-redefined -Wno-invalid-token-paste -Wno-ignored-attributes";
             return arguments;
         }
 

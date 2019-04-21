@@ -1,4 +1,8 @@
 <Project>
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+  </PropertyGroup>
+  
   <!-- Pulled from https://stackoverflow.com/questions/12781870/how-should-i-reference-sn-exe-in-msbuild-script -->
   <Target Name="GetSnPath" Condition="'$(SnPath)' == '' OR !Exists('$(SnPath)')">
     <GetFrameworkSdkPath>

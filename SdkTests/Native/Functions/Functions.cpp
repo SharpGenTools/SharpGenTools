@@ -222,3 +222,8 @@ DECL(bool) VerifyReservedParam(int reserved)
 {
     return reserved == 42;
 }
+
+DECL(StructAsClassWrapper) GetWrapper()
+{
+    return {{1}};
+}

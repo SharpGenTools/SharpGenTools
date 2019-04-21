@@ -84,6 +84,9 @@ namespace SharpGen.Model
         {
             get
             {
+                // Workaround for https://github.com/dotnet/coreclr/issues/19474. This workaround is sufficient
+                // for DirectX on Windows x86 and x64. It may produce incorrect code on other platforms depending
+                // on the calling convention details.
                 if ((ReturnValue.MarshalType ?? ReturnValue.PublicType) is CsStruct csStruct)
                 {
                     return csStruct.Size > MaxSizeReturnParameter;

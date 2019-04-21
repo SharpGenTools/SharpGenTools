@@ -41,7 +41,7 @@ namespace SharpGen.Generator.Marshallers
             }
             var marshalToStatement = CreateMarshalStructStatement(
                 csElement,
-                "__MarshalTo",
+                StructMarshalMethod.To,
                 publicElementExpression,
                 GetMarshalStorageLocation(csElement));
 
@@ -107,7 +107,7 @@ namespace SharpGen.Generator.Marshallers
 
             return CreateMarshalStructStatement(
                     csElement,
-                    "__MarshalFree",
+                    StructMarshalMethod.Free,
                     publicElementExpression,
                     GetMarshalStorageLocation(csElement)
             );
@@ -127,7 +127,7 @@ namespace SharpGen.Generator.Marshallers
 
             return CreateMarshalStructStatement(
                     csElement,
-                    "__MarshalFrom",
+                    StructMarshalMethod.From,
                     publicElementExpression,
                     GetMarshalStorageLocation(csElement)
             );
