@@ -50,5 +50,6 @@
         <map param="ArrayRelationOut(.*)::array" attribute="out buffer" />
         <map function="ArrayRelation(.*)" name="$1" />
         <map function="ArrayRelationOut(.*)" name="$1" />
+        <map param="ArrayRelationInInterfaceArray::length" type="longlong" />
     </mapping>
 </config>

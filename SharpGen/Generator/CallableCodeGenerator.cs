@@ -94,7 +94,7 @@ namespace SharpGen.Generator
 
             foreach (var param in csElement.Parameters)
             {
-                if ((param.IsIn || param.IsRefIn || param.IsRef) && param.Relation == null)
+                if (param.IsIn || param.IsRefIn || param.IsRef)
                 {
                     var marshaller = Generators.Marshalling.GetMarshaller(param);
                     var marshalToNative = marshaller.GenerateManagedToNative(param, true);
