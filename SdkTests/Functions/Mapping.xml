@@ -45,5 +45,12 @@
         <map param="AddOne::param" attribute="inout optional" />
         <map param="EnumOut::test" attribute="out" />
         <map param="FirstEnumElement::test" attribute="in buffer" />
+        <map param="ArrayRelation(.*)::length" relation="length(array)"/>
+        <map param="ArrayRelation(.*)::array" attribute="in buffer" />
+        <map param="ArrayRelationOut(.*)::array" attribute="out buffer" />
+        <map function="ArrayRelation(.*)" name="$1" />
+        <map function="ArrayRelationOut(.*)" name="$1" />
+        <map param="ArrayRelationInInterfaceArray::length" type="longlong" />
+        <map param="VerifyReservedParam::reserved" relation="const(42)" />
     </mapping>
 </config>

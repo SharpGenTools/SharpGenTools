@@ -162,7 +162,7 @@ namespace SharpGen.Generator
             
             var managedArguments = new List<ArgumentSyntax>();
 
-            foreach (var param in csElement.Parameters.Where(p => !p.UsedAsReturn))
+            foreach (var param in csElement.Parameters.Where(p => !p.UsedAsReturn && p.Relation is null))
             {
                 managedArguments.Add(generators.Marshalling.GetMarshaller(param).GenerateManagedArgument(param));
             }

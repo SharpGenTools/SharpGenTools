@@ -140,7 +140,6 @@ namespace SharpGen.Generator.Marshallers
 
         public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame)
         {
-            // TODO: Reverse-callback support?
             if (singleStackFrame)
             {
                 return GenerateNullCheckIfNeeded(csElement,
@@ -155,12 +154,12 @@ namespace SharpGen.Generator.Marshallers
                                     SeparatedList(
                                         new[]
                                         {
-                                                    Argument(GetMarshalStorageLocation(csElement)),
-                                                    Argument(IdentifierName(csElement.Name))
+                                            Argument(GetMarshalStorageLocation(csElement)),
+                                            Argument(IdentifierName(csElement.Name))
                                         }
                             )))));
             }
-            else
+            else if (csElement is CsField)
             {
                 return GenerateNullCheckIfNeeded(csElement,
                     FixedStatement(
@@ -187,16 +186,36 @@ namespace SharpGen.Generator.Marshallers
                                     SeparatedList(
                                         new[]
                                         {
-                                                    Argument(IdentifierName("__ptr")),
-                                                    Argument(IdentifierName(csElement.Name))
+                                            Argument(IdentifierName("__ptr")),
+                                            Argument(IdentifierName(csElement.Name))
                                         }
                             ))))));
+            }
+            else // Reverse-callbacks
+            {
+                return GenerateNullCheckIfNeeded(csElement,
+                    ExpressionStatement(
+                            InvocationExpression(
+                                MemberAccessExpression(
+                                    SyntaxKind.SimpleMemberAccessExpression,
+                                    globalNamespace.GetTypeNameSyntax(WellKnownName.BooleanHelpers),
+                                    IdentifierName("ConvertToBoolArray")))
+                            .WithArgumentList(
+                                ArgumentList(
+                                    SeparatedList(
+                                        new[]
+                                        {
+                                            Argument(GetMarshalStorageLocation(csElement)),
+                                            Argument(IdentifierName(csElement.Name))
+                                        }
+                            ))))
+                );
             }
         }
 
         public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
         {
-            yield return NotImplemented("Bool-to-int arrays");
+            yield return GenerateArrayNativeToManagedExtendedProlog(csElement);
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)

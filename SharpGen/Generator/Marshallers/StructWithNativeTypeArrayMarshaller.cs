@@ -89,7 +89,7 @@ namespace SharpGen.Generator.Marshallers
 
         public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
         {
-            yield return NotImplemented("Array of structs with native type");
+            yield return GenerateArrayNativeToManagedExtendedProlog(csElement);
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)

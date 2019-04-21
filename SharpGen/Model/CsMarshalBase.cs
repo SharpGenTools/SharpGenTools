@@ -113,5 +113,8 @@ namespace SharpGen.Model
                 && !(IsInterface && HasPointer);
             }
         }
+
+        [DataMember]
+        public MarshallableRelation Relation { get; set; }
     }
 }

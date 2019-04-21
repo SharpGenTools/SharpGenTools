@@ -8,19 +8,22 @@ using Microsoft.CodeAnalysis.CSharp;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using SharpGen.Transform;
+using SharpGen.Logging;
 
 namespace SharpGen.Generator
 {
     class CallableCodeGenerator : MemberCodeGeneratorBase<CsCallable>
     {
-        public CallableCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation, ExternalDocCommentsReader docReader, GlobalNamespaceProvider globalNamespace)
+        public CallableCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation, ExternalDocCommentsReader docReader, GlobalNamespaceProvider globalNamespace, Logger logger)
             :base(documentation, docReader)
         {
             Generators = generators;
             this.globalNamespace = globalNamespace;
+            this.logger = logger;
         }
 
-        readonly GlobalNamespaceProvider globalNamespace;
+        private readonly GlobalNamespaceProvider globalNamespace;
+        private readonly Logger logger;
 
         public IGeneratorRegistry Generators { get; }
 
@@ -57,16 +60,50 @@ namespace SharpGen.Generator
 
             foreach (var param in csElement.Parameters)
             {
-                if (param.UsedAsReturn)
+                if (param.Relation == null)
                 {
-                    statements.Add(GenerateManagedReturnProlog(param));
+                    if (param.UsedAsReturn)
+                    {
+                        statements.Add(GenerateManagedHiddenMarshallableProlog(param));
+                    }
+                    statements.AddRange(Generators.Marshalling.GetMarshaller(param).GenerateManagedToNativeProlog(param)); 
                 }
-                statements.AddRange(Generators.Marshalling.GetMarshaller(param).GenerateManagedToNativeProlog(param));
+                else
+                {
+                    statements.Add(GenerateManagedHiddenMarshallableProlog(param));
+
+                    if (!ValidRelationInScenario(param.Relation))
+                    {
+                        logger.Error(LoggingCodes.InvalidRelationInScenario, $"The relation \"{param.Relation}\" is invalid in a method/function.");
+                        continue;
+                    }
+
+                    var marshaller = Generators.Marshalling.GetRelationMarshaller(param.Relation);
+                    StatementSyntax marshalToNative;
+                    var relatedMarshallableName = (param.Relation as IHasRelatedMarshallable)?.RelatedMarshallableName;
+                    if (relatedMarshallableName is null)
+                    {
+                        marshalToNative = marshaller.GenerateManagedToNative(null, param);
+                    }
+                    else
+                    {
+                        marshalToNative = marshaller.GenerateManagedToNative(
+                            csElement.Parameters.First(p => p.CppElementName == relatedMarshallableName),
+                            param);
+                    }
+
+                    if (marshalToNative != null)
+                    {
+                        statements.Add(marshalToNative);
+                    }
+
+                    statements.AddRange(Generators.Marshalling.GetMarshaller(param).GenerateManagedToNativeProlog(param));
+                }
             }
 
             if (csElement.HasReturnType)
             {
-                statements.Add(GenerateManagedReturnProlog(csElement.ReturnValue));
+                statements.Add(GenerateManagedHiddenMarshallableProlog(csElement.ReturnValue));
                 statements.AddRange(
                     Generators.Marshalling.GetMarshaller(csElement.ReturnValue)
                         .GenerateManagedToNativeProlog(csElement.ReturnValue));
@@ -150,13 +187,18 @@ namespace SharpGen.Generator
             yield return methodDeclaration.WithBody(Block(statements));
         }
 
-        private StatementSyntax GenerateManagedReturnProlog(CsMarshalCallableBase csElement)
+        private StatementSyntax GenerateManagedHiddenMarshallableProlog(CsMarshalCallableBase csElement)
         {
             return LocalDeclarationStatement(
                 VariableDeclaration(
                     csElement.IsArray ? ArrayType(ParseTypeName(csElement.PublicType.QualifiedName), SingletonList(ArrayRankSpecifier())) : ParseTypeName(csElement.PublicType.QualifiedName),
                     SingletonSeparatedList(
                         VariableDeclarator(csElement.Name))));
+        }
+
+        private bool ValidRelationInScenario(MarshallableRelation relation)
+        {
+            return relation is ConstantValueRelation || relation is IHasRelatedMarshallable;
         }
     }
 }

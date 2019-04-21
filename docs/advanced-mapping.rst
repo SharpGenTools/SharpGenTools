@@ -143,7 +143,9 @@ All Marshallable Elements
     * ``array``
 
         * Override the array dimension of the matching C++ elements.
+    * ``relation``
 
+        * Specify that this marshallable element is related to another marshallable element or has a constant value. See :doc:`/relations` for more information.
 
 .. _enum:
 

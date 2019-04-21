@@ -24,7 +24,7 @@ namespace SharpGen.Generator
             Struct = new StructCodeGenerator(this, documentation, docReader);
             NativeStruct = new NativeStructCodeGenerator(this, globalNamespace);
             NativeInvocation = new NativeInvocationCodeGenerator(this, globalNamespace);
-            Callable = new CallableCodeGenerator(this, documentation, docReader, globalNamespace);
+            Callable = new CallableCodeGenerator(this, documentation, docReader, globalNamespace, logger);
             Method = new MethodCodeGenerator(this);
             Function = new FunctionCodeGenerator(this);
             Interface = new InterfaceCodeGenerator(this, documentation, docReader, globalNamespace);

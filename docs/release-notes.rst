@@ -2,6 +2,14 @@
 Release Notes
 =====================
 
+1.vNext
+========
+
+Features:
+
+    * Implemented relation mapping.
+    * Enabled automatic shadow generation for callbacks with array parameters when users specify length relations for array parameters.
+
 1.1.1
 ========
 

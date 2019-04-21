@@ -71,7 +71,7 @@ namespace SharpGen.Generator.Marshallers
 
         public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
         {
-            yield return NotImplemented("Interface Arrays");
+            yield return GenerateArrayNativeToManagedExtendedProlog(csElement);
         }
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)

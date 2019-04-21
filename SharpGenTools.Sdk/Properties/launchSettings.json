@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "SharpGenTools.Sdk": {
+      "commandName": "Project"
+    },
+    "SdkTestsBuild": {
+      "commandName": "Executable",
+      "executablePath": "msbuild",
+      "commandLineArgs": "C:\\Users\\jekoritz\\source\\repos\\SharpGenTools\\SdkTests\\SdkTests.sln",
+      "nativeDebugging": false
+    }
+  }
+}

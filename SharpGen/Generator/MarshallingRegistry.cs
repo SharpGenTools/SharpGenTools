@@ -35,10 +35,18 @@ namespace SharpGen.Generator
                 new ValueTypeArrayMarshaller(globalNamespace),
                 new ValueTypeMarshaller(globalNamespace)
             };
+            RelationMarshallers = new Dictionary<Type, IRelationMarshaller>
+            {
+                { typeof(StructSizeRelation), new StructSizeRelationMarshaller(globalNamespace) },
+                { typeof(LengthRelation), new LengthRelationMarshaller(globalNamespace) },
+                { typeof(ConstantValueRelation), new ConstantValueRelationMarshaller(globalNamespace) }
+            };
             this.logger = logger;
         }
 
         private IReadOnlyList<IMarshaller> Marshallers { get; }
+
+        private IReadOnlyDictionary<Type, IRelationMarshaller> RelationMarshallers { get; }
 
         public IMarshaller GetMarshaller(CsMarshalBase csElement)
         {
@@ -57,6 +65,11 @@ namespace SharpGen.Generator
                 }
             }
             return marshaller;
+        }
+
+        public IRelationMarshaller GetRelationMarshaller(MarshallableRelation relation)
+        {
+            return RelationMarshallers[relation.GetType()];
         }
 
         public SyntaxToken GetMarshalStorageLocationIdentifier(CsMarshalBase csElement)

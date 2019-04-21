@@ -95,4 +95,16 @@ DECL(void) EnumOut(MyEnum* test);
 
 DECL(MyEnum) FirstEnumElement(MyEnum test[]);
 
+DECL(int) ArrayRelationSum(int length, SimpleStruct array[]);
+
+DECL(void) ArrayRelationOutInitBoolArray(bool array[], int length);
+
+DECL(void) ArrayRelationOutGetInterfacesWithRelation(int length, Interface** array);
+
+DECL(void) ArrayRelationInInterfaceArray(int length, Interface* array[]);
+
+DECL(int) ArrayRelationSumStructWithMarshal(int length, StructWithMarshal array[]);
+
+DECL(bool) VerifyReservedParam(int reserved);
+
 DECL(StructAsClassWrapper) GetWrapper();
