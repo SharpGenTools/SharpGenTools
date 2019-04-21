@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using SharpGen.Model;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using Microsoft.CodeAnalysis.CSharp;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
