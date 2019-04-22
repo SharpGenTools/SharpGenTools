@@ -21,7 +21,6 @@ namespace SharpGen.UnitTests.Mapping
             var config = new Config.ConfigFile
             {
                 Id = nameof(Basic),
-                Assembly = nameof(Basic),
                 Namespace = nameof(Basic),
                 Includes =
                 {
@@ -70,7 +69,6 @@ namespace SharpGen.UnitTests.Mapping
             var config = new Config.ConfigFile
             {
                 Id = nameof(ExplicitValues),
-                Assembly = nameof(ExplicitValues),
                 Namespace = nameof(ExplicitValues),
                 Includes =
                 {
@@ -125,7 +123,6 @@ namespace SharpGen.UnitTests.Mapping
             var config = new Config.ConfigFile
             {
                 Id = nameof(ExplicitUnderlyingType),
-                Assembly = nameof(ExplicitUnderlyingType),
                 Namespace = nameof(ExplicitUnderlyingType),
                 Includes =
                 {

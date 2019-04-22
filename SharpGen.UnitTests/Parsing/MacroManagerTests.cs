@@ -25,7 +25,6 @@ namespace SharpGen.UnitTests.Parsing
             var config = new ConfigFile
             {
                 Id = nameof(MacroManagerCollectsIncludedHeaders),
-                Assembly = nameof(MacroManagerCollectsIncludedHeaders),
                 Namespace = nameof(MacroManagerCollectsIncludedHeaders),
                 IncludeDirs = { includeRule },
                 Includes =

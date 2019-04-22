@@ -244,8 +244,7 @@
     <GetGeneratedCSharpFiles
       Model="@(CSharpModel)"
       OutputDirectory="$(SharpGenOutputDirectory)"
-      GeneratedCodeFolder="$(SharpGenGeneratedCodeFolder)"
-      IncludeAssemblyNameFolder="$(SharpGenIncludeAssemblyNameFolder)">
+      GeneratedCodeFolder="$(SharpGenGeneratedCodeFolder)">
       <Output TaskParameter="GeneratedFiles" ItemName="GeneratedCSharpFiles" />
     </GetGeneratedCSharpFiles>
   </Target>
@@ -260,7 +259,6 @@
       Model="@(CSharpModel)"
       OutputDirectory="$(SharpGenOutputDirectory)"
       GeneratedCodeFolder="$(SharpGenGeneratedCodeFolder)"
-      IncludeAssemblyNameFolder="$(SharpGenIncludeAssemblyNameFolder)"
       GlobalNamespace="$(SharpGenGlobalNamespace)"
       GlobalNamespaceOverrides="@(SharpGenGlobalNamespaceOverrides)"
       DocLinkCache="@(DocLinksCache)"
@@ -283,7 +281,7 @@
     Inputs="@(GeneratedCSharpFiles)"
     Outputs="$(SharpGenIntermediateDir)ForceNotUpToDate">
     <ItemGroup>
-      <Compile Include="@(GeneratedCSharpFiles)" Condition="'%(GeneratedCSharpFiles.Assembly)' == '$(AssemblyName)'" />
+      <Compile Include="@(GeneratedCSharpFiles)" />
     </ItemGroup>
   </Target>
 
@@ -309,13 +307,12 @@
     Name="RunSharpPatch"
     DependsOnTargets="CoreCompile"
     BeforeTargets="CopyFilesToOutputDirectory"
-    Inputs="@(IntermediateAssembly)"
+    Inputs="@(IntermediateAssembly);@(ReferencePath)"
     Outputs="@(IntermediateAssembly->'%(FullPath).check')"
   >
     <SharpPatch
       AssemblyToPatch="%(IntermediateAssembly.FullPath)"
       References="@(ReferencePath)"
-      GlobalNamespace="$(SharpGenGlobalNamespace)"
     />
   </Target>
 

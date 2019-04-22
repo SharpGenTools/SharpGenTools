@@ -12,7 +12,7 @@ namespace SharpGen.UnitTests
         protected DirectoryInfo TestDirectory { get; }
 
         protected FileSystemTestBase(ITestOutputHelper outputHelper)
-            :base(outputHelper)
+            : base(outputHelper)
         {
             TestDirectory = GenerateTestDirectory();
         }

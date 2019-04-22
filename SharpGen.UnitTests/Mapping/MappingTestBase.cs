@@ -13,11 +13,11 @@ namespace SharpGen.UnitTests.Mapping
     public abstract class MappingTestBase : TestBase
     {
         protected MappingTestBase(ITestOutputHelper outputHelper)
-            :base(outputHelper)
+            : base(outputHelper)
         {
         }
 
-        protected (CsSolution Solution, IEnumerable<DefineExtensionRule> Defines) MapModel(CppModule module, ConfigFile config)
+        protected (CsAssembly Assembly, IEnumerable<DefineExtensionRule> Defines) MapModel(CppModule module, ConfigFile config)
         {
             var transformer = CreateTransformer();
 
@@ -46,8 +46,7 @@ namespace SharpGen.UnitTests.Mapping
                 Logger,
                 typeRegistry,
                 docLinker,
-                new ConstantManager(namingRules, docLinker),
-                new AssemblyManager())
+                new ConstantManager(namingRules, docLinker))
             {
                 ForceGenerator = true
             };

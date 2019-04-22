@@ -69,7 +69,7 @@ namespace SharpGenTools.Sdk.Tasks
                 new CachedDocumentationLinker(DocLinkCache.ItemSpec),
                 new ExternalDocCommentsReader(documentationFiles));
 
-            generator.Run(CsSolution.Read(Model.ItemSpec), OutputDirectory, GeneratedCodeFolder, IncludeAssemblyNameFolder);
+            generator.Run(CsAssembly.Read(Model.ItemSpec), OutputDirectory, GeneratedCodeFolder);
 
             return true;
         }

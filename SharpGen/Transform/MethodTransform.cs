@@ -23,12 +23,6 @@ using SharpGen.Logging;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using Microsoft.CodeAnalysis.CSharp;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SharpGen.Transform
 {
@@ -40,7 +34,7 @@ namespace SharpGen.Transform
         private readonly GroupRegistry groupRegistry;
         private readonly MarshalledElementFactory factory;
         private readonly GlobalNamespaceProvider globalNamespace;
-        private readonly TypeRegistry typeRegistry;
+        private readonly InteropManager interopManager;
 
         public MethodTransform(
             NamingRulesManager namingRules,
@@ -48,13 +42,13 @@ namespace SharpGen.Transform
             GroupRegistry groupRegistry,
             MarshalledElementFactory factory,
             GlobalNamespaceProvider globalNamespace,
-            TypeRegistry typeRegistry)
+            InteropManager interopManager)
             : base(namingRules, logger)
         {
             this.groupRegistry = groupRegistry;
             this.factory = factory;
             this.globalNamespace = globalNamespace;
-            this.typeRegistry = typeRegistry;
+            this.interopManager = interopManager;
         }
 
         /// <summary>
@@ -206,9 +200,7 @@ namespace SharpGen.Transform
                 cSharpInteropCalliSignature.ParameterTypes.Add(interopType);
             }
 
-            var assembly = callable.GetParent<CsAssembly>();
-            cSharpInteropCalliSignature = assembly.Interop.Add(cSharpInteropCalliSignature);
-
+            cSharpInteropCalliSignature = interopManager.Add(cSharpInteropCalliSignature);
             callable.Interop = cSharpInteropCalliSignature;
         }
 
