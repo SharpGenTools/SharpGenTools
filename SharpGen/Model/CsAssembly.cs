@@ -86,7 +86,6 @@ namespace SharpGen.Model
         [DataMember]
         public InteropManager Interop { get; set; }
 
-
         /// <summary>
         /// Reads the module from the specified file.
         /// </summary>
