@@ -113,7 +113,7 @@ namespace SharpGen.Parser
         public const string TagFunctionType = "FunctionType";
 
         /// <summary>
-        /// Gets or sets the executable path of gccxml.exe.
+        /// Gets or sets the executable path of castxml.
         /// </summary>
         /// <value>The executable path.</value>
         public string ExecutablePath { get; }
@@ -145,7 +145,7 @@ namespace SharpGen.Parser
             Logger.RunInContext(nameof(Preprocess), () =>
             {
                 if (!File.Exists(ExecutablePath))
-                    Logger.Fatal("castxml.exe not found from path: [{0}]", ExecutablePath);
+                    Logger.Fatal("castxml not found from path: [{0}]", ExecutablePath);
 
                 if (!File.Exists(headerFile))
                     Logger.Fatal("C++ Header file [{0}] not found", headerFile);
@@ -165,7 +165,7 @@ namespace SharpGen.Parser
 
             Logger.RunInContext(nameof(Process), () =>
             {
-                if (!File.Exists(ExecutablePath)) Logger.Fatal("castxml.exe not found from path: [{0}]", ExecutablePath);
+                if (!File.Exists(ExecutablePath)) Logger.Fatal("castxml not found from path: [{0}]", ExecutablePath);
 
                 if (!File.Exists(headerFile)) Logger.Fatal("C++ Header file [{0}] not found", headerFile);
 

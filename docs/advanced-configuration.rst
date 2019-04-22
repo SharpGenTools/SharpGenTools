@@ -45,7 +45,7 @@ Some of the options above control the output directory for generated code. The t
 CastXML Customization
 =========================
 
-    * ``CastXmlExecutablePath``
+    * ``CastXmlPath``
 
         * A path to a custom build of CastXML.
     * ``CastXmlArg`` MSBuild Items
