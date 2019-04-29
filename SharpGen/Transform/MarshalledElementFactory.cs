@@ -324,14 +324,14 @@ namespace SharpGen.Transform
                         parameterAttribute = CsParameterAttribute.Out;
 
                     // Handle void* with Buffer attribute
-                    if ((cppParameter.GetTypeNameWithMapping() == "void" && (cppAttribute & ParamAttribute.Buffer) != 0))
+                    if (cppParameter.GetTypeNameWithMapping() == "void" && (cppAttribute & ParamAttribute.Buffer) != 0)
                     {
                         hasArray = false;
                         parameterAttribute = CsParameterAttribute.In;
                     }
                     // There's no way to know how to deallocate native-allocated memory correctly since we don't know what allocator the native memory uses
                     // so we treat double-pointer indirections as IntPtr
-                    else if (numIndirections > 1)
+                    else if (numIndirections > 1 && cppParameter.GetTypeNameWithMapping() != "void")
                     {
                         marshalType = publicType = typeRegistry.ImportType(typeof(IntPtr));
                         parameterAttribute = CsParameterAttribute.In;

@@ -406,6 +406,27 @@ namespace SharpGen.UnitTests
         }
 
         [Fact]
+        public void DoubleVoidPointerParameterPreserved()
+        {
+            var cppParameter = new CppParameter
+            {
+                TypeName = "void",
+                Pointer = "**",
+                Attribute = ParamAttribute.Out
+            };
+
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
+            typeRegistry.BindType("void", typeRegistry.ImportType(typeof(void)));
+            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
+            var csParameter = marshalledElementFactory.Create(cppParameter);
+
+            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csParameter.PublicType);
+            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csParameter.MarshalType);
+            Assert.True(csParameter.HasPointer);
+            Assert.True(csParameter.IsOut);
+        }
+
+        [Fact]
         public void PointerNonInterfaceReturnValueMappedAsIntPtr()
         {
             var cppReturnValue = new CppReturnValue
