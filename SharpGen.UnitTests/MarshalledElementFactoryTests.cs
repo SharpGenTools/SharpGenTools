@@ -423,5 +423,28 @@ namespace SharpGen.UnitTests
             Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csReturnValue.MarshalType);
             Assert.True(csReturnValue.HasPointer);
         }
+
+
+        [Fact]
+        public void TriplePointerInterfaceParameterMappedAsIntPtr()
+        {
+            var cppParameter = new CppParameter
+            {
+                TypeName = "Interface",
+                Pointer = "***"
+            };
+
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
+            typeRegistry.BindType("Interface", new CsInterface { Name = "Interface" });
+
+            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
+
+            var csParameter = marshalledElementFactory.Create(cppParameter);
+
+            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csParameter.PublicType);
+            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csParameter.MarshalType);
+            Assert.True(csParameter.HasPointer);
+        }
+
     }
 }

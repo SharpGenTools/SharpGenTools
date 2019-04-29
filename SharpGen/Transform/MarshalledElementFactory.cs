@@ -285,6 +285,15 @@ namespace SharpGen.Transform
                     {
                         parameterAttribute = CsParameterAttribute.Out;
                     }
+
+                    // There's no way to know how to deallocate native-allocated memory correctly since we don't know what allocator the native memory uses
+                    // so we treat triple-pointer indirections as IntPtr
+                    if (numIndirections > 2)
+                    {
+                        marshalType = publicType = typeRegistry.ImportType(typeof(IntPtr));
+                        parameterAttribute = CsParameterAttribute.In;
+                        hasArray = false;
+                    }
                 }
                 else
                 {
