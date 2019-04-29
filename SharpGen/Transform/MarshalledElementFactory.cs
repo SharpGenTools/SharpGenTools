@@ -4,6 +4,7 @@ using SharpGen.Logging;
 using SharpGen.Model;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace SharpGen.Transform
@@ -198,25 +199,34 @@ namespace SharpGen.Transform
 
         public CsReturnValue Create(CppReturnValue cppReturnValue)
         {
-            return CreateCore<CsReturnValue>(cppReturnValue);
+            var retVal = CreateCore<CsReturnValue>(cppReturnValue);
+
+            MakeGeneralPointersBeIntPtr(retVal);
+
+            return retVal;
         }
 
         public CsField Create(CppField cppField)
         {
             var field = CreateCore<CsField>(cppField);
 
-            if (field.HasPointer)
-            {
-                field.MarshalType = typeRegistry.ImportType(typeof(IntPtr));
-                if (field.PublicType != typeRegistry.ImportType(typeof(string)) && !field.IsInterface)
-                {
-                    field.PublicType = typeRegistry.ImportType(typeof(IntPtr));
-                }
-            }
+            MakeGeneralPointersBeIntPtr(field);
 
             field.IsBitField = cppField.IsBitField;
 
             return field;
+        }
+
+        private void MakeGeneralPointersBeIntPtr(CsMarshalBase csMarshallable)
+        {
+            if (csMarshallable.HasPointer)
+            {
+                csMarshallable.MarshalType = typeRegistry.ImportType(typeof(IntPtr));
+                if (csMarshallable.PublicType != typeRegistry.ImportType(typeof(string)) && !csMarshallable.IsInterface)
+                {
+                    csMarshallable.PublicType = typeRegistry.ImportType(typeof(IntPtr));
+                }
+            }
         }
 
         public CsParameter Create(CppParameter cppParameter)
@@ -235,6 +245,7 @@ namespace SharpGen.Transform
             var marshalType = param.MarshalType;
 
             var parameterAttribute = CsParameterAttribute.In;
+            var numIndirections = cppParameter.Pointer?.Count(p => p == '*' || p == '&') ?? 0;
 
             if (hasArray)
             {
@@ -254,8 +265,10 @@ namespace SharpGen.Transform
                     // Force Interface** to be ParamAttribute.Out when None
                     if (cppAttribute == ParamAttribute.In || cppAttribute == ParamAttribute.None)
                     {
-                        if (cppParameter.Pointer == "**")
+                        if (numIndirections == 2)
+                        {
                             cppAttribute = ParamAttribute.Out;
+                        }
                     }
 
                     if ((cppAttribute & ParamAttribute.In) != 0 || (cppAttribute & ParamAttribute.InOut) != 0)
@@ -269,7 +282,9 @@ namespace SharpGen.Transform
                         }
                     }
                     else if ((cppAttribute & ParamAttribute.Out) != 0)
+                    {
                         parameterAttribute = CsParameterAttribute.Out;
+                    }
                 }
                 else
                 {
@@ -300,10 +315,18 @@ namespace SharpGen.Transform
                         parameterAttribute = CsParameterAttribute.Out;
 
                     // Handle void* with Buffer attribute
-                    if (cppParameter.GetTypeNameWithMapping() == "void" && (cppAttribute & ParamAttribute.Buffer) != 0)
+                    if ((cppParameter.GetTypeNameWithMapping() == "void" && (cppAttribute & ParamAttribute.Buffer) != 0))
                     {
                         hasArray = false;
                         parameterAttribute = CsParameterAttribute.In;
+                    }
+                    // There's no way to know how to deallocate native-allocated memory correctly since we don't know what allocator the native memory uses
+                    // so we treat double-pointer indirections as IntPtr
+                    else if (numIndirections > 1)
+                    {
+                        marshalType = publicType = typeRegistry.ImportType(typeof(IntPtr));
+                        parameterAttribute = CsParameterAttribute.In;
+                        hasArray = false;
                     }
                     else if (publicType is CsFundamentalType fundamental && fundamental.Type == typeof(string)
                         && (cppAttribute & ParamAttribute.Out) != 0)
