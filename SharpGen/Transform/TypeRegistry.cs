@@ -69,6 +69,10 @@ namespace SharpGen.Transform
             {
                 typeName = "void";
             }
+            else if (type == typeof(void*))
+            {
+                typeName = "void*";
+            }
 
             if (_mapDefinedCSharpType.TryGetValue(typeName, out CsTypeBase preDefined))
             {

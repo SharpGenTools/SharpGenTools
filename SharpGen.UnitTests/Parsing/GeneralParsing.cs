@@ -20,7 +20,6 @@ namespace SharpGen.UnitTests.Parsing
             var config = new Config.ConfigFile
             {
                 Id = nameof(InvalidCppErrorsLogger),
-                Assembly = nameof(InvalidCppErrorsLogger),
                 Namespace = nameof(InvalidCppErrorsLogger),
                 IncludeDirs = { GetTestFileIncludeRule() },
                 Includes =
@@ -41,7 +40,6 @@ namespace SharpGen.UnitTests.Parsing
             var config = new Config.ConfigFile
             {
                 Id = nameof(InvalidCppErrorsLogger),
-                Assembly = nameof(InvalidCppErrorsLogger),
                 Namespace = nameof(InvalidCppErrorsLogger),
                 IncludeDirs = { GetTestFileIncludeRule() },
                 Includes =

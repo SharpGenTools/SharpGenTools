@@ -46,6 +46,7 @@ Check out :doc:`getting-started` to get started!.
    getting-started
    custom-mapping
    advanced-mapping
+   relations
    config-features
    naming-rules
    documentation

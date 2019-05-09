@@ -19,7 +19,6 @@ namespace SharpGen.UnitTests.Parsing
             var config = new Config.ConfigFile
             {
                 Id = nameof(CppParserCorrectlyParsesStdCall),
-                Assembly = nameof(CppParserCorrectlyParsesStdCall),
                 Namespace = nameof(CppParserCorrectlyParsesStdCall),
                 IncludeDirs =
                 {
@@ -46,7 +45,6 @@ namespace SharpGen.UnitTests.Parsing
             var config = new Config.ConfigFile
             {
                 Id = nameof(CppParserCorrectlyInfersCdeclForDefaultCallingConvention),
-                Assembly = nameof(CppParserCorrectlyInfersCdeclForDefaultCallingConvention),
                 Namespace = nameof(CppParserCorrectlyInfersCdeclForDefaultCallingConvention),
                 IncludeDirs =
                 {
@@ -73,7 +71,6 @@ namespace SharpGen.UnitTests.Parsing
             var config = new Config.ConfigFile
             {
                 Id = nameof(CppParserCorrectlyParsesStdCall),
-                Assembly = nameof(CppParserCorrectlyParsesStdCall),
                 Namespace = nameof(CppParserCorrectlyParsesStdCall),
                 IncludeDirs =
                 {
@@ -88,7 +85,7 @@ namespace SharpGen.UnitTests.Parsing
             };
 
             var model = ParseCpp(config);
-            
+
             Assert.NotNull(model.FindFirst<CppParameter>("func::arg0"));
         }
 
@@ -100,7 +97,6 @@ namespace SharpGen.UnitTests.Parsing
             var config = new Config.ConfigFile
             {
                 Id = nameof(PointerAndReferenceParametersAreCorrectlyParsed),
-                Assembly = nameof(PointerAndReferenceParametersAreCorrectlyParsed),
                 Namespace = nameof(PointerAndReferenceParametersAreCorrectlyParsed),
                 IncludeDirs =
                 {

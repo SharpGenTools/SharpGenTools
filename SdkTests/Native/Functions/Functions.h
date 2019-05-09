@@ -40,6 +40,11 @@ struct StructAsClass
 	int i;
 };
 
+struct StructAsClassWrapper
+{
+	StructAsClass wrapped;
+};
+
 DECL(void) GetInterfaces(int numInstances, Interface** results);
 
 DECL(void) GetInterfacesOptional(int numInstances, Interface** results);
@@ -87,3 +92,19 @@ DECL(int) SumInner(StructAsClass test[], int length);
 DECL(void) AddOne(SimpleStruct* param);
 
 DECL(void) EnumOut(MyEnum* test);
+
+DECL(MyEnum) FirstEnumElement(MyEnum test[]);
+
+DECL(int) ArrayRelationSum(int length, SimpleStruct array[]);
+
+DECL(void) ArrayRelationOutInitBoolArray(bool array[], int length);
+
+DECL(void) ArrayRelationOutGetInterfacesWithRelation(int length, Interface** array);
+
+DECL(void) ArrayRelationInInterfaceArray(int length, Interface* array[]);
+
+DECL(int) ArrayRelationSumStructWithMarshal(int length, StructWithMarshal array[]);
+
+DECL(bool) VerifyReservedParam(int reserved);
+
+DECL(StructAsClassWrapper) GetWrapper();

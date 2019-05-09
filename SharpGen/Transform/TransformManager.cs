@@ -46,8 +46,8 @@ namespace SharpGen.Transform
         private readonly NamespaceRegistry namespaceRegistry;
         private readonly MarshalledElementFactory marshalledElementFactory;
         private readonly ConstantManager constantManager;
+        private readonly InteropManager interopManager = new InteropManager();
         private readonly GroupRegistry groupRegistry = new GroupRegistry();
-        private readonly AssemblyManager assemblyManager;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TransformManager"/> class.
@@ -58,8 +58,7 @@ namespace SharpGen.Transform
             Logger logger,
             TypeRegistry typeRegistry,
             IDocumentationLinker docLinker,
-            ConstantManager constantManager,
-            AssemblyManager assemblyManager)
+            ConstantManager constantManager)
         {
             GlobalNamespace = globalNamespace;
             Logger = logger;
@@ -67,15 +66,14 @@ namespace SharpGen.Transform
             this.docLinker = docLinker;
             this.typeRegistry = typeRegistry;
             this.constantManager = constantManager;
-            this.assemblyManager = assemblyManager;
-            namespaceRegistry = new NamespaceRegistry(logger, assemblyManager);
+            namespaceRegistry = new NamespaceRegistry(logger);
             marshalledElementFactory = new MarshalledElementFactory(Logger, GlobalNamespace, typeRegistry);
 
             EnumTransform = new EnumTransform(namingRules, logger, namespaceRegistry, typeRegistry);
 
             StructTransform = new StructTransform(namingRules, logger, namespaceRegistry, typeRegistry, marshalledElementFactory);
 
-            FunctionTransform = new MethodTransform(namingRules, logger, groupRegistry, marshalledElementFactory, globalNamespace, typeRegistry);
+            FunctionTransform = new MethodTransform(namingRules, logger, groupRegistry, marshalledElementFactory, globalNamespace, interopManager);
 
             InterfaceTransform = new InterfaceTransform(namingRules, logger, globalNamespace, FunctionTransform, FunctionTransform, typeRegistry, namespaceRegistry);
         }
@@ -130,7 +128,7 @@ namespace SharpGen.Transform
 
             foreach (var configFile in configFiles)
             {
-                    Logger.Progress(30 + (indexFile * 30) / numberOfConfigFilesToParse, "Processing mapping rules [{0}]", configFile.Assembly ?? configFile.Id);
+                    Logger.Progress(30 + (indexFile * 30) / numberOfConfigFilesToParse, "Processing mapping rules [{0}]", configFile.Id);
                     ProcessCppModuleWithConfig(cppModule, configFile);
                     indexFile++;
             }
@@ -157,12 +155,12 @@ namespace SharpGen.Transform
             // In order to calculate which assembly we need to process
             foreach (var configFile in configFiles)
             {
-                if (!string.IsNullOrEmpty(configFile.Assembly))
+                if (!string.IsNullOrEmpty(configFile.Id))
                 {
-                    if (!checkFileNodes.TryGetValue(configFile.Assembly, out var checkFileNode))
+                    if (!checkFileNodes.TryGetValue(configFile.Id, out var checkFileNode))
                     {
-                        checkFileNode = new CheckFileNode(configFile.Assembly);
-                        checkFileNodes[configFile.Assembly] = checkFileNode;
+                        checkFileNode = new CheckFileNode(configFile.Id);
+                        checkFileNodes[configFile.Id] = checkFileNode;
                     }
                     ComputeDependencies(checkFileNode, configFile);
                 }
@@ -213,7 +211,7 @@ namespace SharpGen.Transform
         }
 
         /// <summary>
-        /// Checks the assembly is up to date relative to its config dependencies.
+        /// Checks the config file is up to date relative to its config dependencies.
         /// </summary>
         /// <param name="checkFilesNode">The assembly.</param>
         /// <param name="checkFilesPath">The path to where the check file is located.</param>
@@ -255,24 +253,14 @@ namespace SharpGen.Transform
             Logger.PushLocation(file.AbsoluteFilePath);
             try
             {
-                CsAssembly assembly = null;
-
-                if (!string.IsNullOrEmpty(file.Assembly))
-                    assembly = assemblyManager.GetOrCreateAssembly(file.Assembly);
-
-                if (assembly != null)
-                    Logger.Message("Process rules for assembly [{0}] and namespace [{1}]", file.Assembly, file.Namespace);
+                Logger.Message($"Process rules for config [{file.Id}] namespace [{file.Namespace}]");
 
                 var elementFinder = new CppElementFinder(cppModule);
-
-                // Only attach includes when there is a bind to an assembly
-                if (assembly != null)
+                if (file.Namespace != null)
                 {
                     AttachIncludes(file);
-
-                    ProcessExtensions(elementFinder, file);
+                    ProcessExtensions(elementFinder, file); 
                 }
-
                 ProcessMappings(elementFinder, file);
             }
             finally
@@ -394,7 +382,7 @@ namespace SharpGen.Transform
                 {
                     if (createRule.NewClass != null)
                     {
-                        var functionGroup = CreateCsGroup(file.Assembly, file.Namespace, createRule.NewClass);
+                        var functionGroup = CreateCsGroup(file.Namespace, createRule.NewClass);
                         if (createRule.Visibility.HasValue)
                             functionGroup.Visibility = createRule.Visibility.Value;
                     }
@@ -420,7 +408,7 @@ namespace SharpGen.Transform
                 if (includeRule.Attach.HasValue && includeRule.Attach.Value)
                 {
                     AddIncludeToProcess(includeRule.Id);
-                    namespaceRegistry.MapIncludeToNamespace(includeRule.Id, file.Assembly, includeRule.Namespace ?? file.Namespace, includeRule.Output);
+                    namespaceRegistry.MapIncludeToNamespace(includeRule.Id, includeRule.Namespace ?? file.Namespace, includeRule.Output);
                 }
                 else
                 {
@@ -429,7 +417,7 @@ namespace SharpGen.Transform
                         AddIncludeToProcess(includeRule.Id);
 
                     foreach (var attachType in includeRule.AttachTypes)
-                        namespaceRegistry.AttachTypeToNamespace($"^{attachType}$", file.Assembly, includeRule.Namespace ?? file.Namespace, includeRule.Output);
+                        namespaceRegistry.AttachTypeToNamespace($"^{attachType}$", includeRule.Namespace ?? file.Namespace, includeRule.Output);
                 }
             }
 
@@ -437,7 +425,7 @@ namespace SharpGen.Transform
             if (file.Extension.Count > 0)
             {
                 AddIncludeToProcess(file.ExtensionId);
-                namespaceRegistry.MapIncludeToNamespace(file.ExtensionId, file.Assembly, file.Namespace, null);
+                namespaceRegistry.MapIncludeToNamespace(file.ExtensionId, file.Namespace, null);
             }
         }
 
@@ -587,12 +575,14 @@ namespace SharpGen.Transform
         /// <param name="cppModule">The C++ module to parse.</param>
         /// <param name="configFile">The config file to use to transform the C++ module into C# assemblies.</param>
         /// <param name="checkFilesPath">The path for the check files.</param>
-        public (CsSolution solution, IEnumerable<DefineExtensionRule> consumerExtensions) Transform(CppModule cppModule, ConfigFile configFile, string checkFilesPath)
+        public (CsAssembly assembly, IEnumerable<DefineExtensionRule> consumerExtensions) Transform(CppModule cppModule, ConfigFile configFile, string checkFilesPath)
         {
+            Init(configFile.ConfigFilesLoaded);
+
             var checkFileNodes = CheckIfUpdated(configFile.ConfigFilesLoaded, checkFilesPath);
+
             var moduleToTransform = MapModule(cppModule, configFile.ConfigFilesLoaded.Where(cfg => cfg.ProcessMappings));
 
-            Init(configFile.ConfigFilesLoaded);
 
             var selectedCSharpType = new List<CsBase>();
 
@@ -612,24 +602,21 @@ namespace SharpGen.Transform
             Logger.Progress(80, "Transforming functions...");
             ProcessTransform(FunctionTransform, selectedCSharpType.OfType<CsFunction>());
 
-            var solution = new CsSolution();
-
-            foreach (CsAssembly cSharpAssembly in assemblyManager.Assemblies)
+            var asm = new CsAssembly
             {
-                foreach (var ns in cSharpAssembly.Namespaces)
-                {
-                    foreach (var cSharpFunctionGroup in ns.Classes)
-                        constantManager.AttachConstants(cSharpFunctionGroup);
-                }
-                solution.Add(cSharpAssembly);
+                Interop = interopManager
+            };
 
-                if (checkFileNodes.TryGetValue(cSharpAssembly.Name, out var node))
+            foreach (var ns in namespaceRegistry.Namespaces)
+            {
+                foreach (var group in ns.Classes)
                 {
-                    cSharpAssembly.NeedsToBeUpdated = node.NeedsToBeUpdated;
+                    constantManager.AttachConstants(group);
                 }
+                asm.Add(ns);
             }
 
-            return (solution, configFile.ConfigFilesLoaded.SelectMany(file => file.Extension.OfType<DefineExtensionRule>()));
+            return (asm, configFile.ConfigFilesLoaded.SelectMany(file => file.Extension.OfType<DefineExtensionRule>()));
         }
 
         /// <summary>
@@ -689,11 +676,11 @@ namespace SharpGen.Transform
         /// <summary>
         /// Creates the C# class container used to group together loose elements (i.e. functions, constants).
         /// </summary>
-        /// <param name="assemblyName">Name of the assembly.</param>
         /// <param name="namespaceName">Name of the namespace.</param>
         /// <param name="className">Name of the class.</param>
+        /// 
         /// <returns>The C# class container</returns>
-        private CsGroup CreateCsGroup(string assemblyName, string namespaceName, string className)
+        private CsGroup CreateCsGroup(string namespaceName, string className)
         {
             if (className == null) throw new ArgumentNullException(nameof(className));
 
@@ -703,7 +690,7 @@ namespace SharpGen.Transform
                 className = Path.GetExtension(className).Trim('.');
             }
 
-            var csNameSpace = assemblyManager.GetOrCreateNamespace(assemblyName, namespaceName);
+            var csNameSpace = namespaceRegistry.GetOrCreateNamespace(namespaceName);
 
             foreach (var cSharpFunctionGroup in csNameSpace.Classes)
             {

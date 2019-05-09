@@ -9,13 +9,12 @@ using System.Linq;
 
 namespace SharpGen.Generator
 {
-    class ShadowCallbackGenerator : MarshallingCodeGeneratorBase, IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax>
+    class ShadowCallbackGenerator : IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax>
     {
         private readonly GlobalNamespaceProvider globalNamespace;
         private readonly IGeneratorRegistry generators;
 
         public ShadowCallbackGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
-            : base(globalNamespace)
         {
             this.generators = generators;
             this.globalNamespace = globalNamespace;
@@ -107,6 +106,17 @@ namespace SharpGen.Generator
             var statements = new List<StatementSyntax>();
 
             statements.AddRange(generators.ReverseCallableProlog.GenerateCode(csElement));
+
+            statements.AddRange(
+                generators.Marshalling.GetMarshaller(csElement.ReturnValue).
+                    GenerateNativeToManagedExtendedProlog(csElement.ReturnValue));
+
+            foreach (var param in csElement.Parameters)
+            {
+                statements.AddRange(
+                   generators.Marshalling.GetMarshaller(param).
+                       GenerateNativeToManagedExtendedProlog(param));
+            }
             
             if (csElement is CsMethod)
             {
@@ -142,7 +152,7 @@ namespace SharpGen.Generator
             {
                 if (param.IsIn || param.IsRefIn || param.IsRef)
                 {
-                    var marshalFromNative = generators.MarshalFromNative.GenerateCode(param);
+                    var marshalFromNative = generators.Marshalling.GetMarshaller(param).GenerateNativeToManaged(param, false);
                     if (marshalFromNative != null)
                     {
                         statements.Add(marshalFromNative);
@@ -152,25 +162,9 @@ namespace SharpGen.Generator
             
             var managedArguments = new List<ArgumentSyntax>();
 
-            foreach (var param in csElement.Parameters.Where(p => !p.UsedAsReturn))
+            foreach (var param in csElement.Parameters.Where(p => !p.UsedAsReturn && p.Relation is null))
             {
-                var managedArgument = Argument(IdentifierName(param.Name));
-                var managedParam = generators.Parameter.GenerateCode(param);
-
-                if (managedParam.ChildTokens().Any(token => token.RawKind == (int)SyntaxKind.RefKeyword))
-                {
-                    managedArguments.Add(managedArgument
-                        .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)));
-                }
-                else if (managedParam.ChildTokens().Any(token => token.RawKind == (int)SyntaxKind.OutKeyword))
-                {
-                    managedArguments.Add(managedArgument
-                        .WithRefOrOutKeyword(Token(SyntaxKind.OutKeyword)));
-                }
-                else
-                {
-                    managedArguments.Add(managedArgument);
-                }
+                managedArguments.Add(generators.Marshalling.GetMarshaller(param).GenerateManagedArgument(param));
             }
 
             var callableName = csElement is CsFunction
@@ -181,7 +175,9 @@ namespace SharpGen.Generator
 
             var invocation = InvocationExpression(callableName, ArgumentList(SeparatedList(managedArguments)));
 
-            var returnValueNeedsMarshalling = NeedsMarshalling(csElement.ReturnValue);
+            var returnValueMarshaller = generators.Marshalling.GetMarshaller(csElement.ReturnValue);
+
+            var returnValueNeedsMarshalling = returnValueMarshaller.GeneratesMarshalVariable(csElement.ReturnValue);
 
             var hasReturnValue = csElement.HasReturnType && (!csElement.HideReturnType || csElement.ForceReturnType);
 
@@ -209,26 +205,7 @@ namespace SharpGen.Generator
 
                 if (returnValueNeedsMarshalling && !csElement.HasReturnTypeParameter)
                 {
-                    // Bool-to-int is special cased in marshalling so we need to special case it here as well.
-                    if (csElement.ReturnValue.IsBoolToInt)
-                    {
-                        statements.Add(ExpressionStatement(
-                            AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                                GetMarshalStorageLocation(csElement.ReturnValue),
-                                CastExpression(GetMarshalTypeSyntax(csElement.ReturnValue),
-                                    ParenthesizedExpression(
-                                    ConditionalExpression(
-                                        IdentifierName(csElement.ReturnValue.Name),
-                                        LiteralExpression(SyntaxKind.NumericLiteralExpression,
-                                            Literal(1)),
-                                        LiteralExpression(SyntaxKind.NumericLiteralExpression,
-                                            Literal(0))
-                                ))))));
-                    }
-                    else
-                    {
-                        statements.Add(generators.MarshalToNative.GenerateCode(csElement.ReturnValue));
-                    }
+                    statements.Add(generators.Marshalling.GetMarshaller(csElement.ReturnValue).GenerateManagedToNative(csElement.ReturnValue, false));
                 }
             }
 
@@ -236,7 +213,7 @@ namespace SharpGen.Generator
             {
                 if (param.IsOut || param.IsRef)
                 {
-                    var marshalToNative = generators.MarshalToNative.GenerateCode(param);
+                    var marshalToNative = generators.Marshalling.GetMarshaller(param).GenerateManagedToNative(param, false);
                     if (marshalToNative != null)
                     {
                         statements.Add(marshalToNative);
@@ -245,7 +222,7 @@ namespace SharpGen.Generator
             }
 
             var nativeReturnLocation = returnValueNeedsMarshalling
-                                ? GetMarshalStorageLocation(csElement.ReturnValue)
+                                ? IdentifierName(generators.Marshalling.GetMarshalStorageLocationIdentifier(csElement.ReturnValue))
                                 : IdentifierName(csElement.ReturnValue.Name);
 
             if (csElement.HasReturnType && (!csElement.HideReturnType || csElement.ForceReturnType))
@@ -300,7 +277,7 @@ namespace SharpGen.Generator
             {
                 var returnStatement = csElement.IsReturnStructLarge ?
                     ReturnStatement(IdentifierName("returnSlot"))
-                    : ReturnStatement(DefaultExpression(GetMarshalTypeSyntax(csElement.ReturnValue)));
+                    : ReturnStatement(DefaultExpression(returnValueMarshaller.GetMarshalTypeSyntax(csElement.ReturnValue)));
                 catchClause = catchClause.WithBlock(Block(returnStatement));
             }
 

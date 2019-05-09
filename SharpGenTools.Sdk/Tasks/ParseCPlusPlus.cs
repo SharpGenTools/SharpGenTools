@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.Build.Framework;
+﻿using Microsoft.Build.Framework;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Parser;
+using System;
 
 namespace SharpGenTools.Sdk.Tasks
 {
@@ -22,12 +20,14 @@ namespace SharpGenTools.Sdk.Tasks
         [Required]
         public ITaskItem ParsedCppModule { get; set; }
 
+        public string[] CastXmlArguments { get; set; }
+
         protected override bool Execute(ConfigFile config)
         {
             var resolver = new IncludeDirectoryResolver(SharpGenLogger);
             resolver.Configure(config);
 
-            var castXml = new CastXml(SharpGenLogger, resolver, CastXmlExecutablePath)
+            var castXml = new CastXml(SharpGenLogger, resolver, CastXmlExecutablePath, CastXmlArguments ?? Array.Empty<string>())
             {
                 OutputPath = OutputPath
             };

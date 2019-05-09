@@ -147,8 +147,9 @@ namespace SharpGen.Generator
             
             if (csElement.Setter != null)
             {
-                var paramByRef = Generators.Parameter.GenerateCode(csElement.Setter.Parameters[0])
-                    .Modifiers.Select(token => token.Kind()).Contains(SyntaxKind.RefKeyword);
+                var paramByRef = Generators.Marshalling.GetMarshaller(csElement.Setter.Parameters[0])
+                    .GenerateManagedArgument(csElement.Setter.Parameters[0])
+                    .RefOrOutKeyword.Kind() == SyntaxKind.RefKeyword;
 
                 accessors.Add(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
                     .WithExpressionBody(ArrowExpressionClause(

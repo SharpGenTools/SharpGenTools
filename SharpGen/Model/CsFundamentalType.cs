@@ -49,9 +49,14 @@ namespace SharpGen.Model
         {
             try
             {
+                if (!IsPointer)
+                {
 #pragma warning disable 0618
-                return Marshal.SizeOf(Type);
+                    return Marshal.SizeOf(Type);
 #pragma warning restore 0618
+                }
+                // We need to ensure that we always return 8 (64-bit) even when running the generator on x64.
+                return 8;
             }
             catch (Exception)
             {
@@ -59,7 +64,7 @@ namespace SharpGen.Model
             }
         }
 
-        private bool IsPointer => Type == typeof(IntPtr);
+        private bool IsPointer => Type == typeof(IntPtr) || Type == typeof(UIntPtr);
 
         /// <summary>
         /// Calculates the natural alignment of a type. -1 if it is a pointer alignment (4 on x86, 8 on x64)

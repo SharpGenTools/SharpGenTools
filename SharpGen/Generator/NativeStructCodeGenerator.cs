@@ -119,7 +119,7 @@ namespace SharpGen.Generator
                 Block(
                     List(csStruct.Fields
                         .Where(field => !field.IsArray)
-                    .Select(Generators.MarshalCleanup.GenerateCode)
+                    .Select(field => Generators.Marshalling.GetMarshaller(field).GenerateNativeCleanup(field, false))
                         .Where(statement => statement != null))))
             .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)));
 
@@ -132,7 +132,26 @@ namespace SharpGen.Generator
                 .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)))
                 .WithBody(
                 Block(csStruct.Fields
-                    .Select(Generators.MarshalToNative.GenerateCode)
+                    .Select(field =>
+                    {
+                        if (field.Relation == null)
+                        {
+                            return Generators.Marshalling.GetMarshaller(field).GenerateManagedToNative(field, false); 
+                        }
+                        else
+                        {
+                            var marshaller = Generators.Marshalling.GetRelationMarshaller(field.Relation);
+                            if (field.Relation is IHasRelatedMarshallable related)
+                            {
+                                var relatedMarshalableName = related.RelatedMarshallableName;
+                                return marshaller.GenerateManagedToNative(csStruct.Fields.First(fld => fld.CppElementName == relatedMarshalableName), field);
+                            }
+                            else
+                            {
+                                return marshaller.GenerateManagedToNative(null, field);
+                            }
+                        }
+                    })
                     .Where(statement => statement != null)));
         }
 
@@ -144,7 +163,8 @@ namespace SharpGen.Generator
                 .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)))
                 .WithBody(Block(
                     csStruct.Fields
-                    .Select(Generators.MarshalFromNative.GenerateCode)
+                    .Where(field => field.Relation is null)
+                    .Select(field => Generators.Marshalling.GetMarshaller(field).GenerateNativeToManaged(field, false))
                     .Where(statement => statement != null)));
         }
     }

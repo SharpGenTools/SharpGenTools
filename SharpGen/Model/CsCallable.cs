@@ -47,7 +47,7 @@ namespace SharpGen.Model
         {
             get
             {
-                return Items.OfType<CsParameter>().Where(param => !param.IsUsedAsReturnType);
+                return Items.OfType<CsParameter>().Where(param => !param.IsUsedAsReturnType && param.Relation == null);
             }
         }
 
@@ -84,11 +84,11 @@ namespace SharpGen.Model
         {
             get
             {
+                // Workaround for https://github.com/dotnet/coreclr/issues/19474. This workaround is sufficient
+                // for DirectX on Windows x86 and x64. It may produce incorrect code on other platforms depending
+                // on the calling convention details.
                 if ((ReturnValue.MarshalType ?? ReturnValue.PublicType) is CsStruct csStruct)
                 {
-                    if (ReturnValue.MarshalType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr))
-                        return false;
-
                     return csStruct.Size > MaxSizeReturnParameter;
                 }
                 return false;

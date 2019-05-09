@@ -36,6 +36,7 @@ namespace SharpGen.Parser
         private readonly CastXml _gccxml;
         private Dictionary<string, string> _currentMacros = null;
         private readonly Dictionary<string, Dictionary<string, string>> _mapIncludeToMacros = new Dictionary<string, Dictionary<string, string>>();
+        private readonly List<string> _includedFiles = new List<string>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MacroManager"/> class.
@@ -45,6 +46,8 @@ namespace SharpGen.Parser
         {
             _gccxml = gccxml;
         }
+
+        public IEnumerable<string> IncludedFiles => _includedFiles;
 
         /// <summary>
         /// Parses the specified C++ header file and fills the <see cref="CppModule"/> with defined macros.
@@ -88,7 +91,9 @@ namespace SharpGen.Parser
                         _currentMacros = null;
                     else
                     {
+                        _includedFiles.Add(result.Groups[1].Value.Replace(@"\\", @"\"));
                         var currentFile = Path.GetFileName(result.Groups[1].Value);
+
                         if (!_mapIncludeToMacros.TryGetValue(currentFile, out _currentMacros))
                         {
                             _currentMacros = new Dictionary<string,string>();
@@ -97,7 +102,7 @@ namespace SharpGen.Parser
                     }
                 }
                 else if (_currentMacros != null)
-                {                    
+                {
                     result = MatchDefine.Match(line);
                     if (result.Success)
                     {

@@ -64,10 +64,10 @@ namespace SharpGen.Parser
             do
             {
                 enumInstances.Next(1, instances, out fetched);
-                var instance2 = (ISetupInstance2)instances[0];
-                var state = instance2.GetState();
                 if (fetched > 0)
                 {
+                    var instance2 = (ISetupInstance2)instances[0];
+                    var state = instance2.GetState();
                     if ((state & InstanceState.Registered) == InstanceState.Registered)
                     {
                         if (instance2.GetPackages().Any(pkg => pkg.GetId() == "Microsoft.VisualStudio.Component.VC.Tools.x86.x64"))
@@ -79,7 +79,7 @@ namespace SharpGen.Parser
             }
             while (fetched > 0);
 
-            Logger.Fatal("Unable to find compatible Visual Studio installation path.");
+            Logger.Fatal("Unable to find a Visual Studio installation that has the Visual C++ Toolchain installed.");
 
             return null;
         }

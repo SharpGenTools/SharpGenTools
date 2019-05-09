@@ -11,28 +11,48 @@ namespace SharpGen.Transform
 {
     public class NamespaceRegistry
     {
-        private readonly AssemblyManager manager;
         private readonly Dictionary<string, CsNamespace> _mapIncludeToNamespace = new Dictionary<string, CsNamespace>();
         private readonly Dictionary<Regex, CsNamespace> _mapTypeToNamespace = new Dictionary<Regex, CsNamespace>();
+        private readonly Dictionary<string, CsNamespace> _namespaces = new Dictionary<string, CsNamespace>();
+
+        public IEnumerable<CsNamespace> Namespaces => _namespaces.Values;
 
         public Logger Logger { get; }
 
-        public NamespaceRegistry(Logger logger, AssemblyManager manager)
+        public NamespaceRegistry(Logger logger)
         {
             Logger = logger;
-            this.manager = manager;
         }
+
+        /// <summary>
+        /// Gets the C# namespace by its name and its assembly name.
+        /// </summary>
+        /// <param name="assemblyName">Name of the assembly.</param>
+        /// <param name="namespaceName">Name of the namespace.</param>
+        /// <returns>A C# namespace</returns>
+        public CsNamespace GetOrCreateNamespace(string namespaceName)
+        {
+            if (_namespaces.TryGetValue(namespaceName, out var selectedNamespace))
+            {
+                return selectedNamespace;
+            }
+            
+            selectedNamespace = new CsNamespace(namespaceName);
+            _namespaces.Add(namespaceName, selectedNamespace);
+            return selectedNamespace;
+        }
+
 
         /// <summary>
         /// Maps a particular C++ include to a C# namespace.
         /// </summary>
         /// <param name="includeName">Name of the include.</param>
-        /// <param name="assemblyName">The assembly.</param>
         /// <param name="nameSpace">The namespace.</param>
         /// <param name="outputDirectory">The output directory for the namespace.</param>
-        public void MapIncludeToNamespace(string includeName, string assemblyName, string nameSpace, string outputDirectory)
+        /// 
+        public void MapIncludeToNamespace(string includeName, string nameSpace, string outputDirectory)
         {
-            var cSharpNamespace = manager.GetOrCreateNamespace(assemblyName, nameSpace);
+            var cSharpNamespace = GetOrCreateNamespace(nameSpace);
             if (outputDirectory != null)
                 cSharpNamespace.OutputDirectory = outputDirectory;
             _mapIncludeToNamespace.Add(includeName, cSharpNamespace);
@@ -42,12 +62,12 @@ namespace SharpGen.Transform
         /// Attaches C++ to a C# namespace using a regular expression query.
         /// </summary>
         /// <param name="typeNameRegex">The C++ regex selection.</param>
-        /// <param name="assemblyName">The assembly.</param>
         /// <param name="namespaceName">The namespace.</param>
         /// <param name="outputDirectory">The output directory for the namespace.</param>
-        public void AttachTypeToNamespace(string typeNameRegex, string assemblyName, string namespaceName, string outputDirectory)
+        /// 
+        public void AttachTypeToNamespace(string typeNameRegex, string namespaceName, string outputDirectory)
         {
-            var cSharpNamespace = manager.GetOrCreateNamespace(assemblyName, namespaceName);
+            var cSharpNamespace = GetOrCreateNamespace(namespaceName);
             if (outputDirectory != null)
                 cSharpNamespace.OutputDirectory = outputDirectory;
             _mapTypeToNamespace.Add(new Regex(typeNameRegex), cSharpNamespace);
@@ -79,9 +99,9 @@ namespace SharpGen.Transform
             var tag = element.GetMappingRule();
 
             // If a type is redispatched to another namespace
-            if (!string.IsNullOrEmpty(tag.Assembly) && !string.IsNullOrEmpty(tag.Namespace))
+            if (!string.IsNullOrEmpty(tag.Namespace))
             {
-                return manager.GetOrCreateNamespace(tag.Assembly, tag.Namespace);
+                return GetOrCreateNamespace(tag.Namespace);
             }
 
             var namespaceFromElementName = GetCsNamespaceForCppElement(element);

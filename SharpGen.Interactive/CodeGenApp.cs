@@ -211,7 +211,7 @@ namespace SharpGen.Interactive
                     var resolver = new IncludeDirectoryResolver(Logger);
                     resolver.Configure(Config);
 
-                    var castXml = new CastXml(Logger, resolver, CastXmlExecutablePath)
+                    var castXml = new CastXml(Logger, resolver, CastXmlExecutablePath, Array.Empty<string>())
                     {
                         OutputPath = IntermediateOutputPath,
                     };
@@ -242,15 +242,15 @@ namespace SharpGen.Interactive
 
                 Config.ExpandDynamicVariables(Logger, group);
                 
-                var (docAggregator, solution) = ExecuteMappings(group, consumerConfig);
+                var (docAggregator, asm) = ExecuteMappings(group, consumerConfig);
 
-                solution.Write(Path.Combine(IntermediateOutputPath, "Solution.xml"));
+                asm.Write(Path.Combine(IntermediateOutputPath, "Assembly.xml"));
 
-                solution = CsSolution.Read(Path.Combine(IntermediateOutputPath, "Solution.xml"));
+                asm = CsAssembly.Read(Path.Combine(IntermediateOutputPath, "Assembly.xml"));
 
                 GenerateConfigForConsumers(consumerConfig);
 
-                GenerateCode(docAggregator, solution, new ExternalDocCommentsReader(ExternalDocumentation));
+                GenerateCode(docAggregator, asm, new ExternalDocCommentsReader(ExternalDocumentation));
 
                 if (Logger.HasErrors)
                     Logger.Fatal("Code generation failed");
@@ -269,12 +269,11 @@ namespace SharpGen.Interactive
             }
         }
 
-        private (IDocumentationLinker doc, CsSolution solution) ExecuteMappings(CppModule group, ConfigFile consumerConfig)
+        private (IDocumentationLinker doc, CsAssembly asm) ExecuteMappings(CppModule group, ConfigFile consumerConfig)
         {
             var docLinker = new DocumentationLinker();
             var typeRegistry = new TypeRegistry(Logger, docLinker);
             var namingRules = new NamingRulesManager();
-            var assemblyManager = new AssemblyManager();
 
             // Run the main mapping process
             var transformer = new TransformManager(
@@ -283,13 +282,12 @@ namespace SharpGen.Interactive
                 Logger,
                 typeRegistry,
                 docLinker,
-                new ConstantManager(namingRules, docLinker),
-                assemblyManager)
+                new ConstantManager(namingRules, docLinker))
             {
                 ForceGenerator = _isAssemblyNew
             };
 
-            var (solution, defines) = transformer.Transform(group, Config, IntermediateOutputPath);
+            var (asm, defines) = transformer.Transform(group, Config, IntermediateOutputPath);
 
             consumerConfig.Extension = new List<ExtensionBaseRule>(defines);
 
@@ -309,14 +307,14 @@ namespace SharpGen.Interactive
             if (Logger.HasErrors)
                 Logger.Fatal("Executing mapping rules failed");
 
-            PrintStatistics(assemblyManager);
+            PrintStatistics(asm);
 
             DumpRenames(transformer);
 
-            return (docLinker, solution);
+            return (docLinker, asm);
         }
 
-        private void PrintStatistics(AssemblyManager assemblyManager)
+        private void PrintStatistics(CsAssembly assembly)
         {
             var globalStats = new Dictionary<string, int>
             {
@@ -330,49 +328,46 @@ namespace SharpGen.Interactive
                 ["functions"] = 0
             };
 
-            foreach (var assembly in assemblyManager.Assemblies)
+            var stats = globalStats.ToDictionary(globalStat => globalStat.Key, globalStat => 0);
+
+            foreach (var nameSpace in assembly.Items)
             {
-                var stats = globalStats.ToDictionary(globalStat => globalStat.Key, globalStat => 0);
-
-                foreach (var nameSpace in assembly.Items)
+                // Enums, Structs, Interface, FunctionGroup
+                foreach (var item in nameSpace.Items)
                 {
-                    // Enums, Structs, Interface, FunctionGroup
-                    foreach (var item in nameSpace.Items)
-                    {
-                        if (item is CsInterface) stats["interfaces"]++;
-                        else if (item is CsStruct) stats["structs"]++;
-                        else if (item is CsEnum) stats["enums"]++;
+                    if (item is CsInterface) stats["interfaces"]++;
+                    else if (item is CsStruct) stats["structs"]++;
+                    else if (item is CsEnum) stats["enums"]++;
 
-                        foreach (var subitem in item.Items)
+                    foreach (var subitem in item.Items)
+                    {
+                        if (subitem is CsFunction)
                         {
-                            if (subitem is CsFunction)
-                            {
-                                stats["functions"]++;
-                                stats["parameters"] += subitem.Items.Count;
-                            }
-                            else if (subitem is CsMethod)
-                            {
-                                stats["methods"]++;
-                                stats["parameters"] += subitem.Items.Count;
-                            }
-                            else if (subitem is CsEnumItem)
-                            {
-                                stats["enumitems"]++;
-                            }
-                            else if (subitem is CsField)
-                            {
-                                stats["fields"]++;
-                            }
+                            stats["functions"]++;
+                            stats["parameters"] += subitem.Items.Count;
+                        }
+                        else if (subitem is CsMethod)
+                        {
+                            stats["methods"]++;
+                            stats["parameters"] += subitem.Items.Count;
+                        }
+                        else if (subitem is CsEnumItem)
+                        {
+                            stats["enumitems"]++;
+                        }
+                        else if (subitem is CsField)
+                        {
+                            stats["fields"]++;
                         }
                     }
-
-                    foreach (var stat in stats) globalStats[stat.Key] += stat.Value;
                 }
 
-                Logger.Message("Assembly [{0}] Statistics", assembly.QualifiedName);
-                foreach (var stat in stats)
-                    Logger.Message("\tNumber of {0} : {1}", stat.Key, stat.Value);
+                foreach (var stat in stats) globalStats[stat.Key] += stat.Value;
             }
+
+            Logger.Message("Assembly [{0}] Statistics", assembly.QualifiedName);
+            foreach (var stat in stats)
+                Logger.Message("\tNumber of {0} : {1}", stat.Key, stat.Value);
             Logger.Message("\n");
 
             Logger.Message("Global Statistics:");
@@ -460,18 +455,15 @@ namespace SharpGen.Interactive
             return cppHeadersUpdated;
         }
 
-        private void GenerateCode(IDocumentationLinker docAggregator, CsSolution solution, ExternalDocCommentsReader docCommentsReader)
+        private void GenerateCode(IDocumentationLinker docAggregator, CsAssembly asm, ExternalDocCommentsReader docCommentsReader)
         {
             var generator = new RoslynGenerator(Logger, GlobalNamespace, docAggregator, docCommentsReader);
-            generator.Run(solution, _generatedPath, GeneratedCodeFolder, IncludeAssemblyNameFolder);
+            generator.Run(asm, _generatedPath, GeneratedCodeFolder);
 
             // Update check files for all assemblies
             var processTime = DateTime.Now;
-            foreach (CsAssembly assembly in solution.Assemblies)
-            {
-                File.WriteAllText(Path.Combine(IntermediateOutputPath, assembly.CheckFileName), "");
-                File.SetLastWriteTime(Path.Combine(IntermediateOutputPath, assembly.CheckFileName), processTime);
-            }
+            File.WriteAllText(Path.Combine(IntermediateOutputPath, asm.CheckFileName), "");
+            File.SetLastWriteTime(Path.Combine(IntermediateOutputPath, asm.CheckFileName), processTime);
         }
 
         private void GenerateConfigForConsumers(ConfigFile consumerConfig)

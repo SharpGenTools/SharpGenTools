@@ -23,7 +23,6 @@ namespace SharpGen.UnitTests.Mapping
             {
                 Id = nameof(Basic),
                 Namespace = nameof(Basic),
-                Assembly = nameof(Basic),
                 Includes =
                 {
                     new Config.IncludeRule
@@ -77,7 +76,7 @@ namespace SharpGen.UnitTests.Mapping
             var (solution, _) = MapModel(module, config);
 
             Assert.Single(solution.EnumerateDescendants().OfType<CsGroup>());
-            
+
             var group = solution.EnumerateDescendants().OfType<CsGroup>().First();
             Assert.Equal("Functions", group.Name);
 
@@ -87,6 +86,74 @@ namespace SharpGen.UnitTests.Mapping
             Assert.Equal(typeof(int), ((CsFundamentalType)csFunc.ReturnValue.PublicType).Type);
             Assert.Empty(csFunc.Parameters);
             Assert.Equal(Visibility.Static, csFunc.Visibility & Visibility.Static);
+        }
+
+        [Fact]
+        public void PointerSizeReturnValueNotLarge()
+        {
+            var config = new Config.ConfigFile
+            {
+                Id = nameof(PointerSizeReturnValueNotLarge),
+                Namespace = nameof(PointerSizeReturnValueNotLarge),
+                Includes =
+                {
+                    new Config.IncludeRule
+                    {
+                        File = "pointerSize.h",
+                        Attach = true,
+                        Namespace = nameof(PointerSizeReturnValueNotLarge)
+                    }
+                },
+                Extension =
+                {
+                    new DefineExtensionRule
+                    {
+                        Struct = "SharpGen.Runtime.PointerSize",
+                        SizeOf = 8,
+                    }
+                },
+                Bindings =
+                {
+                    new Config.BindRule("int", "SharpGen.Runtime.PointerSize")
+                }
+            };
+
+            var iface = new CppInterface
+            {
+                Name = "Interface",
+                TotalMethodCount = 1
+            };
+
+            iface.Add(new CppMethod
+            {
+                Name = "method",
+                ReturnValue = new CppReturnValue
+                {
+                    TypeName = "int"
+                }
+            });
+
+            var include = new CppInclude
+            {
+                Name = "pointerSize"
+            };
+
+            include.Add(iface);
+
+            var module = new CppModule();
+            module.Add(include);
+
+            var (solution, _) = MapModel(module, config);
+
+            Assert.Single(solution.EnumerateDescendants().OfType<CsInterface>());
+
+            var csIface = solution.EnumerateDescendants().OfType<CsInterface>().First();
+
+            Assert.Single(csIface.Methods);
+
+            var method = csIface.Methods.First();
+
+            Assert.False(method.IsReturnStructLarge);
         }
     }
 }

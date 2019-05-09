@@ -23,6 +23,9 @@
     <map field="BoolToInt(.*)::test" type="bool" />
     <map struct="CustomNativeNew" native="true" new="true" />
     <map struct="CustomNativeNewNested" marshalto="true" />
+    <map struct="(.*)Relation" marshalto="true" />
+    <map field="StructSizeRelation::cbSize" relation="struct-size()" />
+    <map field="ReservedRelation::reserved" relation="const(42)" />
   </mapping>
 
   <depends>SharpGen.Runtime</depends>

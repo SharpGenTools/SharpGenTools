@@ -94,6 +94,9 @@ struct CallbackInterface
     virtual int Add(int i, int j) = 0;
     virtual int MappedTypeTest(int i) = 0;
     virtual RESULT ModifyPointer(void* ptr, MethodOperation op, void** out) = 0;
+    virtual bool ArrayRelationAnd(bool array[], int length) = 0;
+    virtual int ArrayRelationSum(int array[], int length) = 0;
+    virtual long long ArrayRelationSumStruct(LargeStructWithMarshalling array[], int length) = 0;
 };
 
 struct FastOutInterface {
@@ -101,3 +104,9 @@ struct FastOutInterface {
 };
 
 extern "C" __declspec(dllexport) void FastOutInterfaceTest(FastOutInterface** out);
+
+struct PointerSizeMethodTest {
+    virtual size_t PassThrough(size_t value) = 0;
+};
+
+extern "C" __declspec(dllexport) PointerSizeMethodTest* GetPointerSizeTest();

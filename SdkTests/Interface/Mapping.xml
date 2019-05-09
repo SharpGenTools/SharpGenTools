@@ -20,10 +20,7 @@
     <map interface="IInterface" callback="true" callback-dual="true" callback-name="CppImplementation" name="NativeInterface" callback-visibility="public" />
     <map method="IInterface:.*" keep-implement-public="true" />
     <map interface="IInterface2" name="NativeInterface2" />
-    <map function="CreateInstance" dll='"InterfaceNative.dll"' group="Interface.Functions" />
-    <map function="CreateInstance2" dll='"InterfaceNative.dll"' group="Interface.Functions" />
-    <map function="CloneInstance" dll='"InterfaceNative.dll"' group="Interface.Functions" />
-    <map function="CreatePropertyTest" dll='"InterfaceNative.dll"' group="Interface.Functions" />
+    <map function=".*" dll='"InterfaceNative.dll"' group="Interface.Functions" />
     <map param="IInterface2::AddToThis::interfaces" attribute="in buffer" />
     <move method="ILargeInterface::Method3" to="InnerInterface" property="Inner" />
     <map method="InterfaceWithProperties::(.*)" custom-vtbl="true" />
@@ -38,10 +35,11 @@
     <map method="CallbackInterface::.*" property="false" />
     <map param="CallbackInterface::MappedTypeTest::i" type="unsigned int" />
     <map param="CallbackInterface::ModifyPointer::out" attribute="out" return="true" />
+    <map param="CallbackInterface::ArrayRelation(.*)::array" attribute="in buffer" />
+    <map param="CallbackInterface::ArrayRelation(.*)::length" relation="length(array)" />
   
     <!-- Issue #67 -->
     <map interface="FastOutInterface" callback="true" callback-dual="true" autogen-shadow="true" />
-    <map function="FastOutInterfaceTest" dll='"InterfaceNative.dll"' group="Interface.Functions" />
     <map param="FastOutInterfaceTest::out" attribute="fast out" />
   </mapping>
 

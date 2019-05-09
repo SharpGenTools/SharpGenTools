@@ -289,5 +289,11 @@ namespace SharpGen.Config
         /// </summary>
         [XmlAttribute("offset-translate")]
         public int LayoutOffsetTranslate { get; set; }
+
+        /// <summary>
+        /// Specifies how a marshallable element is related to another marshallable.
+        /// </summary>
+        [XmlAttribute("relation")]
+        public string Relation { get; set; }
     }
 }

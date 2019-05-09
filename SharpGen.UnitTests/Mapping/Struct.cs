@@ -23,7 +23,6 @@ namespace SharpGen.UnitTests.Mapping
             {
                 Id = nameof(Simple),
                 Namespace = nameof(Simple),
-                Assembly = nameof(Simple),
                 Includes =
                 {
                     new Config.IncludeRule
@@ -85,7 +84,6 @@ namespace SharpGen.UnitTests.Mapping
             {
                 Id = nameof(SequentialOffsets),
                 Namespace = nameof(SequentialOffsets),
-                Assembly = nameof(SequentialOffsets),
                 Includes =
                 {
                     new Config.IncludeRule
@@ -148,7 +146,6 @@ namespace SharpGen.UnitTests.Mapping
             {
                 Id = nameof(InheritingStructs),
                 Namespace = nameof(InheritingStructs),
-                Assembly = nameof(InheritingStructs),
                 Includes =
                 {
                     new Config.IncludeRule
@@ -219,7 +216,6 @@ namespace SharpGen.UnitTests.Mapping
             {
                 Id = nameof(IntFieldMappedToBoolIsMarkedAsBoolToInt),
                 Namespace = nameof(IntFieldMappedToBoolIsMarkedAsBoolToInt),
-                Assembly = nameof(IntFieldMappedToBoolIsMarkedAsBoolToInt),
                 Includes =
                 {
                     new Config.IncludeRule
@@ -285,7 +281,6 @@ namespace SharpGen.UnitTests.Mapping
             {
                 Id = nameof(MultipleBitfieldOffsetsGeneratedCorrectly),
                 Namespace = nameof(MultipleBitfieldOffsetsGeneratedCorrectly),
-                Assembly = nameof(MultipleBitfieldOffsetsGeneratedCorrectly),
                 Includes =
                 {
                     new Config.IncludeRule
@@ -371,7 +366,6 @@ namespace SharpGen.UnitTests.Mapping
             {
                 Id = nameof(UnionsWithPointersGeneratesStructure),
                 Namespace = nameof(UnionsWithPointersGeneratesStructure),
-                Assembly = nameof(UnionsWithPointersGeneratesStructure),
                 Includes =
                 {
                     new Config.IncludeRule
@@ -436,7 +430,6 @@ namespace SharpGen.UnitTests.Mapping
             {
                 Id = nameof(NonPortableStructAlignmentRaisesError),
                 Namespace = nameof(NonPortableStructAlignmentRaisesError),
-                Assembly = nameof(NonPortableStructAlignmentRaisesError),
                 Includes =
                 {
                     new Config.IncludeRule
@@ -512,7 +505,6 @@ namespace SharpGen.UnitTests.Mapping
             {
                 Id = nameof(NonPortableLayoutDoesNotErrorWhenMarkedForCustomMarshalling),
                 Namespace = nameof(NonPortableLayoutDoesNotErrorWhenMarkedForCustomMarshalling),
-                Assembly = nameof(NonPortableLayoutDoesNotErrorWhenMarkedForCustomMarshalling),
                 Includes =
                 {
                     new Config.IncludeRule

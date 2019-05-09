@@ -9,11 +9,11 @@ Auto-Generated Shadows
 
 To auto-generate the shadow for a callback, add the ``autogen-shadow="true"`` attribute to a mapping rule for the callback interface. This will automatically generate a shadow interface corresponding with the instructions below using the same marshalling code-gen infrastructure as the rest of the generated code.
 
+If any parameters of any methods on the interface are arrays, you must provide an array length relation in your mapping rules. Otherwise your code will be generated with an unconditional ``InvalidOperationException``. See :ref:`lengthRelation` for more information.
+
 .. warning::
 
-    Shadow auto-generation currently does not support non-string-like array parameters. If the native signature contains an array parameter, the generator will generate code that throws a ``NotImplementedException``.
-
-    Additionally, property generation does not currently play nice with the shadow auto-generator. You may need to use a mapping rule to disable property generation. See :ref:`callable` for details on the mapping rule. 
+    Property generation does not currently play nice with the shadow auto-generator. You may need to use a mapping rule to disable property generation. See :ref:`callable` for details on the mapping rule. 
 
 Manually-Written Shadows
 ===========================

@@ -40,3 +40,14 @@ Some of the options above control the output directory for generated code. The t
 
     * If ``SharpGenIncludeAssemblyNameFolder`` is false, ``$(SharpGenOutputDirectory)/$(SharpGenGeneratedCodeFolder)``
     * If ``SharpGenIncludeAssemblyNameFolder`` is true, ``$(SharpGenOutputDirectory)/SharpGenAssemblyName/$(SharpGenGeneratedCodeFolder)``
+
+
+CastXML Customization
+=========================
+
+    * ``CastXmlPath``
+
+        * A path to a custom build of CastXML.
+    * ``CastXmlArg`` MSBuild Items
+
+        * Additional arguments to pass to CastXML when parsing the C++ code.

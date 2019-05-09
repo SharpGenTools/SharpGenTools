@@ -156,7 +156,7 @@ namespace SharpGen.CppModel
 
         public MappingRule GetMappingRule()
         {
-            return Rule ?? new MappingRule();
+            return Rule ?? (Rule = new MappingRule());
         }
 
         /// <summary>

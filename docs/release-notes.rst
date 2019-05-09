@@ -2,6 +2,47 @@
 Release Notes
 =====================
 
+1.2
+========
+
+Features:
+
+    * Implemented relation mapping.
+    * Enabled automatic shadow generation for callbacks with array parameters when users specify length relations for array parameters.
+    * Emit ``GC.KeepAlive`` in marshalling cleanup to keep interface instances alive across calls.
+    * Use ``__has_include`` in generated headers to make SharpGen C++ generation/parsing process more deterministic.
+    * Update CastXML to be based off Clang 7.
+    * Added include files to MSBuild update checks so editing the native code that is being mapped will trigger a regeneration.
+
+Bug Fixes:
+
+    * Fix NRE when VS is not installed.
+
+1.1.2
+========
+
+Bug Fixes:
+
+    * Account for null struct-to-class instances when marshalling from native.
+
+1.1.1
+========
+
+This patch fixes a number of bugs in 1.1 as well as refactoring the marshalling code-gen again to be more mantainable.
+
+Features:
+
+    * Allow the user to specify extra arguments to pass to CastXML as a ``@(CastXmlArg)`` MSBuild item.
+
+Bug Fixes:
+
+    * Pointer-sized members are correctly marshalled as return values.
+    * Ensure that ``<short>`` tag naming rules work on mapped constants.
+
+Development Changes:
+
+    * Marshallers are now separated based on the conditions in which they are used. This makes them much easier to mantain.
+
 1.1
 ==========
 

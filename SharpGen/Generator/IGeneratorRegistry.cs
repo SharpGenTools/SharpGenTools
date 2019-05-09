@@ -16,14 +16,6 @@ namespace SharpGen.Generator
         IMultiCodeGenerator<CsField, MemberDeclarationSyntax> AutoLayoutField { get; }
         IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax> Struct { get; }
         ICodeGenerator<CsCallable, ExpressionSyntax> NativeInvocation { get; }
-        IMultiCodeGenerator<CsMarshalCallableBase, StatementSyntax> CallableProlog { get; }
-        ICodeGenerator<CsMarshalBase, StatementSyntax> MarshalToNativeSingleFrame { get; }
-        ICodeGenerator<CsMarshalBase, StatementSyntax> MarshalFromNativeSingleFrame { get; }
-        ICodeGenerator<CsMarshalBase, StatementSyntax> MarshalCleanupSingleFrame { get; }
-        ICodeGenerator<CsMarshalBase, StatementSyntax> MarshalToNative { get; }
-        ICodeGenerator<CsMarshalBase, StatementSyntax> MarshalFromNative { get; }
-        ICodeGenerator<CsMarshalBase, StatementSyntax> MarshalCleanup { get; }
-        ICodeGenerator<CsParameter, FixedStatementSyntax> Pinning { get; }
         IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> Callable { get; }
         IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax> Method { get; }
         IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax> Function { get; }
@@ -32,11 +24,10 @@ namespace SharpGen.Generator
         ICodeGenerator<CsInterface, MemberDeclarationSyntax> Vtbl { get; }
         IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> ShadowCallable { get; }
         IMultiCodeGenerator<CsCallable, StatementSyntax> ReverseCallableProlog { get; }
-        ICodeGenerator<CsParameter, ParameterSyntax> Parameter { get; }
-        ICodeGenerator<CsMarshalCallableBase, ArgumentSyntax> Argument { get; }
         IMultiCodeGenerator<CsGroup, MemberDeclarationSyntax> Group { get; }
-        ICodeGenerator<CsAssembly, NamespaceDeclarationSyntax> LocalInterop { get; }
+        ICodeGenerator<CsAssembly, ClassDeclarationSyntax> LocalInterop { get; }
 
         IMultiCodeGenerator<InteropMethodSignature, MemberDeclarationSyntax> InteropMethod { get; }
+        MarshallingRegistry Marshalling { get; }
     }
 }

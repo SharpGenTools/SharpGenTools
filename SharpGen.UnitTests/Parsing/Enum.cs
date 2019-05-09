@@ -20,7 +20,6 @@ namespace SharpGen.UnitTests.Parsing
             var config = new Config.ConfigFile
             {
                 Id = nameof(CreatedFromMacros),
-                Assembly = nameof(CreatedFromMacros),
                 Namespace = nameof(CreatedFromMacros),
                 IncludeDirs =
                 {
@@ -63,7 +62,6 @@ namespace SharpGen.UnitTests.Parsing
             var config = new Config.ConfigFile
             {
                 Id = nameof(ScopedEnum),
-                Assembly = nameof(ScopedEnum),
                 Namespace = nameof(ScopedEnum),
                 IncludeDirs =
                 {
@@ -89,7 +87,6 @@ namespace SharpGen.UnitTests.Parsing
             var config = new Config.ConfigFile
             {
                 Id = nameof(SpecifiedUnderlyingType),
-                Assembly = nameof(SpecifiedUnderlyingType),
                 Namespace = nameof(SpecifiedUnderlyingType),
                 IncludeDirs =
                 {
@@ -123,7 +120,6 @@ namespace SharpGen.UnitTests.Parsing
             var config = new Config.ConfigFile
             {
                 Id = nameof(AnonymousEnumAssignedExpectedName),
-                Assembly = nameof(AnonymousEnumAssignedExpectedName),
                 Namespace = nameof(AnonymousEnumAssignedExpectedName),
                 IncludeDirs =
                 {

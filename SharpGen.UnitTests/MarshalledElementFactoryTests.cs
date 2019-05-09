@@ -1,6 +1,7 @@
 ﻿using FakeItEasy;
 using SharpGen.Config;
 using SharpGen.CppModel;
+using SharpGen.Logging;
 using SharpGen.Model;
 using SharpGen.Transform;
 using System;
@@ -62,7 +63,7 @@ namespace SharpGen.UnitTests
             };
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("Interface", new CsInterface {Name = "Interface"});
+            typeRegistry.BindType("Interface", new CsInterface { Name = "Interface" });
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
 
@@ -116,7 +117,7 @@ namespace SharpGen.UnitTests
             Assert.True(csMarshallable.IsWideChar);
         }
 
-        
+
 
         [Fact]
         public void CharPointerMappedToStringMarshalledWithIntPtr()
@@ -344,7 +345,7 @@ namespace SharpGen.UnitTests
             Assert.True(csParameter.IsArray);
             Assert.True(csParameter.IsBoolToInt);
         }
-        
+
         [Fact]
         public void BoolToIntArrayMarshalTypeIsIntegerArray()
         {
@@ -366,5 +367,105 @@ namespace SharpGen.UnitTests
             Assert.True(csParameter.IsArray);
             Assert.True(csParameter.IsBoolToInt);
         }
+
+        [Fact]
+        public void ParameterWithStructSizeRelationLogsError()
+        {
+            var cppParameter = new CppParameter
+            {
+                TypeName = "int"
+            };
+
+            cppParameter.GetMappingRule().Relation = "struct_size()";
+
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
+            typeRegistry.BindType("int", typeRegistry.ImportType(typeof(int)));
+            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
+            var csParameter = marshalledElementFactory.Create(cppParameter);
+
+            AssertLoggingCodeLogged(LoggingCodes.InvalidRelation);
+        }
+
+        [Fact]
+        public void DoublePointerNonInterfaceParameterMappedAsIntPtr()
+        {
+            var cppParameter = new CppParameter
+            {
+                TypeName = "int",
+                Pointer = "**"
+            };
+
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
+            typeRegistry.BindType("int", typeRegistry.ImportType(typeof(int)));
+            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
+            var csParameter = marshalledElementFactory.Create(cppParameter);
+
+            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csParameter.PublicType);
+            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csParameter.MarshalType);
+            Assert.True(csParameter.HasPointer);
+        }
+
+        [Fact]
+        public void DoubleVoidPointerParameterPreserved()
+        {
+            var cppParameter = new CppParameter
+            {
+                TypeName = "void",
+                Pointer = "**",
+                Attribute = ParamAttribute.Out
+            };
+
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
+            typeRegistry.BindType("void", typeRegistry.ImportType(typeof(void)));
+            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
+            var csParameter = marshalledElementFactory.Create(cppParameter);
+
+            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csParameter.PublicType);
+            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csParameter.MarshalType);
+            Assert.True(csParameter.HasPointer);
+            Assert.True(csParameter.IsOut);
+        }
+
+        [Fact]
+        public void PointerNonInterfaceReturnValueMappedAsIntPtr()
+        {
+            var cppReturnValue = new CppReturnValue
+            {
+                TypeName = "int",
+                Pointer = "*"
+            };
+
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
+            typeRegistry.BindType("int", typeRegistry.ImportType(typeof(int)));
+            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
+            var csReturnValue = marshalledElementFactory.Create(cppReturnValue);
+
+            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csReturnValue.PublicType);
+            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csReturnValue.MarshalType);
+            Assert.True(csReturnValue.HasPointer);
+        }
+
+
+        [Fact]
+        public void TriplePointerInterfaceParameterMappedAsIntPtr()
+        {
+            var cppParameter = new CppParameter
+            {
+                TypeName = "Interface",
+                Pointer = "***"
+            };
+
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
+            typeRegistry.BindType("Interface", new CsInterface { Name = "Interface" });
+
+            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
+
+            var csParameter = marshalledElementFactory.Create(cppParameter);
+
+            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csParameter.PublicType);
+            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csParameter.MarshalType);
+            Assert.True(csParameter.HasPointer);
+        }
+
     }
 }

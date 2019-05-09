@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace SharpGen.Generator
 {
-    class LocalInteropCodeGenerator : ICodeGenerator<CsAssembly, NamespaceDeclarationSyntax>
+    class LocalInteropCodeGenerator : ICodeGenerator<CsAssembly, ClassDeclarationSyntax>
     {
         public LocalInteropCodeGenerator(IGeneratorRegistry generators)
         {
@@ -18,17 +18,14 @@ namespace SharpGen.Generator
 
         public IGeneratorRegistry Generators { get; }
 
-        public NamespaceDeclarationSyntax GenerateCode(CsAssembly csElement)
+        public ClassDeclarationSyntax GenerateCode(CsAssembly csElement)
         {
-            return NamespaceDeclaration(ParseName(csElement.QualifiedName))
-                .WithMembers(
-                    SingletonList<MemberDeclarationSyntax>(
-                        ClassDeclaration(Identifier("LocalInterop"))
+            return ClassDeclaration(Identifier("LocalInterop"))
                             .WithModifiers(TokenList(
                                 Token(SyntaxKind.InternalKeyword),
                                 Token(SyntaxKind.StaticKeyword),
                                 Token(SyntaxKind.PartialKeyword)))
-                            .WithMembers(List(csElement.Interop.Methods.SelectMany(sig => Generators.InteropMethod.GenerateCode(sig))))));
+                            .WithMembers(List(csElement.Interop.Methods.SelectMany(sig => Generators.InteropMethod.GenerateCode(sig))));
         }
     }
 }

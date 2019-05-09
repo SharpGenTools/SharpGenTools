@@ -220,6 +220,12 @@ namespace Functions
         }
 
         [Fact]
+        public void WrappedStructAsClass()
+        {
+            Assert.Equal(1, NativeFunctions.GetWrapper().Wrapped.I);
+        }
+
+        [Fact]
         public unsafe void OptionalInOutStructPointer()
         {
             var test = new SimpleStruct { I = 5 };
@@ -229,6 +235,14 @@ namespace Functions
             NativeFunctions.AddOne((IntPtr)addr);
 
             Assert.Equal(6, test.I);
+        }
+
+        [Fact]
+        public void EnumArrayTest()
+        {
+            var test = new [] { MyEnum.TestValue, MyEnum.TestValue };
+
+            Assert.Equal(MyEnum.TestValue, NativeFunctions.FirstEnumElement(test));
         }
     }
 }

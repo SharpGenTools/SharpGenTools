@@ -75,11 +75,11 @@ namespace SharpGen.Parser
                             if (typeBaseRule.GeneratesExtensionHeader())
                                 outputConfig.WriteLine("// {0}", typeBaseRule);
                         }
+                        // Include extension header if it exists
+                        // so we can generate extension headers without needing them to already exist.
+                        outputConfig.WriteLine("#if __has_include(\"{0}\")", configFile.ExtensionFileName);
                         outputConfig.WriteLine("#include \"{0}\"", configFile.ExtensionFileName);
-
-                        // Create Extension file name if it doesn't exist
-                        if (!File.Exists(Path.Combine(OutputPath, configFile.ExtensionFileName)))
-                            File.WriteAllText(Path.Combine(OutputPath, configFile.ExtensionFileName), "");
+                        outputConfig.WriteLine("#endif");
                     }
 
                     var outputConfigStr = outputConfig.ToString();

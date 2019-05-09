@@ -1,4 +1,5 @@
 using System;
+using SharpGen.Runtime;
 using Xunit;
 
 namespace Struct
@@ -216,6 +217,17 @@ namespace Struct
             var result = Functions.PassThrough(obj);
 
             Assert.Equal(1, obj.Test.One());
+        }
+
+        [Fact]
+        public void PointerSizeMember()
+        {
+            var obj = new PointerSizeMember
+            {
+                PointerSize = new PointerSize(25)
+            };
+
+            Assert.Equal(new PointerSize(25), Functions.PassThrough(obj).PointerSize);
         }
     }
 }
