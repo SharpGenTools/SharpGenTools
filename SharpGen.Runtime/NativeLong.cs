@@ -180,7 +180,7 @@ namespace SharpGen.Runtime
         /// </summary>
         /// <param name = "value">The value.</param>
         /// <returns>The result of the conversion.</returns>
-        public static implicit operator NativeLong(long value)
+        public static explicit operator NativeLong(long value)
         {
             return new NativeLong(value);
         }

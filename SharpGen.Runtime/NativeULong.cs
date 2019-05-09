@@ -170,7 +170,7 @@ namespace SharpGen.Runtime
         /// </summary>
         /// <param name = "value">The value.</param>
         /// <returns>The result of the conversion.</returns>
-        public static implicit operator NativeULong(ulong value)
+        public static explicit operator NativeULong(ulong value)
         {
             return new NativeULong(value);
         }
