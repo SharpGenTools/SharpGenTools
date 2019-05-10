@@ -25,7 +25,7 @@ namespace SharpGen.Runtime
 {
     /// <summary>
     ///   The maximum number of bytes to which a pointer can point. Use for a count that must span the full range of a pointer.
-    ///   Equivalent to Windows type SIZE_T.
+    ///   Equivalent to the native type size_t.
     /// </summary>
     public readonly struct PointerSize : IEquatable<PointerSize>
     {
