@@ -89,7 +89,7 @@ namespace SharpGen.Model
                 // on the calling convention details.
                 if ((ReturnValue.MarshalType ?? ReturnValue.PublicType) is CsStruct csStruct)
                 {
-                    return csStruct.Size > MaxSizeReturnParameter;
+                    return !csStruct.IsNativePrimitive && csStruct.Size > MaxSizeReturnParameter;
                 }
                 return false;
             }

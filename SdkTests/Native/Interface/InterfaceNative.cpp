@@ -104,9 +104,14 @@ class FastOutInterfaceImplementation : public FastOutInterface
 	virtual void DoNothing() {}
 };
 
-struct PointerSizeMethodTestImpl: public PointerSizeMethodTest
+struct PassThroughMethodTestImpl: public PassThroughMethodTest
 {
 	virtual size_t PassThrough(size_t test)
+	{
+		return test;
+	}
+
+	virtual long PassThroughLong(long test)
 	{
 		return test;
 	}
@@ -141,7 +146,7 @@ extern "C" __declspec(dllexport) void FastOutInterfaceTest(FastOutInterface** ou
 	*out = new FastOutInterfaceImplementation();
 }
 
-extern "C" __declspec(dllexport) PointerSizeMethodTest* GetPointerSizeTest()
+extern "C" __declspec(dllexport) PassThroughMethodTest* GetPassThroughMethodTest()
 {
-	return new PointerSizeMethodTestImpl();
+	return new PassThroughMethodTestImpl();
 }

@@ -221,8 +221,6 @@ namespace SharpGen.Transform
                     var returnQualifiedName = callable.ReturnValue.PublicType.QualifiedName;
                     if (returnQualifiedName == globalNamespace.GetTypeName(WellKnownName.Result))
                         cSharpInteropCalliSignature.ReturnType = typeof(int);
-                    else if (returnQualifiedName == globalNamespace.GetTypeName(WellKnownName.PointerSize))
-                        cSharpInteropCalliSignature.ReturnType = typeof(void*);
                     else if (callable.ReturnValue.HasNativeValueType)
                         cSharpInteropCalliSignature.ReturnType = $"{callable.ReturnValue.MarshalType.QualifiedName}.__Native";
                     else
@@ -246,6 +244,7 @@ namespace SharpGen.Transform
             }
             else
             {
+                cSharpInteropCalliSignature.ReturnType = callable.ReturnValue.PublicType.QualifiedName;
                 Logger.Error(LoggingCodes.InvalidMethodReturnType, "Invalid return type {0} for method {1}", callable.ReturnValue.PublicType.QualifiedName, callable.CppElement);
             }
         }
@@ -255,11 +254,7 @@ namespace SharpGen.Transform
             InteropType interopType;
             var isLocal = false;
             var publicName = param.PublicType.QualifiedName;
-            if (publicName == globalNamespace.GetTypeName(WellKnownName.PointerSize))
-            {
-                interopType = typeof(void*);
-            }
-            else if (param.HasPointer)
+            if (param.HasPointer)
             {
                 interopType = typeof(void*);
             }

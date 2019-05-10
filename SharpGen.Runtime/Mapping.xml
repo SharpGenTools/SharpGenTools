@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <config id="SharpGen.Runtime" xmlns="urn:SharpGen.Config">
   <extension>
-    <define struct="SharpGen.Runtime.Result" sizeof="4" />
-    <define struct="SharpGen.Runtime.FunctionCallback" sizeof="8" />
-    <define struct="SharpGen.Runtime.PointerSize" sizeof="8" />
-    <define struct="SharpGen.Runtime.NativeLong" sizeof="8" />
-    <define struct="SharpGen.Runtime.NativeULong" sizeof="8" />
+    <define struct="SharpGen.Runtime.Result" sizeof="4" primitive="true" />
+    <define struct="SharpGen.Runtime.FunctionCallback" sizeof="8" primitive="true" />
+    <define struct="SharpGen.Runtime.PointerSize" sizeof="8" primitive="true" />
+    <define struct="SharpGen.Runtime.NativeLong" sizeof="8" primitive="true" />
+    <define struct="SharpGen.Runtime.NativeULong" sizeof="8" primitive="true" />
   </extension>
   <bindings>
     <!-- Primitive bindings -->

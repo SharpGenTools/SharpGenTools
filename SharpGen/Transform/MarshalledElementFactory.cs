@@ -153,11 +153,6 @@ namespace SharpGen.Transform
                 marshalType is CsFundamentalType marshalFundamental && IsIntegerFundamentalType(marshalFundamental)
                 && publicType is CsFundamentalType publicFundamental && publicFundamental.Type == typeof(bool);
 
-            if (publicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.PointerSize))
-            {
-                marshalType = typeRegistry.ImportType(typeof(IntPtr));
-            }
-
             // Present void* elements as IntPtr. Marshal strings as IntPtr
             if (csMarshallable.HasPointer)
             {
