@@ -23,6 +23,7 @@ namespace SharpGen.Generator
                 new BoolToIntMarshaller(globalNamespace),
                 new EnumParameterMarshaller(globalNamespace),
                 new InterfaceMarshaller(globalNamespace),
+                new PointerSizeMarshaller(globalNamespace),
                 new StringMarshaller(globalNamespace),
                 new RemappedTypeMarshaller(globalNamespace),
                 new StructWithNativeTypeMarshaller(globalNamespace),
