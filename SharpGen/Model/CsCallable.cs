@@ -116,7 +116,7 @@ namespace SharpGen.Model
         public bool RequestRawPtr { get; set; }
 
         [DataMember]
-        public InteropMethodSignature Interop { get; set; }
+        public Dictionary<PlatformDetectionType, InteropMethodSignature> InteropSignatures { get; set; } = new Dictionary<PlatformDetectionType, InteropMethodSignature>();
 
         private string _cppSignature;
 

@@ -66,7 +66,7 @@ namespace SharpGen.Generator
                     {
                         statements.Add(GenerateManagedHiddenMarshallableProlog(param));
                     }
-                    statements.AddRange(Generators.Marshalling.GetMarshaller(param).GenerateManagedToNativeProlog(param)); 
+                    statements.AddRange(Generators.Marshalling.GetMarshaller(param).GenerateManagedToNativeProlog(param));
                 }
                 else
                 {
@@ -127,7 +127,15 @@ namespace SharpGen.Generator
                 .Select(param => Generators.Marshalling.GetMarshaller(param).GeneratePin(param))
                 .Where(stmt => stmt != null).ToList();
 
-            var callStmt = ExpressionStatement(Generators.NativeInvocation.GenerateCode(csElement));
+            var callStmt = Block();
+
+            callStmt = callStmt.AddStatements(
+                GeneratorHelpers.GetPlatformSpecificStatements(
+                    globalNamespace,
+                    csElement.InteropSignatures.Keys,
+                    (platform) => 
+                        ExpressionStatement(
+                            Generators.NativeInvocation.GenerateCode((csElement, platform, csElement.InteropSignatures[platform])))));
 
             var fixedStatement = fixedStatements.FirstOrDefault()?.WithStatement(callStmt);
             foreach (var statement in fixedStatements.Skip(1))
@@ -189,9 +197,15 @@ namespace SharpGen.Generator
 
         private StatementSyntax GenerateManagedHiddenMarshallableProlog(CsMarshalCallableBase csElement)
         {
+            var type = csElement.IsArray ?
+                ArrayType(
+                    ParseTypeName(csElement.PublicType.QualifiedName),
+                    SingletonList(ArrayRankSpecifier()))
+                : ParseTypeName(csElement.PublicType.QualifiedName);
+
             return LocalDeclarationStatement(
                 VariableDeclaration(
-                    csElement.IsArray ? ArrayType(ParseTypeName(csElement.PublicType.QualifiedName), SingletonList(ArrayRankSpecifier())) : ParseTypeName(csElement.PublicType.QualifiedName),
+                    type,
                     SingletonSeparatedList(
                         VariableDeclarator(csElement.Name))));
         }

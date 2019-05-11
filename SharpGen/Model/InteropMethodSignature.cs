@@ -26,6 +26,12 @@ using SharpGen.Generator;
 
 namespace SharpGen.Model
 {
+    public enum InteropMethodSignatureFlags
+    {
+        None,
+        ForcedReturnBufferSig
+    }
+
     public class InteropMethodSignature : IEquatable<InteropMethodSignature>
     {
         public InteropMethodSignature()
@@ -33,12 +39,12 @@ namespace SharpGen.Model
             ParameterTypes = new List<InteropType>();
         }
 
-        public int Index { get; set; }
         public InteropType ReturnType { get; set; }
         public List<InteropType> ParameterTypes { get; }
         public bool IsLocal { get; set; }
         public bool IsFunction { get; set; }
         public string CallingConvention { get; set; }
+        public InteropMethodSignatureFlags Flags { get; set; }
 
         public string Name
         {
@@ -47,7 +53,7 @@ namespace SharpGen.Model
                 var returnTypeName = ReturnType.TypeName;
                 returnTypeName = returnTypeName.Replace("*", "Ptr");
                 returnTypeName = returnTypeName.Replace(".", "");
-                return "Calli" + CallingConvention + ((IsFunction)?"Func":"") + returnTypeName + ((IsLocal) ? Index.ToString() : "");
+                return $"Calli{CallingConvention}{(IsFunction ? "Func" : "")}{returnTypeName}_{Flags}";
             }
         }
 
@@ -66,9 +72,9 @@ namespace SharpGen.Model
                 return false;
             if (this.ParameterTypes.Count != against.ParameterTypes.Count)
                 return false;
-            if (this.IsLocal != against.IsLocal)
-                return false;
             if (this.CallingConvention != against.CallingConvention)
+                return false;
+            if (this.Flags != against.Flags)
                 return false;
 
             for (int i = 0; i < ParameterTypes.Count; i++)

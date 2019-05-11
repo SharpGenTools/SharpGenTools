@@ -20,66 +20,67 @@ namespace SharpGen.Generator
 
         public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsFunction csElement)
         {
-            var interopFunction = csElement.Interop;
-
             foreach (var member in Generators.Callable.GenerateCode(csElement))
             {
                 yield return member;
             }
 
-            yield return MethodDeclaration(ParseTypeName(interopFunction.ReturnType.TypeName), $"{csElement.CppElementName}_")
-                .WithModifiers(
-                    TokenList(
-                        Token(SyntaxKind.PrivateKeyword),
-                        Token(SyntaxKind.UnsafeKeyword),
-                        Token(SyntaxKind.StaticKeyword),
-                        Token(SyntaxKind.ExternKeyword)))
-                .WithAttributeLists(SingletonList(AttributeList(SingletonSeparatedList(
-                    Attribute(
-                            QualifiedName(
+            foreach (var sig in csElement.InteropSignatures)
+            {
+                yield return MethodDeclaration(ParseTypeName(sig.Value.ReturnType.TypeName), $"{csElement.CppElementName}{GeneratorHelpers.GetPlatformSpecificSuffix(sig.Key)}")
+                    .WithModifiers(
+                        TokenList(
+                            Token(SyntaxKind.PrivateKeyword),
+                            Token(SyntaxKind.UnsafeKeyword),
+                            Token(SyntaxKind.StaticKeyword),
+                            Token(SyntaxKind.ExternKeyword)))
+                    .WithAttributeLists(SingletonList(AttributeList(SingletonSeparatedList(
+                        Attribute(
                                 QualifiedName(
                                     QualifiedName(
-                                        IdentifierName("System"),
-                                        IdentifierName("Runtime")),
-                                    IdentifierName("InteropServices")),
-                                IdentifierName("DllImportAttribute")))
-                        .WithArgumentList(
-                            AttributeArgumentList(
-                                SeparatedList(
-                                    new[]
-                                    {
-                                        AttributeArgument(
-                                            IdentifierName(csElement.DllName)),
-                                        AttributeArgument(
-                                            LiteralExpression(
-                                                SyntaxKind.StringLiteralExpression,
-                                                Literal(csElement.CppElementName)))
-                                        .WithNameEquals(
-                                            NameEquals(
-                                                IdentifierName("EntryPoint"))),
-                                        AttributeArgument(
-                                            MemberAccessExpression(
-                                                SyntaxKind.SimpleMemberAccessExpression,
-                                                MemberAccessExpression(
-                                                    SyntaxKind.SimpleMemberAccessExpression,
+                                        QualifiedName(
+                                            IdentifierName("System"),
+                                            IdentifierName("Runtime")),
+                                        IdentifierName("InteropServices")),
+                                    IdentifierName("DllImportAttribute")))
+                            .WithArgumentList(
+                                AttributeArgumentList(
+                                    SeparatedList(
+                                        new[]
+                                        {
+                                                AttributeArgument(
+                                                    IdentifierName(csElement.DllName)),
+                                                AttributeArgument(
+                                                    LiteralExpression(
+                                                        SyntaxKind.StringLiteralExpression,
+                                                        Literal(csElement.CppElementName)))
+                                                .WithNameEquals(
+                                                    NameEquals(
+                                                        IdentifierName("EntryPoint"))),
+                                                AttributeArgument(
                                                     MemberAccessExpression(
                                                         SyntaxKind.SimpleMemberAccessExpression,
                                                         MemberAccessExpression(
                                                             SyntaxKind.SimpleMemberAccessExpression,
-                                                            IdentifierName("System"),
-                                                            IdentifierName("Runtime")),
-                                                        IdentifierName("InteropServices")),
-                                                    IdentifierName("CallingConvention")),
-                                                IdentifierName(csElement.CallingConvention)))
-                                        .WithNameEquals(
-                                            NameEquals(
-                                                IdentifierName("CallingConvention")))
-                                    })))))))
-                .WithParameterList(ParameterList(SeparatedList(
-                    interopFunction.ParameterTypes.Select((param, i) =>
-                        Parameter(Identifier($"param{i}"))
-                            .WithType(ParseTypeName(param.TypeName))))))
-                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+                                                            MemberAccessExpression(
+                                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                                MemberAccessExpression(
+                                                                    SyntaxKind.SimpleMemberAccessExpression,
+                                                                    IdentifierName("System"),
+                                                                    IdentifierName("Runtime")),
+                                                                IdentifierName("InteropServices")),
+                                                            IdentifierName("CallingConvention")),
+                                                        IdentifierName(csElement.CallingConvention)))
+                                                .WithNameEquals(
+                                                    NameEquals(
+                                                        IdentifierName("CallingConvention")))
+                                        })))))))
+                    .WithParameterList(ParameterList(SeparatedList(
+                        sig.Value.ParameterTypes.Select((param, i) =>
+                            Parameter(Identifier($"param{i}"))
+                                .WithType(ParseTypeName(param.TypeName))))))
+                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)); 
+            }
         }
 
     }

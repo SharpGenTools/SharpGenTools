@@ -7,7 +7,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    class NativeInvocationCodeGenerator: ICodeGenerator<CsCallable, ExpressionSyntax>
+    class NativeInvocationCodeGenerator: ICodeGenerator<(CsCallable, PlatformDetectionType, InteropMethodSignature), ExpressionSyntax>
     {
         public NativeInvocationCodeGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
         {
@@ -19,8 +19,9 @@ namespace SharpGen.Generator
 
         public IGeneratorRegistry Generators { get; }
         
-        public ExpressionSyntax GenerateCode(CsCallable callable)
+        public ExpressionSyntax GenerateCode((CsCallable, PlatformDetectionType, InteropMethodSignature) sig)
         {
+            var (callable, platform, interopSig) = sig;
             var arguments = new List<ArgumentSyntax>();
 
             if (callable is CsMethod)
@@ -30,7 +31,9 @@ namespace SharpGen.Generator
                                             IdentifierName("_nativePointer"))));
             }
 
-            if (callable.IsReturnStructLarge)
+            bool isForcedReturnBufferSig = (interopSig.Flags & InteropMethodSignatureFlags.ForcedReturnBufferSig) != 0;
+
+            if (isForcedReturnBufferSig)
             {
                 arguments.Add(Generators.Marshalling.GetMarshaller(callable.ReturnValue).GenerateNativeArgument(callable.ReturnValue)); 
             }
@@ -60,11 +63,11 @@ namespace SharpGen.Generator
 
             var call = InvocationExpression(
                     IdentifierName(callable is CsFunction ?
-                        callable.CppElementName + "_"
-                    : "LocalInterop." + callable.Interop.Name),
+                        callable.CppElementName + GeneratorHelpers.GetPlatformSpecificSuffix(platform)
+                    : "LocalInterop." + interopSig.Name),
                     ArgumentList(SeparatedList(arguments)));
 
-            return callable.IsReturnStructLarge || !callable.HasReturnType ?
+            return isForcedReturnBufferSig || !callable.HasReturnType ?
                 (ExpressionSyntax)call
                 : AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                     Generators.Marshalling.GetMarshaller(callable.ReturnValue).GeneratesMarshalVariable(callable.ReturnValue) ?
