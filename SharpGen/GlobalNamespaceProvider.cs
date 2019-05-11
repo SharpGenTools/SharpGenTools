@@ -71,7 +71,15 @@ namespace SharpGen
         /// <summary>
         /// Static class that enables platform detection for SharpGen-generated code.
         /// </summary>
-        PlatformDetection
+        PlatformDetection,
+        /// <summary>
+        /// Native `long` type
+        /// </summary>
+        NativeLong,
+        /// <summary>
+        /// Native `unsigned long` type
+        /// </summary>
+        NativeULong
     }
 
     /// <summary>

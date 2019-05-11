@@ -127,15 +127,12 @@ namespace SharpGen.Generator
                 .Select(param => Generators.Marshalling.GetMarshaller(param).GeneratePin(param))
                 .Where(stmt => stmt != null).ToList();
 
-            var callStmt = Block();
-
-            callStmt = callStmt.AddStatements(
-                GeneratorHelpers.GetPlatformSpecificStatements(
+            var callStmt = GeneratorHelpers.GetPlatformSpecificStatements(
                     globalNamespace,
                     csElement.InteropSignatures.Keys,
                     (platform) => 
                         ExpressionStatement(
-                            Generators.NativeInvocation.GenerateCode((csElement, platform, csElement.InteropSignatures[platform])))));
+                            Generators.NativeInvocation.GenerateCode((csElement, platform, csElement.InteropSignatures[platform]))));
 
             var fixedStatement = fixedStatements.FirstOrDefault()?.WithStatement(callStmt);
             foreach (var statement in fixedStatements.Skip(1))
@@ -143,7 +140,7 @@ namespace SharpGen.Generator
                 fixedStatement = statement.WithStatement(fixedStatement);
             }
 
-            statements.Add((StatementSyntax)fixedStatement ?? callStmt);
+            statements.Add(fixedStatement ?? callStmt);
 
             foreach (var param in csElement.Parameters)
             {

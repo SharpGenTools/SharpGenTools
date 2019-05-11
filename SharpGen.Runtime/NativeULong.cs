@@ -26,6 +26,11 @@ namespace SharpGen.Runtime
             _value = (NativeType)value;
         }
 
+        public NativeULong(UIntPtr value)
+        {
+            _value = (NativeType)value;
+        }
+
         public override string ToString()
         {
             return _value.ToString();
@@ -136,7 +141,7 @@ namespace SharpGen.Runtime
         }
 
         /// <summary>
-        ///   Performs an implicit conversion from <see cref = "NativeULong" /> to <see cref = "int" />.
+        ///   Performs an implicit conversion from <see cref = "NativeULong" /> to <see cref = "uint" />.
         /// </summary>
         /// <param name = "value">The value.</param>
         /// <returns>The result of the conversion.</returns>
@@ -146,7 +151,7 @@ namespace SharpGen.Runtime
         }
 
         /// <summary>
-        ///   Performs an implicit conversion from <see cref = "NativeULong" /> to <see cref = "long" />.
+        ///   Performs an implicit conversion from <see cref = "NativeULong" /> to <see cref = "ulong" />.
         /// </summary>
         /// <param name = "value">The value.</param>
         /// <returns>The result of the conversion.</returns>
@@ -156,7 +161,17 @@ namespace SharpGen.Runtime
         }
 
         /// <summary>
-        ///   Performs an implicit conversion from <see cref = "NativeULong" /> to <see cref = "int" />.
+        ///   Performs an implicit conversion from <see cref = "NativeULong" /> to <see cref = "UIntPtr" />.
+        /// </summary>
+        /// <param name = "value">The value.</param>
+        /// <returns>The result of the conversion.</returns>
+        public static implicit operator UIntPtr(NativeULong value)
+        {
+            return (UIntPtr)value.ToUInt64();
+        }
+
+        /// <summary>
+        ///   Performs an implicit conversion to <see cref = "NativeULong" /> from <see cref = "uint" />.
         /// </summary>
         /// <param name = "value">The value.</param>
         /// <returns>The result of the conversion.</returns>
@@ -166,11 +181,21 @@ namespace SharpGen.Runtime
         }
 
         /// <summary>
-        ///   Performs an implicit conversion from <see cref = "NativeULong" /> to <see cref = "long" />.
+        ///   Performs an implicit conversion to <see cref = "NativeULong" /> from <see cref = "ulong" />.
         /// </summary>
         /// <param name = "value">The value.</param>
         /// <returns>The result of the conversion.</returns>
         public static explicit operator NativeULong(ulong value)
+        {
+            return new NativeULong(value);
+        }
+
+        /// <summary>
+        ///   Performs an implicit conversion to <see cref = "NativeULong" /> from <see cref = "UIntPtr" />.
+        /// </summary>
+        /// <param name = "value">The value.</param>
+        /// <returns>The result of the conversion.</returns>
+        public static implicit operator NativeULong(UIntPtr value)
         {
             return new NativeULong(value);
         }

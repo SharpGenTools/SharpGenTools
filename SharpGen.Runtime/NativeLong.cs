@@ -26,6 +26,11 @@ namespace SharpGen.Runtime
             _value = (NativeType)value;
         }
 
+        public NativeLong(IntPtr value)
+        {
+            _value = (NativeType)value;
+        }
+
         public override string ToString()
         {
             return _value.ToString();
@@ -166,7 +171,17 @@ namespace SharpGen.Runtime
         }
 
         /// <summary>
-        ///   Performs an implicit conversion from <see cref = "NativeLong" /> to <see cref = "int" />.
+        ///   Performs an implicit conversion from <see cref = "NativeLong" /> to <see cref = "long" />.
+        /// </summary>
+        /// <param name = "value">The value.</param>
+        /// <returns>The result of the conversion.</returns>
+        public static implicit operator IntPtr(NativeLong value)
+        {
+            return (IntPtr)value.ToInt64();
+        }
+
+        /// <summary>
+        ///   Performs an implicit conversion to <see cref = "NativeLong" /> from <see cref = "int" />.
         /// </summary>
         /// <param name = "value">The value.</param>
         /// <returns>The result of the conversion.</returns>
@@ -176,11 +191,21 @@ namespace SharpGen.Runtime
         }
 
         /// <summary>
-        ///   Performs an implicit conversion from <see cref = "NativeLong" /> to <see cref = "long" />.
+        ///   Performs an implicit conversion to <see cref = "NativeLong" /> from <see cref = "long" />.
         /// </summary>
         /// <param name = "value">The value.</param>
         /// <returns>The result of the conversion.</returns>
         public static explicit operator NativeLong(long value)
+        {
+            return new NativeLong(value);
+        }
+
+        /// <summary>
+        ///   Performs an implicit conversion to <see cref = "NativeLong" /> from <see cref = "IntPtr" />.
+        /// </summary>
+        /// <param name = "value">The value.</param>
+        /// <returns>The result of the conversion.</returns>
+        public static implicit operator NativeLong(IntPtr value)
         {
             return new NativeLong(value);
         }
