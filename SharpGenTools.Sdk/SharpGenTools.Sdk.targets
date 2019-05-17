@@ -263,6 +263,7 @@
       GlobalNamespaceOverrides="@(SharpGenGlobalNamespaceOverrides)"
       DocLinkCache="@(DocLinksCache)"
       ExternalDocumentation="@(SharpGenExternalDocs)"
+      Platforms="@(SharpGenPlatforms)"
     />
   </Target>
 

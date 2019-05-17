@@ -129,6 +129,7 @@ namespace SharpGen.Generator
 
             var callStmt = GeneratorHelpers.GetPlatformSpecificStatements(
                     globalNamespace,
+                    Generators.Config,
                     csElement.InteropSignatures.Keys,
                     (platform) => 
                         ExpressionStatement(

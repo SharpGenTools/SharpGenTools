@@ -123,7 +123,7 @@ namespace SharpGen.Transform
 
         private void InitSignatureWithReturnType(CsCallable callable, InteropMethodSignature cSharpInteropCalliSignature, PlatformDetectionType platform)
         {
-            Debug.Assert((platform & (PlatformDetectionType.IsWindows | PlatformDetectionType.IsSystemV)) != (PlatformDetectionType.IsWindows | PlatformDetectionType.IsSystemV));
+            Debug.Assert((platform & (PlatformDetectionType.IsWindows | PlatformDetectionType.IsSystemV)) != (PlatformDetectionType.IsWindows | PlatformDetectionType.IsSystemV) || !callable.IsReturnStructLarge);
             var platformSpecificReturnTypeOverrides = (platform & PlatformDetectionType.IsWindows) != 0
                 ? windowsOnlyReturnTypeOverrides
                 : systemvOnlyReturnTypeOverrides;

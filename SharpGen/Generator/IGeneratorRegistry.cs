@@ -29,5 +29,6 @@ namespace SharpGen.Generator
 
         IMultiCodeGenerator<InteropMethodSignature, MemberDeclarationSyntax> InteropMethod { get; }
         MarshallingRegistry Marshalling { get; }
+        GeneratorConfig Config { get; }
     }
 }

@@ -14,6 +14,7 @@ namespace SharpGen.Generator
             GlobalNamespaceProvider globalNamespace,
             IDocumentationLinker documentation,
             ExternalDocCommentsReader docReader,
+            GeneratorConfig config,
             Logger logger)
         {
             Constant = new ConstantCodeGenerator();
@@ -36,6 +37,7 @@ namespace SharpGen.Generator
             Vtbl = new VtblGenerator(this, globalNamespace);
             Shadow = new ShadowGenerator(this, globalNamespace);
             Marshalling = new MarshallingRegistry(globalNamespace, logger);
+            Config = config;
         }
 
         public IMultiCodeGenerator<CsVariable, MemberDeclarationSyntax> Constant { get; }
@@ -65,5 +67,7 @@ namespace SharpGen.Generator
         public IMultiCodeGenerator<(CsCallable, InteropMethodSignature), StatementSyntax> ReverseCallableProlog { get; }
 
         public MarshallingRegistry Marshalling { get; }
+
+        public GeneratorConfig Config { get; }
     }
 }

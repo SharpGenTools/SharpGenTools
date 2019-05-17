@@ -11,6 +11,7 @@ using System.Xml;
 using System.IO;
 using SharpGen.Transform;
 using System.Linq;
+using SharpGen.Logging;
 
 namespace SharpGenTools.Sdk.Tasks
 {
@@ -32,6 +33,8 @@ namespace SharpGenTools.Sdk.Tasks
 
         [Required]
         public string GlobalNamespace { get; set; }
+
+        public ITaskItem[] Platforms { get; set; }
 
         public ITaskItem[] GlobalNamespaceOverrides { get; set; }
 
@@ -63,11 +66,37 @@ namespace SharpGenTools.Sdk.Tasks
                 }
             }
 
+            PlatformDetectionType platformMask = 0;
+
+            foreach (var platform in Platforms ?? Enumerable.Empty<ITaskItem>())
+            {
+                if (!Enum.TryParse<PlatformDetectionType>("Is" + platform.ItemSpec, out var parsedPlatform))
+                {
+                    Log.LogWarning(null, LoggingCodes.InvalidPlatformDetectionType, null, null, 0, 0, 0, 0, $"The platform type {platform} is an unknown platform to SharpGenTools. Falling back to Any platform detection.");
+                    platformMask = PlatformDetectionType.Any;
+                }
+                else
+                {
+                    platformMask |= parsedPlatform;
+                }
+            }
+
+            if (platformMask == 0)
+            {
+                platformMask = PlatformDetectionType.Any;
+            }
+
+            var config = new GeneratorConfig
+            {
+                Platforms = platformMask
+            };
+
             var generator = new RoslynGenerator(
                 new Logger(new MsBuildSharpGenLogger(Log), null),
                 globalNamespace,
                 new CachedDocumentationLinker(DocLinkCache.ItemSpec),
-                new ExternalDocCommentsReader(documentationFiles));
+                new ExternalDocCommentsReader(documentationFiles),
+                config);
 
             generator.Run(CsAssembly.Read(Model.ItemSpec), OutputDirectory, GeneratedCodeFolder);
 

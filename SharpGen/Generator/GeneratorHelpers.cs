@@ -11,9 +11,9 @@ namespace SharpGen.Generator
     {
         private static readonly PlatformDetectionType[] platforms = (PlatformDetectionType[])Enum.GetValues(typeof(PlatformDetectionType));
 
-        private static StatementSyntax PlatformSpecificStatement(GlobalNamespaceProvider globalNamespace, PlatformDetectionType platform, StatementSyntax statement)
+        private static StatementSyntax PlatformSpecificStatement(GlobalNamespaceProvider globalNamespace, PlatformDetectionType allPlatformBitmap, PlatformDetectionType platform, StatementSyntax statement)
         {
-            if (platform == PlatformDetectionType.Any)
+            if ((platform & allPlatformBitmap) == allPlatformBitmap)
             {
                 return statement;
             }
@@ -45,6 +45,11 @@ namespace SharpGen.Generator
 
         public static string GetPlatformSpecificSuffix(PlatformDetectionType platform)
         {
+            if (platform == PlatformDetectionType.Any)
+            {
+                return "_";
+            }
+
             StringBuilder str = new StringBuilder("_");
             foreach (PlatformDetectionType flag in platforms)
             {
@@ -57,18 +62,20 @@ namespace SharpGen.Generator
             return str.ToString();
         }
 
-        public static StatementSyntax GetPlatformSpecificStatements(GlobalNamespaceProvider globalNamespace, IEnumerable<PlatformDetectionType> types, Func<PlatformDetectionType, StatementSyntax> syntaxBuilder)
+        public static StatementSyntax GetPlatformSpecificStatements(GlobalNamespaceProvider globalNamespace, GeneratorConfig config, IEnumerable<PlatformDetectionType> types, Func<PlatformDetectionType, StatementSyntax> syntaxBuilder)
         {
             List<IfStatementSyntax> ifStatements = new List<IfStatementSyntax>();
 
+            var allPlatformBitmap = config.Platforms;
+
             foreach (var platform in types)
             {
-                if (platform == PlatformDetectionType.Any)
+                if ((platform & allPlatformBitmap) == allPlatformBitmap)
                 {
-                    return PlatformSpecificStatement(globalNamespace, platform, syntaxBuilder(platform));
+                    return PlatformSpecificStatement(globalNamespace, allPlatformBitmap, platform, syntaxBuilder(platform));
                 }
 
-                IfStatementSyntax statement = (IfStatementSyntax)PlatformSpecificStatement(globalNamespace, platform, syntaxBuilder(platform));
+                IfStatementSyntax statement = (IfStatementSyntax)PlatformSpecificStatement(globalNamespace, allPlatformBitmap, platform, syntaxBuilder(platform));
                 ifStatements.Add(statement);
             }
 

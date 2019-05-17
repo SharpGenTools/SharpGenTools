@@ -68,7 +68,7 @@ namespace SharpGen.Generator
                             .WithBody(
                                 Block(csElement.Methods
                                         .OrderBy(method => method.Offset)
-                                        .Select(method => GeneratorHelpers.GetPlatformSpecificStatements(globalNamespace, method.InteropSignatures.Keys,
+                                        .Select(method => GeneratorHelpers.GetPlatformSpecificStatements(globalNamespace, generators.Config, method.InteropSignatures.Keys,
                                             platform  =>
                                                 ExpressionStatement(
                                                     InvocationExpression(

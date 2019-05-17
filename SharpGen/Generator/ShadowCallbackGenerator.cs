@@ -22,7 +22,7 @@ namespace SharpGen.Generator
 
         public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsCallable csElement)
         {
-            foreach (var sig in csElement.InteropSignatures)
+            foreach (var sig in csElement.InteropSignatures.Where(sig => (sig.Key & generators.Config.Platforms) != 0))
             {
                 yield return GenerateDelegateDeclaration(csElement, sig.Key, sig.Value);
                 yield return GenerateShadowCallback(csElement, sig.Key, sig.Value);

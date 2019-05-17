@@ -17,10 +17,10 @@ namespace SharpGen.Generator
     {
         public IGeneratorRegistry Generators { get; }
 
-        public RoslynGenerator(Logger logger, GlobalNamespaceProvider globalNamespace, IDocumentationLinker documentation, ExternalDocCommentsReader docReader)
+        public RoslynGenerator(Logger logger, GlobalNamespaceProvider globalNamespace, IDocumentationLinker documentation, ExternalDocCommentsReader docReader, GeneratorConfig config)
         {
             Logger = logger;
-            Generators = new DefaultGenerators(globalNamespace, documentation, docReader, logger);
+            Generators = new DefaultGenerators(globalNamespace, documentation, docReader, config, logger);
         }
 
         public Logger Logger { get; }

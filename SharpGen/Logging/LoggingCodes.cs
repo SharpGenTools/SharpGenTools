@@ -48,6 +48,8 @@ namespace SharpGen.Logging
 
         public const string InvalidRelationInScenario = "SG0022";
 
+        public const string InvalidPlatformDetectionType = "SG0023";
+
         public const string CastXmlError = "CX0001";
 
         public const string CastXmlWarning = "CX0002";
