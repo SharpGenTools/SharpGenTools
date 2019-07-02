@@ -45,7 +45,7 @@ namespace SharpGen.Transform
             {
                 var sigWithRetBuf = GetNativeInteropSignatureWithForcedReturnBuffer(callable, isFunction);
                 interopSignatures.Add(PlatformDetectionType.IsWindows, sigWithRetBuf);
-                interopSignatures.Add(PlatformDetectionType.IsSystemV, GetNativeInteropSignature(callable, isFunction, PlatformDetectionType.IsSystemV));
+                interopSignatures.Add(PlatformDetectionType.IsItaniumSystemV, GetNativeInteropSignature(callable, isFunction, PlatformDetectionType.IsItaniumSystemV));
             }
             else
             {
@@ -61,7 +61,7 @@ namespace SharpGen.Transform
                 {
 
                     interopSignatures.Add(PlatformDetectionType.IsWindows, GetNativeInteropSignature(callable, isFunction, PlatformDetectionType.IsWindows));
-                    interopSignatures.Add(PlatformDetectionType.IsSystemV, GetNativeInteropSignature(callable, isFunction, PlatformDetectionType.IsSystemV));
+                    interopSignatures.Add(PlatformDetectionType.IsItaniumSystemV, GetNativeInteropSignature(callable, isFunction, PlatformDetectionType.IsItaniumSystemV));
                 }
             }
 
@@ -123,7 +123,7 @@ namespace SharpGen.Transform
 
         private void InitSignatureWithReturnType(CsCallable callable, InteropMethodSignature cSharpInteropCalliSignature, PlatformDetectionType platform)
         {
-            Debug.Assert((platform & (PlatformDetectionType.IsWindows | PlatformDetectionType.IsSystemV)) != (PlatformDetectionType.IsWindows | PlatformDetectionType.IsSystemV) || !callable.IsReturnStructLarge);
+            Debug.Assert((platform & (PlatformDetectionType.IsWindows | PlatformDetectionType.IsItaniumSystemV)) != (PlatformDetectionType.IsWindows | PlatformDetectionType.IsItaniumSystemV) || !callable.IsReturnStructLarge);
             var platformSpecificReturnTypeOverrides = (platform & PlatformDetectionType.IsWindows) != 0
                 ? windowsOnlyReturnTypeOverrides
                 : systemvOnlyReturnTypeOverrides;

@@ -56,7 +56,7 @@ namespace SharpGen.Generator
                                 (ExpressionSyntax)MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                     ThisExpression(),
                                     IdentifierName($"{callable.Name}__vtbl_index"))
-                                : LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(method.Offset))
+                                : LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal((platform & PlatformDetectionType.IsWindows) != 0 ? method.WindowsOffset : method.Offset))
                                 )
                             )))));
             }

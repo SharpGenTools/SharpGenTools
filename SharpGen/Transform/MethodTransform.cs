@@ -98,11 +98,13 @@ namespace SharpGen.Transform
             var cppMethod = (CppMethod)csElement.CppElement;
 
             csElement.Offset = cppMethod.Offset;
+            csElement.WindowsOffset = cppMethod.WindowsOffset;
 
             var methodRule = cppMethod.GetMappingRule();
 
             // Apply any offset to the method's vtable
             csElement.Offset += methodRule.LayoutOffsetTranslate;
+            csElement.WindowsOffset += methodRule.LayoutOffsetTranslate;
 
             ProcessCallable(csElement, false);
         }

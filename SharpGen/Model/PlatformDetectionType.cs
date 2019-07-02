@@ -8,7 +8,7 @@ namespace SharpGen.Model
     public enum PlatformDetectionType
     {
         IsWindows = 0b000001,
-        IsSystemV = 0b000010,
-        Any = IsWindows | IsSystemV
+        IsItaniumSystemV = 0b000010,
+        Any = IsWindows | IsItaniumSystemV
     }
 }

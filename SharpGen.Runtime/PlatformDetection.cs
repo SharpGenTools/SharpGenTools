@@ -8,13 +8,13 @@ namespace SharpGen.Runtime
     {
 #if WIN
         public static bool IsWindows => true;
-        public static bool IsSystemV => false;
+        public static bool IsItaniumSystemV => false;
 #elif UNIX
         public static bool IsWindows => false;
-        public static bool IsSystemV => true;
+        public static bool IsItaniumSystemV => true;
 #else
         public static bool IsWindows => throw null;
-        public static bool IsSystemV => throw null;
+        public static bool IsItaniumSystemV => throw null;
 #endif
     }
 }

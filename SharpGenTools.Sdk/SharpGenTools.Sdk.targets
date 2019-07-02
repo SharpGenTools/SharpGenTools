@@ -258,7 +258,7 @@
 
     <ItemGroup Condition="'@(SharpGenPlatforms)' == '' and '$(RuntimeIdentifier)' != ''">
       <SharpGenPlatforms Include="Windows" Condition="$(RuntimeIdentifier.StartsWith('win'))" />
-      <SharpGenPlatforms Include="SystemV" Condition="!$(RuntimeIdentifier.StartsWith('win'))" />
+      <SharpGenPlatforms Include="ItaniumSystemV" Condition="!$(RuntimeIdentifier.StartsWith('win'))" />
     </ItemGroup>
     
     <GenerateCSharp
