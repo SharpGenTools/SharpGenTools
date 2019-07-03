@@ -75,15 +75,22 @@ namespace SharpGen.Generator
                                                         IdentifierName("AddMethod"))
                                                     .WithArgumentList(
                                                         ArgumentList(
-                                                            SingletonSeparatedList(
-                                                                Argument(
-                                                                    ObjectCreationExpression(
-                                                                        IdentifierName($"{method.Name}Delegate{GeneratorHelpers.GetPlatformSpecificSuffix(platform)}"))
-                                                                    .WithArgumentList(
-                                                                        ArgumentList(
-                                                                            SingletonSeparatedList(
-                                                                                Argument(
-                                                                                    IdentifierName($"{method.Name}{GeneratorHelpers.GetPlatformSpecificSuffix(platform)}"))))))))))))))
+                                                            SeparatedList(
+                                                                new []
+                                                                {
+                                                                    Argument(
+                                                                        ObjectCreationExpression(
+                                                                            IdentifierName($"{method.Name}Delegate{GeneratorHelpers.GetPlatformSpecificSuffix(platform)}"))
+                                                                        .WithArgumentList(
+                                                                            ArgumentList(
+                                                                                SingletonSeparatedList(
+                                                                                    Argument(
+                                                                                        IdentifierName($"{method.Name}{GeneratorHelpers.GetPlatformSpecificSuffix(platform)}")))))),
+                                                                    Argument(
+                                                                        LiteralExpression(SyntaxKind.NumericLiteralExpression,
+                                                                            Literal((platform & PlatformDetectionType.IsWindows) != 0 ? method.WindowsOffset : method.Offset)))
+                                                                }
+                                                                ))))))))
                         }
                     .Concat(csElement.Methods
                                 .SelectMany(method => generators.ShadowCallable.GenerateCode(method)))));

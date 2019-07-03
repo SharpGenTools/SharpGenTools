@@ -25,7 +25,7 @@ namespace SharpGen.Runtime.UnitTests
         {
             public CallbackVbtl(int numberOfCallbackMethods) : base(numberOfCallbackMethods + 1)
             {
-                AddMethod(new IncrementDelegate(IncrementImpl));
+                AddMethod(new IncrementDelegate(IncrementImpl), 0);
             }
 
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -54,7 +54,7 @@ namespace SharpGen.Runtime.UnitTests
         {
             public Callback2Vbtl(int numberOfCallbackMethods) : base(numberOfCallbackMethods + 1)
             {
-                AddMethod(new DecrementDelegate(DecrementImpl));
+                AddMethod(new DecrementDelegate(DecrementImpl), 1);
             }
 
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
