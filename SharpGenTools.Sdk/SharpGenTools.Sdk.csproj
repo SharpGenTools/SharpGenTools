@@ -28,5 +28,6 @@
 
   <ItemGroup>
     <Content Include="../CastXML/**/*" PackagePath="tools/CastXML/%(RecursiveDir)%(FileName)%(Extension)" />
+    <Content Include="SharpGenMapping.xaml" PackagePath="build" />
   </ItemGroup>
 </Project>

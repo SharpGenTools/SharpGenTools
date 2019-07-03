@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ProjectSchemaDefinitions xmlns="http://schemas.microsoft.com/build/2009/properties">
+  <ContentType Name="SharpGenMapping" DisplayName="SharpGen Mapping" ItemType="SharpGenMapping" />
+  <ItemType Name="SharpGenMapping" DisplayName="SharpGen Mapping" />
+
+  <Rule Name="SharpGenMapping" PageTemplate="generic" DisplayName="File Properties" Description="File Properties" PropertyPagesHidden="true">
+    <Rule.DataSource>
+      <DataSource Persistence="ProjectFile" ItemType="SharpGenMapping" HasConfigurationCondition="False" SourceOfDefaultValue="AfterContext" />
+    </Rule.DataSource>
+
+    <Rule.Categories>
+      <Category Name="Advanced" DisplayName="Advanced" />
+      <Category Name="Misc" DisplayName="Misc" />
+    </Rule.Categories>
+
+    <DynamicEnumProperty Name="{}{ItemType}" DisplayName="Build Action" Category="Advanced"
+                         Description="How the file relates to the build and deployment processes."
+                         EnumProvider="ItemTypes" />
+
+    <StringProperty Name="Generator"
+                    Category="Advanced"
+                    DisplayName="Custom Tool"
+                    Description="Specifies the tool that transforms a file at design time and places the output of that transformation into another file. For example, a dataset (.xsd) file comes with a default custom tool." />
+
+    <StringProperty Name="FullPath"
+                    DisplayName="Full Path"
+                    ReadOnly="true"
+                    Category="Misc"
+                    Description="Location of the file.">
+      <StringProperty.DataSource>
+        <DataSource Persistence="Intrinsic" ItemType="SharpGenMapping" PersistedName="FullPath" SourceOfDefaultValue="AfterContext" />
+      </StringProperty.DataSource>
+    </StringProperty>
+
+    <StringProperty Name="FileNameAndExtension"
+                    DisplayName="File Name"
+                    ReadOnly="true"
+                    Category="Misc"
+                    Description="Name of the file or folder.">
+      <StringProperty.DataSource>
+        <DataSource Persistence="Intrinsic" ItemType="SharpGenMapping" PersistedName="FileNameAndExtension" SourceOfDefaultValue="AfterContext" />
+      </StringProperty.DataSource>
+    </StringProperty>
+
+  </Rule>
+</ProjectSchemaDefinitions>
