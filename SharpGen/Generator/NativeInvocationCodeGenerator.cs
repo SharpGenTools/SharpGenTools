@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
 using System.Collections.Generic;
@@ -42,6 +43,28 @@ namespace SharpGen.Generator
 
             if (callable is CsMethod method)
             {
+                var windowsOffsetExpression = LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(method.WindowsOffset));
+                var nonWindowsOffsetExpression = LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(method.Offset));
+                ExpressionSyntax vtableOffsetExpression;
+                if ((platform & (PlatformDetectionType.IsWindows | PlatformDetectionType.IsItaniumSystemV)) == (PlatformDetectionType.IsWindows | PlatformDetectionType.IsItaniumSystemV)
+                    && method.Offset != method.WindowsOffset)
+                {
+                    vtableOffsetExpression = ConditionalExpression(
+                        MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            globalNamespace.GetTypeNameSyntax(WellKnownName.PlatformDetection),
+                            IdentifierName(PlatformDetectionType.IsWindows.ToString())),
+                        windowsOffsetExpression,
+                        nonWindowsOffsetExpression);
+                }
+                else if ((platform & PlatformDetectionType.IsWindows) != 0)
+                {
+                    vtableOffsetExpression = windowsOffsetExpression;
+                }
+                else
+                {
+                    vtableOffsetExpression = nonWindowsOffsetExpression;
+                }
                 arguments.Add(Argument(
                     ElementAccessExpression(
                         ParenthesizedExpression(
@@ -53,10 +76,10 @@ namespace SharpGen.Generator
                         BracketedArgumentList(
                             SingletonSeparatedList(
                                 Argument(method.CustomVtbl ?
-                                (ExpressionSyntax)MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                     ThisExpression(),
                                     IdentifierName($"{callable.Name}__vtbl_index"))
-                                : LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal((platform & PlatformDetectionType.IsWindows) != 0 ? method.WindowsOffset : method.Offset))
+                                : vtableOffsetExpression
                                 )
                             )))));
             }
