@@ -531,6 +531,8 @@ namespace SharpGen.Parser
             // Parse annotations
             ParseAnnotations(xElement, cppInterface);
 
+            int offsetMethodBase = offsetMethod;
+
             var methods = new List<CppMethod>();
 
             // Parse methods
@@ -546,7 +548,7 @@ namespace SharpGen.Parser
                 }
             }
 
-            SetMethodsWindowsOffset(methods);
+            SetMethodsWindowsOffset(methods, offsetMethodBase);
 
             // Add the methods to the interface with the correct offsets
             foreach (var cppMethod in methods)
@@ -562,7 +564,7 @@ namespace SharpGen.Parser
             return cppInterface;
         }
 
-        private static void SetMethodsWindowsOffset(IEnumerable<CppMethod> nativeMethods)
+        private static void SetMethodsWindowsOffset(IEnumerable<CppMethod> nativeMethods, int vtableIndexStart)
         {
             List<CppMethod> methods = new List<CppMethod>(nativeMethods);
             // The Visual C++ compiler breaks the rules of the COM ABI when overloaded methods are used.
@@ -591,7 +593,7 @@ namespace SharpGen.Parser
                 }
             }
 
-            int methodOffset = 0;
+            int methodOffset = vtableIndexStart;
             foreach (var cppMethod in methods)
             {
                 cppMethod.WindowsOffset = methodOffset++;
