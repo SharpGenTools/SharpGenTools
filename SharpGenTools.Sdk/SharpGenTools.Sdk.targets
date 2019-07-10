@@ -148,7 +148,7 @@
 
   <Target
     Name="GenerateHeaders"
-    DependsOnTargets="PrepareCppGeneration;GetMappingsFromProjectReferences"
+    DependsOnTargets="CreateIntermediateDir;PrepareCppGeneration;GetMappingsFromProjectReferences"
     Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping);@(SharpGenConsumerMapping)"
     Outputs="@(Headers);@(CppConsumerConfig)"
     Condition="'@(SharpGenMapping)' != ''">
@@ -166,7 +166,7 @@
   
   <Target
     Name="GenerateExtensionHeaders"
-    DependsOnTargets="PrepareCppGeneration;GenerateHeaders"
+    DependsOnTargets="CreateIntermediateDir;PrepareCppGeneration;GenerateHeaders"
     Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping);@(SharpGenConsumerMapping);@(Headers);@(IncludedHeaders)"
     Outputs="@(ExtensionHeaders);@(PartialCppModule)"
     Condition="'@(SharpGenMapping)' != ''">
@@ -193,7 +193,7 @@
 
   <Target
     Name="ParseCPlusPlus"
-    DependsOnTargets="GenerateHeaders;GenerateExtensionHeaders"
+    DependsOnTargets="CreateIntermediateDir;GenerateHeaders;GenerateExtensionHeaders"
     Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping);@(SharpGenConsumerMapping);@(PartialCppModule);@(IncludedHeaders)"
     Outputs="@(ParsedCppModule)"
     Condition="'@(SharpGenMapping)' != ''">
@@ -215,7 +215,7 @@
   
   <Target
     Name="MapCppToCSharp"
-    DependsOnTargets="ParseCPlusPlus;$(DocProviderTargets)"
+    DependsOnTargets="CreateIntermediateDir;ParseCPlusPlus;$(DocProviderTargets)"
     Inputs="@(SharpGenSdkAssembly);@(SharpGenMapping);@(ParsedCppModule);@(CppConsumerConfig);@(SharpGenConsumerMapping)"
     Outputs="@(CSharpModel);@(DocLinksCache);@(SharpGenConsumerBindMapping)"
     Condition="'@(SharpGenMapping)' != ''">
@@ -251,7 +251,7 @@
 
   <Target
     Name="GenerateCSharp"
-    DependsOnTargets="GetGeneratedCSharpFiles;RemoveGeneratedCSharpFiles"
+    DependsOnTargets="CreateIntermediateDir;GetGeneratedCSharpFiles;RemoveGeneratedCSharpFiles"
     Inputs="@(SharpGenSdkAssembly);@(CSharpModel);@(DocLinksCache);@(SharpGenExternalDocs)"
     Outputs="@(GeneratedCSharpFiles)"
     Condition="'@(SharpGenMapping)' != ''">
