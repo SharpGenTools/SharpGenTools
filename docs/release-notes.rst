@@ -2,6 +2,15 @@
 Release Notes
 =====================
 
+vNext.0
+========
+
+Features:
+
+    * Implemented default mapping for C++ ``long``.
+    * Implemented support for different generation based on various platform ABIs with one build.
+    * Implemented support for Itanium ABI vtable offsets for single inheritance.
+
 1.2
 ========
 
