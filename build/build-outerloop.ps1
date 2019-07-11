@@ -1,17 +1,28 @@
 Param(
-    [bool] $RunOpenCover = $true
+    [bool] $RunCodeCoverage = $true
 )
+
+$ScriptFolder = Split-Path -parent $PSCommandPath
+$VersionDumpFile = "$ScriptFolder/../artifacts/version.txt"
+
+dotnet restore ./SdkTests/SdkTests.sln | Write-Host
+
+dotnet msbuild $ScriptFolder/version.proj /p:VersionDumpFile=$VersionDumpFile
+
+$Version = Get-Content $VersionDumpFile -TotalCount 1
+
+$SdkAssemblyFolder = "ScriptFolder/../SdkTests/RestoredPackages/sharpgentools.sdk/$Version/tools/netstandard1.3/" 
 
 # Add directory to path for sn executable
 $env:Path += ";C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\"
 
-$dotnetExe = ./build/find-exe "dotnet"
+$dotnetExe = $(Get-Command dotnet).Path
 
-$dotnetParameters =  "build", "./SdkTests/SdkTests.sln"
-$coverageFilter = @("+[SharpGen]*")
+$dotnetParameters =  "build", "./SdkTests/SdkTests.sln", "/nodeReuse:false", "--no-restore"
+$coverageFilter = "[SharpGen]*", "[SharpGenTools.Sdk]*"
 
-if ($RunOpenCover) {
-    return (./build/Run-OpenCover $dotnetExe $dotnetParameters $coverageFilter)
+if ($RunCodeCoverage) {
+    return (./build/Run-CodeCoverage $SdkAssemblyFolder "SharpGenTools.Sdk.dll" $dotnetExe $dotnetParameters $coverageFilter "outerloop-build.xml")
 }
 else {
     dotnet build ./SdkTests/SdkTests.sln | Write-Host

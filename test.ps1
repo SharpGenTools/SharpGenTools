@@ -4,6 +4,9 @@ Param(
     [switch] $SkipOuterloopTests = $false
 )
 
+$RepoRoot = Split-Path -parent $PSCommandPath
+mkdir $RepoRoot/artifacts/coverage -ErrorAction SilentlyContinue
+
 if (Test-Path -Path "coverage.xml") {
     Remove-Item "coverage.xml"
 }
@@ -12,7 +15,7 @@ $RunCodeCoverage = ($Configuration -eq "Debug")
 
 if(!($SkipUnitTests)) {
     Write-Debug "Running Unit Tests"
-    if (!(./build/unit-test $RunCodeCoverage $Configuration)) {
+    if (!(./build/unit-test $RunCodeCoverage $Configuration -RepoRoot $RepoRoot)) {
         Write-Error "Unit Tests Failed"
         exit 1
     }
