@@ -116,6 +116,12 @@ namespace SharpGen.Model
         public bool HasCustomNew { get; set; }
 
         /// <summary>
+        /// True if the native type this structure represents is a native primitive type
+        /// </summary>
+        [DataMember]
+        public bool IsNativePrimitive { get; set; }
+
+        /// <summary>
         ///   List of declared inner structs
         /// </summary>
         public IEnumerable<CsStruct> InnerStructs

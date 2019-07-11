@@ -67,7 +67,19 @@ namespace SharpGen
         /// <summary>
         /// Attribute that defines the shadow type for an interface.
         /// </summary>
-        ShadowAttribute
+        ShadowAttribute,
+        /// <summary>
+        /// Static class that enables platform detection for SharpGen-generated code.
+        /// </summary>
+        PlatformDetection,
+        /// <summary>
+        /// Native `long` type
+        /// </summary>
+        NativeLong,
+        /// <summary>
+        /// Native `unsigned long` type
+        /// </summary>
+        NativeULong
     }
 
     /// <summary>

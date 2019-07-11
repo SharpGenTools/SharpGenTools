@@ -79,5 +79,8 @@ namespace SharpGen.Model
 
         [DataMember]
         public int Offset { get; set; }
+
+        [DataMember]
+        public int WindowsOffset { get; set; }
     }
 }

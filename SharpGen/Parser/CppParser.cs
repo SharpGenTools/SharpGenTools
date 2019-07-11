@@ -531,6 +531,8 @@ namespace SharpGen.Parser
             // Parse annotations
             ParseAnnotations(xElement, cppInterface);
 
+            int offsetMethodBase = offsetMethod;
+
             var methods = new List<CppMethod>();
 
             // Parse methods
@@ -542,15 +544,15 @@ namespace SharpGen.Parser
                 {
                     var cppMethod = ParseCallable<CppMethod>(method);
                     methods.Add(cppMethod);
+                    cppMethod.Offset = offsetMethod++;
                 }
             }
 
-            FixMethodAbiOrdering(methods);
+            SetMethodsWindowsOffset(methods, offsetMethodBase);
 
             // Add the methods to the interface with the correct offsets
             foreach (var cppMethod in methods)
             {
-                cppMethod.Offset = offsetMethod++;
                 cppInterface.Add(cppMethod);
             }
 
@@ -562,11 +564,12 @@ namespace SharpGen.Parser
             return cppInterface;
         }
 
-        private static void FixMethodAbiOrdering(List<CppMethod> methods)
+        private static void SetMethodsWindowsOffset(IEnumerable<CppMethod> nativeMethods, int vtableIndexStart)
         {
+            List<CppMethod> methods = new List<CppMethod>(nativeMethods);
             // The Visual C++ compiler breaks the rules of the COM ABI when overloaded methods are used.
             // It will group the overloads together in memory and lay them out in the reverse of their declaration order.
-            // Since GCC always lays them out in the order declared, we have to modify the order of the methods to match Visual C++.
+            // Since CastXML always lays them out in the order declared, we have to modify the order of the methods to match Visual C++.
             for (int i = 0; i < methods.Count; i++)
             {
                 var name = methods[i].Name;
@@ -588,6 +591,12 @@ namespace SharpGen.Parser
                         i++;
                     }
                 }
+            }
+
+            int methodOffset = vtableIndexStart;
+            foreach (var cppMethod in methods)
+            {
+                cppMethod.WindowsOffset = methodOffset++;
             }
         }
 

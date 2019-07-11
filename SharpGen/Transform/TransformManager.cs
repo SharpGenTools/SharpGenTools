@@ -344,6 +344,9 @@ namespace SharpGen.Transform
 
                     if (defineRule.Align.HasValue)
                         newStruct.Align = defineRule.Align.Value;
+
+                    if (defineRule.IsNativePrimitive.HasValue)
+                        newStruct.IsNativePrimitive = defineRule.IsNativePrimitive.Value;
                 }
                 else if (defineRule.Interface != null)
                 {
@@ -754,7 +757,8 @@ namespace SharpGen.Transform
                             Align = csStruct.Align,
                             HasCustomMarshal = csStruct.HasCustomMarshal,
                             HasCustomNew = csStruct.HasCustomNew,
-                            IsStaticMarshal = csStruct.IsStaticMarshal
+                            IsStaticMarshal = csStruct.IsStaticMarshal,
+                            IsNativePrimitive = csStruct.IsNativePrimitive
                         };
                         break;
                     case CsInterface csInterface:

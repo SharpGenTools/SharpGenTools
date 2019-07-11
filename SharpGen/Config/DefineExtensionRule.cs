@@ -68,6 +68,11 @@ namespace SharpGen.Config
         [XmlAttribute("custom-new")]
         public bool _HasCustomNew_ { get { return HasCustomNew.Value; } set { HasCustomNew = value; } } public bool ShouldSerialize_HasCustomNew_() { return HasCustomNew != null; }
 
+        [XmlIgnore]
+        public bool? IsNativePrimitive { get; set; }
+        [XmlAttribute("primitive")]
+        public bool _IsNativePrimitive_ { get => IsNativePrimitive.Value; set => IsNativePrimitive = value; } public bool ShouldSerialize_IsNativePrimitive_() => IsNativePrimitive != null;
+
         [ExcludeFromCodeCoverage]
         public override string ToString()
         {

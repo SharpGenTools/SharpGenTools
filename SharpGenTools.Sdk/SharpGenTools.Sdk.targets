@@ -255,6 +255,12 @@
     Inputs="@(SharpGenSdkAssembly);@(CSharpModel);@(DocLinksCache);@(SharpGenExternalDocs)"
     Outputs="@(GeneratedCSharpFiles)"
     Condition="'@(SharpGenMapping)' != ''">
+
+    <ItemGroup Condition="'@(SharpGenPlatforms)' == '' and '$(RuntimeIdentifier)' != ''">
+      <SharpGenPlatforms Include="Windows" Condition="$(RuntimeIdentifier.StartsWith('win'))" />
+      <SharpGenPlatforms Include="ItaniumSystemV" Condition="!$(RuntimeIdentifier.StartsWith('win'))" />
+    </ItemGroup>
+    
     <GenerateCSharp
       Model="@(CSharpModel)"
       OutputDirectory="$(SharpGenOutputDirectory)"
@@ -263,6 +269,7 @@
       GlobalNamespaceOverrides="@(SharpGenGlobalNamespaceOverrides)"
       DocLinkCache="@(DocLinksCache)"
       ExternalDocumentation="@(SharpGenExternalDocs)"
+      Platforms="@(SharpGenPlatforms)"
     />
   </Target>
 

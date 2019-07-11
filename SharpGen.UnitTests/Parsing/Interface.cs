@@ -165,15 +165,21 @@ namespace SharpGen.UnitTests.Parsing
             var model = ParseCpp(config);
             var methods = model.Find<CppMethod>("Test::Method");
 
-            var parameterized = methods.First(method => method.Parameters.Any());
-
-            Assert.Equal(0, parameterized.Offset);
-
             var parameterless = methods.First(method => !method.Parameters.Any());
 
-            Assert.Equal(1, parameterless.Offset);
+            Assert.Equal(1, parameterless.WindowsOffset);
+            Assert.Equal(0, parameterless.Offset);
 
-            Assert.Equal(2, model.FindFirst<CppMethod>("Test::NotOverloaded").Offset);
+            var notOverloaded = model.FindFirst<CppMethod>("Test::NotOverloaded");
+
+            Assert.Equal(2, notOverloaded.WindowsOffset);
+            Assert.Equal(1, notOverloaded.Offset);
+
+            var parameterized = methods.First(method => method.Parameters.Any());
+
+            Assert.Equal(0, parameterized.WindowsOffset);
+            Assert.Equal(2, parameterized.Offset);
+
         }
 
 

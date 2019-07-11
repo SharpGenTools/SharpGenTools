@@ -100,7 +100,7 @@ namespace SharpGen.Runtime
                 }
                 else
                 {
-                    Interlocked.Exchange(ref shadow, value).Dispose();
+                    Interlocked.Exchange(ref shadow, value)?.Dispose();
                 }
             }
         }

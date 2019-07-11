@@ -15,7 +15,7 @@ namespace SharpGen.Generator
         IMultiCodeGenerator<CsField, MemberDeclarationSyntax> ExplicitOffsetField { get; }
         IMultiCodeGenerator<CsField, MemberDeclarationSyntax> AutoLayoutField { get; }
         IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax> Struct { get; }
-        ICodeGenerator<CsCallable, ExpressionSyntax> NativeInvocation { get; }
+        ICodeGenerator<(CsCallable, PlatformDetectionType, InteropMethodSignature), ExpressionSyntax> NativeInvocation { get; }
         IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> Callable { get; }
         IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax> Method { get; }
         IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax> Function { get; }
@@ -23,11 +23,12 @@ namespace SharpGen.Generator
         ICodeGenerator<CsInterface, MemberDeclarationSyntax> Shadow { get; }
         ICodeGenerator<CsInterface, MemberDeclarationSyntax> Vtbl { get; }
         IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> ShadowCallable { get; }
-        IMultiCodeGenerator<CsCallable, StatementSyntax> ReverseCallableProlog { get; }
+        IMultiCodeGenerator<(CsCallable, InteropMethodSignature), StatementSyntax> ReverseCallableProlog { get; }
         IMultiCodeGenerator<CsGroup, MemberDeclarationSyntax> Group { get; }
         ICodeGenerator<CsAssembly, ClassDeclarationSyntax> LocalInterop { get; }
 
         IMultiCodeGenerator<InteropMethodSignature, MemberDeclarationSyntax> InteropMethod { get; }
         MarshallingRegistry Marshalling { get; }
+        GeneratorConfig Config { get; }
     }
 }

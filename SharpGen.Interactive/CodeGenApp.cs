@@ -457,7 +457,7 @@ namespace SharpGen.Interactive
 
         private void GenerateCode(IDocumentationLinker docAggregator, CsAssembly asm, ExternalDocCommentsReader docCommentsReader)
         {
-            var generator = new RoslynGenerator(Logger, GlobalNamespace, docAggregator, docCommentsReader);
+            var generator = new RoslynGenerator(Logger, GlobalNamespace, docAggregator, docCommentsReader, new GeneratorConfig { Platforms = PlatformDetectionType.Any });
             generator.Run(asm, _generatedPath, GeneratedCodeFolder);
 
             // Update check files for all assemblies

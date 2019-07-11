@@ -52,5 +52,6 @@ Check out :doc:`getting-started` to get started!.
    documentation
    native-marshalling
    shadows
+   platform-detection
    advanced-configuration
    limitations

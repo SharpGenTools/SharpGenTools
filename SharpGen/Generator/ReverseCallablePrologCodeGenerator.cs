@@ -7,7 +7,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    class ReverseCallablePrologCodeGenerator : IMultiCodeGenerator<CsCallable, StatementSyntax>
+    class ReverseCallablePrologCodeGenerator : IMultiCodeGenerator<(CsCallable, InteropMethodSignature), StatementSyntax>
     {
         private readonly IGeneratorRegistry generators;
         private readonly GlobalNamespaceProvider globalNamespace;
@@ -18,13 +18,12 @@ namespace SharpGen.Generator
             this.globalNamespace = globalNamespace;
         }
 
-        public IEnumerable<StatementSyntax> GenerateCode(CsCallable csElement)
+        public IEnumerable<StatementSyntax> GenerateCode((CsCallable, InteropMethodSignature) callableSig)
         {
-            var interopParameters = csElement.Interop.ParameterTypes;
-            var realParameterStart = 0;
-            if (csElement.IsReturnStructLarge)
+            var (csElement, interopSig) = callableSig;
+            var interopParameters = interopSig.ParameterTypes;
+            if ((interopSig.Flags & InteropMethodSignatureFlags.ForcedReturnBufferSig) != 0)
             {
-                ++realParameterStart;
                 foreach (var statement in GenerateNativeByRefProlog(csElement.ReturnValue, IdentifierName("returnSlot")))
                 {
                     yield return statement;
@@ -72,17 +71,18 @@ namespace SharpGen.Generator
 
             if (marshaller.GeneratesMarshalVariable(publicElement))
             {
+                var marshalTypeSyntax = marshaller.GetMarshalTypeSyntax(publicElement);
                 yield return LocalDeclarationStatement(
-                    VariableDeclaration(marshaller.GetMarshalTypeSyntax(publicElement))
+                    VariableDeclaration(marshalTypeSyntax)
                     .AddVariables(
                         VariableDeclarator(generators.Marshalling.GetMarshalStorageLocationIdentifier(publicElement))
                         .WithInitializer(
-                            nativeParameter != null
-                            ? EqualsValueClause(
-                                CastExpression(
-                                    marshaller.GetMarshalTypeSyntax(publicElement),
-                                    nativeParameter))
-                            : null)));
+                            EqualsValueClause(
+                                nativeParameter != null
+                                ? (ExpressionSyntax)CastExpression(
+                                    marshalTypeSyntax,
+                                    nativeParameter)
+                                : DefaultExpression(marshalTypeSyntax)))));
             }
             else
             {

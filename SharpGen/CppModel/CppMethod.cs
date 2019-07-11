@@ -37,6 +37,9 @@ namespace SharpGen.CppModel
         [XmlAttribute("offset")]
         public int Offset { get; set; }
 
+        [XmlAttribute("windows-offset")]
+        public int WindowsOffset { get; set; }
+
         protected override CppCallingConvention DefaultCallingConvention => CppCallingConvention.ThisCall;
     }
 }

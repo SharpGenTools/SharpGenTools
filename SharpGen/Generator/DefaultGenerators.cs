@@ -14,6 +14,7 @@ namespace SharpGen.Generator
             GlobalNamespaceProvider globalNamespace,
             IDocumentationLinker documentation,
             ExternalDocCommentsReader docReader,
+            GeneratorConfig config,
             Logger logger)
         {
             Constant = new ConstantCodeGenerator();
@@ -36,6 +37,7 @@ namespace SharpGen.Generator
             Vtbl = new VtblGenerator(this, globalNamespace);
             Shadow = new ShadowGenerator(this, globalNamespace);
             Marshalling = new MarshallingRegistry(globalNamespace, logger);
+            Config = config;
         }
 
         public IMultiCodeGenerator<CsVariable, MemberDeclarationSyntax> Constant { get; }
@@ -45,7 +47,7 @@ namespace SharpGen.Generator
         public IMultiCodeGenerator<CsField, MemberDeclarationSyntax> ExplicitOffsetField { get; }
         public IMultiCodeGenerator<CsField, MemberDeclarationSyntax> AutoLayoutField { get; }
         public IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax> Struct { get; }
-        public ICodeGenerator<CsCallable, ExpressionSyntax> NativeInvocation { get; }
+        public ICodeGenerator<(CsCallable, PlatformDetectionType, InteropMethodSignature), ExpressionSyntax> NativeInvocation { get; }
         public IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> Callable { get; }
         public IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax> Method { get; }
         public IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax> Function { get; }
@@ -62,8 +64,10 @@ namespace SharpGen.Generator
 
         public IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> ShadowCallable { get; }
 
-        public IMultiCodeGenerator<CsCallable, StatementSyntax> ReverseCallableProlog { get; }
+        public IMultiCodeGenerator<(CsCallable, InteropMethodSignature), StatementSyntax> ReverseCallableProlog { get; }
 
         public MarshallingRegistry Marshalling { get; }
+
+        public GeneratorConfig Config { get; }
     }
 }

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
+using System.Linq;
 
 namespace SharpGen.Generator
 {
@@ -19,13 +20,19 @@ namespace SharpGen.Generator
 
         public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsMethod csElement)
         {
+            int defaultOffset = csElement.Offset;
+            if ((Generators.Config.Platforms & PlatformDetectionType.IsWindows) != 0)
+            {
+                // Use the Windows offset for the default offset in the custom vtable when the Windows platform is requested for compat reasons.
+                defaultOffset = csElement.WindowsOffset;
+            }
             if (csElement.CustomVtbl)
             {
                 yield return FieldDeclaration(
                     VariableDeclaration(PredefinedType(Token(SyntaxKind.IntKeyword)),
                         SingletonSeparatedList(
                             VariableDeclarator($"{csElement.Name}__vtbl_index")
-                                .WithInitializer(EqualsValueClause(LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.Offset)))))))
+                                .WithInitializer(EqualsValueClause(LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(defaultOffset))))))) 
                     .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)));
             }
 

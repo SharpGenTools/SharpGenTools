@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    class NativeInvocationCodeGenerator: ICodeGenerator<CsCallable, ExpressionSyntax>
+    class NativeInvocationCodeGenerator: ICodeGenerator<(CsCallable, PlatformDetectionType, InteropMethodSignature), ExpressionSyntax>
     {
         public NativeInvocationCodeGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
         {
@@ -19,8 +20,9 @@ namespace SharpGen.Generator
 
         public IGeneratorRegistry Generators { get; }
         
-        public ExpressionSyntax GenerateCode(CsCallable callable)
+        public ExpressionSyntax GenerateCode((CsCallable, PlatformDetectionType, InteropMethodSignature) sig)
         {
+            var (callable, platform, interopSig) = sig;
             var arguments = new List<ArgumentSyntax>();
 
             if (callable is CsMethod)
@@ -30,7 +32,9 @@ namespace SharpGen.Generator
                                             IdentifierName("_nativePointer"))));
             }
 
-            if (callable.IsReturnStructLarge)
+            bool isForcedReturnBufferSig = (interopSig.Flags & InteropMethodSignatureFlags.ForcedReturnBufferSig) != 0;
+
+            if (isForcedReturnBufferSig)
             {
                 arguments.Add(Generators.Marshalling.GetMarshaller(callable.ReturnValue).GenerateNativeArgument(callable.ReturnValue)); 
             }
@@ -39,6 +43,28 @@ namespace SharpGen.Generator
 
             if (callable is CsMethod method)
             {
+                var windowsOffsetExpression = LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(method.WindowsOffset));
+                var nonWindowsOffsetExpression = LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(method.Offset));
+                ExpressionSyntax vtableOffsetExpression;
+                if ((platform & (PlatformDetectionType.IsWindows | PlatformDetectionType.IsItaniumSystemV)) == (PlatformDetectionType.IsWindows | PlatformDetectionType.IsItaniumSystemV)
+                    && method.Offset != method.WindowsOffset)
+                {
+                    vtableOffsetExpression = ConditionalExpression(
+                        MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            globalNamespace.GetTypeNameSyntax(WellKnownName.PlatformDetection),
+                            IdentifierName(PlatformDetectionType.IsWindows.ToString())),
+                        windowsOffsetExpression,
+                        nonWindowsOffsetExpression);
+                }
+                else if ((platform & PlatformDetectionType.IsWindows) != 0)
+                {
+                    vtableOffsetExpression = windowsOffsetExpression;
+                }
+                else
+                {
+                    vtableOffsetExpression = nonWindowsOffsetExpression;
+                }
                 arguments.Add(Argument(
                     ElementAccessExpression(
                         ParenthesizedExpression(
@@ -50,21 +76,21 @@ namespace SharpGen.Generator
                         BracketedArgumentList(
                             SingletonSeparatedList(
                                 Argument(method.CustomVtbl ?
-                                (ExpressionSyntax)MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                     ThisExpression(),
                                     IdentifierName($"{callable.Name}__vtbl_index"))
-                                : LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(method.Offset))
+                                : vtableOffsetExpression
                                 )
                             )))));
             }
 
             var call = InvocationExpression(
                     IdentifierName(callable is CsFunction ?
-                        callable.CppElementName + "_"
-                    : "LocalInterop." + callable.Interop.Name),
+                        callable.CppElementName + GeneratorHelpers.GetPlatformSpecificSuffix(platform)
+                    : "LocalInterop." + interopSig.Name),
                     ArgumentList(SeparatedList(arguments)));
 
-            return callable.IsReturnStructLarge || !callable.HasReturnType ?
+            return isForcedReturnBufferSig || !callable.HasReturnType ?
                 (ExpressionSyntax)call
                 : AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                     Generators.Marshalling.GetMarshaller(callable.ReturnValue).GeneratesMarshalVariable(callable.ReturnValue) ?

@@ -89,7 +89,7 @@ namespace SharpGen.Model
                 // on the calling convention details.
                 if ((ReturnValue.MarshalType ?? ReturnValue.PublicType) is CsStruct csStruct)
                 {
-                    return csStruct.Size > MaxSizeReturnParameter;
+                    return !csStruct.IsNativePrimitive && csStruct.Size > MaxSizeReturnParameter;
                 }
                 return false;
             }
@@ -116,7 +116,7 @@ namespace SharpGen.Model
         public bool RequestRawPtr { get; set; }
 
         [DataMember]
-        public InteropMethodSignature Interop { get; set; }
+        public Dictionary<PlatformDetectionType, InteropMethodSignature> InteropSignatures { get; set; } = new Dictionary<PlatformDetectionType, InteropMethodSignature>();
 
         private string _cppSignature;
 

@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <config id="SharpGen.Runtime" xmlns="urn:SharpGen.Config">
   <extension>
-    <define struct="SharpGen.Runtime.Result" sizeof="4" />
-    <define struct="SharpGen.Runtime.FunctionCallback" sizeof="8" />
-    <define struct="SharpGen.Runtime.PointerSize" sizeof="8" />
+    <define struct="SharpGen.Runtime.Result" sizeof="4" primitive="true" />
+    <define struct="SharpGen.Runtime.FunctionCallback" sizeof="8" primitive="true" />
+    <define struct="SharpGen.Runtime.PointerSize" sizeof="8" primitive="true" />
+    <define struct="SharpGen.Runtime.NativeLong" sizeof="8" primitive="true" />
+    <define struct="SharpGen.Runtime.NativeULong" sizeof="8" primitive="true" />
   </extension>
   <bindings>
     <!-- Primitive bindings -->
@@ -13,6 +15,8 @@
     <bind from="short" to="System.Int16" />
     <bind from="unsigned short" to="System.UInt16" />
     <bind from="unsigned char" to="System.Byte" />
+    <bind from="long" to="SharpGen.Runtime.NativeLong" />
+    <bind from="unsigned long" to="SharpGen.Runtime.NativeULong" />
     <bind from="longlong" to="System.Int64" />
     <bind from="unsigned longlong" to="System.UInt64" />
     <bind from="float" to="System.Single" />

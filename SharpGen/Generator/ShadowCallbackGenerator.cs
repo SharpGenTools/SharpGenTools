@@ -22,13 +22,16 @@ namespace SharpGen.Generator
 
         public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsCallable csElement)
         {
-            yield return GenerateDelegateDeclaration(csElement);
-            yield return GenerateShadowCallback(csElement);
+            foreach (var sig in csElement.InteropSignatures.Where(sig => (sig.Key & generators.Config.Platforms) != 0))
+            {
+                yield return GenerateDelegateDeclaration(csElement, sig.Key, sig.Value);
+                yield return GenerateShadowCallback(csElement, sig.Key, sig.Value);
+            }
         }
 
-        private DelegateDeclarationSyntax GenerateDelegateDeclaration(CsCallable csElement)
+        private DelegateDeclarationSyntax GenerateDelegateDeclaration(CsCallable csElement, PlatformDetectionType platform, InteropMethodSignature sig)
         {
-            return DelegateDeclaration(ParseTypeName(csElement.Interop.ReturnType.TypeName), $"{csElement.Name}Delegate")
+            return DelegateDeclaration(ParseTypeName(sig.ReturnType.TypeName), $"{csElement.Name}Delegate{GeneratorHelpers.GetPlatformSpecificSuffix(platform)}")
                 .AddAttributeLists(
                     AttributeList(
                         SingletonSeparatedList(
@@ -48,7 +51,7 @@ namespace SharpGen.Generator
                                                     IdentifierName("Runtime")),
                                                 IdentifierName("InteropServices")),
                                             IdentifierName("CallingConvention")),
-                                        IdentifierName(csElement.Interop.CallingConvention)))))))
+                                        IdentifierName(sig.CallingConvention)))))))
             .WithParameterList(
                 ParameterList(
                     (csElement is CsMethod ?
@@ -57,7 +60,7 @@ namespace SharpGen.Generator
                             .WithType(ParseTypeName("System.IntPtr")))
                         : default)
                     .AddRange(
-                        csElement.Interop.ParameterTypes
+                        sig.ParameterTypes
                             .Select((type, i) =>
                                 Parameter(Identifier($"arg{i}"))
                                 .WithType(ParseTypeName(type.TypeName)))
@@ -65,11 +68,11 @@ namespace SharpGen.Generator
             .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)));
         }
 
-        private MethodDeclarationSyntax GenerateShadowCallback(CsCallable csElement)
+        private MethodDeclarationSyntax GenerateShadowCallback(CsCallable csElement, PlatformDetectionType platform, InteropMethodSignature sig)
         {
             var methodDecl = MethodDeclaration(
-                ParseTypeName(csElement.Interop.ReturnType.TypeName),
-                csElement.Name)
+                ParseTypeName(sig.ReturnType.TypeName),
+                $"{csElement.Name}{GeneratorHelpers.GetPlatformSpecificSuffix(platform)}")
                 .WithModifiers(
                     TokenList(
                         Token(SyntaxKind.PrivateKeyword),
@@ -84,9 +87,10 @@ namespace SharpGen.Generator
                         .WithType(ParseTypeName("System.IntPtr")));
             }
 
-            IEnumerable<InteropType> nativeParameters = csElement.Interop.ParameterTypes;
+            bool isForcedReturnBufferSig = (sig.Flags & InteropMethodSignatureFlags.ForcedReturnBufferSig) != 0;
+            IEnumerable<InteropType> nativeParameters = sig.ParameterTypes;
 
-            if (csElement.IsReturnStructLarge)
+            if (isForcedReturnBufferSig)
             {
                 nativeParameters = nativeParameters.Skip(1);
                 methodDecl = methodDecl
@@ -105,7 +109,7 @@ namespace SharpGen.Generator
 
             var statements = new List<StatementSyntax>();
 
-            statements.AddRange(generators.ReverseCallableProlog.GenerateCode(csElement));
+            statements.AddRange(generators.ReverseCallableProlog.GenerateCode((csElement, sig)));
 
             statements.AddRange(
                 generators.Marshalling.GetMarshaller(csElement.ReturnValue).
@@ -228,7 +232,7 @@ namespace SharpGen.Generator
             if (csElement.HasReturnType && (!csElement.HideReturnType || csElement.ForceReturnType))
             {
                 statements.Add(
-                    ReturnStatement(csElement.IsReturnStructLarge ?
+                    ReturnStatement(isForcedReturnBufferSig ?
                         IdentifierName("returnSlot")
                         : nativeReturnLocation));
             }
@@ -275,7 +279,7 @@ namespace SharpGen.Generator
             }
             else if (csElement.HasReturnType)
             {
-                var returnStatement = csElement.IsReturnStructLarge ?
+                var returnStatement = isForcedReturnBufferSig ?
                     ReturnStatement(IdentifierName("returnSlot"))
                     : ReturnStatement(DefaultExpression(returnValueMarshaller.GetMarshalTypeSyntax(csElement.ReturnValue)));
                 catchClause = catchClause.WithBlock(Block(returnStatement));
