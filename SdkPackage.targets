@@ -1,6 +1,6 @@
 <Project>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.3.409" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.3.409" PrivateAssets="all" ExcludeAssets="runtime" />
     <Content Include="**/*.props" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
     <Content Include="**/*.targets" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
   </ItemGroup>
@@ -20,7 +20,7 @@
     <ItemGroup>
       <ReferencedAssemblies Include="bin\$(Configuration)\**\*.dll" />
       <ReferencedAssemblyPdbs Include="bin\$(Configuration)\**\*.pdb" Condition="'$(Configuration)' == 'Debug'" />
-      <_PackageFiles Include="@(ReferencedAssemblies);@(ReferencedAssemblyPdbs)" Condition="'%(FileName)' != '$(AssemblyName)'">
+      <_PackageFiles Include="@(ReferencedAssemblies);@(ReferencedAssemblyPdbs)" Condition="'%(FileName)%(Extension)' != '$(AssemblyName).dll'">
         <PackagePath>tools\%(RecursiveDir)%(FileName)%(Extension)</PackagePath>
         <Visible>false</Visible>
         <BuildAction>None</BuildAction>

@@ -1,7 +1,7 @@
 version: 1.0.{build}
 image: Visual Studio 2017
 before_build:
-- cmd: choco install opencover.portable
+- cmd: dotnet tool install --global coverlet.console
 - cmd: choco install codecov
 - ps: $env:Path = "C:/ProgramData/chocolatey/bin;$env:Path"
 environment:

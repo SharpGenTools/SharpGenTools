@@ -57,3 +57,4 @@ _build/
 # Scripted Code Coverage
 coverage.xml
 CoverageReport/*
+artifacts/
