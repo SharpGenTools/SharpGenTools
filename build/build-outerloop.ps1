@@ -3,8 +3,6 @@ Param(
     [string] $RepoRoot
 )
 
-$VersionDumpFile = "$RepoRoot/artifacts/version.txt"
-
 dotnet restore ./SdkTests/SdkTests.sln | Write-Host
 
 $Version = ./build/Get-SharpGenToolsVersion

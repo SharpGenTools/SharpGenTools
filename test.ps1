@@ -11,7 +11,7 @@ if (Test-Path -Path "coverage.xml") {
     Remove-Item "coverage.xml"
 }
 
-$RunCodeCoverage = ($Configuration -eq "Debug") -and ($env:CI -ne $null)
+$RunCodeCoverage = ($Configuration -eq "Debug")
 
 if(!($SkipUnitTests)) {
     Write-Debug "Running Unit Tests"
