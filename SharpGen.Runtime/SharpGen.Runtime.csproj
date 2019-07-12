@@ -24,4 +24,10 @@
     <Compile Include="**/*.Windows.cs" Condition="'$(RuntimeIdentifier)' == 'win'" />
     <Compile Include="**/*.Unix.cs" Condition="'$(RuntimeIdentifier)' == 'unix'" />
   </ItemGroup>
+
+  <Target Name="RemoveInvalidDuplicateSymbols" BeforeTargets="GenerateNuspec" AfterTargets="_GetPackageFiles">
+    <ItemGroup>
+      <_PackageFiles Remove="@(_PackageFiles)" Condition="'%(_PackageFiles.PackagePath)' != 'runtimes/%(_PackageFiles.Rid)/lib/%(_PackageFiles.TargetFramework)' and '%(_PackageFiles.TargetPath)' == '$(AssemblyName).pdb'" />
+    </ItemGroup>
+  </Target>
 </Project>
