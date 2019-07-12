@@ -35,13 +35,13 @@ if(!($SkipOuterloopTests)) {
     }
 
     Write-Debug "Building outerloop tests"
-    if(!(./build/build-outerloop $RunCodeCoverage)) {
+    if(!(./build/build-outerloop $RunCodeCoverage -RepoRoot $RepoRoot)) {
         Write-Error "Failed to build outerloop tests"
         exit 1
     }
 
     Write-Debug "Running outerloop tests"
-    if(!(./build/run-outerloop-tests)) {
+    if(!(./build/run-outerloop-tests $RunCodeCoverage -RepoRoot $RepoRoot)) {
         Write-Error "Outerloop tests failed"
         exit 1
     }

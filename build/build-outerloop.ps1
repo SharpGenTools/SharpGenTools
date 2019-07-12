@@ -1,9 +1,9 @@
 Param(
-    [bool] $RunCodeCoverage = $true
+    [bool] $RunCodeCoverage = $true,
+    [string] $RepoRoot
 )
 
-$ScriptFolder = Split-Path -parent $PSCommandPath
-$VersionDumpFile = "$ScriptFolder/../artifacts/version.txt"
+$VersionDumpFile = "$RepoRoot/artifacts/version.txt"
 
 dotnet restore ./SdkTests/SdkTests.sln | Write-Host
 
@@ -11,7 +11,7 @@ dotnet msbuild $ScriptFolder/version.proj /p:VersionDumpFile=$VersionDumpFile
 
 $Version = Get-Content $VersionDumpFile -TotalCount 1
 
-$SdkAssemblyFolder = "ScriptFolder/../SdkTests/RestoredPackages/sharpgentools.sdk/$Version/tools/netstandard1.3/" 
+$SdkAssemblyFolder = "$RepoRoot/SdkTests/RestoredPackages/sharpgentools.sdk/$Version/tools/netstandard1.3/" 
 
 # Add directory to path for sn executable
 $env:Path += ";C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\"
