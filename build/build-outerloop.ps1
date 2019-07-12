@@ -7,9 +7,7 @@ $VersionDumpFile = "$RepoRoot/artifacts/version.txt"
 
 dotnet restore ./SdkTests/SdkTests.sln | Write-Host
 
-dotnet msbuild $ScriptFolder/version.proj /p:VersionDumpFile=$VersionDumpFile
-
-$Version = Get-Content $VersionDumpFile -TotalCount 1
+$Version = ./build/Get-SharpGenToolsVersion
 
 $SdkAssemblyFolder = "$RepoRoot/SdkTests/RestoredPackages/sharpgentools.sdk/$Version/tools/netstandard1.3/" 
 
