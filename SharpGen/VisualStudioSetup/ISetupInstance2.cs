@@ -2,6 +2,8 @@
 using System.Runtime.InteropServices.ComTypes;
 using FILETIME = System.Runtime.InteropServices.ComTypes.FILETIME;
 
+#pragma warning disable 0618
+
 namespace SharpGen.VisualStudioSetup
 {
   [Guid("89143C9A-05AF-49B0-B717-72E218A2185C")]

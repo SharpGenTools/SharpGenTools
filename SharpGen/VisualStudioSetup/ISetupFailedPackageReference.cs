@@ -4,6 +4,8 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 
+#pragma warning disable 0618
+
 namespace SharpGen.VisualStudioSetup
 {
     [Guid("E73559CD-7003-4022-B134-27DC650B280F")]
