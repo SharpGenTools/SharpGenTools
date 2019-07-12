@@ -6,7 +6,7 @@
     <VersionSuffix Condition="'$(CI)' != '' AND '$(APPVEYOR_REPO_TAG_NAME)' == ''">ci.$(APPVEYOR_BUILD_NUMBER)</VersionSuffix>
     <Authors>jkoritzinsky</Authors>
     <Copyright>(c) 2010-2017 Alexandre Mutel, 2017-2018 Jeremy Koritzinsky</Copyright>
-    <PackageLicenseUrl>https://github.com/jkoritzinsky/SharpGenTools/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/jkoritzinsky/SharpGenTools</PackageProjectUrl>
     <Tags>SharpGen;CodeGen;CPlusPlus;COM</Tags>
     <RepositoryUrl>https://github.com/jkoritzinsky/SharpGenTools</RepositoryUrl>
