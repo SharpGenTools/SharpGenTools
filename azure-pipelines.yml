@@ -19,7 +19,9 @@ jobs:
         inputs:
           packageType: sdk
           version: 2.1.x
-      - script: dotnet tool install --global coverlet.console CodeCov.Tool
+      - script: |
+          dotnet tool install --global coverlet.console
+          dotnet tool install --global CodeCov.Tool
         displayName: 'Install Code Coverage Tools'
       - pwsh: ./build.ps1 -Configuration $(Configuration)
         displayName: 'Build SharpGenTools'
