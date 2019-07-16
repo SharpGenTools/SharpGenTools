@@ -18,7 +18,7 @@ jobs:
         displayName: 'Install .NET Core Sdk'
         inputs:
           packageType: sdk
-          version: 2.1.x
+          version: 2.2.x
       - script: |
           dotnet tool install --global coverlet.console
           dotnet tool install --global CodeCov.Tool
