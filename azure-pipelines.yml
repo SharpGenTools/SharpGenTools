@@ -33,18 +33,7 @@ jobs:
         displayName: 'Publish unit test results'
         inputs:
           testResultsFormat: 'VSTest'
-          testResultsFiles: 'SharpGen*.trx'
-          mergeTestResults: true
-          testRunTitle: 'Unit Tests'
-          buildConfiguration: '$(Config)'
-          searchFolder: '$(Build.SourcesDirectory)/artifacts/test-results'
-      - task: PublishTestResults@2
-        displayName: 'Publish outerloop test results'
-        inputs:
-          testResultsFormat: 'VSTest'
-          testResultsFiles: '*.trx;!SharpGen*.trx'
-          mergeTestResults: true
-          testRunTitle: 'Outerloop Tests'
+          testResultsFiles: '*.trx'
           buildConfiguration: '$(Config)'
           searchFolder: '$(Build.SourcesDirectory)/artifacts/test-results'
       - task: CopyFiles@2
