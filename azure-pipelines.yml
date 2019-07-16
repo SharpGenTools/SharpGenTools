@@ -32,6 +32,7 @@ jobs:
         inputs:
           contents: 'Sharp*/**/Sharp*.nupkg'
           targetFolder: '$(Build.ArtifactStagingDirectory)'
+          flattenFolders: true
       - task: PublishBuildArtifacts@1
         condition: eq(variables['Config'], 'Release')
         displayName: Publish NuGet Packages
