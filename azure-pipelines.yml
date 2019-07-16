@@ -29,15 +29,31 @@ jobs:
         displayName: 'Build SharpGenTools'
       - pwsh: ./test.ps1 -Configuration $(Config)
         displayName: 'Run Tests'
-      - task: CopyFiles@2
-        displayName: 'Copy NuGet packages to Artifact staging directory'
+      - task: PublishTestResults@2
         inputs:
-          contents: 'Sharp*/**/Sharp*.nupkg'
-          targetFolder: '$(Build.ArtifactStagingDirectory)'
-          flattenFolders: true
-      - task: PublishBuildArtifacts@1
-        condition: eq(variables['Config'], 'Release')
-        displayName: Publish NuGet Packages
+          testResultsFormat: 'VSTest'
+          testResultsFiles: 'SharpGen*.trx'
+          mergeTestResults: true
+          testRunTitle: 'Unit Tests'
+          buildConfiguration: '$(Config)'
+          searchFolder: '$(Build.SourcesDirectory)/artifacts/test-results'
+      - task: PublishTestResults@2
         inputs:
-          pathToPublish: '$(Build.ArtifactStagingDirectory)'
-          artifactName: NuGet Packages
+          testResultsFormat: 'VSTest'
+          testResultsFiles: '!SharpGen*.trx'
+          mergeTestResults: true
+          testRunTitle: 'Outerloop Tests'
+          buildConfiguration: '$(Config)'
+          searchFolder: '$(Build.SourcesDirectory)/artifacts/test-results'
+      - ${{ if eq(variables['Config'], 'Release') }}:
+        - task: CopyFiles@2
+          displayName: 'Copy NuGet packages to Artifact staging directory'
+          inputs:
+            contents: 'Sharp*/**/Sharp*.nupkg'
+            targetFolder: '$(Build.ArtifactStagingDirectory)'
+            flattenFolders: true
+        - task: PublishBuildArtifacts@1
+          displayName: Publish NuGet Packages
+          inputs:
+            pathToPublish: '$(Build.ArtifactStagingDirectory)'
+            artifactName: NuGet Packages
