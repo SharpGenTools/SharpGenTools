@@ -9,8 +9,6 @@ $SharpGenRuntimePath = "$RepoRoot/SdkTests/RestoredPackages/sharpgen.runtime/$Sh
 
 $managedTests = "Interface", "Struct", "Functions"
 
-Write-Host "Coverage Include directory : $SharpGenRuntimePath"
-
 foreach($test in $managedTests) {
     ./build/Run-UnitTest -Project $test -Configuration "Debug" -CollectCoverage $RunCodeCoverage `
          -RepoRoot $RepoRoot -TestSubdirectory "SdkTests" -CoverageIncludeDirectory $SharpGenRuntimePath

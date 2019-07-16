@@ -30,6 +30,7 @@ jobs:
       - pwsh: ./test.ps1 -Configuration $(Config)
         displayName: 'Run Tests'
       - task: PublishTestResults@2
+        displayName: 'Publish unit test results'
         inputs:
           testResultsFormat: 'VSTest'
           testResultsFiles: 'SharpGen*.trx'
@@ -38,9 +39,10 @@ jobs:
           buildConfiguration: '$(Config)'
           searchFolder: '$(Build.SourcesDirectory)/artifacts/test-results'
       - task: PublishTestResults@2
+        displayName: 'Publish outerloop test results'
         inputs:
           testResultsFormat: 'VSTest'
-          testResultsFiles: '!SharpGen*.trx'
+          testResultsFiles: '*.trx;!SharpGen*.trx'
           mergeTestResults: true
           testRunTitle: 'Outerloop Tests'
           buildConfiguration: '$(Config)'
