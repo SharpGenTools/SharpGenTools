@@ -10,9 +10,9 @@ jobs:
     strategy:
       matrix:
         Debug:
-          Configuration: 'Debug'
+          Config: 'Debug'
         Release:
-          Configuration: 'Release'
+          Config: 'Release'
     steps:
       - task: UseDotNet@2
         displayName: 'Install .NET Core Sdk'
@@ -23,9 +23,9 @@ jobs:
           dotnet tool install --global coverlet.console
           dotnet tool install --global CodeCov.Tool
         displayName: 'Install Code Coverage Tools'
-      - pwsh: ./build.ps1 -Configuration $(Configuration)
+      - pwsh: ./build.ps1 -Configuration $(Config)
         displayName: 'Build SharpGenTools'
-      - pwsh: ./test.ps1 -Configuration $(Configuration)
+      - pwsh: ./test.ps1 -Configuration $(Config)
         displayName: 'Run Tests'
       - task: CopyFiles@2
         displayName: 'Copy NuGet packages to Artifact staging directory'
@@ -33,7 +33,7 @@ jobs:
           contents: 'Sharp*/**/Sharp*.nupkg'
           targetFolder: '$(Build.ArtifactStagingDirectory)'
       - task: PublishBuildArtifacts@1
-        condition: eq(variables['Configuration'], 'Release')
+        condition: eq(variables['Config'], 'Release')
         displayName: Publish NuGet Packages
         inputs:
           pathToPublish: '$(Build.ArtifactStagingDirectory)'
