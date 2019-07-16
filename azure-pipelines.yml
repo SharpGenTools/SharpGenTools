@@ -1,0 +1,38 @@
+trigger:
+- master
+pr:
+- master
+
+jobs:
+  - job: SharpGenTools_Windows
+    pool:
+      vmImage: 'windows2019'
+    strategy:
+      matrix:
+        Debug:
+          Configuration: 'Debug'
+        Release:
+          Configuration: 'Release'
+    steps:
+      - task: UseDotNet@2
+        displayName: 'Install .NET Core Sdk'
+        inputs:
+          packageType: sdk
+          version: 2.1.x
+      - script: dotnet tool install --global coverlet.console CodeCov.Tool
+        displayName: 'Install Code Coverage Tools'
+      - pwsh: ./build.ps1 -Configuration $(Configuration)
+        displayName: 'Build SharpGenTools'
+      - pwsh: ./test.ps1 -Configuration $(Configuration)
+        displayName: 'Run Tests'
+      - task: CopyFiles@2
+        displayName: 'Copy NuGet packages to Artifact staging directory'
+        inputs:
+          contents: 'Sharp*/**/Sharp*.nupkg'
+          targetFolder: '$(Build.ArtifactStagingDirectory)'
+      - task: PublishBuildArtifacts@1
+        condition: eq($(Configuration), 'Release')
+        displayName: Publish NuGet Packages
+        inputs:
+          pathToPublish: '$(Build.ArtifactStagingDirectory)'
+          artifactName: NuGet Packages
