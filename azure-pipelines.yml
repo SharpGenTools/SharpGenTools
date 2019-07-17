@@ -22,7 +22,7 @@ jobs:
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
     steps:
       - pwsh: |
-          if ($env:SourceBranch -Matches 'refs/tags/v(?<Version>.+)')
+          if ($env:SourceBranch -match 'refs/tags/v(?<Version>.+)')
           {
             Write-Host "##vso[task.setvariable variable=ReleaseVersion;]$Matches.Version"
           }
