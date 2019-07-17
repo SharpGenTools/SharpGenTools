@@ -2,12 +2,11 @@ trigger:
   branches:
     include:
       - master
-  pr:
-    include:
-      - master
   tags:
     include:
       - v*.*
+pr:
+- master
 
 jobs:
   - job: SharpGenTools_Windows
