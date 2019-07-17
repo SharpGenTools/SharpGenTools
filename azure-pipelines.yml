@@ -1,7 +1,13 @@
 trigger:
-- master
-pr:
-- master
+  branches:
+    include:
+      - master
+  pr:
+    include:
+      - master
+  tags:
+    include:
+      - v*.*
 
 jobs:
   - job: SharpGenTools_Windows
@@ -16,6 +22,14 @@ jobs:
     variables:
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
     steps:
+      - pwsh: |
+          if ($env:SourceBranch -Matches 'refs/tags/v(?<Version>.+)')
+          {
+            Write-Host "##vso[task.setvariable variable=ReleaseVersion;]$Matches.Version"
+          }
+        displayName: 'Get Release Name (if this is a tag-triggered build)'
+        env:
+          SourceBranch : '$(Build.SourceBranch)'
       - task: UseDotNet@2
         displayName: 'Install .NET Core Sdk'
         inputs:
