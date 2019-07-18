@@ -40,8 +40,16 @@ jobs:
         displayName: 'Install Code Coverage Tools'
       - pwsh: ./build.ps1 -Configuration $(Config)
         displayName: 'Build SharpGenTools'
+        env:
+          ReleaseTag: '$(ReleaseVersion)'
+          BuildNumber: '$(Build.BuildNumber)'
+          CI: true
       - pwsh: ./test.ps1 -Configuration $(Config)
         displayName: 'Run Tests'
+        env:
+          ReleaseTag: '$(ReleaseVersion)'
+          BuildNumber: '$(Build.BuildNumber)'
+          CI: true
       - task: PublishTestResults@2
         displayName: 'Publish unit test results'
         inputs:
