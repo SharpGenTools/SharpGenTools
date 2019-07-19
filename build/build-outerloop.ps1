@@ -14,11 +14,10 @@ $env:Path += ";C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.
 
 $dotnetExe = $(Get-Command dotnet).Path
 
-$dotnetParameters =  "build", "./SdkTests/SdkTests.sln", "/nodeReuse:false", "--no-restore"
-$coverageFilter = "[SharpGen]*", "[SharpGenTools.Sdk]*"
+$dotnetParameters =  "build", "./SdkTests/SdkTests.sln", "-nr:false", "-m:1" # Force no parallelization to work around https://github.com/tonerdo/coverlet/issues/491
 
 if ($RunCodeCoverage) {
-    return (./build/Run-CodeCoverage $SdkAssemblyFolder "SharpGenTools.Sdk.dll" $dotnetExe $dotnetParameters $coverageFilter "outerloop-build.xml")
+    return (./build/Run-CodeCoverage $SdkAssemblyFolder "SharpGenTools.Sdk.dll" $dotnetExe $dotnetParameters "outerloop-build.xml")
 }
 else {
     dotnet build ./SdkTests/SdkTests.sln | Write-Host

@@ -1,0 +1,105 @@
+trigger:
+  branches:
+    include:
+      - master
+  tags:
+    include:
+      - v*.*
+pr:
+- master
+
+variables:
+  buildNumber: $[counter(variables['build.reason'], 1000)]
+
+stages:
+- stage: Build
+  jobs:
+    - job: SharpGenTools_Windows
+      pool:
+        vmImage: 'windows-2019'
+      strategy:
+        matrix:
+          Debug:
+            Config: 'Debug'
+          Release:
+            Config: 'Release'
+      variables:
+        - name: DOTNET_SKIP_FIRST_TIME_EXPERIENCE
+          value: "true"
+        - name: ReleaseVersion
+          value: ''
+        - name: CI
+          value: true
+        - group: SharpGenTools
+      steps:
+        - pwsh: |
+            if ($env:SourceBranch -match 'refs/tags/v(?<Version>.+)')
+            {
+              Write-Host "##vso[task.setvariable variable=ReleaseVersion;]$Matches.Version"
+            }
+          displayName: 'Get Release Name (if this is a tag-triggered build)'
+          env:
+            SourceBranch : '$(Build.SourceBranch)'
+        - task: UseDotNet@2
+          displayName: 'Install .NET Core Sdk'
+          inputs:
+            packageType: sdk
+            version: 2.2.x
+        - script: |
+            dotnet tool install --global coverlet.console
+            dotnet tool install --global CodeCov.Tool
+          displayName: 'Install Code Coverage Tools'
+        - pwsh: ./build.ps1 -Configuration $(Config)
+          displayName: 'Build SharpGenTools'
+          env:
+            ReleaseTag: '$(ReleaseVersion)'
+            BuildNumber: 'azp.$(buildNumber)'
+        - pwsh: ./test.ps1 -Configuration $(Config)
+          displayName: 'Run Tests'
+          env:
+            ReleaseTag: '$(ReleaseVersion)'
+            BuildNumber: 'azp.$(buildNumber)'
+        - pwsh: ./build/upload-coverage.ps1
+          displayName: 'Upload Code Coverage results to codecov.io'
+          condition: eq(variables['Config'], 'Debug')
+          env:
+            CODECOV_TOKEN: $(SharpGenTools-CodeCov)
+        - task: PublishTestResults@2
+          displayName: 'Publish unit test results'
+          inputs:
+            testResultsFormat: 'VSTest'
+            testResultsFiles: '*.trx'
+            buildConfiguration: '$(Config)'
+            searchFolder: '$(Build.SourcesDirectory)/artifacts/test-results'
+        - task: CopyFiles@2
+          condition: eq(variables['Config'], 'Release')
+          displayName: 'Copy NuGet packages to Artifact staging directory'
+          inputs:
+            contents: 'Sharp*/**/Sharp*.nupkg'
+            targetFolder: '$(Build.ArtifactStagingDirectory)'
+            flattenFolders: true
+        - task: PublishBuildArtifacts@1
+          condition: eq(variables['Config'], 'Release')
+          displayName: Publish NuGet Packages
+          inputs:
+            pathToPublish: '$(Build.ArtifactStagingDirectory)'
+            artifactName: NuGet Packages
+- stage: Deploy
+  condition: eq(variables['Build.SourceBranchName'], 'master')
+  dependsOn: Build
+  jobs:
+    - job: MyGet_Deploy
+      pool:
+        vmImage: 'windows-2019'
+      steps:
+        - task: DownloadBuildArtifacts@0
+          inputs:
+            buildType: 'current'
+            downloadType: 'single'
+            artifactName: 'NuGet Packages'
+            downloadPath: '$(Build.ArtifactStagingDirectory)'
+        - task: NuGetCommand@2
+          inputs:
+            command: 'push'
+            nugetFeedType: 'external'
+            publishFeedCredentials: 'MyGet'

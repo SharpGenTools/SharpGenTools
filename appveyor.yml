@@ -4,13 +4,14 @@ before_build:
 - cmd: dotnet tool install --global coverlet.console
 - cmd: choco install codecov
 - ps: $env:Path = "C:/ProgramData/chocolatey/bin;$env:Path"
+- ps: $env:ReleaseTag = $env:APPVEYOR_REPO_TAG_NAME
+- ps: $env:BuildNumber = $env:APPVEYOR_BUILD_NUMBER
 environment:
   CLI_VERSION: 2.0.0
   MYGET_API_KEY:
     secure: dtTGYQHgEupz5SmTDFkvDW1uEZH7mEM8PD948uzOZY/XCl965mhorbEl2e+6U8pO
   NUGET_API_KEY:
     secure: Vxbun4/HFyJ9eIX1o7qSb2/YwuU/syLy52D0klu8Mla5NjBLC2YmAd6ceBxcT35S
-  
   matrix:
     - Config: Debug
     - Config: Release
@@ -18,7 +19,7 @@ environment:
 build_script:
 -  ps: ./build -Configuration $env:Config
 test_script:
--  ps: ./test -Configuration $env:Config
+-  ps: ./test -Configuration $env:Config; if ($env:Config -eq 'Debug') { ./build/upload-coverage.ps1 }
 artifacts:
   - path: 'Sharp*\**\Sharp*.nupkg'
 
