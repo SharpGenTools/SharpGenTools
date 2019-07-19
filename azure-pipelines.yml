@@ -8,6 +8,9 @@ trigger:
 pr:
 - master
 
+variables:
+  buildNumber: $[counter(variables['build.reason'], 1000)]
+
 stages:
 - stage: Build
   jobs:
@@ -50,12 +53,12 @@ stages:
           displayName: 'Build SharpGenTools'
           env:
             ReleaseTag: '$(ReleaseVersion)'
-            BuildNumber: 'azp.$(Build.BuildNumber)'
+            BuildNumber: 'azp.$(buildNumber)'
         - pwsh: ./test.ps1 -Configuration $(Config)
           displayName: 'Run Tests'
           env:
             ReleaseTag: '$(ReleaseVersion)'
-            BuildNumber: 'azp.$(Build.BuildNumber)'
+            BuildNumber: 'azp.$(buildNumber)'
         - pwsh: ./build/upload-coverage.ps1
           displayName: 'Upload Code Coverage results to codecov.io'
           condition: eq(variables['Config'], 'Debug')
