@@ -78,7 +78,7 @@ stages:
   dependsOn: Build
   displayName: Deploy
   jobs:
-    - job: Deploy to MyGet
+    - job: MyGet_Deploy
       pool:
         vmImage: 'windows-2019'
       steps:
