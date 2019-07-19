@@ -53,12 +53,12 @@ stages:
           displayName: 'Build SharpGenTools'
           env:
             ReleaseTag: '$(ReleaseVersion)'
-            BuildNumber: 'azp.$(buildNumber)'
+            BuildNumber: '$(buildNumber)'
         - pwsh: ./test.ps1 -Configuration $(Config)
           displayName: 'Run Tests'
           env:
             ReleaseTag: '$(ReleaseVersion)'
-            BuildNumber: 'azp.$(buildNumber)'
+            BuildNumber: '$(buildNumber)'
         - pwsh: ./build/upload-coverage.ps1
           displayName: 'Upload Code Coverage results to codecov.io'
           condition: eq(variables['Config'], 'Debug')
@@ -89,9 +89,11 @@ stages:
   dependsOn: Build
   jobs:
     - job: MyGet_Deploy
+      condition: not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
       pool:
         vmImage: 'windows-2019'
       steps:
+        - checkout: none
         - task: DownloadBuildArtifacts@0
           inputs:
             buildType: 'current'
@@ -103,3 +105,20 @@ stages:
             command: 'push'
             nugetFeedType: 'external'
             publishFeedCredentials: 'MyGet'
+    - job: NuGet_Deploy
+      condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
+      pool:
+        vmImage: 'windows-2019'
+      steps:
+        - checkout: none
+        - task: DownloadBuildArtifacts@0
+          inputs:
+            buildType: 'current'
+            downloadType: 'single'
+            artifactName: 'NuGet Packages'
+            downloadPath: '$(Build.ArtifactStagingDirectory)'
+        - task: NuGetCommand@2
+          inputs:
+            command: 'push'
+            nugetFeedType: 'external'
+            publishFeedCredentials: 'NuGet'
