@@ -46,7 +46,3 @@ if(!($SkipOuterloopTests)) {
         exit 1
     }
 }
-
-if ($RunCodeCoverage -and $env:CI) {
-    ./build/upload-coverage.ps1
-}

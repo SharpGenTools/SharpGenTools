@@ -21,9 +21,13 @@ stages:
           Release:
             Config: 'Release'
       variables:
-        DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
-        ReleaseVersion: ''
-        CI: true
+        - name: DOTNET_SKIP_FIRST_TIME_EXPERIENCE
+          value: "true"
+        - name: ReleaseVersion
+          value: ''
+        - name: CI
+          value: true
+        - group: CodeCov
       steps:
         - pwsh: |
             if ($env:SourceBranch -match 'refs/tags/v(?<Version>.+)')
@@ -52,6 +56,11 @@ stages:
           env:
             ReleaseTag: '$(ReleaseVersion)'
             BuildNumber: 'azp.$(Build.BuildNumber)'
+        - pwsh: ./build/upload-coverage.ps1
+          displayName: 'Upload Code Coverage results to codecov.io'
+          condition: eq(variables['Config'], 'Debug')
+          env:
+            CODECOV_TOKEN: $(SharpGenTools-CodeCov)
         - task: PublishTestResults@2
           displayName: 'Publish unit test results'
           inputs:
