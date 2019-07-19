@@ -9,8 +9,7 @@ pr:
 - master
 
 stages:
-- stage:
-  displayName: Build
+- stage: Build
   jobs:
     - job: SharpGenTools_Windows
       pool:
@@ -73,10 +72,9 @@ stages:
           inputs:
             pathToPublish: '$(Build.ArtifactStagingDirectory)'
             artifactName: NuGet Packages
-- stage:
+- stage: Deploy
   condition: eq(variables['Build.SourceBranchName'], 'master')
   dependsOn: Build
-  displayName: Deploy
   jobs:
     - job: MyGet_Deploy
       pool:
