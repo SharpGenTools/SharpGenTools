@@ -19,7 +19,7 @@ environment:
 build_script:
 -  ps: ./build -Configuration $env:Config
 test_script:
--  ps: ./test -Configuration $env:Config; if ($env:Config == 'Debug') { ./build/upload-coverage.ps1 }
+-  ps: ./test -Configuration $env:Config; if ($env:Config -eq 'Debug') { ./build/upload-coverage.ps1 }
 artifacts:
   - path: 'Sharp*\**\Sharp*.nupkg'
 
