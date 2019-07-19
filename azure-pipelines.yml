@@ -27,7 +27,7 @@ stages:
           value: ''
         - name: CI
           value: true
-        - group: CodeCov
+        - group: SharpGenTools
       steps:
         - pwsh: |
             if ($env:SourceBranch -match 'refs/tags/v(?<Version>.+)')
