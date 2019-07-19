@@ -46,7 +46,7 @@ stages:
           displayName: 'Build SharpGenTools'
           env:
             ReleaseTag: '$(ReleaseVersion)'
-            BuildNumber: '$(Build.BuildNumber)'
+            BuildNumber: 'azp.$(Build.BuildNumber)'
         - pwsh: ./test.ps1 -Configuration $(Config)
           displayName: 'Run Tests'
           env:
