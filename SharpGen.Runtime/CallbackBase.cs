@@ -43,41 +43,19 @@ namespace SharpGen.Runtime
 
         public uint AddRef()
         {
-            var old = refCount;
-            while (true)
-            {
-                if (old == 0)
-                {
-                    throw new ObjectDisposedException("Cannot add a reference to a nonreferenced item");
-                }
-                var current = Interlocked.CompareExchange(ref refCount, old + 1, old);
-                if (current == old)
-                {
-                    return (uint)(old + 1);
-                }
-                old = current;
-            }
+            return (uint) Interlocked.Increment(ref refCount);
         }
 
         public uint Release()
         {
-            var old = refCount;
-            while (true)
+            var newRefCount = Interlocked.Decrement(ref refCount);
+            if (newRefCount == 1)
             {
-                var current = Interlocked.CompareExchange(ref refCount, old - 1, old);
-
-                if (current == old)
-                {
-                    if (old == 1)
-                    {
-                        // Dispose native resources
-                        var callback = ((ICallbackable)this);
-                        callback.Shadow = null;
-                    }
-                    return (uint)(old - 1);
-                }
-                old = current;
+                // Dispose native resources
+                var callback = ((ICallbackable)this);
+                callback.Shadow = null;
             }
+            return (uint) newRefCount;
         }
 
         private ShadowContainer shadow;
