@@ -256,15 +256,35 @@ namespace SharpGen.Generator.Marshallers
 
             if (csElement.IsFastOut)
             {
-                return ExpressionStatement(
+                return Block(
+                    ExpressionStatement(
                         AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                             MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                 ParenthesizedExpression(publicElement),
                                 IdentifierName("NativePointer")),
-                            marshalElement));
+                            marshalElement)),
+                    ExpressionStatement(
+                        InvocationExpression(
+                            MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                globalNamespace.GetTypeNameSyntax(WellKnownName.MarshallingHelpers),
+                                IdentifierName(
+                                    Identifier("TransformObjectFromUnmanaged"))
+                            ),
+                            ArgumentList(
+                                SeparatedList(
+                                    new [] 
+                                    {
+                                        Argument(publicElement),
+                                        Argument(LiteralExpression(SyntaxKind.TrueLiteralExpression))
+                                    })
+                                )
+                            )
+                        )
+                    );
             }
 
-            var isOutParamFlagSyntax = LiteralExpression(SyntaxKind.TrueLiteralExpression, (csElement is CsParameter param && param.IsOut) ? Token(SyntaxKind.TrueKeyword) : Token(SyntaxKind.FalseKeyword));
+            var isOutParamFlagSyntax = LiteralExpression(csElement is CsParameter param && param.IsOut ? SyntaxKind.TrueLiteralExpression : SyntaxKind.FalseLiteralExpression);
 
             return IfStatement(
                     BinaryExpression(SyntaxKind.NotEqualsExpression,
