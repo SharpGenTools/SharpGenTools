@@ -1,7 +1,7 @@
 Push-Location SdkTests/Native
 
 try {
-    cmake . -A x64 | Write-Host
+    cmake . -G "Visual Studio 16 2019" -A x64 | Write-Host
 
     if ($LastExitCode -ne 0) {
         Write-Error "Failed to generate native projects"
