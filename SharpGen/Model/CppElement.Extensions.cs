@@ -121,7 +121,8 @@ namespace SharpGen.Model
             if (newRule.RawPtr.HasValue) tag.RawPtr = newRule.RawPtr;
             if (newRule.Visibility.HasValue) tag.Visibility = newRule.Visibility;
             if (newRule.NativeCallbackVisibility.HasValue) tag.NativeCallbackVisibility = newRule.NativeCallbackVisibility;
-            if (newRule.NativeCallbackName != null) tag.NativeCallbackName = newRule.NativeCallbackName;
+            if (newRule.NativeCallbackName != null) 
+                tag.NativeCallbackName = RegexRename(patchRegex, element.FullName, newRule.NativeCallbackName);
             if (newRule.Property.HasValue) tag.Property = newRule.Property;
             if (newRule.CustomVtbl.HasValue) tag.CustomVtbl = newRule.CustomVtbl;
             if (newRule.Persist.HasValue) tag.Persist = newRule.Persist;
