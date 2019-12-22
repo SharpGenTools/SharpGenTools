@@ -117,7 +117,7 @@ namespace SharpGen.Generator
                    generators.Marshalling.GetMarshaller(param).
                        GenerateNativeToManagedExtendedProlog(param));
             }
-            
+
             if (csElement is CsMethod)
             {
                 statements.Add(LocalDeclarationStatement(
@@ -159,7 +159,7 @@ namespace SharpGen.Generator
                     }
                 }
             }
-            
+
             var managedArguments = new List<ArgumentSyntax>();
 
             foreach (var param in csElement.Parameters.Where(p => !p.UsedAsReturn && p.Relation is null))
@@ -244,8 +244,47 @@ namespace SharpGen.Generator
             {
                 catchClause = catchClause
                     .WithDeclaration(catchClause.Declaration.WithIdentifier(exceptionVariableIdentifier))
-                    .WithBlock(
-                        Block(
+                    .WithBlock(Block(LocalDeclarationStatement(
+                    VariableDeclaration(
+                        IdentifierName(csElement.Parent.Name))
+                    .WithVariables(
+                        SingletonSeparatedList(
+                            VariableDeclarator(
+                                Identifier("@this"))
+                            .WithInitializer(
+                                EqualsValueClause(
+                                    CastExpression(
+                                        IdentifierName(csElement.Parent.Name),
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            InvocationExpression(
+                                                GenericName(
+                                                    Identifier("ToShadow"))
+                                                .WithTypeArgumentList(
+                                                    TypeArgumentList(
+                                                        SingletonSeparatedList<TypeSyntax>(
+                                                            IdentifierName(csElement.GetParent<CsInterface>().ShadowName)))))
+                                            .WithArgumentList(
+                                                ArgumentList(
+                                                    SingletonSeparatedList(
+                                                        Argument(
+                                                            IdentifierName("thisObject"))))),
+                                            IdentifierName("Callback")))))))),
+                            ExpressionStatement(
+                                                ConditionalAccessExpression(
+                                                    ParenthesizedExpression(
+                                                        BinaryExpression(
+                                                            SyntaxKind.AsExpression,
+                                                            (IdentifierName(@"@this")),
+                                                            IdentifierName("SharpGen.Runtime.IExceptionCallback"))),
+                                                    InvocationExpression(
+                                                        MemberBindingExpression(
+                                                            IdentifierName("RaiseException")))
+                                                    .WithArgumentList(
+                                                        ArgumentList(
+                                                            SingletonSeparatedList<ArgumentSyntax>(
+                                                                Argument(
+                                                                    IdentifierName(exceptionVariableIdentifier))))))),
                             ReturnStatement(
                                 MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                     InvocationExpression(
@@ -258,8 +297,7 @@ namespace SharpGen.Generator
                                             SingletonSeparatedList(
                                                 Argument(
                                                     IdentifierName(exceptionVariableIdentifier))))),
-                                    IdentifierName("Code"))
-                        )));
+                                    IdentifierName("Code")))));
 
                 if (csElement.HideReturnType && !csElement.ForceReturnType)
                 {
@@ -278,7 +316,101 @@ namespace SharpGen.Generator
                 var returnStatement = csElement.IsReturnStructLarge ?
                     ReturnStatement(IdentifierName("returnSlot"))
                     : ReturnStatement(DefaultExpression(returnValueMarshaller.GetMarshalTypeSyntax(csElement.ReturnValue)));
-                catchClause = catchClause.WithBlock(Block(returnStatement));
+
+                catchClause = catchClause
+                    .WithDeclaration(catchClause.Declaration.WithIdentifier(exceptionVariableIdentifier))
+                    .WithBlock(
+                        Block(
+                            LocalDeclarationStatement(
+                    VariableDeclaration(
+                        IdentifierName(csElement.Parent.Name))
+                    .WithVariables(
+                        SingletonSeparatedList(
+                            VariableDeclarator(
+                                Identifier("@this"))
+                            .WithInitializer(
+                                EqualsValueClause(
+                                    CastExpression(
+                                        IdentifierName(csElement.Parent.Name),
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            InvocationExpression(
+                                                GenericName(
+                                                    Identifier("ToShadow"))
+                                                .WithTypeArgumentList(
+                                                    TypeArgumentList(
+                                                        SingletonSeparatedList<TypeSyntax>(
+                                                            IdentifierName(csElement.GetParent<CsInterface>().ShadowName)))))
+                                            .WithArgumentList(
+                                                ArgumentList(
+                                                    SingletonSeparatedList(
+                                                        Argument(
+                                                            IdentifierName("thisObject"))))),
+                                            IdentifierName("Callback")))))))),
+                            ExpressionStatement(
+                                                ConditionalAccessExpression(
+                                                    ParenthesizedExpression(
+                                                        BinaryExpression(
+                                                            SyntaxKind.AsExpression,
+                                                            (IdentifierName(@"@this")),
+                                                            IdentifierName("SharpGen.Runtime.IExceptionCallback"))),
+                                                    InvocationExpression(
+                                                        MemberBindingExpression(
+                                                            IdentifierName("RaiseException")))
+                                                    .WithArgumentList(
+                                                        ArgumentList(
+                                                            SingletonSeparatedList<ArgumentSyntax>(
+                                                                Argument(
+                                                                    IdentifierName(exceptionVariableIdentifier))))))),
+                                                                    returnStatement));
+            }
+            else
+            {
+                catchClause = catchClause
+                    .WithDeclaration(catchClause.Declaration.WithIdentifier(exceptionVariableIdentifier))
+                    .WithBlock(
+                        Block(
+                            LocalDeclarationStatement(
+                    VariableDeclaration(
+                        IdentifierName(csElement.Parent.Name))
+                    .WithVariables(
+                        SingletonSeparatedList(
+                            VariableDeclarator(
+                                Identifier("@this"))
+                            .WithInitializer(
+                                EqualsValueClause(
+                                    CastExpression(
+                                        IdentifierName(csElement.Parent.Name),
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            InvocationExpression(
+                                                GenericName(
+                                                    Identifier("ToShadow"))
+                                                .WithTypeArgumentList(
+                                                    TypeArgumentList(
+                                                        SingletonSeparatedList<TypeSyntax>(
+                                                            IdentifierName(csElement.GetParent<CsInterface>().ShadowName)))))
+                                            .WithArgumentList(
+                                                ArgumentList(
+                                                    SingletonSeparatedList(
+                                                        Argument(
+                                                            IdentifierName("thisObject"))))),
+                                            IdentifierName("Callback")))))))),
+                            ExpressionStatement(
+                                                ConditionalAccessExpression(
+                                                    ParenthesizedExpression(
+                                                        BinaryExpression(
+                                                            SyntaxKind.AsExpression,
+                                                            (IdentifierName(@"@this")),
+                                                            IdentifierName("SharpGen.Runtime.IExceptionCallback"))),
+                                                    InvocationExpression(
+                                                        MemberBindingExpression(
+                                                            IdentifierName("RaiseException")))
+                                                    .WithArgumentList(
+                                                        ArgumentList(
+                                                            SingletonSeparatedList<ArgumentSyntax>(
+                                                                Argument(
+                                                                    IdentifierName(exceptionVariableIdentifier)))))))));
             }
 
             return methodDecl.WithBody(
