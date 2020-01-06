@@ -114,8 +114,6 @@ namespace SharpGen.Generator
             var statementList = new List<StatementSyntax> { toShadowStatement, exceptionCallbackStatement };
             statementList.AddRange(statements);
 
-            
-
             return catchClause
                 .WithDeclaration(
                     CatchDeclaration(ParseTypeName("System.Exception"))
@@ -311,7 +309,6 @@ namespace SharpGen.Generator
                                                     IdentifierName(exceptionVariableIdentifier))))),
                                     IdentifierName("Code"))));
                 
-
                 if (csElement.HideReturnType && !csElement.ForceReturnType)
                 {
                     statements.Add(ReturnStatement(
