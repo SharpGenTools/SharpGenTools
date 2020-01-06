@@ -104,8 +104,8 @@ namespace Interface
         [Fact]
         public void ExceptionsOnResultReturningMethods()
         {
-                target.ThrowExceptionInClone = true;
-                Assert.Throws<InvalidOperationException>(() => nativeView.CloneInstance(out var inst));
+            target.ThrowExceptionInClone = true;
+            Assert.Throws<InvalidOperationException>(() => nativeView.CloneInstance(out var inst));
         }
 
         [Fact]
