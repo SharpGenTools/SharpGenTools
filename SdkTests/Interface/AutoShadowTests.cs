@@ -104,9 +104,8 @@ namespace Interface
         [Fact]
         public void ExceptionsOnResultReturningMethods()
         {
-            target.ThrowExceptionInClone = true;
-
-            Assert.Throws<SharpGenException>(() => nativeView.CloneInstance(out var inst));
+                target.ThrowExceptionInClone = true;
+                Assert.Throws<InvalidOperationException>(() => nativeView.CloneInstance(out var inst));
         }
 
         [Fact]
@@ -119,7 +118,7 @@ namespace Interface
             Assert.Equal(new IntPtr(6), nativeView.ModifyPointer(val, 0));
         }
 
-        class ManagedImplementation : CallbackBase, CallbackInterface
+        class ManagedImplementation : CallbackBase, CallbackInterface, IExceptionCallback
         {
             public bool ThrowExceptionInClone { get; set; }
 
@@ -208,6 +207,11 @@ namespace Interface
             public long ArrayRelationSumStruct(LargeStructWithMarshalling[] arr)
             {
                 return arr.SelectMany(x => x.I).Sum();
+            }
+
+            public void RaiseException(Exception e)
+            {
+                throw e;
             }
         }
     }
