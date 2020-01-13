@@ -38,4 +38,9 @@ namespace SharpGen.Runtime
         /// </remarks>
         ShadowContainer Shadow { get; set; }
     }
+
+    public interface IExceptionCallback
+    {
+        void RaiseException (Exception e);
+    }
 }
