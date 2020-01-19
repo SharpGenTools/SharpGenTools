@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SharpGen.Model;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Linq;
+using Microsoft.CodeAnalysis;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
@@ -68,6 +69,60 @@ namespace SharpGen.Generator
             .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)));
         }
 
+        private static CatchClauseSyntax GenerateCatchClause(CatchClauseSyntax catchClause, CsCallable csElement, SyntaxToken exceptionVariableIdentifier, params StatementSyntax[] statements)
+        {
+            var toShadowStatement = LocalDeclarationStatement(
+                    VariableDeclaration(
+                        IdentifierName(csElement.Parent.Name))
+                    .WithVariables(
+                        SingletonSeparatedList(
+                            VariableDeclarator(
+                                Identifier("@this"))
+                            .WithInitializer(
+                                EqualsValueClause(
+                                    CastExpression(
+                                        IdentifierName(csElement.Parent.Name),
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            InvocationExpression(
+                                                GenericName(
+                                                    Identifier("ToShadow"))
+                                                .WithTypeArgumentList(
+                                                    TypeArgumentList(
+                                                        SingletonSeparatedList<TypeSyntax>(
+                                                            IdentifierName(csElement.GetParent<CsInterface>().ShadowName)))))
+                                            .WithArgumentList(
+                                                ArgumentList(
+                                                    SingletonSeparatedList(
+                                                        Argument(
+                                                            IdentifierName("thisObject"))))),
+                                            IdentifierName("Callback"))))))));
+
+            var exceptionCallbackStatement = ExpressionStatement(
+                                ConditionalAccessExpression(
+                                    ParenthesizedExpression(
+                                        BinaryExpression(
+                                            SyntaxKind.AsExpression,
+                                            (IdentifierName(@"@this")),
+                                            IdentifierName("SharpGen.Runtime.IExceptionCallback"))),
+                                    InvocationExpression(
+                                        MemberBindingExpression(
+                                            IdentifierName("RaiseException")))
+                                    .WithArgumentList(
+                                        ArgumentList(
+                                            SingletonSeparatedList<ArgumentSyntax>(
+                                                Argument(
+                                                    IdentifierName(exceptionVariableIdentifier)))))));
+
+            var statementList = new List<StatementSyntax> { toShadowStatement, exceptionCallbackStatement };
+            statementList.AddRange(statements);
+
+            return catchClause
+                .WithDeclaration(
+                    CatchDeclaration(ParseTypeName("System.Exception"))
+                    .WithIdentifier(exceptionVariableIdentifier))
+                .WithBlock(Block(statementList.ToArray()));
+        }        
         private MethodDeclarationSyntax GenerateShadowCallback(CsCallable csElement, PlatformDetectionType platform, InteropMethodSignature sig)
         {
             var methodDecl = MethodDeclaration(
@@ -121,7 +176,7 @@ namespace SharpGen.Generator
                    generators.Marshalling.GetMarshaller(param).
                        GenerateNativeToManagedExtendedProlog(param));
             }
-            
+
             if (csElement is CsMethod)
             {
                 statements.Add(LocalDeclarationStatement(
@@ -163,7 +218,7 @@ namespace SharpGen.Generator
                     }
                 }
             }
-            
+
             var managedArguments = new List<ArgumentSyntax>();
 
             foreach (var param in csElement.Parameters.Where(p => !p.UsedAsReturn && p.Relation is null))
@@ -240,17 +295,11 @@ namespace SharpGen.Generator
             var exceptionVariableIdentifier = Identifier("__exception__");
 
             var catchClause = CatchClause()
-                .WithDeclaration(
-                    CatchDeclaration(ParseTypeName("System.Exception")))
                 .WithBlock(Block());
 
             if (csElement.ReturnValue.PublicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.Result))
             {
-                catchClause = catchClause
-                    .WithDeclaration(catchClause.Declaration.WithIdentifier(exceptionVariableIdentifier))
-                    .WithBlock(
-                        Block(
-                            ReturnStatement(
+                catchClause = GenerateCatchClause(catchClause, csElement, exceptionVariableIdentifier, ReturnStatement(
                                 MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                     InvocationExpression(
                                         MemberAccessExpression(
@@ -262,9 +311,8 @@ namespace SharpGen.Generator
                                             SingletonSeparatedList(
                                                 Argument(
                                                     IdentifierName(exceptionVariableIdentifier))))),
-                                    IdentifierName("Code"))
-                        )));
-
+                                    IdentifierName("Code"))));
+                
                 if (csElement.HideReturnType && !csElement.ForceReturnType)
                 {
                     statements.Add(ReturnStatement(
@@ -282,7 +330,12 @@ namespace SharpGen.Generator
                 var returnStatement = isForcedReturnBufferSig ?
                     ReturnStatement(IdentifierName("returnSlot"))
                     : ReturnStatement(DefaultExpression(returnValueMarshaller.GetMarshalTypeSyntax(csElement.ReturnValue)));
-                catchClause = catchClause.WithBlock(Block(returnStatement));
+                
+                catchClause = GenerateCatchClause(catchClause, csElement, exceptionVariableIdentifier, returnStatement);
+            }
+            else
+            {
+                catchClause = GenerateCatchClause(catchClause, csElement, exceptionVariableIdentifier);
             }
 
             return methodDecl.WithBody(
