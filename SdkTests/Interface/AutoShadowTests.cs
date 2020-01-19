@@ -1,122 +1,174 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Disposables;
 using System.Text;
 using SharpGen.Runtime;
 using Xunit;
 
 namespace Interface
 {
-    public class AutoShadowTests : IDisposable
-    {
-        private ManagedImplementation target;
-        private CallbackInterfaceNative nativeView;
-
+    public class AutoShadowTests
+    {   
         public AutoShadowTests()
         {
-            target = new ManagedImplementation();
-            nativeView = new CallbackInterfaceNative(CppObject.ToCallbackPtr<CallbackInterface>(target));
         }
 
-        public void Dispose()
+        private static IDisposable SetupTests(bool supportExceptions, out CallbackInterfaceNative nativeView, out ManagedImplementation target)
         {
-            nativeView.Dispose();
-            target.Dispose();
+            target = supportExceptions ? new ExceptionEnabledManagedImplementation() : new ManagedImplementation();
+            nativeView = new CallbackInterfaceNative(CppObject.ToCallbackPtr<CallbackInterface>(target));
+
+            return new CompositeDisposable
+            {
+                target,
+                nativeView
+            };
         }
 
         [Fact]
         public void OutParameterCorrectlySet()
         {
-            nativeView.GetZero(out var zero);
+            using (SetupTests(false, out var nativeView, out _))
+            {
+                nativeView.GetZero(out var zero);
 
-            Assert.Equal(0, zero);
+                Assert.Equal(0, zero);
+            }
         }
 
         [Fact]
         public void SimpleParameters()
         {
-            Assert.Equal(3, nativeView.Add(1, 2));
+            using (SetupTests(false, out var nativeView, out _))
+            {
+                Assert.Equal(3, nativeView.Add(1, 2));
+            }
         }
 
         [Fact]
         public void StringMarshalling()
         {
-            var str = "ABC";
+            using (SetupTests(false, out var nativeView, out _))
+            {
+                var str = "ABC";
 
-            Assert.Equal('A', nativeView.GetFirstCharacter(str));
-            Assert.Equal((byte)'A', nativeView.GetFirstAnsiCharacter(str));
+                Assert.Equal('A', nativeView.GetFirstCharacter(str));
+                Assert.Equal((byte)'A', nativeView.GetFirstAnsiCharacter(str));
+            }
         }
 
         [Fact]
         public void RefParameter()
         {
-            var i = 4;
+            using (SetupTests(false, out var nativeView, out _))
+            {
+                var i = 4;
 
-            nativeView.Increment(ref i);
+                nativeView.Increment(ref i);
 
-            Assert.Equal(5, i);
+                Assert.Equal(5, i);
+            }
         }
 
         [Fact]
         public void LargeStruct()
         {
-            var result = nativeView.GetLargeStruct(4, 10);
+            using (SetupTests(false, out var nativeView, out _))
+            {
+                var result = nativeView.GetLargeStruct(4, 10);
 
-            Assert.Equal(4, result.A);
-            Assert.Equal(10, result.B);
+                Assert.Equal(4, result.A);
+                Assert.Equal(10, result.B);
+            }
         }
 
         [Fact]
         public void MarshalledLargeStruct()
         {
-            var result = nativeView.GetLargeMarshalledStruct(3, 2, 1);
+            using (SetupTests(false, out var nativeView, out _))
+            {
+                var result = nativeView.GetLargeMarshalledStruct(3, 2, 1);
 
-            Assert.Equal(3, result.I[0]);
-            Assert.Equal(2, result.I[1]);
-            Assert.Equal(1, result.I[2]);
+                Assert.Equal(3, result.I[0]);
+                Assert.Equal(2, result.I[1]);
+                Assert.Equal(1, result.I[2]);
+            }
         }
 
         [Fact]
         public void MappedType()
         {
-            Assert.Equal(20, nativeView.MappedTypeTest(20));
+            using (SetupTests(false, out var nativeView, out _))
+            {
+                Assert.Equal(20, nativeView.MappedTypeTest(20));
+            }
         }
 
         [Fact]
         public void InInterfaceParameter()
         {
-            using (var test = new ManagedImplementation())
+            using (SetupTests(false, out var nativeView, out _))
             {
-                Assert.True(nativeView.AreEqual(test));
+                using (var test = new ManagedImplementation())
+                {
+                    Assert.True(nativeView.AreEqual(test));
+                }
             }
         }
 
         [Fact]
         public void OutInterfaceParameters()
         {
-            nativeView.CloneInstance(out var test);
-            using (test)
+            using (SetupTests(false, out var nativeView, out _))
             {
-                Assert.Equal(1, test.Add(0, 1));
+                nativeView.CloneInstance(out var test);
+                using (test)
+                {
+                    Assert.Equal(1, test.Add(0, 1));
+                }
             }
         }
 
         [Fact]
         public void ExceptionsOnResultReturningMethods()
         {
-            target.ThrowExceptionInClone = true;
+            using (SetupTests(false, out var nativeView, out var target))
+            {
+                target.ThrowExceptionInClone = true;
+                Assert.Throws<SharpGen.Runtime.SharpGenException>(() => nativeView.CloneInstance(out var inst));
+            }
+        }
 
-            Assert.Throws<SharpGenException>(() => nativeView.CloneInstance(out var inst));
+        [Fact]
+        public void ExceptionsRethrownOnManagedSideWhenSupportIsImplemented()
+        {
+            using (SetupTests(true, out var nativeView, out var target))
+            {
+                target.ThrowExceptionInClone = true;
+                Assert.Throws<InvalidOperationException>(() => nativeView.CloneInstance(out var inst));
+            }
         }
 
         [Fact]
         public void ReturnMappings()
         {
-            IntPtr val = new IntPtr(5);
+            using (SetupTests(false, out var nativeView, out var target))
+            {
+                IntPtr val = new IntPtr(5);
 
-            Assert.Equal(val, nativeView.ModifyPointer(val, MethodOperation.PassThrough));
+                Assert.Equal(val, nativeView.ModifyPointer(val, MethodOperation.PassThrough));
 
-            Assert.Equal(new IntPtr(6), nativeView.ModifyPointer(val, 0));
+                Assert.Equal(new IntPtr(6), nativeView.ModifyPointer(val, 0));
+            }
+        }
+
+        class ExceptionEnabledManagedImplementation : ManagedImplementation, IExceptionCallback
+        {
+            public void RaiseException(Exception e)
+            {
+                throw e;
+            }
         }
 
         class ManagedImplementation : CallbackBase, CallbackInterface
