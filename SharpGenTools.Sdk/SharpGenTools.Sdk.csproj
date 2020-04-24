@@ -1,24 +1,38 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="MSBuild.Sdk.Extras">
+
+  <Sdk Name="Microsoft.Build.CentralPackageVersions" />
 
   <PropertyGroup>
-    <TargetFrameworks>net46;netstandard1.3</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp2.1</TargetFrameworks>
     <PackageId>SharpGenTools.Sdk</PackageId>
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <!-- forces SDK to copy dependencies into build output to make packing easier -->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <BuildOutputTargetFolder>tools</BuildOutputTargetFolder>
     <DevelopmentDependency>true</DevelopmentDependency>
+    <RuntimeIdentifiers>win;unix</RuntimeIdentifiers>
     <Description>MSBuild tooling for SharpGen and SharpPatch. Tooling for generating efficient C# code from C++ and COM headers.</Description>
     <SharpGenSdkPackage>true</SharpGenSdkPackage>
+    <ExtrasBuildEachRuntimeIdentifier>true</ExtrasBuildEachRuntimeIdentifier>
+    <EnsureRuntimePackageDependencies>false</EnsureRuntimePackageDependencies>
+    <ExtrasIncludeDefaultProjectBuildOutputInPackTarget>IncludeDefaultProjectBuildOutputInPack</ExtrasIncludeDefaultProjectBuildOutputInPackTarget>
   </PropertyGroup>
 
+  <Target Name="IncludeDefaultProjectBuildOutputInPack">
+
+    <ItemGroup>
+      <None Include="@(RidSpecificOutput->'%(Identity)')" PackagePath="tools/%(TargetFramework)/%(Rid)" Pack="true" />
+    </ItemGroup>
+
+  </Target>
+
   <ItemGroup>
-    <PackageReference Include="Mono.Cecil" Version="0.10.0-beta6" />
-    <PackageReference Include="System.Xml.XmlDocument" Version="4.3.0" />
+    <PackageReference Include="Mono.Cecil" />
+    <PackageReference Include="System.Xml.XmlDocument" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SharpGen\SharpGen.csproj" >
+    <ProjectReference Include="..\SharpGen\SharpGen.csproj">
       <PrivateAssets>all</PrivateAssets>
     </ProjectReference>
     <ProjectReference Include="..\SharpPatch\SharpPatch.csproj">
@@ -30,4 +44,5 @@
     <Content Include="../CastXML/**/*" PackagePath="tools/CastXML/%(RecursiveDir)%(FileName)%(Extension)" />
     <Content Include="SharpGenMapping.xaml" PackagePath="build" />
   </ItemGroup>
+
 </Project>

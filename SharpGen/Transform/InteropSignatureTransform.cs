@@ -7,34 +7,64 @@ using System.Text;
 
 namespace SharpGen.Transform
 {
-    class InteropSignatureTransform
+    internal class InteropSignatureTransform
     {
+        public class SignatureInteropTypeOverride
+        {
+            public SignatureInteropTypeOverride(InteropType newType, InteropMethodSignatureFlags? setFlags = null)
+            {
+                NewType = newType ?? throw new ArgumentNullException(nameof(newType));
+                
+                if (setFlags.HasValue)
+                    SetFlags = setFlags.Value;
+            }
+
+            public InteropType NewType { get; }
+            public InteropMethodSignatureFlags SetFlags { get; } = InteropMethodSignatureFlags.None;
+
+            public static implicit operator SignatureInteropTypeOverride(Type input) =>
+                new SignatureInteropTypeOverride(input);
+        }
+        
         private readonly GlobalNamespaceProvider provider;
         private readonly Logger logger;
-        private readonly Dictionary<string, InteropType> returnTypeOverrides;
-        private readonly Dictionary<string, InteropType> windowsOnlyReturnTypeOverrides;
-        private readonly Dictionary<string, InteropType> systemvOnlyReturnTypeOverrides;
+        private readonly Dictionary<string, SignatureInteropTypeOverride> returnTypeOverrides;
+        private readonly Dictionary<string, SignatureInteropTypeOverride> windowsOnlyReturnTypeOverrides;
+        private readonly Dictionary<string, SignatureInteropTypeOverride> systemvOnlyReturnTypeOverrides;
 
         public InteropSignatureTransform(GlobalNamespaceProvider provider, Logger logger)
         {
             this.provider = provider;
             this.logger = logger;
-            returnTypeOverrides = new Dictionary<string, InteropType>
+            
+            returnTypeOverrides = new Dictionary<string, SignatureInteropTypeOverride>
             {
                 { provider.GetTypeName(WellKnownName.Result), typeof(int) },
                 { provider.GetTypeName(WellKnownName.PointerSize), typeof(void*) }
             };
 
-            windowsOnlyReturnTypeOverrides = new Dictionary<string, InteropType>
+            windowsOnlyReturnTypeOverrides = new Dictionary<string, SignatureInteropTypeOverride>
             {
-                { provider.GetTypeName(WellKnownName.NativeLong), typeof(int) },
-                { provider.GetTypeName(WellKnownName.NativeULong), typeof(uint) }
+                {
+                    provider.GetTypeName(WellKnownName.NativeLong),
+                    new SignatureInteropTypeOverride(typeof(int), InteropMethodSignatureFlags.CastToNativeLong)
+                },
+                {
+                    provider.GetTypeName(WellKnownName.NativeULong),
+                    new SignatureInteropTypeOverride(typeof(uint), InteropMethodSignatureFlags.CastToNativeULong)
+                }
             };
 
-            systemvOnlyReturnTypeOverrides = new Dictionary<string, InteropType>
+            systemvOnlyReturnTypeOverrides = new Dictionary<string, SignatureInteropTypeOverride>
             {
-                { provider.GetTypeName(WellKnownName.NativeLong), typeof(IntPtr) },
-                { provider.GetTypeName(WellKnownName.NativeULong), typeof(UIntPtr) }
+                {
+                    provider.GetTypeName(WellKnownName.NativeLong),
+                    new SignatureInteropTypeOverride(typeof(IntPtr), InteropMethodSignatureFlags.CastToNativeLong)
+                },
+                {
+                    provider.GetTypeName(WellKnownName.NativeULong),
+                    new SignatureInteropTypeOverride(typeof(UIntPtr), InteropMethodSignatureFlags.CastToNativeULong)
+                }
             };
         }
 
@@ -50,10 +80,8 @@ namespace SharpGen.Transform
             else
             {
                 var returnType = callable.ReturnValue.PublicType.QualifiedName;
-                InteropType windowsOverride;
-                windowsOnlyReturnTypeOverrides.TryGetValue(returnType, out windowsOverride);
-                InteropType systemvOverride;
-                systemvOnlyReturnTypeOverrides.TryGetValue(returnType, out systemvOverride);
+                windowsOnlyReturnTypeOverrides.TryGetValue(returnType, out var windowsOverride);
+                systemvOnlyReturnTypeOverrides.TryGetValue(returnType, out var systemvOverride);
 
                 if (windowsOverride == systemvOverride)
                     interopSignatures.Add(PlatformDetectionType.Any, GetNativeInteropSignature(callable, isFunction, PlatformDetectionType.Any));
@@ -74,11 +102,10 @@ namespace SharpGen.Transform
             {
                 IsFunction = isFunction,
                 CallingConvention = callable.CallingConvention,
-                Flags = InteropMethodSignatureFlags.ForcedReturnBufferSig
+                ForcedReturnBufferSig = true,
+                ReturnType = typeof(void*),
+                ParameterTypes = {typeof(void*)}
             };
-
-            cSharpInteropCalliSignature.ReturnType = typeof(void*);
-            cSharpInteropCalliSignature.ParameterTypes.Add(typeof(void*));
 
             InitCalliSignatureParameters(callable, cSharpInteropCalliSignature);
 
@@ -134,11 +161,13 @@ namespace SharpGen.Transform
                 var returnQualifiedName = callable.ReturnValue.PublicType.QualifiedName;
                 if (returnTypeOverrides.TryGetValue(returnQualifiedName, out var interopType))
                 {
-                    cSharpInteropCalliSignature.ReturnType = interopType;
+                    cSharpInteropCalliSignature.ReturnType = interopType.NewType;
+                    cSharpInteropCalliSignature.Flags |= interopType.SetFlags;
                 }
                 else if (platformSpecificReturnTypeOverrides.TryGetValue(returnQualifiedName, out interopType))
                 {
-                    cSharpInteropCalliSignature.ReturnType = interopType;
+                    cSharpInteropCalliSignature.ReturnType = interopType.NewType;
+                    cSharpInteropCalliSignature.Flags |= interopType.SetFlags;
                 }
                 else if (callable.ReturnValue.HasNativeValueType)
                     cSharpInteropCalliSignature.ReturnType = $"{callable.ReturnValue.MarshalType.QualifiedName}.__Native";

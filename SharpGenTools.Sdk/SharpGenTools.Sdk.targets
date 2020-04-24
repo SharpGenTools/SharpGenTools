@@ -1,6 +1,6 @@
 ﻿<Project>
   <PropertyGroup>
-    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <MSBuildAllProjects Condition="'$(MSBuildToolsVersion)' != 'Current'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
   </PropertyGroup>
   
   <PropertyGroup>
@@ -10,13 +10,19 @@
     <SharpGenGeneratedCodeFolder Condition="'$(SharpGenGeneratedCodeFolder)' == ''">$(SharpGenIntermediateDir)Generated</SharpGenGeneratedCodeFolder>
     <SharpGenConsumerBindMappingConfigId Condition="'$(SharpGenConsumerBindMappingConfigId)' == ''">$(AssemblyName)</SharpGenConsumerBindMappingConfigId>
     <SharpGenOutputDirectory Condition="'$(SharpGenOutputDirectory)' == ''">$(MSBuildProjectDirectory)</SharpGenOutputDirectory>
+    <SharpGenSdkAssemblyDirectory Condition="'$(SharpGenSdkAssemblyDirectory)' == ''">$(MSBuildThisFileDirectory)../tools/</SharpGenSdkAssemblyDirectory>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(SharpGenSdkAssembly)' == ''">
+  <PropertyGroup Condition="'$(SharpGenSdkAssemblyRuntimeIdentifier)' == ''">
+    <SharpGenSdkAssemblyRuntimeIdentifier>win</SharpGenSdkAssemblyRuntimeIdentifier>
+    <SharpGenSdkAssemblyRuntimeIdentifier Condition="$([MSBuild]::IsOsUnixLike())">unix</SharpGenSdkAssemblyRuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'@(SharpGenSdkAssembly)' == ''">
     <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'"
-                         Include="$(MSBuildThisFileDirectory)/../tools/netstandard1.3/SharpGenTools.Sdk.dll" />
+                         Include="$(SharpGenSdkAssemblyDirectory)netcoreapp2.1/$(SharpGenSdkAssemblyRuntimeIdentifier)/SharpGenTools.Sdk.dll" />
     <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' != 'Core'"
-                         Include="$(MSBuildThisFileDirectory)/../tools/net46/SharpGenTools.Sdk.dll" />
+                         Include="$(SharpGenSdkAssemblyDirectory)net472/$(SharpGenSdkAssemblyRuntimeIdentifier)/SharpGenTools.Sdk.dll" />
   </ItemGroup>
 
   <ItemGroup>

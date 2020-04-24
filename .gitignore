@@ -53,6 +53,10 @@ Source/CertificationTests/Results/*
 _build/
 
 .vscode/*
+.idea/
+
+# CodeRush personal settings
+.cr/personal
 
 # Scripted Code Coverage
 coverage.xml

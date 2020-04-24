@@ -32,7 +32,7 @@ namespace SharpGen.Generator
                                             IdentifierName("_nativePointer"))));
             }
 
-            bool isForcedReturnBufferSig = (interopSig.Flags & InteropMethodSignatureFlags.ForcedReturnBufferSig) != 0;
+            var isForcedReturnBufferSig = interopSig.ForcedReturnBufferSig;
 
             if (isForcedReturnBufferSig)
             {
@@ -46,7 +46,7 @@ namespace SharpGen.Generator
                 var windowsOffsetExpression = LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(method.WindowsOffset));
                 var nonWindowsOffsetExpression = LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(method.Offset));
                 ExpressionSyntax vtableOffsetExpression;
-                if ((platform & (PlatformDetectionType.IsWindows | PlatformDetectionType.IsItaniumSystemV)) == (PlatformDetectionType.IsWindows | PlatformDetectionType.IsItaniumSystemV)
+                if ((platform & PlatformDetectionType.Any) == PlatformDetectionType.Any
                     && method.Offset != method.WindowsOffset)
                 {
                     vtableOffsetExpression = ConditionalExpression(
@@ -84,20 +84,29 @@ namespace SharpGen.Generator
                             )))));
             }
 
-            var call = InvocationExpression(
+            ExpressionSyntax call = InvocationExpression(
                     IdentifierName(callable is CsFunction ?
                         callable.CppElementName + GeneratorHelpers.GetPlatformSpecificSuffix(platform)
                     : "LocalInterop." + interopSig.Name),
                     ArgumentList(SeparatedList(arguments)));
 
-            return isForcedReturnBufferSig || !callable.HasReturnType ?
-                (ExpressionSyntax)call
-                : AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                    Generators.Marshalling.GetMarshaller(callable.ReturnValue).GeneratesMarshalVariable(callable.ReturnValue) ?
-                        IdentifierName(Generators.Marshalling.GetMarshalStorageLocationIdentifier(callable.ReturnValue))
+            if (interopSig.CastToNativeLong)
+                call = CastExpression(globalNamespace.GetTypeNameSyntax(WellKnownName.NativeLong), call);
+            
+            if (interopSig.CastToNativeULong)
+                call = CastExpression(globalNamespace.GetTypeNameSyntax(WellKnownName.NativeULong), call);
+
+            return isForcedReturnBufferSig || !callable.HasReturnType
+                ? call
+                : AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    Generators.Marshalling.GetMarshaller(callable.ReturnValue)
+                        .GeneratesMarshalVariable(callable.ReturnValue)
+                        ? IdentifierName(
+                            Generators.Marshalling.GetMarshalStorageLocationIdentifier(callable.ReturnValue))
                         : IdentifierName(callable.ReturnValue.Name),
                     call
-                    );
+                );
         }
 
     }

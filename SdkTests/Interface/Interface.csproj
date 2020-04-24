@@ -1,10 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
-    <IsPackable>false</IsPackable>
     <AssemblyOriginatorKeyFile>Interface.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="System.Reactive" Version="4.3.2" />
+    <PackageReference Include="System.Reactive" />
   </ItemGroup>
+
 </Project>

@@ -1,22 +1,29 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Sdk Name="Microsoft.Build.CentralPackageVersions" />
+
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>netstandard1.3</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp2.1</TargetFrameworks>
   </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="2.1.0" />
-    <PackageReference Include="Microsoft.Win32.Registry" Version="4.3.0" />
-    <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
-    <PackageReference Include="System.Runtime.Extensions" Version="4.3.0" />
-    <PackageReference Include="System.ValueTuple" Version="4.3.0" />
-    <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
-    <PackageReference Include="System.Xml.XmlDocument" Version="4.3.0" />
-    <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
-    <PackageReference Include="System.Runtime.Serialization.Xml" Version="4.3.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.Win32.Registry" />
+    <PackageReference Include="Superpower" />
+    <PackageReference Include="System.Diagnostics.Process" />
+    <PackageReference Include="System.Runtime.Extensions" />
+    <PackageReference Include="System.ValueTuple" />
+    <PackageReference Include="System.Xml.XmlSerializer" />
+    <PackageReference Include="System.Xml.XmlDocument" />
+    <PackageReference Include="System.Runtime.Serialization.Primitives" />
+    <PackageReference Include="System.Runtime.Serialization.Xml" />
   </ItemGroup>
+
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
       <_Parameter1>SharpGen.UnitTests</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
+
 </Project>

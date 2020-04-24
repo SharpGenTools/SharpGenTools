@@ -3,24 +3,29 @@ Param(
     [string] $RepoRoot
 )
 
-dotnet restore ./SdkTests/SdkTests.sln | Write-Host
-
-$Version = ./build/Get-SharpGenToolsVersion
-
-$SdkAssemblyFolder = "$RepoRoot/SdkTests/RestoredPackages/sharpgentools.sdk/$Version/tools/netstandard1.3/" 
-
 # Add directory to path for sn executable
 $env:Path += ";C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\"
 
-$dotnetExe = $(Get-Command dotnet).Path
+$SdkTestsSolution = "$RepoRoot/SdkTests/SdkTests.sln"
 
-$dotnetParameters =  "build", "./SdkTests/SdkTests.sln", "-nr:false", "-m:1" # Force no parallelization to work around https://github.com/tonerdo/coverlet/issues/491
+dotnet restore $SdkTestsSolution | Write-Host
 
 if ($RunCodeCoverage) {
-    return (./build/Run-CodeCoverage $SdkAssemblyFolder "SharpGenTools.Sdk.dll" $dotnetExe $dotnetParameters "outerloop-build.xml")
+    $Version = & "$RepoRoot/build/Get-SharpGenToolsVersion"
+
+    $SdkAssemblyFolder = "$RepoRoot/SdkTests/RestoredPackages/sharpgentools.sdk/$Version/tools/"
+
+    $dotnetExe = $(Get-Command dotnet).Path
+
+    $dotnetParameters = "build", $SdkTestsSolution, "-nr:false", "-m:1" # Force no parallelization to work around https://github.com/tonerdo/coverlet/issues/491
+
+    $targetArgs = $($dotnetParameters -join ' ')
+
+    coverlet "$SdkAssemblyFolder/netcoreapp2.1/win/SharpGenTools.Sdk.dll" -t $dotnetExe -a $targetArgs -f opencover `
+        -o "$RepoRoot/artifacts/coverage/outerloop-build.xml" --include-test-assembly --include-directory $SdkAssemblyFolder `
+        | Write-Host
+} else {
+    dotnet build $SdkTestsSolution | Write-Host
 }
-else {
-    dotnet build ./SdkTests/SdkTests.sln | Write-Host
-    return $LastExitCode -eq 0
-}
- 
+
+return $LastExitCode -eq 0

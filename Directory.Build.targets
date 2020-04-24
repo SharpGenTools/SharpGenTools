@@ -1,3 +1,20 @@
 <Project>
-  <Import Project="$(MSBuildThisFileDirectory)/SdkPackage.targets" Condition="'$(SharpGenSdkPackage)' == 'true'" />
+  <Import Project="$(MSBuildThisFileDirectory)SdkPackage.targets" Condition="'$(SharpGenSdkPackage)' == 'true'" />
+
+  <Target Name="IncludeTargetingPackReferencePatch" BeforeTargets="_CheckForInvalidConfigurationAndPlatform;CollectPackageReferences;CheckForImplicitPackageReferenceOverrides"
+          Condition="'$(TargetFrameworkMoniker)' != '' and '$(TargetFrameworkIdentifier)' == '.NETFramework'">
+    <GetReferenceAssemblyPaths
+        TargetFrameworkMoniker="$(TargetFrameworkMoniker)"
+        RootPath="$(TargetFrameworkRootPath)"
+        TargetFrameworkFallbackSearchPaths="$(TargetFrameworkFallbackSearchPaths)"
+        BypassFrameworkInstallChecks="$(BypassFrameworkInstallChecks)"
+        SuppressNotFoundError="true">
+      <Output TaskParameter="FullFrameworkReferenceAssemblyPaths" PropertyName="_FullFrameworkReferenceAssemblyPaths"/>
+    </GetReferenceAssemblyPaths>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="$(MicrosoftNETFrameworkReferenceAssembliesLatestPackageVersion)" PrivateAssets="All"
+                        Condition="'$(_FullFrameworkReferenceAssemblyPaths)' == ''"/>
+    </ItemGroup>
+  </Target>
 </Project>

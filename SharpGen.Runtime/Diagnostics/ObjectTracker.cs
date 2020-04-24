@@ -102,9 +102,7 @@ namespace SharpGen.Runtime.Diagnostics
         /// </summary>
         public static string GetStackTrace()
         {
-#if NETSTANDARD2_0
-            return new StackTrace().ToString();
-#else
+#if NETSTANDARD1_1
             try
             {
                 throw new GetStackTraceException();
@@ -113,6 +111,8 @@ namespace SharpGen.Runtime.Diagnostics
             {
                 return ex.StackTrace;
             }
+#else
+            return new StackTrace().ToString();
 #endif
         }
 
@@ -284,8 +284,10 @@ namespace SharpGen.Runtime.Diagnostics
             UnTracked?.Invoke(null, new CppObjectEventArgs(obj));
         }
 
+#if NETSTANDARD1_1
         private class GetStackTraceException : Exception
         {
         }
+#endif
    }
 }
