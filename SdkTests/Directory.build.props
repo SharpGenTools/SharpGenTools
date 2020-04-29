@@ -1,4 +1,16 @@
 <Project>
-  <Import Project="$(MSBuildThisFileDirectory)../Directory.build.props" />
-  <Import Project="$(MSBuildThisFileDirectory)Managed.props"  Condition="'$(MSBuildProjectExtension)' == '.csproj'" />
+
+  <PropertyGroup>
+    <DeterministicSourcePaths>false</DeterministicSourcePaths>
+  </PropertyGroup>
+
+  <Import Project="Sdk.props" Sdk="Microsoft.Build.CentralPackageVersions" Condition="'$(MSBuildProjectExtension)' == '.csproj'" />
+
+  <PropertyGroup>
+    <DisableSourceLink>true</DisableSourceLink>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)../Directory.Build.props" />
+  <Import Project="$(MSBuildThisFileDirectory)Managed.props" Condition="'$(MSBuildProjectExtension)' == '.csproj'" />
+
 </Project>

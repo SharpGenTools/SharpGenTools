@@ -1,5 +1,6 @@
 {
     "msbuild-sdks": {
-        "MSBuild.Sdk.Extras": "2.0.54"
+        "MSBuild.Sdk.Extras": "2.0.83",
+        "Microsoft.Build.CentralPackageVersions" : "2.0.52"
     }
 }

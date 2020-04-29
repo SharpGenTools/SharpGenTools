@@ -1,7 +1,7 @@
 <Project>
   <Target Name="LayoutNative" AfterTargets="Build" Condition="'$(SdkTestNative)' != ''">
     <ItemGroup>
-      <SdkTestNativeFiles Include="$(MSBuildThisFileDirectory)\Native\$(SdkTestNative)\Debug\$(SdkTestNative)Native.*" />
+      <SdkTestNativeFiles Include="$(MSBuildThisFileDirectory)Native\$(SdkTestNative)\Debug\$(SdkTestNative)Native.*" />
     </ItemGroup>
     <Copy
       DestinationFolder="$(OutputPath)"
@@ -9,4 +9,6 @@
     />
     <Message Text="Copied Native Test Dependencies" />
   </Target>
+
+  <Import Project="Sdk.targets" Sdk="Microsoft.Build.CentralPackageVersions" Condition="'$(MSBuildProjectExtension)' == '.csproj'" />
 </Project>

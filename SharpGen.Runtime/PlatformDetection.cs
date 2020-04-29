@@ -1,20 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Runtime.InteropServices;
 
 namespace SharpGen.Runtime
 {
     public static class PlatformDetection
     {
-#if WIN
-        public static bool IsWindows => true;
-        public static bool IsItaniumSystemV => false;
-#elif UNIX
-        public static bool IsWindows => false;
-        public static bool IsItaniumSystemV => true;
-#else
-        public static bool IsWindows => throw null;
-        public static bool IsItaniumSystemV => throw null;
-#endif
+        public static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+        public static readonly bool IsItaniumSystemV = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
+                                                       RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
     }
 }

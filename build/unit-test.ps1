@@ -4,15 +4,13 @@ Param(
     [string] $RepoRoot
 )
 
+$managedTests = "SharpGen.UnitTests", "SharpGen.Runtime.UnitTests"
 
-if(!(./build/Run-UnitTest -Project "SharpGen.UnitTests" -Configuration $Configuration -CollectCoverage $RunCodeCoverage -RepoRoot $RepoRoot)) {
-    Write-Error "SharpGen Unit Tests Failed"
-    return $false
-}
-
-if(!(./build/Run-UnitTest -Project "SharpGen.Runtime.UnitTests" -Configuration $Configuration -CollectCoverage $RunCodeCoverage -RepoRoot $RepoRoot)) {
-    Write-Error "SharpGen.Runtime Unit Tests Failed"
-    return $false
+foreach ($test in $managedTests) {
+    if (!(./build/Run-UnitTest -Project $test -Configuration $Configuration -CollectCoverage $RunCodeCoverage -RepoRoot $RepoRoot)) {
+        Write-Error "$test Failed"
+        return $false
+    }
 }
 
 return $true

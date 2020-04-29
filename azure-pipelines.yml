@@ -26,9 +26,11 @@ stages:
       variables:
         - name: DOTNET_SKIP_FIRST_TIME_EXPERIENCE
           value: "true"
+        - name: DOTNET_ROLL_FORWARD
+          value: "Major"
         - name: ReleaseVersion
           value: ''
-        - name: CI
+        - name: ContinuousIntegrationBuild
           value: true
         - group: SharpGenTools
       steps:
@@ -40,11 +42,6 @@ stages:
           displayName: 'Get Release Name (if this is a tag-triggered build)'
           env:
             SourceBranch : '$(Build.SourceBranch)'
-        - task: UseDotNet@2
-          displayName: 'Install .NET Core Sdk'
-          inputs:
-            packageType: sdk
-            version: 2.2.x
         - script: |
             dotnet tool install --global coverlet.console
             dotnet tool install --global CodeCov.Tool
@@ -75,7 +72,7 @@ stages:
           condition: eq(variables['Config'], 'Release')
           displayName: 'Copy NuGet packages to Artifact staging directory'
           inputs:
-            contents: 'Sharp*/**/Sharp*.nupkg'
+            contents: 'Sharp*/**/Sharp*@(.nupkg|.snupkg)'
             targetFolder: '$(Build.ArtifactStagingDirectory)'
             flattenFolders: true
         - task: PublishBuildArtifacts@1

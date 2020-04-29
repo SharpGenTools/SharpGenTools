@@ -3,16 +3,11 @@ Param(
     [string] $RepoRoot
 )
 
-$SharpGenVersion = ./build/Get-SharpGenToolsVersion
-
-$SharpGenRuntimePath = "$RepoRoot/SdkTests/RestoredPackages/sharpgen.runtime/$SharpGenVersion/runtimes/win/lib/netstandard2.0/"
-
 $managedTests = "Interface", "Struct", "Functions"
 
-foreach($test in $managedTests) {
-    ./build/Run-UnitTest -Project $test -Configuration "Debug" -CollectCoverage $RunCodeCoverage `
-         -RepoRoot $RepoRoot -TestSubdirectory "SdkTests" -CoverageIncludeDirectory $SharpGenRuntimePath
-    if ($LastExitCode -ne 0) {
+foreach ($test in $managedTests) {
+    if (!(./build/Run-UnitTest -Project $test -Configuration "Debug" -CollectCoverage $RunCodeCoverage -RepoRoot $RepoRoot -TestSubdirectory "SdkTests")) {
+        Write-Error "Outer-loop $test Test Failed"
         return $false
     }
 }
