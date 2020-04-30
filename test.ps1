@@ -1,7 +1,8 @@
 Param(
     [string] $Configuration = "Debug",
     [switch] $SkipUnitTests = $false,
-    [switch] $SkipOuterloopTests = $false
+    [switch] $SkipOuterloopTests = $false,
+    [switch] $SkipCodeCoverage = $false
 )
 
 $RepoRoot = Split-Path -parent $PSCommandPath
@@ -11,7 +12,7 @@ if (Test-Path -Path "coverage.xml") {
     Remove-Item "coverage.xml"
 }
 
-$RunCodeCoverage = ($Configuration -eq "Debug")
+$RunCodeCoverage = ($Configuration -eq "Debug") -and (-not $SkipCodeCoverage)
 
 if(!($SkipUnitTests)) {
     Write-Debug "Running Unit Tests"

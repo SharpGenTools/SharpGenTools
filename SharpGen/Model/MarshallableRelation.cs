@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using System.Text;
+﻿using System.Runtime.Serialization;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Transform;
 
 namespace SharpGen.Model
 {
@@ -10,29 +10,24 @@ namespace SharpGen.Model
     {
     }
 
-    internal interface IHasRelatedMarshallable
-    {
-        string RelatedMarshallableName { get; set; }
-    }
-
     [DataContract(Name = "Struct-Size")]
     public sealed class StructSizeRelation : MarshallableRelation
     {
         public override string ToString()
         {
-            return $"Size of enclosing structure";
+            return "Size of enclosing structure";
         }
     }
 
     [DataContract(Name = "Length")]
-    public sealed class LengthRelation : MarshallableRelation, IHasRelatedMarshallable
+    public sealed class LengthRelation : MarshallableRelation
     {
         [DataMember]
-        public string RelatedMarshallableName { get; set; }
-
+        public string Identifier { get; set; }
+        
         public override string ToString()
         {
-            return $"Length of '{RelatedMarshallableName}'";
+            return $"Length of '{Identifier}'";
         }
     }
 
@@ -40,8 +35,14 @@ namespace SharpGen.Model
     public sealed class ConstantValueRelation : MarshallableRelation
     {
         [DataMember]
-        public string Value { get; set; }
-
+        private string ExpressionString
+        {
+            get => Value.ToString();
+            set => Value = SyntaxFactory.ParseExpression(value, options: RelationParser.SharpParseOptions);
+        }
+        
+        public ExpressionSyntax Value { get; set; }
+        
         public override string ToString()
         {
             return $"Constant Value '{Value}'";

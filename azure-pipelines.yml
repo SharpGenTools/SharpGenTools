@@ -42,25 +42,16 @@ stages:
           displayName: 'Get Release Name (if this is a tag-triggered build)'
           env:
             SourceBranch : '$(Build.SourceBranch)'
-        - script: |
-            dotnet tool install --global coverlet.console
-            dotnet tool install --global CodeCov.Tool
-          displayName: 'Install Code Coverage Tools'
         - pwsh: ./build.ps1 -Configuration $(Config)
           displayName: 'Build SharpGenTools'
           env:
             ReleaseTag: '$(ReleaseVersion)'
             BuildNumber: '$(buildNumber)'
-        - pwsh: ./test.ps1 -Configuration $(Config)
+        - pwsh: ./test.ps1 -Configuration $(Config) -SkipCodeCoverage
           displayName: 'Run Tests'
           env:
             ReleaseTag: '$(ReleaseVersion)'
             BuildNumber: '$(buildNumber)'
-        - pwsh: ./build/upload-coverage.ps1
-          displayName: 'Upload Code Coverage results to codecov.io'
-          condition: eq(variables['Config'], 'Debug')
-          env:
-            CODECOV_TOKEN: $(SharpGenTools-CodeCov)
         - task: PublishTestResults@2
           displayName: 'Publish unit test results'
           inputs:

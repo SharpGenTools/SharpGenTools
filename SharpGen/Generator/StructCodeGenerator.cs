@@ -1,13 +1,12 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.CodeAnalysis.CSharp;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Model;
 using SharpGen.Transform;
+
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
@@ -46,7 +45,7 @@ namespace SharpGen.Generator
 
             var constants = csElement.Variables.SelectMany(var => Generators.Constant.GenerateCode(var));
 
-            var fields = csElement.Fields.Where(field => field.Relation == null).SelectMany(field =>
+            var fields = csElement.Fields.Where(field => (field.Relations?.Count ?? 0) == 0).SelectMany(field =>
             {
                 var explicitLayout = !csElement.HasMarshalType && csElement.ExplicitLayout;
                 var generator = explicitLayout ? Generators.ExplicitOffsetField : Generators.AutoLayoutField;

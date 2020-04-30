@@ -126,33 +126,39 @@ namespace SharpGen.Generator
 
         private MethodDeclarationSyntax GenerateMarshalTo(CsStruct csStruct)
         {
+            IEnumerable<StatementSyntax> FieldMarshallers(CsField field)
+            {
+                if ((field.Relations?.Count ?? 0) == 0)
+                {
+                    yield return Generators.Marshalling.GetMarshaller(field).GenerateManagedToNative(field, false);
+                    yield break;
+                }
+
+                foreach (var relation in field.Relations)
+                {
+                    var marshaller = Generators.Marshalling.GetRelationMarshaller(relation);
+                    CsField publicElement = null;
+                    
+                    if (relation is LengthRelation related)
+                    {
+                        var relatedMarshallableName = related.Identifier;
+
+                        publicElement = csStruct.Fields.First(fld => fld.CppElementName == relatedMarshallableName);
+                    }
+
+                    yield return marshaller.GenerateManagedToNative(publicElement, field);
+                }
+            }
+
             return MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "__MarshalTo")
                 .WithParameterList(ParameterList(SingletonSeparatedList(
                     Parameter(Identifier("@ref")).WithType(RefType(ParseTypeName("__Native"))))))
                 .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)))
                 .WithBody(
-                Block(csStruct.Fields
-                    .Select(field =>
-                    {
-                        if (field.Relation == null)
-                        {
-                            return Generators.Marshalling.GetMarshaller(field).GenerateManagedToNative(field, false); 
-                        }
-                        else
-                        {
-                            var marshaller = Generators.Marshalling.GetRelationMarshaller(field.Relation);
-                            if (field.Relation is IHasRelatedMarshallable related)
-                            {
-                                var relatedMarshalableName = related.RelatedMarshallableName;
-                                return marshaller.GenerateManagedToNative(csStruct.Fields.First(fld => fld.CppElementName == relatedMarshalableName), field);
-                            }
-                            else
-                            {
-                                return marshaller.GenerateManagedToNative(null, field);
-                            }
-                        }
-                    })
-                    .Where(statement => statement != null)));
+                    Block(
+                        csStruct.Fields.SelectMany(FieldMarshallers).Where(statement => statement != null)
+                    )
+                );
         }
 
         private MethodDeclarationSyntax GenerateMarshalFrom(CsStruct csStruct)
@@ -161,11 +167,15 @@ namespace SharpGen.Generator
                 .WithParameterList(ParameterList(SingletonSeparatedList(
                     Parameter(Identifier("@ref")).WithType(RefType(ParseTypeName("__Native"))))))
                 .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)))
-                .WithBody(Block(
-                    csStruct.Fields
-                    .Where(field => field.Relation is null)
-                    .Select(field => Generators.Marshalling.GetMarshaller(field).GenerateNativeToManaged(field, false))
-                    .Where(statement => statement != null)));
+                .WithBody(
+                    Block(
+                        csStruct.Fields
+                            .Where(field => (field.Relations?.Count ?? 0) == 0)
+                            .Select(field =>
+                                Generators.Marshalling.GetMarshaller(field).GenerateNativeToManaged(field, false))
+                            .Where(statement => statement != null)
+                    )
+                );
         }
     }
 }

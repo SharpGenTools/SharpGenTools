@@ -43,13 +43,8 @@ namespace SharpGen.Model
             get { return _parameters ?? (_parameters = Items.OfType<CsParameter>().ToList()); }
         }
 
-        public IEnumerable<CsParameter> PublicParameters
-        {
-            get
-            {
-                return Items.OfType<CsParameter>().Where(param => !param.IsUsedAsReturnType && param.Relation == null);
-            }
-        }
+        public IEnumerable<CsParameter> PublicParameters => Items.OfType<CsParameter>()
+            .Where(param => !param.IsUsedAsReturnType && (param.Relations?.Count ?? 0) == 0);
 
         [DataMember]
         public string CallingConvention { get; set; }

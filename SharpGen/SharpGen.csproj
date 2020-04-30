@@ -10,7 +10,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.Win32.Registry" />
-    <PackageReference Include="Superpower" />
     <PackageReference Include="System.Diagnostics.Process" />
     <PackageReference Include="System.Runtime.Extensions" />
     <PackageReference Include="System.ValueTuple" />

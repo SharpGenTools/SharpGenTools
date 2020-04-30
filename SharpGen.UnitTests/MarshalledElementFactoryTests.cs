@@ -376,14 +376,18 @@ namespace SharpGen.UnitTests
                 TypeName = "int"
             };
 
-            cppParameter.GetMappingRule().Relation = "struct_size()";
+            cppParameter.GetMappingRule().Relation = "struct-size()";
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
             typeRegistry.BindType("int", typeRegistry.ImportType(typeof(int)));
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider("SharpGen.Runtime"), typeRegistry);
-            var csParameter = marshalledElementFactory.Create(cppParameter);
 
-            AssertLoggingCodeLogged(LoggingCodes.InvalidRelation);
+            using (LoggerMessageCountEnvironment(1, LogLevel.Error))
+            using (LoggerMessageCountEnvironment(0, ~LogLevel.Error))
+            using (LoggerCodeRequiredEnvironment(LoggingCodes.InvalidRelation))
+            {
+                marshalledElementFactory.Create(cppParameter);
+            }
         }
 
         [Fact]
