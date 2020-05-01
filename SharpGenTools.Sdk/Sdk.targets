@@ -37,17 +37,11 @@
 
   <Choose>
     <When Condition="$([MSBuild]::IsOsUnixLike())">
-      <PropertyGroup>
-        <SnParam>-R</SnParam>
-      </PropertyGroup>
       <PropertyGroup Condition="'$(SharpGenSdkAssemblyRuntimeIdentifier)' == ''">
         <SharpGenSdkAssemblyRuntimeIdentifier>unix</SharpGenSdkAssemblyRuntimeIdentifier>
       </PropertyGroup>
     </When>
     <Otherwise>
-      <PropertyGroup>
-        <SnParam>-Ra</SnParam>
-      </PropertyGroup>
       <PropertyGroup Condition="'$(CastXmlPath)' == ''">
         <CastXmlPath>$([System.IO.Path]::Combine('$(SharpGenSdkToolsDirectory)', 'CastXML', 'bin', 'castxml.exe'))</CastXmlPath>
       </PropertyGroup>
@@ -78,7 +72,6 @@
     <GeneratedCSharpFiles Include="$(SharpGenGeneratedCodeFolder)Enumerations.cs" />
     <GeneratedCSharpFiles Include="$(SharpGenGeneratedCodeFolder)Functions.cs" />
     <GeneratedCSharpFiles Include="$(SharpGenGeneratedCodeFolder)Interfaces.cs" />
-    <GeneratedCSharpFiles Include="$(SharpGenGeneratedCodeFolder)LocalInterop.cs" />
     <GeneratedCSharpFiles Include="$(SharpGenGeneratedCodeFolder)Structures.cs" />
   </ItemGroup>
 
@@ -292,33 +285,6 @@
       <Clean Include="$(SharpGenIntermediateDir)*" />
     </ItemGroup>
   </Target>
-
-  <Target Name="RunSharpPatchTask"
-          DependsOnTargets="CoreCompile"
-          BeforeTargets="CopyFilesToOutputDirectory"
-          Inputs="@(IntermediateAssembly);@(ReferencePath)"
-          Outputs="@(IntermediateAssembly->'%(FullPath).check')">
-    <SharpPatchTask AssemblyToPatch="%(IntermediateAssembly.FullPath)"
-                    DebugWaitForDebuggerAttach="$(SharpGenWaitForDebuggerAttach)"
-                    References="@(ReferencePath)" />
-  </Target>
-
-  <Import Project="$(MSBuildThisFileDirectory)GetSnPath.$(MSBuildRuntimeType).props" />
-
-  <Target Name="ResignAssembly"
-          DependsOnTargets="GetSnPath"
-          Condition="'$(SignAssembly)' =='true'">
-    <Error Text="Could not find 'sn' executable. Cannot resign the patched assembly"
-           Condition="'$(SnPath)' == '' OR !Exists('$(SnPath)')" />
-    <Exec Command='"$(SnPath)" $(SnParam) %(IntermediateAssembly.FullPath) $(AssemblyOriginatorKeyFile)'
-          WorkingDirectory="$(MSBuildProjectDirectory)" />
-  </Target>
-
-  <Target Name="PatchAssembly"
-          DependsOnTargets="RunSharpPatchTask;ResignAssembly"
-          BeforeTargets="CopyFilesToOutputDirectory"
-          Inputs="@(IntermediateAssembly)"
-          Outputs="@(IntermediateAssembly->'%(FullPath).check')" />
 
   <!--
     ============================================================

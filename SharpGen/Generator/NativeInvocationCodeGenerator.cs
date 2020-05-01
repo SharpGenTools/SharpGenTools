@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.CppModel;
 using SharpGen.Generator.Marshallers;
 using SharpGen.Model;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
@@ -111,9 +112,36 @@ namespace SharpGen.Generator
                 );
             }
 
-            if (vtblAccess != null)
+            CastExpressionSyntax FnPtrCall()
             {
-                arguments = arguments.Append((Argument(vtblAccess), VoidPtr)).ToArray();
+                var fnptrParameters = arguments
+                                     .Select(x => x.Type)
+                                     .Append(ParseTypeName(interopSig.ReturnType.TypeName))
+                                     .Select(FunctionPointerParameter);
+
+                var callConv = ((CppCallable) callable.CppElement).CallingConvention switch
+                {
+                    CppCallingConvention.StdCall => "Stdcall",
+                    CppCallingConvention.FastCall => "Fastcall",
+                    CppCallingConvention.ThisCall => "Thiscall",
+                    CppCallingConvention.CDecl => "Cdecl",
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+
+                return CastExpression(
+                    FunctionPointerType(
+                        FunctionPointerCallingConvention(
+                            Token(SyntaxKind.UnmanagedKeyword),
+                            FunctionPointerUnmanagedCallingConventionList(
+                                SingletonSeparatedList(
+                                    FunctionPointerUnmanagedCallingConvention(Identifier(callConv))
+                                )
+                            )
+                        ),
+                        FunctionPointerParameterList(SeparatedList(fnptrParameters))
+                    ),
+                    ParenthesizedExpression(vtblAccess)
+                );
             }
 
             ExpressionSyntax what = callable switch
@@ -121,7 +149,7 @@ namespace SharpGen.Generator
                 CsFunction => IdentifierName(
                     callable.CppElementName + GeneratorHelpers.GetPlatformSpecificSuffix(platform)
                 ),
-                CsMethod => IdentifierName("LocalInterop." + interopSig.Name),
+                CsMethod => ParenthesizedExpression(FnPtrCall()),
                 _ => throw new ArgumentOutOfRangeException()
             };
 
