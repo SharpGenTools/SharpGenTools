@@ -493,9 +493,11 @@ namespace SharpGen.UnitTests.Mapping
             var module = new CppModule();
             module.Add(include);
 
-            var (solution, _) = MapModel(module, config);
-
-            AssertLoggingCodeLogged(LoggingCodes.NonPortableAlignment);
+            using (LoggerMessageCountEnvironment(1, LogLevel.Error))
+            using (LoggerCodeRequiredEnvironment(LoggingCodes.NonPortableAlignment))
+            {
+                MapModel(module, config);
+            }
         }
 
         [Fact]

@@ -9,13 +9,12 @@
     </PackageReference>
     <PackageReference Update="FakeItEasy" Version="6.0.1" />
     <PackageReference Update="FakeItEasy.Analyzer.CSharp" Version="6.0.0" />
-    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="16.5.0" />
+    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="16.6.1" />
     <PackageReference Update="xunit" Version="2.4.1" />
     <PackageReference Update="xunit.runner.visualstudio" Version="2.4.1" />
-    <PackageReference Update="Xunit.SkippableFact" Version="1.3.12" />
+    <PackageReference Update="Xunit.SkippableFact" Version="1.4.8" />
     <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="3.6.0-3.final" />
     <PackageReference Update="Microsoft.Win32.Registry" Version="4.7.0" />
-    <PackageReference Update="Superpower" Version="2.3.0" />
     <PackageReference Update="System.Diagnostics.Process" Version="4.3.0" />
     <PackageReference Update="System.Runtime.Extensions" Version="4.3.1" />
     <PackageReference Update="System.ValueTuple" Version="4.5.0" />
@@ -32,7 +31,7 @@
     <PackageReference Update="System.Runtime.CompilerServices.Unsafe" Version="4.7.1" />
     <PackageReference Update="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
     <PackageReference Update="Microsoft.Build.Utilities.Core" Version="15.3.409" />
-    <PackageReference Update="Microsoft.Net.Compilers.Toolset" Version="3.7.0-1.20223.1">
+    <PackageReference Update="Microsoft.Net.Compilers.Toolset" Version="3.7.0-1.20230.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>

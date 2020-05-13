@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Linq;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
@@ -8,7 +6,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    class ConstantValueRelationMarshaller : MarshallerBase, IRelationMarshaller
+    internal class ConstantValueRelationMarshaller : MarshallerBase, IRelationMarshaller
     {
         public ConstantValueRelationMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
         {
@@ -16,12 +14,19 @@ namespace SharpGen.Generator.Marshallers
 
         public StatementSyntax GenerateManagedToNative(CsMarshalBase publicElement, CsMarshalBase relatedElement)
         {
+            var relation = relatedElement.Relations?.OfType<ConstantValueRelation>().Single();
+
+            if (relation is null) return null;
+
             return ExpressionStatement(
-                AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                    relatedElement is CsField ?
-                        GetMarshalStorageLocation(relatedElement)
+                AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    relatedElement is CsField
+                        ? GetMarshalStorageLocation(relatedElement)
                         : IdentifierName(relatedElement.Name),
-                    ParseExpression(((ConstantValueRelation)relatedElement.Relation).Value)));
+                    relation.Value
+                )
+            );
         }
 
         public StatementSyntax GenerateNativeToManaged(CsMarshalBase publicElement, CsMarshalBase relatedElement)

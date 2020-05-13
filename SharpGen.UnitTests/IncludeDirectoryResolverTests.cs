@@ -47,9 +47,12 @@ namespace SharpGen.UnitTests
             var resolver = new IncludeDirectoryResolver(Logger);
             resolver.AddDirectories(new[] { new IncludeDirRule(@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;SubFolder") });
 
-            var resolvedPaths = resolver.IncludePaths;
-
-            AssertLoggingCodeLogged(LoggingCodes.RegistryKeyNotFound);
+            using (LoggerMessageCountEnvironment(1, LogLevel.Error))
+            using (LoggerMessageCountEnvironment(0, ~LogLevel.Error))
+            using (LoggerCodeRequiredEnvironment(LoggingCodes.RegistryKeyNotFound))
+            {
+                resolver.IncludePaths.ToArray();
+            }
         }
     }
 }

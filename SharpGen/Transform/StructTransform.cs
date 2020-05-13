@@ -170,7 +170,7 @@ namespace SharpGen.Transform
                             || csField.IsArray;
 
                         // BoolToInt doesn't generate native Marshaling although they have a different marshaller
-                        if (((!csField.IsBoolToInt || csField.IsArray) && fieldHasMarshalType) || csField.Relation != null)
+                        if (((!csField.IsBoolToInt || csField.IsArray) && fieldHasMarshalType) || (csField.Relations?.Count ?? 0) != 0)
                             hasMarshalType = true;
 
                         // If last field has same offset, then it's a union

@@ -175,7 +175,7 @@ namespace SharpGen.Transform
             csMarshallable.PublicType = publicType;
             csMarshallable.MarshalType = marshalType ?? publicType;
 
-            csMarshallable.Relation = RelationParser.ParseRelation(marshallable.GetMappingRule().Relation, logger);
+            csMarshallable.Relations = RelationParser.ParseRelation(marshallable.GetMappingRule().Relation, logger);
 
             return csMarshallable;
         }
@@ -361,9 +361,9 @@ namespace SharpGen.Transform
                 param.IsArray = false;
             }
 
-            if (param.Relation is StructSizeRelation)
+            if (param.Relations?.OfType<StructSizeRelation>().Any() ?? false)
             {
-                logger.Error(LoggingCodes.InvalidRelation, $"Parameter [{cppParameter.ToString()}] marked with a struct-size relationship");
+                logger.Error(LoggingCodes.InvalidRelation, $"Parameter [{cppParameter}] marked with a struct-size relationship");
             }
 
             return param;

@@ -19,6 +19,7 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -114,7 +115,6 @@ namespace SharpGen.Model
             }
         }
 
-        [DataMember]
-        public MarshallableRelation Relation { get; set; }
+        [DataMember] public IList<MarshallableRelation> Relations { get; set; }
     }
 }

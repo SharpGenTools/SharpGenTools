@@ -8,14 +8,14 @@ namespace SharpGen.UnitTests
 {
     class XUnitLogger : LoggerBase
     {
-        private ITestOutputHelper output;
+        private readonly ITestOutputHelper output;
 
         public XUnitLogger(ITestOutputHelper output)
         {
             this.output = output;
         }
 
-        public HashSet<string> LoggerCodesEncountered { get; } = new HashSet<string>();
+        public List<XUnitLogEvent> MessageLog { get; } = new List<XUnitLogEvent>();
 
         public override void Exit(string reason, int exitCode)
         {
@@ -24,8 +24,9 @@ namespace SharpGen.UnitTests
 
         public override void Log(LogLevel logLevel, LogLocation logLocation, string context, string code, string message, Exception exception, params object[] parameters)
         {
-            LoggerCodesEncountered.Add(code);
-            string lineMessage = FormatMessage(logLevel, logLocation, context, message, exception, parameters);
+            var lineMessage = FormatMessage(logLevel, logLocation, context, message, exception, parameters);
+            
+            MessageLog.Add(new XUnitLogEvent(code, lineMessage, exception, logLevel));
 
             output.WriteLine(lineMessage);
 

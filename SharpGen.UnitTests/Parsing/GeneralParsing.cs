@@ -28,9 +28,11 @@ namespace SharpGen.UnitTests.Parsing
                 }
             };
 
-            var model = ParseCpp(config);
-
-            AssertLoggingCodeLogged(LoggingCodes.CastXmlError);
+            using (LoggerMessageCountEnvironment(3, LogLevel.Error))
+            using (LoggerCodeRequiredEnvironment(LoggingCodes.CastXmlError))
+            {
+                ParseCpp(config);
+            }
         }
 
         [Fact]

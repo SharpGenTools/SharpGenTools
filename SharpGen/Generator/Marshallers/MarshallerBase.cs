@@ -388,21 +388,41 @@ namespace SharpGen.Generator.Marshallers
 
         protected StatementSyntax GenerateArrayNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
         {
-            var callable = (CsCallable)csElement.Parent;
-            var lengthParam = callable.Parameters
-                .FirstOrDefault(param
-                    => param.Relation is LengthRelation relation
-                        && relation.RelatedMarshallableName == csElement.CppElementName);
-            if (lengthParam != null)
+            // e.g. Function(int[] buffer, int length)
+            // callable is Function
+            // csElement is buffer
+            // lengthParam is length
+
+            var callable = (CsCallable) csElement.Parent;
+
+            bool MatchPredicate(CsParameter param)
             {
-                var marshaller = new LengthRelationMarshaller(globalNamespace);
-                return marshaller.GenerateNativeToManaged(csElement, lengthParam);
+                var relations = param.Relations;
+
+                if (relations is null) return false;
+
+                return relations.OfType<LengthRelation>()
+                    .Any(relation => relation.Identifier == csElement.CppElementName);
             }
-            else
+
+            var lengthParam = callable.Parameters
+                .Where(MatchPredicate)
+                .ToArray();
+
+            if (lengthParam.Length == 0)
             {
                 return NotSupported("Cannot marshal a native array to a managed array when length is not specified");
             }
+            
+            if (lengthParam.Length > 1)
+            {
+                return NotSupported("Cannot marshal a native array to a managed array when length is specified multiple times");
+            }
+
+            var marshaller = new LengthRelationMarshaller(globalNamespace);
+            return marshaller.GenerateNativeToManaged(csElement, lengthParam[0]);
         }
+        
         protected StatementSyntax GenerateGCKeepAlive(CsMarshalBase csElement)
         {
             return ExpressionStatement(

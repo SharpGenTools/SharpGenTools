@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SharpGen.Model;
-using Microsoft.CodeAnalysis.CSharp;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Model;
+
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
@@ -219,12 +218,10 @@ namespace SharpGen.Generator
                 }
             }
 
-            var managedArguments = new List<ArgumentSyntax>();
-
-            foreach (var param in csElement.Parameters.Where(p => !p.UsedAsReturn && p.Relation is null))
-            {
-                managedArguments.Add(generators.Marshalling.GetMarshaller(param).GenerateManagedArgument(param));
-            }
+            var managedArguments = csElement.Parameters
+                .Where(p => !p.UsedAsReturn && (p.Relations?.Count ?? 0) == 0)
+                .Select(param => generators.Marshalling.GetMarshaller(param).GenerateManagedArgument(param))
+                .ToList();
 
             var callableName = csElement is CsFunction
                 ? (ExpressionSyntax)IdentifierName(csElement.Name)
