@@ -25,7 +25,7 @@ namespace SharpGen.Parser
         public CppModule GenerateExtensionHeaders(ConfigFile configRoot, string outputPath, IReadOnlyCollection<string> filesWithExtensions, IReadOnlyCollection<ConfigFile> updatedConfigs)
         {
             var module = configRoot.CreateSkeletonModule();
-            MacroManager.Parse(Path.Combine(outputPath, $"{configRoot.Id}.h"), module);
+            MacroManager.Parse(Path.Combine(outputPath, configRoot.HeaderFileName), module);
 
             var finder = new CppElementFinder(module);
 

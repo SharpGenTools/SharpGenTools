@@ -169,7 +169,7 @@ namespace SharpGen.Parser
 
                 Logger.Progress(15, progressMessage);
 
-                var configRootHeader = Path.Combine(OutputPath, _configRoot.Id + ".h");
+                var configRootHeader = Path.Combine(OutputPath, _configRoot.HeaderFileName);
 
                 xmlReader = _gccxml.Process(configRootHeader);
                 if (xmlReader != null)

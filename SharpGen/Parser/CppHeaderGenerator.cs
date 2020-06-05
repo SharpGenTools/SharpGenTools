@@ -48,7 +48,7 @@ namespace SharpGen.Parser
                     configRoot, configFile, filesWithIncludes, filesWithExtensionHeaders, prologue
                 );
 
-                var fileName = Path.Combine(OutputPath, configFile.Id + ".h");
+                var fileName = Path.Combine(OutputPath, configFile.HeaderFileName);
 
                 // Test if Last config file was generated. If not, then we need to generate it
                 // If it exists, then we need to test if it is the same than previous run
@@ -121,7 +121,7 @@ namespace SharpGen.Parser
             foreach (var reference in configFile.References)
             {
                 if (filesWithIncludes.Contains(reference))
-                    outputConfig.WriteLine("#include \"{0}\"", reference.Id + ".h");
+                    outputConfig.WriteLine("#include \"{0}\"", reference.HeaderFileName);
             }
 
             // Dump Create from macros

@@ -50,11 +50,8 @@ namespace SharpGen.Config
             // Check if the file has any includes related config
             foreach (var configFile in configRoot.ConfigFilesLoaded)
             {
-                var includesAnyFiles = false;
-
                 // Build prolog
-                if (configFile.IncludeProlog.Count > 0)
-                    includesAnyFiles = true;
+                var includesAnyFiles = configFile.IncludeProlog.Count > 0;
 
                 if (configFile.Includes.Count > 0)
                     includesAnyFiles = true;

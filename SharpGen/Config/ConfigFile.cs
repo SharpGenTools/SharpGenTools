@@ -137,6 +137,12 @@ namespace SharpGen.Config
         [XmlIgnore]
         public string ExtensionFileName => ExtensionId + ".h";
 
+        /// <summary>
+        /// Gets the name of this configs' primary header file.
+        /// </summary>
+        [XmlIgnore]
+        public string HeaderFileName => Id + ".h";
+
         [XmlArray("bindings")]
         public List<BindRule> Bindings { get; set; } = new List<BindRule>();
 
@@ -237,9 +243,8 @@ namespace SharpGen.Config
                 if (keyValue.Name == variableName)
                     return ExpandString(keyValue.Value, false, logger);
             }
-            if (Parent != null)
-                return Parent.GetVariable(variableName, logger);
-            return null;
+
+            return Parent?.GetVariable(variableName, logger);
         }
 
         /// <summary>

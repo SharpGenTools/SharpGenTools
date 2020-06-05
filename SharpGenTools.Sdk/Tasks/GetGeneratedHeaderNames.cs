@@ -23,8 +23,8 @@ namespace SharpGenTools.Sdk.Tasks
         protected override bool Execute(ConfigFile config)
         {
             var (headers, extensionHeaders) = config.GetFilesWithIncludesAndExtensionHeaders();
-            Headers = headers.Select(cfg => CreateHeaderItem(cfg)).ToArray();
-            ExtensionHeaders = extensionHeaders.Select(cfg => CreateExtensionHeaderItem(cfg)).ToArray();
+            Headers = headers.Select(CreateHeaderItem).ToArray<ITaskItem>();
+            ExtensionHeaders = extensionHeaders.Select(CreateExtensionHeaderItem).ToArray<ITaskItem>();
 
             return true;
         }
