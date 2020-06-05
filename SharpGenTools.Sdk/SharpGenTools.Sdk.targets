@@ -2,14 +2,39 @@
   <PropertyGroup>
     <MSBuildAllProjects Condition="'$(MSBuildToolsVersion)' != 'Current'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
   </PropertyGroup>
-  
+
+  <Choose>
+    <When Condition="'$(SharpGenIntermediateDir)' == ''">
+      <Choose>
+        <When Condition="$([System.IO.Path]::IsPathRooted('$(IntermediateOutputPath)'))">
+          <PropertyGroup>
+            <SharpGenIntermediateDir>$([MSBuild]::NormalizeDirectory('$(IntermediateOutputPath)', 'SharpGen'))</SharpGenIntermediateDir>
+          </PropertyGroup>
+        </When>
+        <Otherwise>
+          <PropertyGroup>
+            <SharpGenIntermediateDir>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)', 'SharpGen'))</SharpGenIntermediateDir>
+          </PropertyGroup>
+        </Otherwise>
+      </Choose>
+    </When>
+    <When Condition="!$([System.IO.Path]::IsPathRooted('$(SharpGenIntermediateDir)'))">
+      <PropertyGroup>
+        <SharpGenIntermediateDir>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '$(SharpGenIntermediateDir)'))</SharpGenIntermediateDir>
+      </PropertyGroup>
+    </When>
+    <When Condition="!HasTrailingSlash('$(SharpGenIntermediateDir)')">
+      <PropertyGroup>
+        <SharpGenIntermediateDir>$([MSBuild]::EnsureTrailingSlash('$(SharpGenIntermediateDir)'))</SharpGenIntermediateDir>
+      </PropertyGroup>
+    </When>
+  </Choose>
+
   <PropertyGroup>
-    <SharpGenIntermediateDir>$(IntermediateOutputPath)SharpGen/</SharpGenIntermediateDir>
     <SharpGenDocumentationOutputDir Condition="'$(SharpGenDocumentationOutputDir)' == ''">$(SharpGenIntermediateDir)</SharpGenDocumentationOutputDir>
     <ShadowCopyDocumentationOutput Condition="'$(SharpGenDocumentationOutputDir)' != '$(SharpGenIntermediateDir)'">true</ShadowCopyDocumentationOutput>
-    <SharpGenGeneratedCodeFolder Condition="'$(SharpGenGeneratedCodeFolder)' == ''">$(SharpGenIntermediateDir)Generated</SharpGenGeneratedCodeFolder>
+    <SharpGenGeneratedCodeFolder Condition="'$(SharpGenGeneratedCodeFolder)' == ''">$([MSBuild]::NormalizeDirectory('$(SharpGenIntermediateDir)', 'Generated'))</SharpGenGeneratedCodeFolder>
     <SharpGenConsumerBindMappingConfigId Condition="'$(SharpGenConsumerBindMappingConfigId)' == ''">$(AssemblyName)</SharpGenConsumerBindMappingConfigId>
-    <SharpGenOutputDirectory Condition="'$(SharpGenOutputDirectory)' == ''">$(MSBuildProjectDirectory)</SharpGenOutputDirectory>
     <SharpGenSdkAssemblyDirectory Condition="'$(SharpGenSdkAssemblyDirectory)' == ''">$(MSBuildThisFileDirectory)../tools/</SharpGenSdkAssemblyDirectory>
   </PropertyGroup>
 
@@ -73,11 +98,11 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(SharpGenGenerateConsumerBindMapping)' == 'true' and '@(SharpGenMapping)' != ''">
-      <TfmConsumerProps Include="$(MSBuildProjectDirectory)/$(IntermediateOutputPath)SharpGen/$(PackageId).props">
+      <TfmConsumerProps Include="$(SharpGenIntermediateDir)$(PackageId).props">
         <PackagePath>build/$(TargetFramework);buildMultiTargeting/$(TargetFramework)</PackagePath>
         <Pack>true</Pack>
       </TfmConsumerProps>
-      <SharpGenConsumerBindMappingFile Include="$(MSBuildProjectDirectory)/$(IntermediateOutputPath)SharpGen/$(SharpGenConsumerBindMappingConfigId).BindMapping.xml">
+      <SharpGenConsumerBindMappingFile Include="$(SharpGenIntermediateDir)$(SharpGenConsumerBindMappingConfigId).BindMapping.xml">
         <PackagePath>build/$(TargetFramework);buildMultiTargeting/$(TargetFramework)</PackagePath>
         <Pack>true</Pack>
       </SharpGenConsumerBindMappingFile>
@@ -90,13 +115,10 @@
     Outputs="@(TfmConsumerProps)"
      Condition="'$(SharpGenGenerateConsumerBindMapping)' == 'true'"
   >
-    <PropertyGroup>
-      <EmbeddedConsumerProp>$</EmbeddedConsumerProp>
-    </PropertyGroup>
     <ItemGroup>
       <TfmConsumerPropsLines Include="&lt;Project&gt;" />
       <TfmConsumerPropsLines Include="&lt;ItemGroup&gt;" />
-      <TfmConsumerPropsLines Include='&lt;SharpGenConsumerMapping Include=&quot;$(EmbeddedConsumerProp)(MSBuildThisFileDirectory)/$(SharpGenConsumerBindMappingConfigId).BindMapping.xml&quot;/&gt;' />
+      <TfmConsumerPropsLines Include='&lt;SharpGenConsumerMapping Include=&quot;%24(MSBuildThisFileDirectory)/$(SharpGenConsumerBindMappingConfigId).BindMapping.xml&quot;/&gt;' />
       <TfmConsumerPropsLines Include="&lt;/ItemGroup&gt;" />
       <TfmConsumerPropsLines Include="&lt;/Project&gt;" />
     </ItemGroup>
@@ -181,7 +203,7 @@
       Macros="$(SharpGenMacros)"
       ExtensionHeaders="@(ExtensionHeaders)"
       CastXmlExecutablePath="$(CastXmlPath)"
-      OutputPath="$(MSBuildProjectDirectory)/$(SharpGenIntermediateDir)"
+      OutputPath="$(SharpGenIntermediateDir)"
       PartialCppModuleCache="@(PartialCppModule)"
       UpdatedConfigs="@(UpdatedConfigs)"
       CastXmlArguments="@(CastXmlArg)">
@@ -207,7 +229,7 @@
       ConfigFiles="@(SharpGenMapping);@(SharpGenConsumerMapping)"
       Macros="$(SharpGenMacros)"
       CastXmlExecutablePath="$(CastXmlPath)"
-      OutputPath="$(MSBuildProjectDirectory)/$(SharpGenIntermediateDir)"
+      OutputPath="$(SharpGenIntermediateDir)"
       PartialCppModuleCache="@(PartialCppModule)"
       ParsedCppModule="@(ParsedCppModule)"
       CastXmlArguments="@(CastXmlArg)"
@@ -247,7 +269,6 @@
     Outputs="$(SharpGenIntermediateDir)ForceNotUpToDate">
     <GetGeneratedCSharpFiles
       Model="@(CSharpModel)"
-      OutputDirectory="$(SharpGenOutputDirectory)"
       GeneratedCodeFolder="$(SharpGenGeneratedCodeFolder)">
       <Output TaskParameter="GeneratedFiles" ItemName="GeneratedCSharpFiles" />
     </GetGeneratedCSharpFiles>
@@ -267,7 +288,6 @@
     
     <GenerateCSharp
       Model="@(CSharpModel)"
-      OutputDirectory="$(SharpGenOutputDirectory)"
       GeneratedCodeFolder="$(SharpGenGeneratedCodeFolder)"
       GlobalNamespaceOverrides="@(SharpGenGlobalNamespaceOverrides)"
       DocLinkCache="@(DocLinksCache)"

@@ -15,9 +15,6 @@ namespace SharpGenTools.Sdk.Tasks
         public ITaskItem Model { get; set; }
 
         [Required]
-        public string OutputDirectory { get; set; }
-
-        [Required]
         public string GeneratedCodeFolder { get; set; }
 
         [Output]
@@ -27,7 +24,7 @@ namespace SharpGenTools.Sdk.Tasks
         {
             var asm = CsAssembly.Read(Model.ItemSpec);
             
-            var files = RoslynGenerator.GetFilePathsForGeneratedFiles(asm, OutputDirectory, GeneratedCodeFolder);
+            var files = RoslynGenerator.GetFilePathsForGeneratedFiles(asm, GeneratedCodeFolder);
 
             GeneratedFiles = files
                 .Select(file =>

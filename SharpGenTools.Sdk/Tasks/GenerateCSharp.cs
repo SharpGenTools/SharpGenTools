@@ -21,9 +21,6 @@ namespace SharpGenTools.Sdk.Tasks
         public ITaskItem Model { get; set; }
 
         [Required]
-        public string OutputDirectory { get; set; }
-
-        [Required]
         public string GeneratedCodeFolder { get; set; }
 
         [Required]
@@ -93,7 +90,7 @@ namespace SharpGenTools.Sdk.Tasks
                 new ExternalDocCommentsReader(documentationFiles),
                 config);
 
-            generator.Run(CsAssembly.Read(Model.ItemSpec), OutputDirectory, GeneratedCodeFolder);
+            generator.Run(CsAssembly.Read(Model.ItemSpec), GeneratedCodeFolder);
 
             return true;
         }
