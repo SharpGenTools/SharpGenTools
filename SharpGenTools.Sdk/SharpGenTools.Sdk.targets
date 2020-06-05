@@ -233,7 +233,6 @@
       CppModule="@(ParsedCppModule)"
       CppConsumerConfigCache="@(CppConsumerConfig)"
       OutputPath="$(SharpGenIntermediateDir)"
-      ForceGenerator="$(NewSdkAssembly)"
       GlobalNamespaceOverrides="@(SharpGenGlobalNamespaceOverrides)"
       CSharpModel="@(CSharpModel)"
       DocLinksCache="@(DocLinksCache)"

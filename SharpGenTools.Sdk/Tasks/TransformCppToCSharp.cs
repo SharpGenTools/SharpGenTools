@@ -25,8 +25,6 @@ namespace SharpGenTools.Sdk.Tasks
         [Required]
         public string OutputPath { get; set; }
 
-        public bool ForceGenerator { get; set; }
-
         public ITaskItem[] GlobalNamespaceOverrides { get; set; }
 
         [Required]
@@ -65,10 +63,8 @@ namespace SharpGenTools.Sdk.Tasks
                 SharpGenLogger,
                 typeRegistry,
                 docLinker,
-                new ConstantManager(namingRules, docLinker))
-            {
-                ForceGenerator = ForceGenerator
-            };
+                new ConstantManager(namingRules, docLinker)
+            );
 
             var (solution, defines) = transformer.Transform(group, config, null);
 

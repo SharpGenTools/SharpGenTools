@@ -78,8 +78,6 @@ namespace SharpGen.Transform
             InterfaceTransform = new InterfaceTransform(namingRules, logger, globalNamespace, FunctionTransform, FunctionTransform, typeRegistry, namespaceRegistry);
         }
 
-        public bool ForceGenerator { get; set; }
-
         /// <summary>
         /// Gets the naming rules manager.
         /// </summary>
@@ -119,9 +117,9 @@ namespace SharpGen.Transform
         /// <param name="cppModule">The C++ module.</param>
         /// <param name="config">The root config file.</param>
         /// <returns>The module to transform after mapping rules have been applied.</returns>
-        private CppModule MapModule(CppModule cppModule, IEnumerable<ConfigFile> configFiles)
+        private CppModule MapModule(CppModule cppModule, IReadOnlyCollection<ConfigFile> configFiles)
         {
-            var numberOfConfigFilesToParse = configFiles.Count();
+            var numberOfConfigFilesToParse = configFiles.Count;
 
             var indexFile = 0;
             // Process each config file
@@ -148,30 +146,6 @@ namespace SharpGen.Transform
             return moduleToTransform;
         }
 
-        private Dictionary<string, CheckFileNode> CheckIfUpdated(IEnumerable<ConfigFile> configFiles, string checkFilesPath)
-        {
-            var checkFileNodes = new Dictionary<string, CheckFileNode>();
-            // Compute assembly dependencies first
-            // In order to calculate which assembly we need to process
-            foreach (var configFile in configFiles)
-            {
-                if (!string.IsNullOrEmpty(configFile.Id))
-                {
-                    if (!checkFileNodes.TryGetValue(configFile.Id, out var checkFileNode))
-                    {
-                        checkFileNode = new CheckFileNode(configFile.Id);
-                        checkFileNodes[configFile.Id] = checkFileNode;
-                    }
-                    ComputeDependencies(checkFileNode, configFile);
-                }
-            }
-
-            // Check which assembly to update
-            foreach (var checkFileNode in checkFileNodes.Values)
-                CheckIfNodeUpToDate(checkFileNode, checkFilesPath);
-            return checkFileNodes;
-        }
-
         /// <summary>
         /// Adds the include to process.
         /// </summary>
@@ -180,68 +154,6 @@ namespace SharpGen.Transform
         {
             if (!_includesToProcess.Contains(includeId))
                 _includesToProcess.Add(includeId);
-        }
-
-        /// <summary>
-        /// Computes assembly dependencies from a config file.
-        /// </summary>
-        /// <param name="file">The file.</param>
-        private void ComputeDependencies(CheckFileNode checkFileNode, ConfigFile file)
-        {
-            // Review all includes file
-            foreach (var includeRule in file.Includes)
-            {
-                if (includeRule.Attach.HasValue && includeRule.Attach.Value || includeRule.AttachTypes.Any())
-                    // Link this assembly to its config file (for checking checkfiles)
-                    checkFileNode.AddLinkedConfigFile(file);
-            }
-
-            // Add link to extensions if any
-            if (file.Extension.Count > 0)
-                checkFileNode.AddLinkedConfigFile(file);
-
-            // Find all dependencies from all linked config files
-            var dependencyList = new List<ConfigFile>();
-            foreach (var linkedConfigFile in checkFileNode.ConfigFilesLinked)
-                linkedConfigFile.FindAllDependencies(dependencyList);
-
-            // Add full dependency for this assembly from all config files
-            foreach (var linkedConfigFile in dependencyList)
-                checkFileNode.AddLinkedConfigFile(linkedConfigFile);
-        }
-
-        /// <summary>
-        /// Checks the config file is up to date relative to its config dependencies.
-        /// </summary>
-        /// <param name="checkFilesNode">The assembly.</param>
-        /// <param name="checkFilesPath">The path to where the check file is located.</param>
-        private void CheckIfNodeUpToDate(CheckFileNode checkFilesNode, string checkFilesPath)
-        {
-            var maxUpdateTime = ConfigFile.GetLatestTimestamp(checkFilesNode.ConfigFilesLinked);
-
-            if (checkFilesPath != null && File.Exists(Path.Combine(checkFilesPath, checkFilesNode.CheckFileName)))
-            {
-                if (maxUpdateTime > File.GetLastWriteTime(Path.Combine(checkFilesPath, checkFilesNode.CheckFileName)))
-                    checkFilesNode.NeedsToBeUpdated = true;
-            }
-            else
-            {
-                checkFilesNode.NeedsToBeUpdated = true;
-            }
-
-            // Force generate
-            if (ForceGenerator)
-                checkFilesNode.NeedsToBeUpdated = true;
-
-            if (checkFilesNode.NeedsToBeUpdated)
-            {
-                foreach (var linkedConfigFile in checkFilesNode.ConfigFilesLinked)
-                    linkedConfigFile.ProcessMappings = true;
-            }
-            string updateForMessage = (checkFilesNode.NeedsToBeUpdated) ? "Config changed. Need to update from" : "Config unchanged. No need to update from";
-
-            Logger.Message("Process assembly [{0}] => {1} dependencies: [{2}]", checkFilesNode.Name, updateForMessage,
-                           string.Join(",", checkFilesNode.ConfigFilesLinked));
         }
 
         /// <summary>
@@ -582,10 +494,7 @@ namespace SharpGen.Transform
         {
             Init(configFile.ConfigFilesLoaded);
 
-            var checkFileNodes = CheckIfUpdated(configFile.ConfigFilesLoaded, checkFilesPath);
-
-            var moduleToTransform = MapModule(cppModule, configFile.ConfigFilesLoaded.Where(cfg => cfg.ProcessMappings));
-
+            var moduleToTransform = MapModule(cppModule, configFile.ConfigFilesLoaded);
 
             var selectedCSharpType = new List<CsBase>();
 

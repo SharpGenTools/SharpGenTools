@@ -40,17 +40,14 @@ namespace SharpGen.UnitTests.Mapping
             var namingRules = new NamingRulesManager();
 
             // Run the main mapping process
-            var transformer = new TransformManager(
+            return new TransformManager(
                 new GlobalNamespaceProvider(),
                 namingRules,
                 Logger,
                 typeRegistry,
                 docLinker,
-                new ConstantManager(namingRules, docLinker))
-            {
-                ForceGenerator = true
-            };
-            return transformer;
+                new ConstantManager(namingRules, docLinker)
+            );
         }
     }
 }
