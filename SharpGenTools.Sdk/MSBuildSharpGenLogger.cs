@@ -5,11 +5,11 @@ using SharpGen.Logging;
 
 namespace SharpGenTools.Sdk
 {
-    internal class MsBuildSharpGenLogger : LoggerBase
+    internal sealed class MSBuildSharpGenLogger : LoggerBase
     {
         private readonly TaskLoggingHelper log;
 
-        public MsBuildSharpGenLogger(TaskLoggingHelper log)
+        public MSBuildSharpGenLogger(TaskLoggingHelper log)
         {
             this.log = log;
         }

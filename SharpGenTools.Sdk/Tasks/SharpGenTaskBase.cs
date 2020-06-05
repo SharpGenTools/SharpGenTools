@@ -22,7 +22,7 @@ namespace SharpGenTools.Sdk.Tasks
         {
             BindingRedirectResolution.Enable();
 
-            SharpGenLogger = new Logger(new MsBuildSharpGenLogger(Log), null);
+            SharpGenLogger = new Logger(new MSBuildSharpGenLogger(Log), null);
 
             var config = new ConfigFile
             {
