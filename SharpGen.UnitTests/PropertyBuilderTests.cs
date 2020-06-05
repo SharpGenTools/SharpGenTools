@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using SharpGen.Config;
+﻿using SharpGen.Config;
 using SharpGen.Model;
 using SharpGen.Transform;
 using Xunit;

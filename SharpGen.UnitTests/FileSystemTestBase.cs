@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Runtime.CompilerServices;
-using System.Text;
+using SharpGen.Config;
 using Xunit.Abstractions;
 
 namespace SharpGen.UnitTests
@@ -17,9 +15,9 @@ namespace SharpGen.UnitTests
             TestDirectory = GenerateTestDirectory();
         }
 
-        public Config.IncludeDirRule GetTestFileIncludeRule()
+        public IncludeDirRule GetTestFileIncludeRule()
         {
-            return new Config.IncludeDirRule
+            return new IncludeDirRule
             {
                 Path = $@"{TestDirectory.FullName}\includes"
             };

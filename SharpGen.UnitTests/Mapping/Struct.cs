@@ -1,10 +1,8 @@
-﻿using SharpGen.CppModel;
+﻿using System.Linq;
+using SharpGen.Config;
+using SharpGen.CppModel;
 using SharpGen.Logging;
 using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -19,13 +17,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void Simple()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(Simple),
                 Namespace = nameof(Simple),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         File = "simple.h",
                         Attach = true,
@@ -34,7 +32,7 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32")
+                    new BindRule("int", "System.Int32")
                 }
             };
 
@@ -80,13 +78,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void SequentialOffsets()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(SequentialOffsets),
                 Namespace = nameof(SequentialOffsets),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         File = "simple.h",
                         Attach = true,
@@ -95,7 +93,7 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32")
+                    new BindRule("int", "System.Int32")
                 }
             };
 
@@ -142,13 +140,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void InheritingStructs()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(InheritingStructs),
                 Namespace = nameof(InheritingStructs),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         File = "struct.h",
                         Attach = true,
@@ -157,7 +155,7 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32")
+                    new BindRule("int", "System.Int32")
                 }
             };
 
@@ -212,13 +210,13 @@ namespace SharpGen.UnitTests.Mapping
         public void IntFieldMappedToBoolIsMarkedAsBoolToInt()
         {
             var structName = "BoolToInt";
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(IntFieldMappedToBoolIsMarkedAsBoolToInt),
                 Namespace = nameof(IntFieldMappedToBoolIsMarkedAsBoolToInt),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         File = "test.h",
                         Attach = true,
@@ -227,12 +225,12 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32"),
-                    new Config.BindRule("bool", "System.Boolean")
+                    new BindRule("int", "System.Int32"),
+                    new BindRule("bool", "System.Boolean")
                 },
                 Mappings =
                 {
-                    new Config.MappingRule
+                    new MappingRule
                     {
                         Field = $"{structName}::field",
                         MappingType = "bool",
@@ -277,13 +275,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void MultipleBitfieldOffsetsGeneratedCorrectly()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(MultipleBitfieldOffsetsGeneratedCorrectly),
                 Namespace = nameof(MultipleBitfieldOffsetsGeneratedCorrectly),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         File = "test.h",
                         Attach = true,
@@ -292,7 +290,7 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32")
+                    new BindRule("int", "System.Int32")
                 }
             };
 
@@ -362,13 +360,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void UnionsWithPointersGeneratesStructure()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(UnionsWithPointersGeneratesStructure),
                 Namespace = nameof(UnionsWithPointersGeneratesStructure),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         File = "test.h",
                         Attach = true,
@@ -377,7 +375,7 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32")
+                    new BindRule("int", "System.Int32")
                 }
             };
 
@@ -426,13 +424,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void NonPortableStructAlignmentRaisesError()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(NonPortableStructAlignmentRaisesError),
                 Namespace = nameof(NonPortableStructAlignmentRaisesError),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         File = "test.h",
                         Attach = true,
@@ -441,7 +439,7 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32")
+                    new BindRule("int", "System.Int32")
                 }
             };
 
@@ -503,13 +501,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void NonPortableLayoutDoesNotErrorWhenMarkedForCustomMarshalling()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(NonPortableLayoutDoesNotErrorWhenMarkedForCustomMarshalling),
                 Namespace = nameof(NonPortableLayoutDoesNotErrorWhenMarkedForCustomMarshalling),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         File = "test.h",
                         Attach = true,
@@ -518,11 +516,11 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32")
+                    new BindRule("int", "System.Int32")
                 },
                 Mappings =
                 {
-                    new Config.MappingRule
+                    new MappingRule
                     {
                         Struct = "Test",
                         StructCustomMarshal = true

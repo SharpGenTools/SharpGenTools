@@ -1,6 +1,7 @@
-﻿using SharpGen.CppModel;
+﻿using System.Linq;
+using SharpGen.Config;
+using SharpGen.CppModel;
 using SharpGen.Model;
-using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -15,13 +16,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void MappingNameRuleRenamesStruct()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(MappingNameRuleRenamesStruct),
                 Namespace = nameof(MappingNameRuleRenamesStruct),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         File = "simpleStruct.h",
                         Attach = true,
@@ -30,11 +31,11 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32")
+                    new BindRule("int", "System.Int32")
                 },
                 Mappings =
                 {
-                    new Config.MappingRule
+                    new MappingRule
                     {
                         Struct = "Test",
                         MappingName = "MyStruct"
@@ -69,13 +70,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void MappingNameRuleRenamesStructMember()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(MappingNameRuleRenamesStructMember),
                 Namespace = nameof(MappingNameRuleRenamesStructMember),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         File = "simpleStruct.h",
                         Attach = true,
@@ -84,11 +85,11 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32")
+                    new BindRule("int", "System.Int32")
                 },
                 Mappings =
                 {
-                    new Config.MappingRule
+                    new MappingRule
                     {
                         Field = "Test::field",
                         MappingName = "MyField"
@@ -125,13 +126,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void ShortNameRuleReplacesAcronym()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(ShortNameRuleReplacesAcronym),
                 Namespace = nameof(ShortNameRuleReplacesAcronym),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         File = "simpleStruct.h",
                         Attach = true,
@@ -140,7 +141,7 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Naming =
                 {
-                    new Config.NamingRuleShort("DESC", "Description")
+                    new NamingRuleShort("DESC", "Description")
                 }
             };
 

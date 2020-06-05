@@ -1,8 +1,8 @@
-﻿using SharpGen.Config;
+﻿using System.Collections.Generic;
+using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
 using SharpGen.Transform;
-using System.Collections.Generic;
 using Xunit.Abstractions;
 
 namespace SharpGen.UnitTests.Mapping

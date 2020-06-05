@@ -1,9 +1,7 @@
-﻿using SharpGen.CppModel;
+﻿using System.Linq;
+using SharpGen.Config;
+using SharpGen.CppModel;
 using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -18,13 +16,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void Simple()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(Simple),
                 Namespace = nameof(Simple),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         File = "interface.h",
                         Attach = true,
@@ -33,7 +31,7 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32")
+                    new BindRule("int", "System.Int32")
                 }
             };
 
@@ -82,13 +80,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void DualCallbackFlowsNativeImplementation()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(Simple),
                 Namespace = nameof(Simple),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         File = "interface.h",
                         Attach = true,
@@ -97,11 +95,11 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32")
+                    new BindRule("int", "System.Int32")
                 },
                 Mappings =
                 {
-                    new Config.MappingRule
+                    new MappingRule
                     {
                         Interface = "Interface",
                         IsCallbackInterface = true,
@@ -145,13 +143,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void DefineWithNativeImplementationDefinesNativeImplementationType()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(Simple),
                 Namespace = nameof(Simple),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         File = "interface.h",
                         Attach = true,
@@ -160,7 +158,7 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Extension =
                 {
-                    new Config.DefineExtensionRule
+                    new DefineExtensionRule
                     {
                         Interface = "Imported.Param",
                         NativeImplementation = "Imported.ParamNative"
@@ -168,8 +166,8 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32"),
-                    new Config.BindRule("Param", "Imported.Param")
+                    new BindRule("int", "System.Int32"),
+                    new BindRule("Param", "Imported.Param")
                 }
             };
 

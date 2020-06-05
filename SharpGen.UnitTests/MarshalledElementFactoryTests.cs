@@ -1,12 +1,10 @@
-﻿using FakeItEasy;
+﻿using System;
+using FakeItEasy;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Logging;
 using SharpGen.Model;
 using SharpGen.Transform;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 using Xunit.Abstractions;
 

@@ -1,8 +1,6 @@
-﻿using SharpGen.CppModel;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
+using SharpGen.Config;
+using SharpGen.CppModel;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,7 +15,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact]
         public void CreatedFromMacros()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(CreatedFromMacros),
                 Namespace = nameof(CreatedFromMacros),
@@ -34,15 +32,15 @@ namespace SharpGen.UnitTests.Parsing
                 },
                 Extension =
                 {
-                    new Config.ContextRule("cppEnum"),
-                    new Config.ContextRule(nameof(CreatedFromMacros)),
-                    new Config.ContextRule($"{nameof(CreatedFromMacros)}-ext"),
-                    new Config.CreateCppExtensionRule
+                    new ContextRule("cppEnum"),
+                    new ContextRule(nameof(CreatedFromMacros)),
+                    new ContextRule($"{nameof(CreatedFromMacros)}-ext"),
+                    new CreateCppExtensionRule
                     {
                         Enum = "SHARPGEN_TESTENUM",
                         Macro = "TESTENUM_(.*)"
                     },
-                    new Config.ClearContextRule(),
+                    new ClearContextRule(),
                 }
             };
 
@@ -59,7 +57,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact]
         public void ScopedEnum()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(ScopedEnum),
                 Namespace = nameof(ScopedEnum),
@@ -84,7 +82,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact(Skip = "CastXML in GCCXml compat mode does not support C++11 and newer features.")]
         public void SpecifiedUnderlyingType()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(SpecifiedUnderlyingType),
                 Namespace = nameof(SpecifiedUnderlyingType),
@@ -102,7 +100,7 @@ namespace SharpGen.UnitTests.Parsing
                 },
                 Bindings =
                 {
-                    new Config.BindRule("short", "System.Int16"),
+                    new BindRule("short", "System.Int16"),
                 }
             };
 
@@ -117,7 +115,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact]
         public void AnonymousEnumAssignedExpectedName()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(AnonymousEnumAssignedExpectedName),
                 Namespace = nameof(AnonymousEnumAssignedExpectedName),

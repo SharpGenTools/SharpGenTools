@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
+using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Logging;
 using Xunit;
@@ -17,7 +16,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact]
         public void InvalidCppErrorsLogger()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(InvalidCppErrorsLogger),
                 Namespace = nameof(InvalidCppErrorsLogger),
@@ -39,7 +38,7 @@ namespace SharpGen.UnitTests.Parsing
         public void PartialAttachOnlyAddsAttachedTypesToModel()
         {
 
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(InvalidCppErrorsLogger),
                 Namespace = nameof(InvalidCppErrorsLogger),

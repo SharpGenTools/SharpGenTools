@@ -1,7 +1,7 @@
-using Xunit;
+using System;
 using FakeItEasy;
 using SharpGen.Logging;
-using System;
+using Xunit;
 
 namespace SharpGen.UnitTests
 {

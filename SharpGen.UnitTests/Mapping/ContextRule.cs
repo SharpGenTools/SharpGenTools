@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
+using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
 using Xunit;
@@ -18,19 +16,19 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void ContextRuleLimitsWhereMappingRuleExecutes()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(ContextRuleLimitsWhereMappingRuleExecutes),
                 Namespace = nameof(ContextRuleLimitsWhereMappingRuleExecutes),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         Attach = true,
                         File = "cppEnum.h",
                         Namespace = nameof(ContextRuleLimitsWhereMappingRuleExecutes)
                     },
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         Attach = true,
                         File = "secondFile.h",
@@ -40,12 +38,12 @@ namespace SharpGen.UnitTests.Mapping
                 Mappings =
                 {
                     new Config.ContextRule("cppEnum"),
-                    new Config.MappingRule
+                    new MappingRule
                     {
                         Enum = "AnotherEnum",
                         MappingNameFinal = "NewEnum"
                     },
-                    new Config.ClearContextRule()
+                    new ClearContextRule()
                 }
             };
 
