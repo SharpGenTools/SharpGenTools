@@ -1,6 +1,3 @@
-Param(
-    [string] $report = "coverage.xml"
-)
 $ScriptRoot = Split-Path -parent $PSCommandPath
 ls $ScriptRoot/../artifacts/coverage/*.xml | %{ codecov -f $_.FullName }
 

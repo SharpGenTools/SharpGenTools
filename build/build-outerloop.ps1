@@ -25,7 +25,7 @@ if ($RunCodeCoverage) {
         -o "$RepoRoot/artifacts/coverage/outerloop-build.xml" --include-test-assembly --include-directory $SdkAssemblyFolder `
         | Write-Host
 } else {
-    dotnet build $SdkTestsSolution | Write-Host
+    dotnet build -nr:false $SdkTestsSolution | Write-Host
 }
 
 return $LastExitCode -eq 0
