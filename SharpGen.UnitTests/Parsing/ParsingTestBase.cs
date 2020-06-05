@@ -44,11 +44,11 @@ namespace SharpGen.UnitTests.Parsing
             };
         }
 
-        protected CastXml GetCastXml(ConfigFile config, string[] additionalArguments = null)
+        protected CastXmlRunner GetCastXml(ConfigFile config, string[] additionalArguments = null)
         {
             var resolver = new IncludeDirectoryResolver(Logger);
             resolver.Configure(config);
-            return new CastXml(
+            return new CastXmlRunner(
                 Logger,
                 resolver,
                 CastXmlExecutablePath,

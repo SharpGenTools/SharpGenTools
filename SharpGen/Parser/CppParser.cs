@@ -43,7 +43,7 @@ namespace SharpGen.Parser
     }
 
     /// <summary>
-    /// Full C++ Parser built on top of <see cref="CastXml"/>.
+    /// Full C++ Parser built on top of <see cref="CastXmlRunner"/>.
     /// </summary>
     public class CppParser
     {
@@ -52,7 +52,7 @@ namespace SharpGen.Parser
         private readonly Dictionary<string, bool> _includeIsAttached = new Dictionary<string, bool>();
         private readonly Dictionary<string, HashSet<string>> _includeAttachedTypes = new Dictionary<string, HashSet<string>>();
         private readonly HashSet<string> _boundTypes = new HashSet<string>();
-        private readonly CastXml _gccxml;
+        private readonly ICastXmlRunner _gccxml;
         private ConfigFile _configRoot;
         private CppInclude _currentCppInclude;
         readonly Dictionary<string, XElement> _mapIdToXElement = new Dictionary<string, XElement>();
@@ -62,7 +62,7 @@ namespace SharpGen.Parser
         /// <summary>
         /// Initializes a new instance of the <see cref="CppParser"/> class.
         /// </summary>
-        public CppParser(Logger logger, CastXml castXml)
+        public CppParser(Logger logger, ICastXmlRunner castXml)
         {
             Logger = logger;
             _gccxml = castXml;

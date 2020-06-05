@@ -33,7 +33,7 @@ namespace SharpGen.Parser
     {
         private static readonly Regex MatchIncludeLine = new Regex(@"^\s*#\s+\d+\s+""([^""]+)""", RegexOptions.Compiled);
         private static readonly Regex MatchDefine = new Regex(@"^\s*#define\s+([a-zA-Z_][\w_]*)\s+(.*)", RegexOptions.Compiled);
-        private readonly CastXml _gccxml;
+        private readonly ICastXmlRunner _gccxml;
         private Dictionary<string, string> _currentMacros = null;
         private readonly Dictionary<string, Dictionary<string, string>> _mapIncludeToMacros = new Dictionary<string, Dictionary<string, string>>();
         private readonly List<string> _includedFiles = new List<string>();
@@ -42,7 +42,7 @@ namespace SharpGen.Parser
         /// Initializes a new instance of the <see cref="MacroManager"/> class.
         /// </summary>
         /// <param name="gccxml">The GccXml parser.</param>
-        public MacroManager(CastXml gccxml)
+        public MacroManager(ICastXmlRunner gccxml)
         {
             _gccxml = gccxml;
         }
@@ -75,12 +75,8 @@ namespace SharpGen.Parser
         /// <summary>
         /// Parses a macro definition line.
         /// </summary>
-        /// <param name="sendingProcess">The sending process.</param>
-        /// <param name="outLine">The <see cref="System.Diagnostics.DataReceivedEventArgs"/> instance containing the event data.</param>
-        private void ParseLine(object sendingProcess, DataReceivedEventArgs outLine)
+        private void ParseLine(string line)
         {
-            string line = outLine.Data;
-
             // Collect the sort command output.
             if (!String.IsNullOrEmpty(line))
             {

@@ -9,7 +9,7 @@ using SharpGen.Logging;
 
 namespace SharpGen.Parser
 {
-    public class IncludeDirectoryResolver
+    public class IncludeDirectoryResolver : IIncludeDirectoryResolver
     {
         private readonly Logger logger;
         private readonly List<IncludeDirRule> includeDirectoryList = new List<IncludeDirRule>();
@@ -27,6 +27,11 @@ namespace SharpGen.Parser
         public void AddDirectories(IEnumerable<IncludeDirRule> directories)
         {
             includeDirectoryList.AddRange(directories);
+        }
+
+        public void AddDirectories(params IncludeDirRule[] directories)
+        {
+            AddDirectories((IEnumerable<IncludeDirRule>) directories);
         }
 
         public IEnumerable<string> IncludePaths

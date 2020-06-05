@@ -53,7 +53,7 @@ namespace SharpGenTools.Sdk.Tasks
             var resolver = new IncludeDirectoryResolver(SharpGenLogger);
             resolver.Configure(config);
 
-            var castXml = new CastXml(SharpGenLogger, resolver, CastXmlExecutablePath, CastXmlArguments)
+            var castXml = new CastXmlRunner(SharpGenLogger, resolver, CastXmlExecutablePath, CastXmlArguments)
             {
                 OutputPath = OutputPath
             };
