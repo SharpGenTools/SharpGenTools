@@ -66,7 +66,7 @@ namespace SharpGenTools.Sdk.Tasks
                 new ConstantManager(namingRules, docLinker)
             );
 
-            var (solution, defines) = transformer.Transform(group, config, null);
+            var (solution, defines) = transformer.Transform(group, config);
 
             solution.Write(CSharpModel.ItemSpec);
 

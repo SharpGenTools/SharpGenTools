@@ -24,7 +24,7 @@ namespace SharpGen.Model
     {
         [DataMember]
         public string Identifier { get; set; }
-        
+
         public override string ToString()
         {
             return $"Length of '{Identifier}'";
@@ -40,9 +40,9 @@ namespace SharpGen.Model
             get => Value.ToString();
             set => Value = SyntaxFactory.ParseExpression(value, options: RelationParser.SharpParseOptions);
         }
-        
+
         public ExpressionSyntax Value { get; set; }
-        
+
         public override string ToString()
         {
             return $"Constant Value '{Value}'";

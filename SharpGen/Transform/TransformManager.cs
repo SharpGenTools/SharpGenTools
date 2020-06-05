@@ -110,7 +110,7 @@ namespace SharpGen.Transform
 
         public GlobalNamespaceProvider GlobalNamespace { get; }
         public Logger Logger { get; }
-        
+
         /// <summary>
         /// Initializes this instance with the specified C++ module and config.
         /// </summary>
@@ -122,13 +122,18 @@ namespace SharpGen.Transform
             var numberOfConfigFilesToParse = configFiles.Count;
 
             var indexFile = 0;
-            // Process each config file
 
+            // Process each config file
             foreach (var configFile in configFiles)
             {
-                    Logger.Progress(30 + (indexFile * 30) / numberOfConfigFilesToParse, "Processing mapping rules [{0}]", configFile.Id);
-                    ProcessCppModuleWithConfig(cppModule, configFile);
-                    indexFile++;
+                Logger.Progress(
+                    30 + (indexFile * 30) / numberOfConfigFilesToParse,
+                    "Processing mapping rules [{0}]",
+                    configFile.Id
+                );
+
+                ProcessCppModuleWithConfig(cppModule, configFile);
+                indexFile++;
             }
 
             // Strip out includes we aren't processing from transformation
@@ -138,7 +143,9 @@ namespace SharpGen.Transform
                 Name = cppModule.Name
             };
 
-            foreach (var include in cppModule.Includes.Where(cppInclude => _includesToProcess.Contains(cppInclude.Name)).ToArray())
+            foreach (var include in cppModule.Includes
+                                             .Where(cppInclude => _includesToProcess.Contains(cppInclude.Name))
+                                             .ToArray())
             {
                 moduleToTransform.Add(include);
             }
@@ -489,8 +496,7 @@ namespace SharpGen.Transform
         /// </summary>
         /// <param name="cppModule">The C++ module to parse.</param>
         /// <param name="configFile">The config file to use to transform the C++ module into C# assemblies.</param>
-        /// <param name="checkFilesPath">The path for the check files.</param>
-        public (CsAssembly assembly, IEnumerable<DefineExtensionRule> consumerExtensions) Transform(CppModule cppModule, ConfigFile configFile, string checkFilesPath)
+        public (CsAssembly assembly, IEnumerable<DefineExtensionRule> consumerExtensions) Transform(CppModule cppModule, ConfigFile configFile)
         {
             Init(configFile.ConfigFilesLoaded);
 
