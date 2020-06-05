@@ -1,12 +1,10 @@
-﻿using Microsoft.Build.Framework;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using SharpGen.Config;
 using SharpGen.Parser;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Logger = SharpGen.Logging.Logger;
+using SharpGen.Platform;
 
 namespace SharpGenTools.Sdk.Tasks
 {

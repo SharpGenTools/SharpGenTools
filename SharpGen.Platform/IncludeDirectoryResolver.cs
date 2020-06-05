@@ -6,10 +6,11 @@ using System.Runtime.InteropServices;
 using Microsoft.Win32;
 using SharpGen.Config;
 using SharpGen.Logging;
+using SharpGen.Parser;
 
-namespace SharpGen.Parser
+namespace SharpGen.Platform
 {
-    public class IncludeDirectoryResolver : IIncludeDirectoryResolver
+    public sealed class IncludeDirectoryResolver : IIncludeDirectoryResolver
     {
         private readonly Logger logger;
         private readonly List<IncludeDirRule> includeDirectoryList = new List<IncludeDirRule>();

@@ -1,13 +1,11 @@
-﻿using SharpGen.Config;
-using SharpGen.CppModel;
-using SharpGen.Parser;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using Xunit;
+using SharpGen.Config;
+using SharpGen.CppModel;
+using SharpGen.Parser;
+using SharpGen.Platform;
 using Xunit.Abstractions;
 
 namespace SharpGen.UnitTests.Parsing

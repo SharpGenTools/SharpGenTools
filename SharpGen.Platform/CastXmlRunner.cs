@@ -18,20 +18,21 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using SharpGen.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
+using SharpGen.Logging;
+using SharpGen.Parser;
 
-namespace SharpGen.Parser
+namespace SharpGen.Platform
 {
     /// <summary>
     /// CastXML front end for command line.
     /// see https://github.com/CastXML/CastXML
     /// </summary>
-    public class CastXmlRunner : ICastXmlRunner
+    public sealed class CastXmlRunner : ICastXmlRunner
     {
         private static readonly Regex MatchError = new Regex("error:");
 

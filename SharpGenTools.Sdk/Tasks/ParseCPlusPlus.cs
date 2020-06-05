@@ -1,8 +1,9 @@
-﻿using Microsoft.Build.Framework;
+﻿using System;
+using Microsoft.Build.Framework;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Parser;
-using System;
+using SharpGen.Platform;
 
 namespace SharpGenTools.Sdk.Tasks
 {

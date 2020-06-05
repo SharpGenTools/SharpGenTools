@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SharpGen\SharpGen.csproj" />
+    <ProjectReference Include="..\SharpGen.Platform\SharpGen.Platform.csproj" />
     <ProjectReference Include="..\SharpGen.Runtime\SharpGen.Runtime.csproj" />
   </ItemGroup>
 

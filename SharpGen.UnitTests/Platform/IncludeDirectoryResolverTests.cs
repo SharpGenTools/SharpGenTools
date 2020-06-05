@@ -2,11 +2,11 @@
 using System.Runtime.InteropServices;
 using SharpGen.Config;
 using SharpGen.Logging;
-using SharpGen.Parser;
+using SharpGen.Platform;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace SharpGen.UnitTests
+namespace SharpGen.UnitTests.Platform
 {
     public class IncludeDirectoryResolverTests : TestBase
     {
