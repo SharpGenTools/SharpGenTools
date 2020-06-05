@@ -72,9 +72,10 @@ namespace SharpGen.UnitTests.Parsing
                 }
             }
 
-            var cppHeaderGenerator = new CppHeaderGenerator(Logger, true, TestDirectory.FullName);
+            var cppHeaderGenerator = new CppHeaderGenerator(Logger, TestDirectory.FullName);
 
-            var (updated, _) = cppHeaderGenerator.GenerateCppHeaders(loaded, configsWithIncludes, filesWithExtensionHeaders);
+            var updated = cppHeaderGenerator.GenerateCppHeaders(loaded, configsWithIncludes, filesWithExtensionHeaders)
+                                            .UpdatedConfigs;
 
             var castXml = GetCastXml(loaded);
 

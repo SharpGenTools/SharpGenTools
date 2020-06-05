@@ -27,14 +27,9 @@ namespace SharpGenTools.Sdk.Tasks
         [Required]
         public string OutputPath { get; set; }
 
-        public bool ForceParsing { get; set; }
-
         protected override bool Execute(ConfigFile config)
         {
-            var cppHeaderGenerator = new CppHeaderGenerator(
-                SharpGenLogger,
-                ForceParsing,
-                OutputPath);
+            var cppHeaderGenerator = new CppHeaderGenerator(SharpGenLogger, OutputPath);
 
             var configsWithHeaders = new HashSet<ConfigFile>();
             foreach (var cfg in config.ConfigFilesLoaded)
@@ -51,16 +46,12 @@ namespace SharpGenTools.Sdk.Tasks
                 configsWithExtensions.Add(file.GetMetadata("ConfigId"));
             }
 
-            var (updatedConfigs, prolog) = cppHeaderGenerator.GenerateCppHeaders(config, configsWithHeaders, configsWithExtensions);
+            var cppHeaderGenerationResult = cppHeaderGenerator.GenerateCppHeaders(config, configsWithHeaders, configsWithExtensions);
 
             var consumerConfig = new ConfigFile
             {
                 Id = "CppConsumerConfig",
-                IncludeProlog =
-                {
-                    prolog
-                }
-
+                IncludeProlog = {cppHeaderGenerationResult.Prologue}
             };
 
             consumerConfig.Write(CppConsumerConfigCache.ItemSpec);
@@ -69,7 +60,7 @@ namespace SharpGenTools.Sdk.Tasks
 
             foreach (var cfg in configsWithHeaders)
             {
-                if (updatedConfigs.Contains(cfg) && cfg.AbsoluteFilePath != null)
+                if (cppHeaderGenerationResult.UpdatedConfigs.Contains(cfg) && cfg.AbsoluteFilePath != null)
                 {
                     var item = new TaskItem(cfg.AbsoluteFilePath);
                     item.SetMetadata("Id", cfg.Id);

@@ -209,8 +209,7 @@
       HeaderFiles="@(Headers)"
       ExtensionHeaders="@(ExtensionHeaders)"
       CppConsumerConfigCache="@(CppConsumerConfig)"
-      OutputPath="$(SharpGenIntermediateDir)"
-      ForceParsing="$(NewSdkAssembly)">
+      OutputPath="$(SharpGenIntermediateDir)">
       <Output TaskParameter="UpdatedConfigs" ItemName="UpdatedConfigs" />
     </GenerateHeaders>
   </Target>
