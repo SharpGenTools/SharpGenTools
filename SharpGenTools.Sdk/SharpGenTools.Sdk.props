@@ -6,7 +6,6 @@
   <PropertyGroup>
     <SharpGenGenerateConsumerBindMapping Condition="'$(SharpGenGenerateConsumerBindMapping)' == ''">true</SharpGenGenerateConsumerBindMapping>
     <SharpGenGenerateDoc Condition="'$(SharpGenGenerateDoc)' == ''">false</SharpGenGenerateDoc>
-    <SharpGenGlobalNamespace Condition="'$(SharpGenGlobalNamespace)' == ''">SharpGen.Runtime</SharpGenGlobalNamespace>
     <CastXmlPath Condition="('$(CastXmlPath)' == '') and ('$(OS)'  == 'Windows_NT')">$(MSBuildThisFileDirectory)../tools/CastXML/bin/castxml.exe</CastXmlPath>
     <CppStandard Condition="'$(CppStandard)' == ''">c++14</CppStandard>
   </PropertyGroup>

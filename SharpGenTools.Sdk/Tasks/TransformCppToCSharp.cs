@@ -27,9 +27,6 @@ namespace SharpGenTools.Sdk.Tasks
 
         public bool ForceGenerator { get; set; }
 
-        [Required]
-        public string GlobalNamespace { get; set; }
-
         public ITaskItem[] GlobalNamespaceOverrides { get; set; }
 
         [Required]
@@ -49,7 +46,7 @@ namespace SharpGenTools.Sdk.Tasks
             var typeRegistry = new TypeRegistry(SharpGenLogger, docLinker);
             var namingRules = new NamingRulesManager();
 
-            var globalNamespace = new GlobalNamespaceProvider(GlobalNamespace);
+            var globalNamespace = new GlobalNamespaceProvider();
 
             foreach (var nameOverride in GlobalNamespaceOverrides ?? Enumerable.Empty<ITaskItem>())
             {

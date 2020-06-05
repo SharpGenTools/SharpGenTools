@@ -26,13 +26,8 @@ namespace SharpGenTools.Sdk.Tasks
         [Required]
         public string GeneratedCodeFolder { get; set; }
 
-        public bool IncludeAssemblyNameFolder { get; set; }
-
         [Required]
         public ITaskItem DocLinkCache { get; set; }
-
-        [Required]
-        public string GlobalNamespace { get; set; }
 
         public ITaskItem[] Platforms { get; set; }
 
@@ -54,7 +49,7 @@ namespace SharpGenTools.Sdk.Tasks
                 }
             }
 
-            var globalNamespace = new GlobalNamespaceProvider(GlobalNamespace);
+            var globalNamespace = new GlobalNamespaceProvider();
 
             foreach (var nameOverride in GlobalNamespaceOverrides ?? Enumerable.Empty<ITaskItem>())
             {

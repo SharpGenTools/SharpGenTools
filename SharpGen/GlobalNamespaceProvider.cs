@@ -18,57 +18,34 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Collections.Generic;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Collections.Generic;
 
 namespace SharpGen
 {
     /// <summary>
-    /// Global namespace provider.
+    ///     Global namespace provider.
     /// </summary>
     public class GlobalNamespaceProvider
     {
         private readonly Dictionary<WellKnownName, string> overrides = new Dictionary<WellKnownName, string>();
 
-        private string Name { get; }
+        public string GetTypeName(WellKnownName name) =>
+            overrides.TryGetValue(name, out var overridenName)
+                ? overridenName
+                : $"SharpGen.Runtime.{name}";
 
-        public GlobalNamespaceProvider(string name)
-        {
-            Name = name;
-        }
+        public NameSyntax GetTypeNameSyntax(WellKnownName name) => SyntaxFactory.ParseName(GetTypeName(name));
 
-        private string GetLocalName(WellKnownName name)
-        {
-            return overrides.TryGetValue(name, out var overridenName) ? overridenName : name.ToString();
-        }
-        
-        public string GetTypeName(WellKnownName name)
-        {
-            return $"{Name}.{GetLocalName(name)}";
-        }
-
-        public QualifiedNameSyntax GetTypeNameSyntax(WellKnownName name)
-        {
-            return SyntaxFactory.QualifiedName(
-                SyntaxFactory.IdentifierName(Name),
-                SyntaxFactory.IdentifierName(GetLocalName(name)));
-        }
-
-        public NameSyntax GetTypeNameSyntax(BuiltinType type)
-        {
-            switch (type)
+        public static NameSyntax GetTypeNameSyntax(BuiltinType type) =>
+            type switch
             {
-                case BuiltinType.Marshal:
-                    return SyntaxFactory.ParseName("System.Runtime.InteropServices.Marshal");
-                case BuiltinType.Math:
-                    return SyntaxFactory.ParseName("System.Math");
-                case BuiltinType.Unsafe:
-                    return SyntaxFactory.ParseName("System.Runtime.CompilerServices.Unsafe");
-                default:
-                    return null;
-            }
-        }
+                BuiltinType.Marshal => SyntaxFactory.ParseName("System.Runtime.InteropServices.Marshal"),
+                BuiltinType.Math => SyntaxFactory.ParseName("System.Math"),
+                BuiltinType.Unsafe => SyntaxFactory.ParseName("System.Runtime.CompilerServices.Unsafe"),
+                _ => null
+            };
 
         public void OverrideName(WellKnownName wellKnownName, string name)
         {

@@ -41,7 +41,7 @@ namespace SharpGen.UnitTests.Mapping
 
             // Run the main mapping process
             var transformer = new TransformManager(
-                new GlobalNamespaceProvider("SharpGen.Runtime"),
+                new GlobalNamespaceProvider(),
                 namingRules,
                 Logger,
                 typeRegistry,
