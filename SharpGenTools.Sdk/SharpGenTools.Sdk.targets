@@ -57,6 +57,12 @@
     <PartialCppModule Include="$(SharpGenIntermediateDir)PartialCppModule.xml" />
     <ParsedCppModule Include="$(SharpGenIntermediateDir)ParsedCpp.xml" />
     <SharpGenDocumentationCache Include="$(SharpGenDocumentationOutputDir)DocumentationCache.xml" />
+
+    <GeneratedCSharpFiles Include="$(SharpGenGeneratedCodeFolder)Enumerations.cs" />
+    <GeneratedCSharpFiles Include="$(SharpGenGeneratedCodeFolder)Functions.cs" />
+    <GeneratedCSharpFiles Include="$(SharpGenGeneratedCodeFolder)Interfaces.cs" />
+    <GeneratedCSharpFiles Include="$(SharpGenGeneratedCodeFolder)LocalInterop.cs" />
+    <GeneratedCSharpFiles Include="$(SharpGenGeneratedCodeFolder)Structures.cs" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(CastXmlMSVCCompat)' != 'false'">
@@ -77,7 +83,6 @@
   <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="ParseCPlusPlus" />
   <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="TransformCppToCSharp" />
   <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="GenerateCSharp" />
-  <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="GetGeneratedCSharpFiles" />
 
   <Target Name="GetMappingsFromProjectReferences">
     <MSBuild
@@ -262,23 +267,10 @@
   </Target>
 
   <Target
-    Name="GetGeneratedCSharpFiles"
-    DependsOnTargets="MapCppToCSharp"
-    Condition="'@(SharpGenMapping)' != ''"
-    Inputs="@(CSharpModel)"
-    Outputs="$(SharpGenIntermediateDir)ForceNotUpToDate">
-    <GetGeneratedCSharpFiles
-      Model="@(CSharpModel)"
-      GeneratedCodeFolder="$(SharpGenGeneratedCodeFolder)">
-      <Output TaskParameter="GeneratedFiles" ItemName="GeneratedCSharpFiles" />
-    </GetGeneratedCSharpFiles>
-  </Target>
-
-  <Target
     Name="GenerateCSharp"
-    DependsOnTargets="CreateIntermediateDir;GetGeneratedCSharpFiles;RemoveGeneratedCSharpFiles"
+    DependsOnTargets="CreateIntermediateDir;MapCppToCSharp;RemoveGeneratedCSharpFiles"
     Inputs="@(SharpGenSdkAssembly);@(CSharpModel);@(DocLinksCache);@(SharpGenExternalDocs)"
-    Outputs="@(GeneratedCSharpFiles)"
+    Outputs="@(GeneratedCSharpFiles);$(SharpGenIntermediateDir)ForceNotUpToDate"
     Condition="'@(SharpGenMapping)' != ''">
 
     <ItemGroup Condition="'@(SharpGenPlatforms)' == '' and '$(RuntimeIdentifier)' != ''">
@@ -296,9 +288,7 @@
     />
   </Target>
 
-  <Target
-    Name="RemoveGeneratedCSharpFiles"
-    DependsOnTargets="GetGeneratedCSharpFiles">
+  <Target Name="RemoveGeneratedCSharpFiles">
     <ItemGroup>
       <Compile Remove="@(GeneratedCSharpFiles)" />
     </ItemGroup>
