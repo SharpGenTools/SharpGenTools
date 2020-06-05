@@ -40,37 +40,44 @@ namespace SharpGen.Config
             config.ExpandVariables(true, logger);
         }
 
-        public static (HashSet<string> filesWithIncludes, HashSet<string> filesWithExtensionHeaders)
-            GetFilesWithIncludesAndExtensionHeaders(this ConfigFile configRoot)
+        public static void GetFilesWithIncludesAndExtensionHeaders(this ConfigFile configRoot,
+                                                                   out HashSet<ConfigFile> filesWithIncludes,
+                                                                   out HashSet<ConfigFile> filesWithExtensionHeaders)
         {
-            var filesWithExtensionHeaders = new HashSet<string>();
-
-            var filesWithIncludes = new HashSet<string>();
+            filesWithExtensionHeaders = new HashSet<ConfigFile>(ConfigFile.IdComparer);
+            filesWithIncludes = new HashSet<ConfigFile>(ConfigFile.IdComparer);
 
             // Check if the file has any includes related config
             foreach (var configFile in configRoot.ConfigFilesLoaded)
             {
                 // Build prolog
-                var includesAnyFiles = configFile.IncludeProlog.Count > 0;
-
-                if (configFile.Includes.Count > 0)
-                    includesAnyFiles = true;
-
-                if (configFile.References.Count > 0)
-                    includesAnyFiles = true;
+                var includesAnyFiles = configFile.IncludeProlog.Count > 0 || configFile.Includes.Count > 0 ||
+                                       configFile.References.Count > 0;
 
                 if (configFile.Extension.Any(rule => rule.GeneratesExtensionHeader()))
                 {
-                    filesWithExtensionHeaders.Add(configFile.Id);
+                    filesWithExtensionHeaders.Add(configFile);
                     includesAnyFiles = true;
                 }
 
                 // If this config file has any include rules
                 if (includesAnyFiles)
-                    filesWithIncludes.Add(configFile.Id);
+                    filesWithIncludes.Add(configFile);
             }
+        }
 
-            return (filesWithIncludes, filesWithExtensionHeaders);
+        [Obsolete("Use " + nameof(GetFilesWithIncludesAndExtensionHeaders) + " overload with out parameters")]
+        public static (HashSet<string> filesWithIncludes, HashSet<string> filesWithExtensionHeaders)
+            GetFilesWithIncludesAndExtensionHeaders(this ConfigFile configRoot)
+        {
+            GetFilesWithIncludesAndExtensionHeaders(
+                configRoot, out var configsWithIncludes, out var configsWithExtensionHeaders
+            );
+
+            static string IdSelector(ConfigFile x) => x.Id;
+
+            return (new HashSet<string>(configsWithIncludes.Select(IdSelector)),
+                    new HashSet<string>(configsWithExtensionHeaders.Select(IdSelector)));
         }
 
         /// <summary>

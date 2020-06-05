@@ -31,19 +31,16 @@ namespace SharpGenTools.Sdk.Tasks
         {
             var cppHeaderGenerator = new CppHeaderGenerator(SharpGenLogger, OutputPath);
 
-            var configsWithHeaders = new HashSet<ConfigFile>();
+            var configsWithHeaders = new HashSet<ConfigFile>(ConfigFile.IdComparer);
+            var configsWithExtensions = new HashSet<ConfigFile>(ConfigFile.IdComparer);
+
             foreach (var cfg in config.ConfigFilesLoaded)
             {
                 if (HeaderFiles.Any(item => item.GetMetadata("ConfigId") == cfg.Id))
-                {
                     configsWithHeaders.Add(cfg);
-                }
-            }
 
-            var configsWithExtensions = new HashSet<string>();
-            foreach (var file in ExtensionHeaders)
-            {
-                configsWithExtensions.Add(file.GetMetadata("ConfigId"));
+                if (ExtensionHeaders.Any(item => item.GetMetadata("ConfigId") == cfg.Id))
+                    configsWithExtensions.Add(cfg);
             }
 
             var cppHeaderGenerationResult = cppHeaderGenerator.GenerateCppHeaders(config, configsWithHeaders, configsWithExtensions);

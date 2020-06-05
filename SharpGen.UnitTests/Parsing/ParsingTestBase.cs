@@ -60,17 +60,7 @@ namespace SharpGen.UnitTests.Parsing
         {
             var loaded = ConfigFile.Load(config, new string[0], Logger);
 
-            var (filesWithIncludes, filesWithExtensionHeaders) = loaded.GetFilesWithIncludesAndExtensionHeaders();
-
-            var configsWithIncludes = new HashSet<ConfigFile>();
-
-            foreach (var cfg in loaded.ConfigFilesLoaded)
-            {
-                if (filesWithIncludes.Contains(cfg.Id))
-                {
-                    configsWithIncludes.Add(cfg);
-                }
-            }
+            loaded.GetFilesWithIncludesAndExtensionHeaders(out var configsWithIncludes, out var filesWithExtensionHeaders);
 
             var cppHeaderGenerator = new CppHeaderGenerator(Logger, TestDirectory.FullName);
 

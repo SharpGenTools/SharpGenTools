@@ -22,7 +22,7 @@ namespace SharpGen.Parser
 
         public MacroManager MacroManager { get; }
 
-        public CppModule GenerateExtensionHeaders(ConfigFile configRoot, string outputPath, IReadOnlyCollection<string> filesWithExtensions, IReadOnlyCollection<ConfigFile> updatedConfigs)
+        public CppModule GenerateExtensionHeaders(ConfigFile configRoot, string outputPath, ISet<ConfigFile> filesWithExtensions, IReadOnlyCollection<ConfigFile> updatedConfigs)
         {
             var module = configRoot.CreateSkeletonModule();
             MacroManager.Parse(Path.Combine(outputPath, configRoot.HeaderFileName), module);
@@ -33,18 +33,17 @@ namespace SharpGen.Parser
             foreach (var configFile in configRoot.ConfigFilesLoaded)
             {
                 // Dump Create from macros
-                if (filesWithExtensions.Contains(configFile.Id) && updatedConfigs.Contains(configFile))
+                if (filesWithExtensions.Contains(configFile) && updatedConfigs.Contains(configFile))
                 {
-                    using (var extension = File.Open(Path.Combine(outputPath, configFile.ExtensionFileName), FileMode.Create))
-                    using (var extensionWriter = new StreamWriter(extension))
+                    using var extension = File.Create(Path.Combine(outputPath, configFile.ExtensionFileName));
+                    using var extensionWriter = new StreamWriter(extension);
+
+                    foreach (var typeBaseRule in configFile.Extension)
                     {
-                        foreach (var typeBaseRule in configFile.Extension)
-                        {
-                            if (typeBaseRule.GeneratesExtensionHeader())
-                                extensionWriter.Write(CreateCppFromMacro(finder, typeBaseRule));
-                            else if (typeBaseRule is ContextRule context)
-                                HandleContextRule(configFile, finder, context);
-                        }
+                        if (typeBaseRule.GeneratesExtensionHeader())
+                            extensionWriter.Write(CreateCppFromMacro(finder, typeBaseRule));
+                        else if (typeBaseRule is ContextRule context)
+                            HandleContextRule(configFile, finder, context);
                     }
                 }
             }

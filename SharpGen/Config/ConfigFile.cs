@@ -33,7 +33,7 @@ namespace SharpGen.Config
     /// Config File.
     /// </summary>
     [XmlRoot("config", Namespace=XmlNamespace)]
-    public class ConfigFile
+    public partial class ConfigFile
     {
         internal const string XmlNamespace = "urn:SharpGen.Config";
 

@@ -35,9 +35,9 @@ namespace SharpGen.Parser
         }
 
         public Result GenerateCppHeaders(ConfigFile configRoot, IReadOnlyCollection<ConfigFile> filesWithIncludes,
-                                         IReadOnlyCollection<string> filesWithExtensionHeaders)
+                                         ISet<ConfigFile> filesWithExtensionHeaders)
         {
-            var updatedConfigs = new HashSet<ConfigFile>();
+            var updatedConfigs = new HashSet<ConfigFile>(ConfigFile.IdComparer);
 
             var prologue = GeneratePrologue(configRoot);
 
@@ -91,7 +91,7 @@ namespace SharpGen.Parser
 
         private static string GenerateIncludeConfigContents(ConfigFile configRoot, ConfigFile configFile,
                                                             IReadOnlyCollection<ConfigFile> filesWithIncludes,
-                                                            IReadOnlyCollection<string> filesWithExtensionHeaders,
+                                                            ISet<ConfigFile> filesWithExtensionHeaders,
                                                             string prolog)
         {
             using var outputConfig = new StringWriter();
@@ -125,7 +125,7 @@ namespace SharpGen.Parser
             }
 
             // Dump Create from macros
-            if (filesWithExtensionHeaders.Contains(configFile.Id))
+            if (filesWithExtensionHeaders.Contains(configFile))
             {
                 foreach (var typeBaseRule in configFile.Extension)
                 {

@@ -33,19 +33,16 @@ namespace SharpGenTools.Sdk.Tasks
 
         protected override bool Execute(ConfigFile config)
         {
-            var configsWithExtensions = new HashSet<string>();
-            foreach (var file in ExtensionHeaders)
-            {
-                configsWithExtensions.Add(file.GetMetadata("ConfigId"));
-            }
+            var updatedConfigs = new HashSet<ConfigFile>(ConfigFile.IdComparer);
+            var configsWithExtensions = new HashSet<ConfigFile>(ConfigFile.IdComparer);
 
-            var updatedConfigs = new HashSet<ConfigFile>();
             foreach (var cfg in config.ConfigFilesLoaded)
             {
                 if (UpdatedConfigs.Any(updated => updated.GetMetadata("Id") == cfg.Id))
-                {
                     updatedConfigs.Add(cfg);
-                }
+
+                if (ExtensionHeaders.Any(updated => updated.GetMetadata("ConfigId") == cfg.Id))
+                    configsWithExtensions.Add(cfg);
             }
 
             var resolver = new IncludeDirectoryResolver(SharpGenLogger);
@@ -62,7 +59,7 @@ namespace SharpGenTools.Sdk.Tasks
 
             var module = cppExtensionGenerator.GenerateExtensionHeaders(config, OutputPath, configsWithExtensions, updatedConfigs);
 
-            ReferencedHeaders = macroManager.IncludedFiles.Select(file => new TaskItem(file)).ToArray();
+            ReferencedHeaders = macroManager.IncludedFiles.Select(file => new TaskItem(file)).ToArray<ITaskItem>();
 
             if (SharpGenLogger.HasErrors)
             {
