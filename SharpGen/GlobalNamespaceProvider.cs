@@ -79,7 +79,11 @@ namespace SharpGen
         /// <summary>
         /// Native `unsigned long` type
         /// </summary>
-        NativeULong
+        NativeULong,
+        /// <summary>
+        /// Helper class for marshalling interface/class types
+        /// </summary>
+        MarshallingHelpers
     }
 
     /// <summary>

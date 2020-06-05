@@ -256,13 +256,35 @@ namespace SharpGen.Generator.Marshallers
 
             if (csElement.IsFastOut)
             {
-                return ExpressionStatement(
+                return Block(
+                    ExpressionStatement(
                         AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                             MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                                 ParenthesizedExpression(publicElement),
                                 IdentifierName("NativePointer")),
-                            marshalElement));
+                            marshalElement)),
+                    ExpressionStatement(
+                        InvocationExpression(
+                            MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                globalNamespace.GetTypeNameSyntax(WellKnownName.MarshallingHelpers),
+                                IdentifierName(
+                                    Identifier("TransformObjectFromUnmanaged"))
+                            ),
+                            ArgumentList(
+                                SeparatedList(
+                                    new [] 
+                                    {
+                                        Argument(publicElement),
+                                        Argument(LiteralExpression(SyntaxKind.TrueLiteralExpression))
+                                    })
+                                )
+                            )
+                        )
+                    );
             }
+
+            var isOutParamFlagSyntax = LiteralExpression(csElement is CsParameter param && param.IsOut ? SyntaxKind.TrueLiteralExpression : SyntaxKind.FalseLiteralExpression);
 
             return IfStatement(
                     BinaryExpression(SyntaxKind.NotEqualsExpression,
@@ -271,10 +293,25 @@ namespace SharpGen.Generator.Marshallers
                     ExpressionStatement(
                         AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                         publicElement,
-                        ObjectCreationExpression(ParseTypeName(interfaceType.GetNativeImplementationOrThis().QualifiedName))
-                        .WithArgumentList(
-                            ArgumentList(SingletonSeparatedList(
-                                Argument(marshalElement)))))),
+                        InvocationExpression(
+                            MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                globalNamespace.GetTypeNameSyntax(WellKnownName.MarshallingHelpers),
+                                IdentifierName(
+                                    Identifier("TransformObjectFromUnmanaged"))
+                                ),
+                            ArgumentList(
+                                SeparatedList(
+                                    new [] 
+                                    {
+                                        Argument(
+                                        ObjectCreationExpression(ParseTypeName(interfaceType.GetNativeImplementationOrThis().QualifiedName))
+                                            .WithArgumentList(
+                                                ArgumentList(SingletonSeparatedList(
+                                                    Argument(marshalElement))))),
+                                        Argument(isOutParamFlagSyntax)
+                                    })))
+                        )),
                     ElseClause(
                         ExpressionStatement(
                         AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
@@ -292,7 +329,7 @@ namespace SharpGen.Generator.Marshallers
                     InvocationExpression(
                         MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
-                            globalNamespace.GetTypeNameSyntax(WellKnownName.CppObject),
+                            globalNamespace.GetTypeNameSyntax(WellKnownName.MarshallingHelpers),
                             GenericName(
                                 Identifier("ToCallbackPtr"))
                             .WithTypeArgumentList(
