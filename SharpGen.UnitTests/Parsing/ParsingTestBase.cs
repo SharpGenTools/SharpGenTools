@@ -60,27 +60,28 @@ namespace SharpGen.UnitTests.Parsing
         {
             var loaded = ConfigFile.Load(config, new string[0], Logger);
 
-            loaded.GetFilesWithIncludesAndExtensionHeaders(out var configsWithIncludes, out var filesWithExtensionHeaders);
+            loaded.GetFilesWithIncludesAndExtensionHeaders(out var configsWithIncludes,
+                                                           out var filesWithExtensionHeaders);
 
             var cppHeaderGenerator = new CppHeaderGenerator(Logger, TestDirectory.FullName);
 
             var updated = cppHeaderGenerator.GenerateCppHeaders(loaded, configsWithIncludes, filesWithExtensionHeaders)
                                             .UpdatedConfigs;
 
-            var castXml = GetCastXml(loaded);
+            var castXml = GetCastXml(loaded, additionalArguments);
 
             var extensionGenerator = new CppExtensionHeaderGenerator(new MacroManager(castXml));
 
             var skeleton = extensionGenerator.GenerateExtensionHeaders(loaded, TestDirectory.FullName, filesWithExtensionHeaders, updated);
 
-            var parser = new CppParser(Logger, castXml)
+            var parser = new CppParser(Logger, loaded)
             {
                 OutputPath = TestDirectory.FullName
             };
 
-            parser.Initialize(loaded);
+            using var xmlReader = castXml.Process(parser.RootConfigHeaderFileName);
 
-            return parser.Run(skeleton);
+            return parser.Run(skeleton, xmlReader);
         }
     }
 }
