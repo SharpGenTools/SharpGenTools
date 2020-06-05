@@ -35,19 +35,37 @@
     <ShadowCopyDocumentationOutput Condition="'$(SharpGenDocumentationOutputDir)' != '$(SharpGenIntermediateDir)'">true</ShadowCopyDocumentationOutput>
     <SharpGenGeneratedCodeFolder Condition="'$(SharpGenGeneratedCodeFolder)' == ''">$([MSBuild]::NormalizeDirectory('$(SharpGenIntermediateDir)', 'Generated'))</SharpGenGeneratedCodeFolder>
     <SharpGenConsumerBindMappingConfigId Condition="'$(SharpGenConsumerBindMappingConfigId)' == ''">$(AssemblyName)</SharpGenConsumerBindMappingConfigId>
-    <SharpGenSdkAssemblyDirectory Condition="'$(SharpGenSdkAssemblyDirectory)' == ''">$(MSBuildThisFileDirectory)../tools/</SharpGenSdkAssemblyDirectory>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(SharpGenSdkAssemblyRuntimeIdentifier)' == ''">
-    <SharpGenSdkAssemblyRuntimeIdentifier>win</SharpGenSdkAssemblyRuntimeIdentifier>
-    <SharpGenSdkAssemblyRuntimeIdentifier Condition="$([MSBuild]::IsOsUnixLike())">unix</SharpGenSdkAssemblyRuntimeIdentifier>
+  <Choose>
+    <When Condition="$([MSBuild]::IsOsUnixLike())">
+      <PropertyGroup>
+        <SnParam>-R</SnParam>
+      </PropertyGroup>
+      <PropertyGroup Condition="'$(SharpGenSdkAssemblyRuntimeIdentifier)' == ''">
+        <SharpGenSdkAssemblyRuntimeIdentifier>unix</SharpGenSdkAssemblyRuntimeIdentifier>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <SnParam>-Ra</SnParam>
+      </PropertyGroup>
+      <PropertyGroup Condition="'$(CastXmlPath)' == ''">
+        <CastXmlPath>$([System.IO.Path]::Combine('$(SharpGenSdkToolsDirectory)', 'CastXML', 'bin', 'castxml.exe'))</CastXmlPath>
+      </PropertyGroup>
+      <PropertyGroup Condition="'$(SharpGenSdkAssemblyRuntimeIdentifier)' == ''">
+        <SharpGenSdkAssemblyRuntimeIdentifier>win</SharpGenSdkAssemblyRuntimeIdentifier>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+
+  <PropertyGroup Condition="'$(SharpGenSdkAssemblyFrameworkIdentifier)' == ''">
+    <SharpGenSdkAssemblyFrameworkIdentifier Condition="'$(MSBuildRuntimeType)' == 'Core'">netcoreapp2.1</SharpGenSdkAssemblyFrameworkIdentifier>
+    <SharpGenSdkAssemblyFrameworkIdentifier Condition="'$(MSBuildRuntimeType)' != 'Core'">net472</SharpGenSdkAssemblyFrameworkIdentifier>
   </PropertyGroup>
 
   <ItemGroup Condition="'@(SharpGenSdkAssembly)' == ''">
-    <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' == 'Core'"
-                         Include="$(SharpGenSdkAssemblyDirectory)netcoreapp2.1/$(SharpGenSdkAssemblyRuntimeIdentifier)/SharpGenTools.Sdk.dll" />
-    <SharpGenSdkAssembly Condition="'$(MSBuildRuntimeType)' != 'Core'"
-                         Include="$(SharpGenSdkAssemblyDirectory)net472/$(SharpGenSdkAssemblyRuntimeIdentifier)/SharpGenTools.Sdk.dll" />
+    <SharpGenSdkAssembly Include="$([System.IO.Path]::Combine('$(SharpGenSdkToolsDirectory)', '$(SharpGenSdkAssemblyFrameworkIdentifier)', '$(SharpGenSdkAssemblyRuntimeIdentifier)', 'SharpGenTools.Sdk.dll'))" />
   </ItemGroup>
 
   <ItemGroup>
@@ -123,7 +141,7 @@
     <ItemGroup>
       <TfmConsumerPropsLines Include="&lt;Project&gt;" />
       <TfmConsumerPropsLines Include="&lt;ItemGroup&gt;" />
-      <TfmConsumerPropsLines Include='&lt;SharpGenConsumerMapping Include=&quot;%24(MSBuildThisFileDirectory)/$(SharpGenConsumerBindMappingConfigId).BindMapping.xml&quot;/&gt;' />
+      <TfmConsumerPropsLines Include='&lt;SharpGenConsumerMapping Include=&quot;%24(MSBuildThisFileDirectory)$(SharpGenConsumerBindMappingConfigId).BindMapping.xml&quot;/&gt;' />
       <TfmConsumerPropsLines Include="&lt;/ItemGroup&gt;" />
       <TfmConsumerPropsLines Include="&lt;/Project&gt;" />
     </ItemGroup>
@@ -337,11 +355,6 @@
   </Target>
 
   <Import Project="$(MSBuildThisFileDirectory)/GetSnPath.$(MSBuildRuntimeType).props" />
-
-  <PropertyGroup>
-    <SnParam Condition="'$(OS)' == 'Windows_NT'">-Ra</SnParam>
-    <SnParam Condition="'$(OS)' == 'Unix'">-R</SnParam>
-  </PropertyGroup>
 
   <Target
     Name="ResignAssembly"
