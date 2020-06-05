@@ -2,15 +2,17 @@
 
   <PropertyGroup>
     <DeterministicSourcePaths>false</DeterministicSourcePaths>
+    <DisableSourceLink>true</DisableSourceLink>
   </PropertyGroup>
 
   <Import Project="Sdk.props" Sdk="Microsoft.Build.CentralPackageVersions" Condition="'$(MSBuildProjectExtension)' == '.csproj'" />
 
+  <Import Project="$(MSBuildThisFileDirectory)../Directory.Build.props" />
+
   <PropertyGroup>
-    <DisableSourceLink>true</DisableSourceLink>
+    <LocalPackageVersion>$(Version)</LocalPackageVersion>
   </PropertyGroup>
 
-  <Import Project="$(MSBuildThisFileDirectory)../Directory.Build.props" />
   <Import Project="$(MSBuildThisFileDirectory)Managed.props" Condition="'$(MSBuildProjectExtension)' == '.csproj'" />
 
 </Project>

@@ -6,17 +6,12 @@
         <RestoreNoCache>true</RestoreNoCache>
         <RestoreAdditionalProjectSources>$(MSBuildThisFileDirectory)LocalPackages</RestoreAdditionalProjectSources>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <LocalPackageVersion Condition="'$(APPVEYOR_REPO_TAG_NAME)' == ''">$(VersionPrefix)-$(VersionSuffix)</LocalPackageVersion> 
-        <LocalPackageVersion Condition="'$(APPVEYOR_REPO_TAG_NAME)' != ''">$(APPVEYOR_REPO_TAG_NAME)</LocalPackageVersion> 
         <SdkTestNative>$(MSBuildProjectName)</SdkTestNative>
     </PropertyGroup>
-    
+
     <ItemGroup>
         <ProjectReference Include="$(MSBuildThisFileDirectory)../SharpGen.Runtime/SharpGen.Runtime.csproj" />
-
-        <PackageReference Include="SharpGenTools.Sdk" VersionOverride="$(LocalPackageVersion)">
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
+        <PackageReference Include="SharpGenTools.Sdk" Version="$(LocalPackageVersion)" IsImplicitlyDefined="true" PrivateAssets="All" />
 
         <PackageReference Include="coverlet.msbuild" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
