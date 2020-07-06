@@ -287,7 +287,7 @@
     Name="GenerateCSharp"
     DependsOnTargets="CreateIntermediateDir;MapCppToCSharp;RemoveGeneratedCSharpFiles"
     Inputs="@(SharpGenSdkAssembly);@(CSharpModel);@(DocLinksCache);@(SharpGenExternalDocs)"
-    Outputs="@(GeneratedCSharpFiles);$(SharpGenIntermediateDir)ForceNotUpToDate"
+    Outputs="@(GeneratedCSharpFiles)"
     Condition="'@(SharpGenMapping)' != ''">
 
     <ItemGroup Condition="'@(SharpGenPlatforms)' == '' and '$(RuntimeIdentifier)' != ''">
