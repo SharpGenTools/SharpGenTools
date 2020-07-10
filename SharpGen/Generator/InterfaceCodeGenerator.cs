@@ -241,17 +241,18 @@ namespace SharpGen.Generator
                 attributes = attributes?.AddAttributes(shadowAttribute) ?? AttributeList(SingletonSeparatedList(shadowAttribute));
             }
 
-            yield return csElement.IsCallback ?
-                (MemberDeclarationSyntax)InterfaceDeclaration(attributes != null ? SingletonList(attributes) : default,
-                TokenList(ParseTokens(csElement.VisibilityName)).Add(Token(SyntaxKind.PartialKeyword)),
-                Identifier(csElement.Name),
-                default, baseList, default, List(members))
-                :
-                ClassDeclaration(attributes != null ? SingletonList(attributes) : default,
-                TokenList(ParseTokens(csElement.VisibilityName)).Add(Token(SyntaxKind.PartialKeyword)),
-                Identifier(csElement.Name),
-                default, baseList, default, List(members))
-                ;
+            yield return (csElement.IsCallback ?
+                    (MemberDeclarationSyntax)InterfaceDeclaration(
+                        attributes != null ? SingletonList(attributes) : default,
+                        TokenList(ParseTokens(csElement.VisibilityName)).Add(Token(SyntaxKind.PartialKeyword)),
+                        Identifier(csElement.Name),
+                        default, baseList, default, List(members))
+                    :
+                    ClassDeclaration(attributes != null ? SingletonList(attributes) : default,
+                        TokenList(ParseTokens(csElement.VisibilityName)).Add(Token(SyntaxKind.PartialKeyword)),
+                        Identifier(csElement.Name),
+                        default, baseList, default, List(members))
+                ).WithLeadingTrivia(Trivia(docComment));
         }
 
 
