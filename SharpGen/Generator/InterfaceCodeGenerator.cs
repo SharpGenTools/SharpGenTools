@@ -254,7 +254,6 @@ namespace SharpGen.Generator
                 ).WithLeadingTrivia(Trivia(docComment));
         }
 
-
         private IEnumerable<StatementSyntax> GenerateUpdateInnerInterface(CsInterface csInterface)
         {
             yield return IfStatement(BinaryExpression(SyntaxKind.EqualsExpression,
