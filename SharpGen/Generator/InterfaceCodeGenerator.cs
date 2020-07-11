@@ -1,13 +1,12 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
+using SharpGen.Transform;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Microsoft.CodeAnalysis.CSharp;
 using System.Linq;
-using Microsoft.CodeAnalysis;
-using SharpGen.Transform;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
@@ -294,6 +293,5 @@ namespace SharpGen.Generator
                         ThisExpression(),
                         IdentifierName("NativePointer"))));
         }
-
     }
 }
