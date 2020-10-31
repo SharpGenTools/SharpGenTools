@@ -64,7 +64,7 @@ namespace SharpGen.Generator.Marshallers
                                     GetMarshalStorageLocation(csElement),
                                     InvocationExpression(
                                         MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            globalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
+                                            GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Marshal),
                                             IdentifierName("StringToHGlobal" + (csElement.IsWideChar ? "Uni" : "Ansi"))),
                                         ArgumentList(SingletonSeparatedList(
                                             Argument(
@@ -106,7 +106,7 @@ namespace SharpGen.Generator.Marshallers
                     InvocationExpression(
                         MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
-                            globalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
+                            GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Marshal),
                             IdentifierName("FreeHGlobal")),
                         ArgumentList(
                             SingletonSeparatedList(
@@ -152,7 +152,7 @@ namespace SharpGen.Generator.Marshallers
                                 IdentifierName(csElement.Name),
                                 InvocationExpression(
                                     MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                        globalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
+                                        GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Marshal),
                                         IdentifierName("PtrToString" + (csElement.IsWideChar ? "Uni" : "Ansi"))),
                                     ArgumentList(SingletonSeparatedList(
                                         Argument(
@@ -200,7 +200,7 @@ namespace SharpGen.Generator.Marshallers
                                 VariableDeclarator(Identifier($"{marshallable.Name}_length"))
                                 .WithInitializer(EqualsValueClause(
                                     InvocationExpression(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                        globalNamespace.GetTypeNameSyntax(BuiltinType.Math),
+                                        GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Math),
                                         IdentifierName("Min")),
                                         ArgumentList(
                                             SeparatedList(
@@ -225,7 +225,7 @@ namespace SharpGen.Generator.Marshallers
                                 VariableDeclarator(Identifier("__from"))
                                     .WithInitializer(EqualsValueClause(
                                         InvocationExpression(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            globalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
+                                            GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Marshal),
                                             IdentifierName("StringToHGlobalAnsi")))
                                         .WithArgumentList(
                                             ArgumentList(SingletonSeparatedList(Argument(IdentifierName(marshallable.Name)))))))))),
@@ -249,7 +249,7 @@ namespace SharpGen.Generator.Marshallers
                                     LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)))))),
                     ExpressionStatement(InvocationExpression(
                         MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                            globalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
+                            GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Marshal),
                             IdentifierName("FreeHGlobal")),
                                 ArgumentList(SingletonSeparatedList(
                                     Argument(IdentifierName($"__from"))))))
@@ -280,7 +280,7 @@ namespace SharpGen.Generator.Marshallers
                                 VariableDeclarator(Identifier($"{marshallable.Name}_length"))
                                 .WithInitializer(EqualsValueClause(
                                     InvocationExpression(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                        globalNamespace.GetTypeNameSyntax(BuiltinType.Math),
+                                        GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Math),
                                         IdentifierName("Min")),
                                         ArgumentList(
                                             SeparatedList(

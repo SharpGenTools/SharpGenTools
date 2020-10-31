@@ -3,9 +3,11 @@ using System.Runtime.InteropServices;
 
 namespace SharpGen.Runtime
 {
-    // todo: implement IFormattable
     [StructLayout(LayoutKind.Explicit)]
     public readonly struct NativeLong : IEquatable<NativeLong>, IComparable<NativeLong>, IComparable
+#if NET5_0
+    , IFormattable
+#endif
     {
         [FieldOffset(0)]
         private readonly nint _pointerValue;
@@ -61,10 +63,10 @@ namespace SharpGen.Runtime
         public override string ToString() => 
             UseInt ? _intValue.ToString() : _pointerValue.ToString();
 
-#if false
         public string ToString(string format) => 
             UseInt ? _intValue.ToString(format) : _pointerValue.ToString(format);
 
+#if NET5_0
         public string ToString(IFormatProvider formatProvider) => 
             UseInt ? _intValue.ToString(formatProvider) : _pointerValue.ToString(formatProvider);
 
@@ -221,8 +223,8 @@ namespace SharpGen.Runtime
         {
             if (UseInt)
                 return _intValue.CompareTo(other._intValue);
-            
-#if true
+
+#if !NET5_0
             return ((long)_pointerValue).CompareTo((long) other._pointerValue);
 #else
             return _pointerValue.CompareTo(other._pointerValue);

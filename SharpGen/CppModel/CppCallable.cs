@@ -77,16 +77,19 @@ namespace SharpGen.CppModel
             }
             builder.Append(Name);
             builder.Append("(");
-            int i = 0, count = Parameters.Count();
+
+            uint i = 0;
             foreach (var cppParameter in Parameters)
             {
-                builder.Append(cppParameter);
-                if ((i + 1) < count)
+                if (i != 0)
                 {
-                    builder.Append(",");
+                    builder.Append(", ");
                 }
+
+                builder.Append(cppParameter);
                 i++;
             }
+
             builder.Append(")");
             return builder.ToString();
         }

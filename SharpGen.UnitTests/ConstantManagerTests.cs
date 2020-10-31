@@ -1,11 +1,9 @@
-﻿using SharpGen.Transform;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Xunit;
+﻿using System;
 using FakeItEasy;
 using SharpGen.CppModel;
 using SharpGen.Model;
+using SharpGen.Transform;
+using Xunit;
 
 namespace SharpGen.UnitTests
 {

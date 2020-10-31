@@ -1,11 +1,8 @@
-﻿using SharpGen.Config;
+﻿using System.Collections.Generic;
+using SharpGen.Config;
 using SharpGen.CppModel;
-using SharpGen.Logging;
 using SharpGen.Model;
 using SharpGen.Transform;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit.Abstractions;
 
 namespace SharpGen.UnitTests.Mapping
@@ -21,14 +18,14 @@ namespace SharpGen.UnitTests.Mapping
         {
             var transformer = CreateTransformer();
 
-            return transformer.Transform(module, ConfigFile.Load(config, new string[0], Logger), null);
+            return transformer.Transform(module, ConfigFile.Load(config, new string[0], Logger));
         }
 
         protected (IEnumerable<BindRule> bindings, IEnumerable<DefineExtensionRule> defines) GetConsumerBindings(CppModule module, ConfigFile config)
         {
             var transformer = CreateTransformer();
 
-            transformer.Transform(module, ConfigFile.Load(config, new string[0], Logger), null);
+            transformer.Transform(module, ConfigFile.Load(config, new string[0], Logger));
 
             return transformer.GenerateTypeBindingsForConsumers();
         }
@@ -40,17 +37,14 @@ namespace SharpGen.UnitTests.Mapping
             var namingRules = new NamingRulesManager();
 
             // Run the main mapping process
-            var transformer = new TransformManager(
-                new GlobalNamespaceProvider("SharpGen.Runtime"),
+            return new TransformManager(
+                new GlobalNamespaceProvider(),
                 namingRules,
                 Logger,
                 typeRegistry,
                 docLinker,
-                new ConstantManager(namingRules, docLinker))
-            {
-                ForceGenerator = true
-            };
-            return transformer;
+                new ConstantManager(namingRules, docLinker)
+            );
         }
     }
 }

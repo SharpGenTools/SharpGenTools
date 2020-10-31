@@ -1,13 +1,12 @@
 ﻿<Project>
   <PropertyGroup>
-    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <MSBuildAllProjects Condition="'$(MSBuildToolsVersion)' != 'Current'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
   </PropertyGroup>
 
   <PropertyGroup>
     <SharpGenGenerateConsumerBindMapping Condition="'$(SharpGenGenerateConsumerBindMapping)' == ''">true</SharpGenGenerateConsumerBindMapping>
     <SharpGenGenerateDoc Condition="'$(SharpGenGenerateDoc)' == ''">false</SharpGenGenerateDoc>
-    <SharpGenGlobalNamespace Condition="'$(SharpGenGlobalNamespace)' == ''">SharpGen.Runtime</SharpGenGlobalNamespace>
-    <CastXmlPath Condition="('$(CastXmlPath)' == '') and ('$(OS)'  == 'Windows_NT')">$(MSBuildThisFileDirectory)../tools/CastXML/bin/castxml.exe</CastXmlPath>
+    <SharpGenSdkToolsDirectory Condition="'$(SharpGenSdkToolsDirectory)' == ''">$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', 'tools'))</SharpGenSdkToolsDirectory>
     <CppStandard Condition="'$(CppStandard)' == ''">c++14</CppStandard>
   </PropertyGroup>
 

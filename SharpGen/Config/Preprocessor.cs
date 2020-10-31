@@ -39,7 +39,7 @@ namespace SharpGen.Config
         {
             var doc = XDocument.Load(new StringReader(xmlText));
 
-            XNamespace ns = ConfigFile.NS;
+            XNamespace ns = ConfigFile.XmlNamespace;
 
             var list = doc.Descendants(ns + "ifndef").ToList();
             // Work on deepest first

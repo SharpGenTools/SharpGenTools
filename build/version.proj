@@ -1,6 +1,6 @@
 <Project>
-    <Import Project="../Directory.build.props" />
+    <Import Project="../Directory.Build.props" />
     <Target Name="DumpVersion">
-        <WriteLinesToFile Lines="$(VersionPrefix)-$(VersionSuffix)" File="$(VersionDumpFile)" Overwrite="True" />
+        <WriteLinesToFile Lines="$(Version)" File="$(VersionDumpFile)" Overwrite="True" />
     </Target>
 </Project>

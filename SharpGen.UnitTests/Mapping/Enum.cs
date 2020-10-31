@@ -1,9 +1,8 @@
-﻿using SharpGen.CppModel;
-using SharpGen.Model;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
-using System.Text;
+using SharpGen.Config;
+using SharpGen.CppModel;
+using SharpGen.Model;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -18,13 +17,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void Basic()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(Basic),
                 Namespace = nameof(Basic),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         Attach = true,
                         File = "cppEnum.h",
@@ -66,13 +65,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void ExplicitValues()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(ExplicitValues),
                 Namespace = nameof(ExplicitValues),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         Attach = true,
                         File = "cppEnum.h",
@@ -120,13 +119,13 @@ namespace SharpGen.UnitTests.Mapping
         [InlineData(typeof(uint), "uint")]
         public void ExplicitUnderlyingType(Type underlyingType, string underlyingTypeShortName)
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(ExplicitUnderlyingType),
                 Namespace = nameof(ExplicitUnderlyingType),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         Attach = true,
                         File = "cppEnum.h",

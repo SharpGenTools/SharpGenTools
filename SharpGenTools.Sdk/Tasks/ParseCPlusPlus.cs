@@ -1,8 +1,9 @@
-﻿using Microsoft.Build.Framework;
+﻿using System;
+using Microsoft.Build.Framework;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Parser;
-using System;
+using SharpGen.Platform;
 
 namespace SharpGenTools.Sdk.Tasks
 {
@@ -20,6 +21,7 @@ namespace SharpGenTools.Sdk.Tasks
         [Required]
         public ITaskItem ParsedCppModule { get; set; }
 
+        [Required]
         public string[] CastXmlArguments { get; set; }
 
         protected override bool Execute(ConfigFile config)
@@ -27,25 +29,29 @@ namespace SharpGenTools.Sdk.Tasks
             var resolver = new IncludeDirectoryResolver(SharpGenLogger);
             resolver.Configure(config);
 
-            var castXml = new CastXml(SharpGenLogger, resolver, CastXmlExecutablePath, CastXmlArguments ?? Array.Empty<string>())
+            var castXml = new CastXmlRunner(SharpGenLogger, resolver, CastXmlExecutablePath, CastXmlArguments)
             {
                 OutputPath = OutputPath
             };
 
             // Run the parser
-            var parser = new CppParser(SharpGenLogger, castXml)
+            var parser = new CppParser(SharpGenLogger, config)
             {
                 OutputPath = OutputPath
             };
-            parser.Initialize(config);
 
             if (SharpGenLogger.HasErrors)
                 return false;
 
             var module = CppModule.Read(PartialCppModuleCache.ItemSpec);
 
-            // Run the parser
-            var group = parser.Run(module);
+            // Run the C++ parser
+            CppModule group;
+
+            using (var xmlReader = castXml.Process(parser.RootConfigHeaderFileName))
+            {
+                group = parser.Run(module, xmlReader);
+            }
 
             if (SharpGenLogger.HasErrors)
                 return false;

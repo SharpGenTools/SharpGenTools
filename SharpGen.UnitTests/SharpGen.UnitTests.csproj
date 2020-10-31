@@ -1,16 +1,15 @@
-﻿<Project Sdk="MSBuild.Sdk.Extras">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Sdk Name="Microsoft.Build.CentralPackageVersions" />
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <IsPackable>false</IsPackable>
-    <RuntimeIdentifiers>win;unix</RuntimeIdentifiers>
-    <ExtrasBuildEachRuntimeIdentifier>true</ExtrasBuildEachRuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../SharpGen/SharpGen.csproj" />
+    <ProjectReference Include="..\SharpGen.Platform\SharpGen.Platform.csproj" />
+    <ProjectReference Include="..\SharpGen.Runtime\SharpGen.Runtime.csproj" />
   </ItemGroup>
 
   <ItemGroup>

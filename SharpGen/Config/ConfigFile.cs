@@ -32,35 +32,18 @@ namespace SharpGen.Config
     /// <summary>
     /// Config File.
     /// </summary>
-    [XmlRoot("config", Namespace=NS)]
-    public class ConfigFile
+    [XmlRoot("config", Namespace=XmlNamespace)]
+    public partial class ConfigFile
     {
-        internal const string NS = "urn:SharpGen.Config";
-
-        public ConfigFile()
-        {
-            Depends = new List<string>();
-            Bindings = new List<BindRule>();
-            Extension = new List<ExtensionBaseRule>();
-            Files = new List<string>();
-            References = new List<ConfigFile>();
-            IncludeProlog = new List<string>();
-            Sdks = new List<SdkRule>();
-            IncludeDirs = new List<IncludeDirRule>();
-            Variables = new List<KeyValue>();
-            Naming = new List<NamingRule>();
-            Includes = new List<IncludeRule>();
-            Mappings = new List<ConfigBaseRule>();
-            DynamicVariables = new Dictionary<string, string>();
-        }
+        internal const string XmlNamespace = "urn:SharpGen.Config";
 
         /// <summary>
         /// Gets dynamic variables used by dynamic variable substitution #(MyVariable)
         /// </summary>
         /// <value>The dynamic variables.</value>
         [XmlIgnore]
-        public Dictionary<string, string> DynamicVariables { get; private set; }
-        
+        public Dictionary<string, string> DynamicVariables { get; private set; } = new Dictionary<string, string>();
+
         /// <summary>
         /// Gets or sets the parent of this mapping file.
         /// </summary>
@@ -94,7 +77,7 @@ namespace SharpGen.Config
         public string Id { get; set; }
 
         [XmlElement("depends")]
-        public List<string> Depends { get; set; }
+        public List<string> Depends { get; set; } = new List<string>();
 
         [XmlElement("namespace")]
         public string Namespace { get; set; }
@@ -109,28 +92,28 @@ namespace SharpGen.Config
         }
 
         [XmlElement("var")]
-        public List<KeyValue> Variables { get; set; }
+        public List<KeyValue> Variables { get; set; } = new List<KeyValue>();
 
         [XmlElement("file")]
-        public List<string> Files { get; set; }
+        public List<string> Files { get; set; } = new List<string>();
 
         [XmlIgnore]
-        public List<ConfigFile> References { get; set; }
+        public List<ConfigFile> References { get; set; } = new List<ConfigFile>();
 
         [XmlElement("sdk")]
-        public List<SdkRule> Sdks { get; set; }
+        public List<SdkRule> Sdks { get; set; } = new List<SdkRule>();
 
         [XmlElement("include-dir")]
-        public List<IncludeDirRule> IncludeDirs { get; set; }
+        public List<IncludeDirRule> IncludeDirs { get; set; } = new List<IncludeDirRule>();
 
         [XmlElement("include-prolog")]
-        public List<string> IncludeProlog { get; set; }
+        public List<string> IncludeProlog { get; set; } = new List<string>();
 
         [XmlElement("include")]
-        public List<IncludeRule> Includes { get; set; }
+        public List<IncludeRule> Includes { get; set; } = new List<IncludeRule>();
 
         [XmlArray("naming"),XmlArrayItem(typeof(NamingRuleShort))]
-        public List<NamingRule> Naming { get; set; }
+        public List<NamingRule> Naming { get; set; } = new List<NamingRule>();
 
         [XmlElement("context-set")]
         public List<ContextSetRule> ContextSets { get; set; }
@@ -142,20 +125,26 @@ namespace SharpGen.Config
         [XmlArrayItem(typeof(CreateCppExtensionRule))]
         [XmlArrayItem(typeof(DefineExtensionRule))]
         [XmlArrayItem(typeof(ConstantRule))]
-        public List<ExtensionBaseRule> Extension { get; set; }
+        public List<ExtensionBaseRule> Extension { get; set; } = new List<ExtensionBaseRule>();
 
         [XmlIgnore]
-        public string ExtensionId { get { return Id + "-ext"; } }
+        public string ExtensionId => Id + "-ext";
 
         /// <summary>
         /// Gets the name of the extension header file.
         /// </summary>
         /// <value>The name of the extension header file.</value>
         [XmlIgnore]
-        public string ExtensionFileName { get { return ExtensionId + ".h"; } }
+        public string ExtensionFileName => ExtensionId + ".h";
+
+        /// <summary>
+        /// Gets the name of this configs' primary header file.
+        /// </summary>
+        [XmlIgnore]
+        public string HeaderFileName => Id + ".h";
 
         [XmlArray("bindings")]
-        public List<BindRule> Bindings { get; set; }
+        public List<BindRule> Bindings { get; set; } = new List<BindRule>();
 
         [XmlArray("mapping")]
         [XmlArrayItem(typeof(MappingRule))]
@@ -163,7 +152,7 @@ namespace SharpGen.Config
         [XmlArrayItem(typeof(RemoveRule))]
         [XmlArrayItem(typeof(ContextRule))]
         [XmlArrayItem(typeof(ClearContextRule))]
-        public List<ConfigBaseRule> Mappings { get; set; }
+        public List<ConfigBaseRule> Mappings { get; set; } = new List<ConfigBaseRule>();
 
         /// <summary>
         /// Finds all dependencies ConfigFile from this instance.
@@ -173,7 +162,7 @@ namespace SharpGen.Config
         {
             foreach (var dependConfigFileId in Depends)
             {
-                var linkedConfig = GetRoot().MapIdToFile[dependConfigFileId];
+                var linkedConfig = GetRoot().mapIdToFile[dependConfigFileId];
                 if (!dependencyListOutput.Contains(linkedConfig))
                     dependencyListOutput.Add(linkedConfig);
 
@@ -182,24 +171,13 @@ namespace SharpGen.Config
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether we need to process mappings.
-        /// </summary>
-        /// <value>
-        /// 	<c>true</c> if this instance is mapping to process; otherwise, <c>false</c>.
-        /// </value>
-        [XmlIgnore]
-        public bool ProcessMappings { get; set; }
-
-        /// <summary>
         /// Finds a context set by Id.
         /// </summary>
         /// <param name="contextSetId">The context set id.</param>
         /// <returns></returns>
         public ContextSetRule FindContextSetById(string contextSetId)
         {
-            if (ContextSets != null)
-                return ContextSets.FirstOrDefault(contextSetRule => contextSetRule.Id == contextSetId);
-            return null;
+            return ContextSets?.FirstOrDefault(contextSetRule => contextSetRule.Id == contextSetId);
         }
 
         /// <summary>
@@ -265,9 +243,8 @@ namespace SharpGen.Config
                 if (keyValue.Name == variableName)
                     return ExpandString(keyValue.Value, false, logger);
             }
-            if (Parent != null)
-                return Parent.GetVariable(variableName, logger);
-            return null;
+
+            return Parent?.GetVariable(variableName, logger);
         }
 
         /// <summary>
@@ -357,33 +334,10 @@ namespace SharpGen.Config
             Files.Clear();
 
             // Add this mapping file
-            GetRoot().MapIdToFile.Add(Id, this);            
+            GetRoot().mapIdToFile.Add(Id, this);            
         }
 
-        public IReadOnlyCollection<ConfigFile> ConfigFilesLoaded => GetRoot().MapIdToFile.Values;
-
-
-        /// <summary>
-        /// Gets the latest timestamp from a set of config files.
-        /// </summary>
-        /// <param name="files">The files to check.</param>
-        /// <returns>The latest timestamp from a set of config files</returns>
-        public static DateTime GetLatestTimestamp(IEnumerable<ConfigFile> files)
-        {
-            var latestTimestmap = new DateTime(0);
-            if (files.Any(cfg => cfg.AbsoluteFilePath == null))
-            {
-                return DateTime.Now;
-            }
-
-            foreach (var configFile in files)
-            {
-                var fileTime = File.GetLastWriteTime(configFile.AbsoluteFilePath);
-                if (fileTime > latestTimestmap)
-                    latestTimestmap = fileTime;
-            }
-            return latestTimestmap;
-        }
+        public IReadOnlyCollection<ConfigFile> ConfigFilesLoaded => GetRoot().mapIdToFile.Values;
 
         /// <summary>
         /// Loads the specified config file attached to a parent config file.
@@ -407,8 +361,7 @@ namespace SharpGen.Config
 
                 config = (ConfigFile)deserializer.Deserialize(new StringReader(Preprocessor.Preprocess(File.ReadAllText(file), macros)));
 
-                if (config != null)
-                    config.PostLoad(parent, file, macros, variables, logger);
+                config?.PostLoad(parent, file, macros, variables, logger);
             }
             catch (Exception ex)
             {
@@ -429,7 +382,7 @@ namespace SharpGen.Config
             return root;
         }
 
-        private Dictionary<string,ConfigFile> MapIdToFile = new Dictionary<string, ConfigFile>();
+        private readonly Dictionary<string,ConfigFile> mapIdToFile = new Dictionary<string, ConfigFile>();
 
         private void Verify(Logger logger)
         {
@@ -438,7 +391,7 @@ namespace SharpGen.Config
             // TODO: verify Depends
             foreach (var depend in Depends)
             {
-                if (!GetRoot().MapIdToFile.ContainsKey(depend))
+                if (!GetRoot().mapIdToFile.ContainsKey(depend))
                     logger.Error(LoggingCodes.MissingConfigDependency, $"Unable to resolve dependency [{depend}] for config file [{Id}]");
             }
 
@@ -478,10 +431,9 @@ namespace SharpGen.Config
 
         public void Write(string file)
         {
-            using (var output = new FileStream(file, FileMode.Create))
-            {
-                Write(output); 
-            }
+            using var output = File.Create(file);
+
+            Write(output);
         }
 
         /// <summary>
@@ -492,7 +444,7 @@ namespace SharpGen.Config
         {
             //Create our own namespaces for the output
             var ns = new XmlSerializerNamespaces();
-            ns.Add("", NS);
+            ns.Add("", XmlNamespace);
             var serializer = new XmlSerializer(typeof(ConfigFile));
             serializer.Serialize(writer, this, ns);
         }

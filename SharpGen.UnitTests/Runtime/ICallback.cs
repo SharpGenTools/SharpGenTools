@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
+using SharpGen.Runtime;
 
-namespace SharpGen.Runtime.UnitTests
+namespace SharpGen.UnitTests.Runtime
 {
     [Shadow(typeof(CallbackShadow))]
     interface ICallback : ICallbackable

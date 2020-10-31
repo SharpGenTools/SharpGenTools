@@ -21,18 +21,10 @@ namespace SharpGenTools.Sdk.Tasks
         public ITaskItem Model { get; set; }
 
         [Required]
-        public string OutputDirectory { get; set; }
-
-        [Required]
         public string GeneratedCodeFolder { get; set; }
-
-        public bool IncludeAssemblyNameFolder { get; set; }
 
         [Required]
         public ITaskItem DocLinkCache { get; set; }
-
-        [Required]
-        public string GlobalNamespace { get; set; }
 
         public ITaskItem[] Platforms { get; set; }
 
@@ -54,7 +46,7 @@ namespace SharpGenTools.Sdk.Tasks
                 }
             }
 
-            var globalNamespace = new GlobalNamespaceProvider(GlobalNamespace);
+            var globalNamespace = new GlobalNamespaceProvider();
 
             foreach (var nameOverride in GlobalNamespaceOverrides ?? Enumerable.Empty<ITaskItem>())
             {
@@ -92,13 +84,13 @@ namespace SharpGenTools.Sdk.Tasks
             };
 
             var generator = new RoslynGenerator(
-                new Logger(new MsBuildSharpGenLogger(Log), null),
+                new Logger(new MSBuildSharpGenLogger(Log), null),
                 globalNamespace,
                 new CachedDocumentationLinker(DocLinkCache.ItemSpec),
                 new ExternalDocCommentsReader(documentationFiles),
                 config);
 
-            generator.Run(CsAssembly.Read(Model.ItemSpec), OutputDirectory, GeneratedCodeFolder);
+            generator.Run(CsAssembly.Read(Model.ItemSpec), GeneratedCodeFolder);
 
             return true;
         }

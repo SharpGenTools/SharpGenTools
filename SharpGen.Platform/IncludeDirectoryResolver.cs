@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using Microsoft.Win32;
 using SharpGen.Config;
 using SharpGen.Logging;
+using SharpGen.Parser;
 
-namespace SharpGen.Parser
+namespace SharpGen.Platform
 {
-    public class IncludeDirectoryResolver
+    public sealed class IncludeDirectoryResolver : IIncludeDirectoryResolver
     {
         private readonly Logger logger;
         private readonly List<IncludeDirRule> includeDirectoryList = new List<IncludeDirRule>();
@@ -28,6 +28,11 @@ namespace SharpGen.Parser
         public void AddDirectories(IEnumerable<IncludeDirRule> directories)
         {
             includeDirectoryList.AddRange(directories);
+        }
+
+        public void AddDirectories(params IncludeDirRule[] directories)
+        {
+            AddDirectories((IEnumerable<IncludeDirRule>) directories);
         }
 
         public IEnumerable<string> IncludePaths

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+﻿using System.IO;
 using System.Xml.Linq;
 using SharpGen.Config;
 using Xunit;
@@ -15,7 +12,7 @@ namespace SharpGen.UnitTests
         {
             using (var stringReader = new StringReader(
                 Preprocessor.Preprocess(
-                    $"<root xmlns:pre='{ConfigFile.NS}'><pre:ifdef name='Defined'><child /></pre:ifdef></root>",
+                    $"<root xmlns:pre='{ConfigFile.XmlNamespace}'><pre:ifdef name='Defined'><child /></pre:ifdef></root>",
                     "Defined")))
             {
                 var document = XDocument.Load(stringReader);
@@ -28,7 +25,7 @@ namespace SharpGen.UnitTests
         {
             using (var stringReader = new StringReader(
                 Preprocessor.Preprocess(
-                    $"<root xmlns:pre='{ConfigFile.NS}'><pre:ifdef name='Undefined'><child /></pre:ifdef><child /></root>")))
+                    $"<root xmlns:pre='{ConfigFile.XmlNamespace}'><pre:ifdef name='Undefined'><child /></pre:ifdef><child /></root>")))
             {
                 var document = XDocument.Load(stringReader);
                 Assert.Single(document.Descendants("child"));
@@ -40,7 +37,7 @@ namespace SharpGen.UnitTests
         {
             using (var stringReader = new StringReader(
                 Preprocessor.Preprocess(
-                    $"<root xmlns:pre='{ConfigFile.NS}'><pre:ifdef name='Undefined|Defined'><child /></pre:ifdef></root>",
+                    $"<root xmlns:pre='{ConfigFile.XmlNamespace}'><pre:ifdef name='Undefined|Defined'><child /></pre:ifdef></root>",
                     "Defined")))
             {
                 var document = XDocument.Load(stringReader);
@@ -53,7 +50,7 @@ namespace SharpGen.UnitTests
         {
             using (var stringReader = new StringReader(
                 Preprocessor.Preprocess(
-                    $"<root xmlns:pre='{ConfigFile.NS}'><pre:ifndef name='Defined'><child /></pre:ifndef></root>",
+                    $"<root xmlns:pre='{ConfigFile.XmlNamespace}'><pre:ifndef name='Defined'><child /></pre:ifndef></root>",
                     "Defined")))
             {
                 var document = XDocument.Load(stringReader);
@@ -66,7 +63,7 @@ namespace SharpGen.UnitTests
         {
             using (var stringReader = new StringReader(
                 Preprocessor.Preprocess(
-                    $"<root xmlns:pre='{ConfigFile.NS}'><pre:ifndef name='Undefined'><child /></pre:ifndef></root>"
+                    $"<root xmlns:pre='{ConfigFile.XmlNamespace}'><pre:ifndef name='Undefined'><child /></pre:ifndef></root>"
                     )))
             {
                 var document = XDocument.Load(stringReader);

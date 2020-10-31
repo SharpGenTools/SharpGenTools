@@ -31,7 +31,7 @@ using SharpGen.CppModel;
 
 namespace SharpGen.Parser
 {
-    static class Extension
+    internal static class Extension
     {
         /// <summary>
         /// Get the value from an attribute.
@@ -43,39 +43,37 @@ namespace SharpGen.Parser
     }
 
     /// <summary>
-    /// Full C++ Parser built on top of <see cref="CastXml"/>.
+    /// Full C++ Parser built on top of <see cref="CastXmlRunner"/>.
     /// </summary>
-    public class CppParser
+    public sealed class CppParser
     {
         private CppModule _group;
         private readonly HashSet<string> _includeToProcess = new HashSet<string>();
         private readonly Dictionary<string, bool> _includeIsAttached = new Dictionary<string, bool>();
         private readonly Dictionary<string, HashSet<string>> _includeAttachedTypes = new Dictionary<string, HashSet<string>>();
         private readonly HashSet<string> _boundTypes = new HashSet<string>();
-        private readonly CastXml _gccxml;
-        private ConfigFile _configRoot;
+        private readonly ConfigFile _configRoot;
         private CppInclude _currentCppInclude;
-        readonly Dictionary<string, XElement> _mapIdToXElement = new Dictionary<string, XElement>();
-        readonly Dictionary<string, List<XElement>> _mapFileToXElement = new Dictionary<string, List<XElement>>();
+        private readonly Dictionary<string, XElement> _mapIdToXElement = new Dictionary<string, XElement>();
+        private readonly Dictionary<string, List<XElement>> _mapFileToXElement = new Dictionary<string, List<XElement>>();
         private readonly Dictionary<string, int> _mapIncludeToAnonymousEnumCount = new Dictionary<string, int>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CppParser"/> class.
         /// </summary>
-        public CppParser(Logger logger, CastXml castXml)
+        public CppParser(Logger logger, ConfigFile configRoot)
         {
-            Logger = logger;
-            _gccxml = castXml;
+            Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _configRoot = configRoot ?? throw new ArgumentNullException(nameof(configRoot));
+            Initialize();
         }
 
         public string OutputPath { get; set; }
 
         public Logger Logger { get; }
-        
-        public void Initialize(ConfigFile configRoot)
+
+        private void Initialize()
         {
-            _configRoot = configRoot ?? throw new ArgumentNullException(nameof(configRoot));
-            
             foreach (var bindRule in _configRoot.ConfigFilesLoaded.SelectMany(cfg => cfg.Bindings))
             {
                 if (_boundTypes.Contains(bindRule.From))
@@ -141,10 +139,9 @@ namespace SharpGen.Parser
         /// Gets the name of the generated GCCXML file.
         /// </summary>
         /// <value>The name of the generated GCCXML file.</value>
-        private string GccXmlFileName
-        {
-            get { return _configRoot.Id + "-gcc.xml"; }
-        }
+        private string GccXmlFileName => Path.Combine(OutputPath, _configRoot.Id + "-gcc.xml");
+
+        public string RootConfigHeaderFileName => Path.Combine(OutputPath, _configRoot.HeaderFileName);
 
         /// <summary>
         /// Gets or sets the GccXml doc.
@@ -156,22 +153,18 @@ namespace SharpGen.Parser
         /// Runs this instance.
         /// </summary>
         /// <returns></returns>
-        public CppModule Run(CppModule groupSkeleton)
+        public CppModule Run(CppModule groupSkeleton, StreamReader xmlReader)
         {
             _group = groupSkeleton;
             Logger.Message("Config files changed.");
 
             const string progressMessage = "Parsing C++ headers starts, please wait...";
-                
-            StreamReader xmlReader = null;
+
             try
             {
 
                 Logger.Progress(15, progressMessage);
 
-                var configRootHeader = Path.Combine(OutputPath, _configRoot.Id + ".h");
-
-                xmlReader = _gccxml.Process(configRootHeader);
                 if (xmlReader != null)
                 {
                     Parse(xmlReader);
@@ -185,13 +178,12 @@ namespace SharpGen.Parser
             }
             finally
             {
-                xmlReader?.Dispose();
-
                 // Write back GCCXML document on the disk
-                using (var stream = File.OpenWrite(Path.Combine(OutputPath, GccXmlFileName)))
+                using (var stream = File.OpenWrite(GccXmlFileName))
                 {
                     GccXmlDoc?.Save(stream);
                 }
+
                 Logger.Message("Parsing headers is finished.");
             }
 
@@ -199,11 +191,8 @@ namespace SharpGen.Parser
             // Track number of included macros for statistics
             foreach (var cppInclude in _group.Includes)
             {
-                IncludeMacroCounts.TryGetValue(cppInclude.Name, out int count);
-                foreach (var cppDefine in cppInclude.Macros)
-                {
-                    count ++;
-                }
+                IncludeMacroCounts.TryGetValue(cppInclude.Name, out var count);
+                count += cppInclude.Macros.Count();
                 IncludeMacroCounts[cppInclude.Name] = count;
             }
 
@@ -958,8 +947,8 @@ namespace SharpGen.Parser
                 case CastXml.TagEnumeration:
                     return ParseEnum(xElement);
                 case CastXml.TagFunction:
-                    // TODO: Find btter criteria for exclusion. In CastXML extern="1" only indicates an explicit external storage modifier.
-                    // For now, exlude inline functions instead; may not be sensible since by default all functions have external linkage.
+                    // TODO: Find better criteria for exclusion. In CastXML extern="1" only indicates an explicit external storage modifier.
+                    // For now, exclude inline functions instead; may not be sensible since by default all functions have external linkage.
                     if (xElement.AttributeValue("inline") == null)
                         return ParseFunction(xElement);
                     break;

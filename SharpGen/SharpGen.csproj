@@ -4,13 +4,11 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>net472;netcoreapp2.1</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
-    <PackageReference Include="Microsoft.Win32.Registry" />
-    <PackageReference Include="System.Diagnostics.Process" />
     <PackageReference Include="System.Runtime.Extensions" />
     <PackageReference Include="System.ValueTuple" />
     <PackageReference Include="System.Xml.XmlSerializer" />

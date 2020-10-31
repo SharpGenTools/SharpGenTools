@@ -1,9 +1,7 @@
-﻿using SharpGen.CppModel;
+﻿using System.Linq;
+using SharpGen.Config;
+using SharpGen.CppModel;
 using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -18,13 +16,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void Enum()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(Enum),
                 Namespace = nameof(Enum),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         Attach = true,
                         File = "cppEnum.h",
@@ -33,7 +31,7 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Mappings =
                 {
-                    new Config.RemoveRule
+                    new RemoveRule
                     {
                         Enum = @".*ToRemove\d+"
                     }
@@ -68,13 +66,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void RemoveParentDoesNotRemoveAllParents()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(RemoveParentDoesNotRemoveAllParents),
                 Namespace = nameof(RemoveParentDoesNotRemoveAllParents),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         Attach = true,
                         File = "cppEnum.h",
@@ -83,7 +81,7 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Mappings =
                 {
-                    new Config.RemoveRule
+                    new RemoveRule
                     {
                         Method = @"#.*ToRemove"
                     }

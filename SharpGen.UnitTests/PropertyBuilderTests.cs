@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using SharpGen.Config;
+﻿using SharpGen.Config;
 using SharpGen.Model;
 using SharpGen.Transform;
 using Xunit;
@@ -14,7 +10,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void MethodWithNameStartingWithIsCreatesProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var returnType = new CsFundamentalType(typeof(int));
 
@@ -37,7 +33,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void MethodWithNameStartingWithGetCreatesProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var returnType = new CsFundamentalType(typeof(int));
 
@@ -60,7 +56,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void MethodWithNameStartingWithSetCreatesProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var paramType = new CsFundamentalType(typeof(int));
 
@@ -88,7 +84,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void MethodWithNameStartingWithSetAndReturningResultGeneratesProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var paramType = new CsFundamentalType(typeof(int));
 
@@ -115,7 +111,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void GetterMethodReturningStatusCodeWithOutParamGeneratesProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var paramType = new CsFundamentalType(typeof(int));
 
@@ -148,7 +144,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void GetterWithInvalidSetterDoesNotGenerateProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var returnType = new CsFundamentalType(typeof(int));
 
@@ -179,7 +175,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void InvalidGetterDoesNotCreateProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var returnType = new CsFundamentalType(typeof(void));
 
@@ -199,7 +195,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void InvalidSetterDoesNotCreateProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var paramType = new CsFundamentalType(typeof(int));
 
@@ -218,7 +214,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void GeneratePropertyIfGetterAndSetterMatch()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var paramType = new CsFundamentalType(typeof(int));
 
@@ -255,7 +251,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void DoesNotGeneratePropertyIfGetterAndSetterMismatch()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var paramType = new CsFundamentalType(typeof(int));
 
@@ -290,7 +286,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void DoesNotGeneratePropertyIfGetterAndSetterMismatch_ParameterizedGetter()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var paramType = new CsFundamentalType(typeof(int));
 
@@ -333,7 +329,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void DoesNotGeneratePropertyIfOverloaded()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var paramType = new CsFundamentalType(typeof(int));
 
@@ -378,7 +374,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void PropertyAttachedToGetterType()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var paramType = new CsFundamentalType(typeof(int));
 
@@ -409,7 +405,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void SetOnlyPropertyAttachedToSetterType()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var paramType = new CsFundamentalType(typeof(int));
 
@@ -444,7 +440,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void PropertyNotAttachedWhenGetterAllowPropertyIsFalse()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var paramType = new CsFundamentalType(typeof(int));
 
@@ -475,7 +471,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void PropertyNotAttachedWhenSetterAllowPropertyIsFalse()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var paramType = new CsFundamentalType(typeof(int));
 
@@ -510,7 +506,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void PersistentGetterGeneratesPersistentProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var paramType = new CsFundamentalType(typeof(int));
 
@@ -542,7 +538,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void GetterVisibiltyInternal()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var paramType = new CsFundamentalType(typeof(int));
 
@@ -573,7 +569,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void SetterVisibilityInternal()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var paramType = new CsFundamentalType(typeof(int));
 
@@ -608,7 +604,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void NonPropertyMethodWithNonPropertyNameShouldNotCreateProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider("SharpGen.Runtime"));
+            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
 
             var paramType = new CsFundamentalType(typeof(int));
 

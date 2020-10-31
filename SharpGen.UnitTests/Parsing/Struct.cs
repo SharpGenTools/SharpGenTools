@@ -1,7 +1,5 @@
-﻿using SharpGen.CppModel;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using SharpGen.Config;
+using SharpGen.CppModel;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -16,7 +14,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact]
         public void SequentialFieldsOffsets()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(SequentialFieldsOffsets),
                 Namespace = nameof(SequentialFieldsOffsets),
@@ -50,7 +48,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact]
         public void UnionFieldOffsets0()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(UnionFieldOffsets0),
                 Namespace = nameof(UnionFieldOffsets0),
@@ -86,7 +84,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact]
         public void BitfieldStructHasCorrectBitOffsets()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(BitfieldStructHasCorrectBitOffsets),
                 Namespace = nameof(BitfieldStructHasCorrectBitOffsets),
@@ -123,7 +121,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact(Skip = "Issue #48")]
         public void MultipleBitfieldsHaveCorrectBitOffsets()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(MultipleBitfieldsHaveCorrectBitOffsets),
                 Namespace = nameof(MultipleBitfieldsHaveCorrectBitOffsets),
@@ -165,7 +163,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact]
         public void InnerStructGivenExpectedName()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(InnerStructGivenExpectedName),
                 Namespace = nameof(InnerStructGivenExpectedName),
@@ -193,7 +191,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact]
         public void TypedefedStructAdjustsNameToTypedef()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(TypedefedStructAdjustsNameToTypedef),
                 Namespace = nameof(TypedefedStructAdjustsNameToTypedef),
@@ -229,7 +227,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact]
         public void InheritingStructHasBaseMemberSetCorrectly()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(InheritingStructHasBaseMemberSetCorrectly),
                 Namespace = nameof(InheritingStructHasBaseMemberSetCorrectly),
@@ -260,7 +258,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact]
         public void AnonymousNestedStructureMembersInlined()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(AnonymousNestedStructureMembersInlined),
                 Namespace = nameof(AnonymousNestedStructureMembersInlined),

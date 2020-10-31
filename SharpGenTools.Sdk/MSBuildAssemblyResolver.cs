@@ -7,11 +7,11 @@ using System.Linq;
 
 namespace SharpGenTools.Sdk
 {
-    class MSBuildAssemblyResolver : IAssemblyResolver
+    internal sealed class MSBuildAssemblyResolver : IAssemblyResolver
     {
-        private Dictionary<string, Lazy<AssemblyDefinition>> references;
+        private readonly Dictionary<string, Lazy<AssemblyDefinition>> references;
 
-        public MSBuildAssemblyResolver(ITaskItem[] references)
+        public MSBuildAssemblyResolver(IEnumerable<ITaskItem> references)
         {
             this.references = references
                 .Select(item => (Path.GetFileNameWithoutExtension(item.ItemSpec), new Lazy<AssemblyDefinition>(() => AssemblyDefinition.ReadAssembly(item.ItemSpec, new ReaderParameters { AssemblyResolver = this }))))

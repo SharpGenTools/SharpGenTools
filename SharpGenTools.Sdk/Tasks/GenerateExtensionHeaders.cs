@@ -1,12 +1,10 @@
-﻿using Microsoft.Build.Framework;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using SharpGen.Config;
 using SharpGen.Parser;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Logger = SharpGen.Logging.Logger;
+using SharpGen.Platform;
 
 namespace SharpGenTools.Sdk.Tasks
 {
@@ -35,25 +33,22 @@ namespace SharpGenTools.Sdk.Tasks
 
         protected override bool Execute(ConfigFile config)
         {
-            var configsWithExtensions = new HashSet<string>();
-            foreach (var file in ExtensionHeaders)
-            {
-                configsWithExtensions.Add(file.GetMetadata("ConfigId"));
-            }
+            var updatedConfigs = new HashSet<ConfigFile>(ConfigFile.IdComparer);
+            var configsWithExtensions = new HashSet<ConfigFile>(ConfigFile.IdComparer);
 
-            var updatedConfigs = new HashSet<ConfigFile>();
             foreach (var cfg in config.ConfigFilesLoaded)
             {
                 if (UpdatedConfigs.Any(updated => updated.GetMetadata("Id") == cfg.Id))
-                {
                     updatedConfigs.Add(cfg);
-                }
+
+                if (ExtensionHeaders.Any(updated => updated.GetMetadata("ConfigId") == cfg.Id))
+                    configsWithExtensions.Add(cfg);
             }
 
             var resolver = new IncludeDirectoryResolver(SharpGenLogger);
             resolver.Configure(config);
 
-            var castXml = new CastXml(SharpGenLogger, resolver, CastXmlExecutablePath, CastXmlArguments)
+            var castXml = new CastXmlRunner(SharpGenLogger, resolver, CastXmlExecutablePath, CastXmlArguments)
             {
                 OutputPath = OutputPath
             };
@@ -64,7 +59,7 @@ namespace SharpGenTools.Sdk.Tasks
 
             var module = cppExtensionGenerator.GenerateExtensionHeaders(config, OutputPath, configsWithExtensions, updatedConfigs);
 
-            ReferencedHeaders = macroManager.IncludedFiles.Select(file => new TaskItem(file)).ToArray();
+            ReferencedHeaders = macroManager.IncludedFiles.Select(file => new TaskItem(file)).ToArray<ITaskItem>();
 
             if (SharpGenLogger.HasErrors)
             {

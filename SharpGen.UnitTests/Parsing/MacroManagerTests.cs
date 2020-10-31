@@ -1,16 +1,16 @@
-﻿using SharpGen.Config;
-using SharpGen.Parser;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
-using System.Text;
+using SharpGen.Config;
+using SharpGen.CppModel;
+using SharpGen.Parser;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace SharpGen.UnitTests.Parsing
 {
     public class MacroManagerTests : ParsingTestBase
     {
-        public MacroManagerTests(Xunit.Abstractions.ITestOutputHelper outputHelper)
+        public MacroManagerTests(ITestOutputHelper outputHelper)
             : base(outputHelper)
         {
         }
@@ -37,7 +37,7 @@ namespace SharpGen.UnitTests.Parsing
 
             var macroManager = new MacroManager(castXml);
 
-            macroManager.Parse(Path.Combine(includeRule.Path, "includer.h"), new CppModel.CppModule());
+            macroManager.Parse(Path.Combine(includeRule.Path, "includer.h"), new CppModule());
 
             Assert.Contains(includeRule.Path + "/included.h",
                 macroManager.IncludedFiles);

@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SharpGen\SharpGen.csproj">
+    <ProjectReference Include="..\SharpGen.Platform\SharpGen.Platform.csproj">
       <PrivateAssets>all</PrivateAssets>
     </ProjectReference>
     <ProjectReference Include="..\SharpPatch\SharpPatch.csproj">

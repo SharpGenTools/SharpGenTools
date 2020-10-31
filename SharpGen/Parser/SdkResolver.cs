@@ -1,12 +1,10 @@
 ﻿using SharpGen.Config;
 using SharpGen.Logging;
 using SharpGen.VisualStudioSetup;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace SharpGen.Parser
 {
@@ -38,15 +36,15 @@ namespace SharpGen.Parser
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                var vcInstallDir = Path.Combine(GetVSInstallPath(), "VC");
+                var vsInstallDir = GetVSInstallPath();
 
-                if (version == null)
-                {
-                    version
-                        = File.ReadAllText(vcInstallDir + Path.Combine(@"\Auxiliary\Build", "Microsoft.VCToolsVersion.default.txt")).Trim();
-                }
+                version ??= File.ReadAllText(
+                    Path.Combine(vsInstallDir, "VC", "Auxiliary", "Build", "Microsoft.VCToolsVersion.default.txt")
+                );
 
-                yield return new IncludeDirRule(Path.Combine(vcInstallDir, $@"Tools\MSVC\{version}\include"));
+                yield return new IncludeDirRule(
+                    Path.Combine(vsInstallDir, "VC", "Tools", "MSVC", version.Trim(), "include")
+                );
             }
             else
             {

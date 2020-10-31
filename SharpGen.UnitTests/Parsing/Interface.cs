@@ -1,8 +1,7 @@
-﻿using SharpGen.CppModel;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
-using System.Text;
+using SharpGen.Config;
+using SharpGen.CppModel;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,7 +16,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact]
         public void Inheriting()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(Inheriting),
                 Namespace = nameof(Inheriting),
@@ -40,7 +39,7 @@ namespace SharpGen.UnitTests.Parsing
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32")
+                    new BindRule("int", "System.Int32")
                 }
             };
 
@@ -57,7 +56,7 @@ namespace SharpGen.UnitTests.Parsing
         {
             var guid = Guid.Parse("B31C25F0-44CA-414A-A067-304E3A077184");
 
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(GuidAttribute),
                 Namespace = nameof(GuidAttribute),
@@ -81,7 +80,7 @@ namespace SharpGen.UnitTests.Parsing
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32")
+                    new BindRule("int", "System.Int32")
                 }
             };
 
@@ -102,7 +101,7 @@ namespace SharpGen.UnitTests.Parsing
                 };
             ");
 
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(GuidAttribute),
                 Namespace = nameof(GuidAttribute),
@@ -137,7 +136,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact]
         public void OverloadedMethodsCorrectlyOrderedInVtable()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(OverloadedMethodsCorrectlyOrderedInVtable),
                 Namespace = nameof(OverloadedMethodsCorrectlyOrderedInVtable),
@@ -158,7 +157,7 @@ namespace SharpGen.UnitTests.Parsing
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32")
+                    new BindRule("int", "System.Int32")
                 }
             };
 
@@ -186,7 +185,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact]
         public void DefaultMethodCallingConventionIsThisCall()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(DefaultMethodCallingConventionIsThisCall),
                 Namespace = nameof(DefaultMethodCallingConventionIsThisCall),
@@ -205,7 +204,7 @@ namespace SharpGen.UnitTests.Parsing
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32")
+                    new BindRule("int", "System.Int32")
                 }
             };
 

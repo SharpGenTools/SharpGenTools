@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Sdk Name="Microsoft.Build.CentralPackageVersions" />
+
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <TargetFrameworks>net472;netcoreapp2.1</TargetFrameworks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Win32.Registry" Condition="'$(TargetFramework)' != 'net472'" />
+        <PackageReference Include="System.Diagnostics.Process" Condition="'$(TargetFramework)' != 'net472'" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>SharpGen.UnitTests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\SharpGen\SharpGen.csproj" />
+    </ItemGroup>
+
+</Project>

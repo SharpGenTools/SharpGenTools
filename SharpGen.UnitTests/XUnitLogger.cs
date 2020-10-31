@@ -1,6 +1,6 @@
-﻿using SharpGen.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using SharpGen.Logging;
 using Xunit;
 using Xunit.Abstractions;
 

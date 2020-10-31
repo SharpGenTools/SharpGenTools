@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using SharpGen.Config;
 using SharpGen.CppModel;
 using Xunit;
 using Xunit.Abstractions;
@@ -16,7 +14,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact]
         public void CppParserCorrectlyParsesStdCall()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(CppParserCorrectlyParsesStdCall),
                 Namespace = nameof(CppParserCorrectlyParsesStdCall),
@@ -42,7 +40,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact]
         public void CppParserCorrectlyInfersCdeclForDefaultCallingConvention()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(CppParserCorrectlyInfersCdeclForDefaultCallingConvention),
                 Namespace = nameof(CppParserCorrectlyInfersCdeclForDefaultCallingConvention),
@@ -68,7 +66,7 @@ namespace SharpGen.UnitTests.Parsing
         [Fact]
         public void UnnamedParameterAssignedDefaultName()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(CppParserCorrectlyParsesStdCall),
                 Namespace = nameof(CppParserCorrectlyParsesStdCall),
@@ -94,7 +92,7 @@ namespace SharpGen.UnitTests.Parsing
         [InlineData("&")]
         public void PointerAndReferenceParametersAreCorrectlyParsed(string pointerSymbol)
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(PointerAndReferenceParametersAreCorrectlyParsed),
                 Namespace = nameof(PointerAndReferenceParametersAreCorrectlyParsed),

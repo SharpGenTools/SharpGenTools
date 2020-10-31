@@ -1,7 +1,5 @@
-﻿using SharpGen.Transform;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using SharpGen.CppModel;
+using SharpGen.Transform;
 using Xunit;
 
 namespace SharpGen.UnitTests
@@ -14,7 +12,7 @@ namespace SharpGen.UnitTests
             var manager = new NamingRulesManager();
 
             manager.AddShortNameRule("DESC", "Description");
-            Assert.Equal("ShaderDescription", manager.Rename(new CppModel.CppElement
+            Assert.Equal("ShaderDescription", manager.Rename(new CppElement
             {
                 Name = "SHADER_DESC"
             }));
@@ -28,12 +26,12 @@ namespace SharpGen.UnitTests
             manager.AddShortNameRule("INFO", "Information");
             manager.AddShortNameRule("INFORMATION", "Information");
 
-            Assert.Equal("RawDeviceInformation", manager.Rename(new CppModel.CppElement
+            Assert.Equal("RawDeviceInformation", manager.Rename(new CppElement
             {
                 Name = "RAW_DEVICE_INFO"
             }));
 
-            Assert.Equal("RawDeviceInformation", manager.Rename(new CppModel.CppElement
+            Assert.Equal("RawDeviceInformation", manager.Rename(new CppElement
             {
                 Name = "RAW_DEVICE_INFORMATION"
             }));

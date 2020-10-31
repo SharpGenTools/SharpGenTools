@@ -1,10 +1,7 @@
-﻿using SharpGen.Config;
+﻿using System.Linq;
+using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -19,13 +16,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void Basic()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(Basic),
                 Namespace = nameof(Basic),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         Attach = true,
                         File = "func.h",
@@ -34,18 +31,18 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Extension =
                 {
-                    new Config.CreateExtensionRule
+                    new CreateExtensionRule
                     {
                         NewClass = $"{nameof(Basic)}.Functions",
                     }
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "System.Int32")
+                    new BindRule("int", "System.Int32")
                 },
                 Mappings =
                 {
-                    new Config.MappingRule
+                    new MappingRule
                     {
                         Function = "Test",
                         FunctionDllName = "\"Test.dll\"",
@@ -91,13 +88,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void PointerSizeReturnValueNotLarge()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(PointerSizeReturnValueNotLarge),
                 Namespace = nameof(PointerSizeReturnValueNotLarge),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         File = "pointerSize.h",
                         Attach = true,
@@ -115,7 +112,7 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Bindings =
                 {
-                    new Config.BindRule("int", "SharpGen.Runtime.PointerSize")
+                    new BindRule("int", "SharpGen.Runtime.PointerSize")
                 }
             };
 
@@ -160,13 +157,13 @@ namespace SharpGen.UnitTests.Mapping
         [Fact]
         public void NativePrimitiveTypeNotLarge()
         {
-            var config = new Config.ConfigFile
+            var config = new ConfigFile
             {
                 Id = nameof(NativePrimitiveTypeNotLarge),
                 Namespace = nameof(NativePrimitiveTypeNotLarge),
                 Includes =
                 {
-                    new Config.IncludeRule
+                    new IncludeRule
                     {
                         File = "pointerSize.h",
                         Attach = true,
@@ -184,7 +181,7 @@ namespace SharpGen.UnitTests.Mapping
                 },
                 Bindings =
                 {
-                    new Config.BindRule("NativePrimitive", "NativePrimitiveType")
+                    new BindRule("NativePrimitive", "NativePrimitiveType")
                 }
             };
 

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Text;
-using System.Text.RegularExpressions;
-using SharpGen.Model;
+﻿using System.Collections.Generic;
 
 namespace SharpGen.Transform
 {
@@ -18,21 +12,17 @@ namespace SharpGen.Transform
         }
 
         /// <summary>
-        ///   Finds the C# full name from a C++ name.
+        ///     Finds the C# full name from a C++ name.
         /// </summary>
-        /// <param name = "cppName">Name of a c++ type</param>
+        /// <param name="cppName">Name of a c++ type</param>
         /// <returns>Name of the C# type</returns>
-        public string FindDocName(string cppName)
-        {
-            return _docToCSharp.TryGetValue(cppName, out string cSharpName) ? cSharpName : null;
-        }
+        public string FindDocName(string cppName) =>
+            _docToCSharp.TryGetValue(cppName, out var cSharpName) ? cSharpName : null;
 
         public IEnumerable<(string cppName, string cSharpName)> GetAllDocLinks()
         {
             foreach (var link in _docToCSharp)
-            {
                 yield return (link.Key, link.Value);
-            }
         }
     }
 }
