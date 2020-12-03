@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <SharpGenSdkUsedAsPackageReference Condition="'$(SharpGenSdkUsedAsPackageReference)' == ''">true</SharpGenSdkUsedAsPackageReference>
+  </PropertyGroup>
+  <Import Project="$(MSBuildThisFileDirectory)..\Sdk\Sdk.props" />
+</Project>
