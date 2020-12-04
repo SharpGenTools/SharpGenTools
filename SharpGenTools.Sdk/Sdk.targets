@@ -94,7 +94,7 @@
     <CastXmlArg Include="-std=$(CppStandard)" />
   </ItemGroup>
 
-  <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="SharpPatch" />
+  <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="SharpPatchTask" />
   <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="GetGeneratedHeaderNames" />
   <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="GenerateHeaders" />
   <UsingTask AssemblyFile="@(SharpGenSdkAssembly)" TaskName="GenerateExtensionHeaders" />
@@ -347,7 +347,7 @@
     Inputs="@(IntermediateAssembly);@(ReferencePath)"
     Outputs="@(IntermediateAssembly->'%(FullPath).check')"
   >
-    <SharpPatch
+    <SharpPatchTask
       AssemblyToPatch="%(IntermediateAssembly.FullPath)"
       References="@(ReferencePath)"
     />

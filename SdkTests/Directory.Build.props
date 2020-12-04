@@ -1,8 +1,7 @@
 <Project>
 
   <PropertyGroup>
-    <DeterministicSourcePaths>false</DeterministicSourcePaths>
-    <DisableSourceLink>true</DisableSourceLink>
+    <BuildingSdkTests>true</BuildingSdkTests>
   </PropertyGroup>
 
   <Import Project="Sdk.props" Sdk="Microsoft.Build.CentralPackageVersions" Condition="'$(MSBuildProjectExtension)' == '.csproj'" />

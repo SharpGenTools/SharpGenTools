@@ -17,46 +17,30 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
+
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
+using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
-using System.Text.RegularExpressions;
-using System.Xml;
 using SharpGen.Config;
 using SharpGen.CppModel;
-using SharpGen.Generator;
-using System.Diagnostics;
 using SharpGen.Transform;
-using System.Xml.Serialization;
-using System.Collections.Specialized;
-using System.Runtime.Serialization;
 
 namespace SharpGen.Model
 {
     /// <summary>
     /// Root class for all model elements.
     /// </summary>
-    [DebuggerDisplay("Name: {Name}")]
+    [DebuggerDisplay("Name: {" + nameof(Name) + "}")]
     [DataContract(Name = "Element")]
     public class CsBase
     {
         private ObservableCollection<CsBase> _items;
         private CppElement _cppElement;
         private string _cppElementName;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CsBase"/> class.
-        /// </summary>
-        public CsBase()
-        {
-            Visibility = Visibility.Public;
-            IsFullyMapped = true;
-            Description = "No documentation.";
-            Remarks = "";
-        }
 
         private void ItemsChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
@@ -65,14 +49,15 @@ namespace SharpGen.Model
                 foreach (var item in e.NewItems.OfType<CsBase>())
                 {
                     item.Parent = this;
-                } 
+                }
             }
+
             if (e.OldItems != null)
             {
                 foreach (var item in e.OldItems.OfType<CsBase>())
                 {
                     item.Parent = null;
-                } 
+                }
             }
         }
 
@@ -82,7 +67,7 @@ namespace SharpGen.Model
         /// <value>The parent.</value>
         [DataMember]
         public CsBase Parent { get; set; }
-        
+
         /// <summary>
         /// Gets the parent of a specified type. This method goes back
         /// to all parent and returns the first parent of the type T or null if no parent were found.
@@ -106,11 +91,8 @@ namespace SharpGen.Model
         {
             get
             {
-                if (_items == null)
-                {
-                    _items = new ObservableCollection<CsBase>();
-                    _items.CollectionChanged += ItemsChanged;
-                }
+                if (_items == null) ResetItems();
+
                 return _items;
             }
         }
@@ -120,7 +102,6 @@ namespace SharpGen.Model
             _items = new ObservableCollection<CsBase>();
             _items.CollectionChanged += ItemsChanged;
         }
-        
 
         /// <summary>
         /// Adds the specified inner container to this container.
@@ -158,7 +139,7 @@ namespace SharpGen.Model
         /// </summary>
         /// <value>The visibility.</value>
         [DataMember]
-        public Visibility Visibility { get; set; }
+        public Visibility Visibility { get; set; } = Visibility.Public;
 
         /// <summary>
         /// Returns a textual representation of the <see cref="Visibility"/> property.
@@ -212,7 +193,7 @@ namespace SharpGen.Model
         /// <value>
         /// 	<c>true</c> if this instance is fully mapped; otherwise, <c>false</c>.
         /// </value>
-        public bool IsFullyMapped { get; set; }
+        public bool IsFullyMapped { get; set; } = true;
 
         /// <summary>
         /// Gets the full qualified name of this type.
@@ -222,8 +203,8 @@ namespace SharpGen.Model
         {
             get
             {
-                string path = Parent?.QualifiedName;
-                string name = Name ?? "";
+                var path = Parent?.QualifiedName;
+                var name = Name ?? "";
                 return string.IsNullOrEmpty(path) ? name : path + "." + name;
             }
         }
@@ -234,17 +215,21 @@ namespace SharpGen.Model
         /// <value>The C++ element.</value>
         public virtual CppElement CppElement
         {
-            get { return _cppElement; }
+            get => _cppElement;
             set
             {
+                if (_cppElement == value)
+                    return;
+
                 _cppElement = value;
-                if (_cppElement != null )
-                {
-                    DocId = string.IsNullOrEmpty(CppElement.Id) ? DocId : CppElement.Id;
-                    Description = string.IsNullOrEmpty(CppElement.Description) ? Description : CppElement.Description;
-                    Remarks = string.IsNullOrEmpty(CppElement.Remarks) ? Remarks : CppElement.Remarks;
-                    UpdateFromMappingRule(_cppElement.GetMappingRule());
-                }
+
+                if (_cppElement == null)
+                    return;
+
+                DocId = string.IsNullOrEmpty(CppElement.Id) ? DocId : CppElement.Id;
+                Description = string.IsNullOrEmpty(CppElement.Description) ? Description : CppElement.Description;
+                Remarks = string.IsNullOrEmpty(CppElement.Remarks) ? Remarks : CppElement.Remarks;
+                UpdateFromMappingRule(CppElement.GetMappingRule());
             }
         }
 
@@ -255,13 +240,8 @@ namespace SharpGen.Model
         [DataMember(Name = "CppElement")]
         public string CppElementName
         {
-            get
-            {
-                if (!string.IsNullOrEmpty(_cppElementName))
-                    return _cppElementName;
-                return CppElement?.Name;
-            } 
-            set { _cppElementName = value; }
+            get => string.IsNullOrEmpty(_cppElementName) ? CppElement?.Name : _cppElementName;
+            set => _cppElementName = value;
         }
 
         /// <summary>
@@ -278,26 +258,22 @@ namespace SharpGen.Model
         /// </summary>
         /// <value>The description.</value>
         [DataMember]
-        public string Description { get; set; }
+        public string Description { get; set; } = "No documentation.";
 
         /// <summary>
         /// Gets or sets the remarks documentation.
         /// </summary>
         /// <value>The remarks.</value>
         [DataMember]
-        public string Remarks { get; set; }
-        
-        public virtual void FillDocItems(IList<string> docItems, IDocumentationLinker manager) {}
-        
-        public virtual string DocUnmanagedName
+        public string Remarks { get; set; } = string.Empty;
+
+        public virtual void FillDocItems(IList<string> docItems, IDocumentationLinker manager)
         {
-            get { return CppElementName; }
         }
 
-        public virtual string DocUnmanagedShortName
-        {
-            get { return CppElementName; }
-        }
+        public virtual string DocUnmanagedName => CppElementName;
+
+        public virtual string DocUnmanagedShortName => CppElementName;
 
         /// <summary>
         /// Updates this element from a tag.
@@ -315,9 +291,6 @@ namespace SharpGen.Model
         }
 
         [ExcludeFromCodeCoverage]
-        public override string ToString()
-        {
-            return QualifiedName;
-        }
+        public override string ToString() => QualifiedName;
     }
 }

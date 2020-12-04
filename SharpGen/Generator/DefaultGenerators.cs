@@ -28,7 +28,7 @@ namespace SharpGen.Generator
             Callable = new CallableCodeGenerator(this, documentation, docReader, globalNamespace, logger);
             Method = new MethodCodeGenerator(this);
             Function = new FunctionCodeGenerator(this);
-            Interface = new InterfaceCodeGenerator(this, documentation, docReader, globalNamespace);
+            Interface = new InterfaceCodeGenerator(this, documentation, docReader, globalNamespace, logger);
             Group = new GroupCodeGenerator(this, documentation, docReader);
             LocalInterop = new LocalInteropCodeGenerator(this);
             InteropMethod = new InteropMethodCodeGenerator();

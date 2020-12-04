@@ -34,18 +34,18 @@ namespace SharpGen.Parser
             }
         }
 
-        public Result GenerateCppHeaders(ConfigFile configRoot, IReadOnlyCollection<ConfigFile> filesWithIncludes,
-                                         ISet<ConfigFile> filesWithExtensionHeaders)
+        public Result GenerateCppHeaders(ConfigFile configRoot, IReadOnlyCollection<ConfigFile> configsWithIncludes,
+                                         ISet<ConfigFile> configsWithExtensionHeaders)
         {
             var updatedConfigs = new HashSet<ConfigFile>(ConfigFile.IdComparer);
 
             var prologue = GeneratePrologue(configRoot);
 
             // Dump includes
-            foreach (var configFile in filesWithIncludes)
+            foreach (var configFile in configsWithIncludes)
             {
                 var outputConfigStr = GenerateIncludeConfigContents(
-                    configRoot, configFile, filesWithIncludes, filesWithExtensionHeaders, prologue
+                    configRoot, configFile, configsWithIncludes, configsWithExtensionHeaders, prologue
                 );
 
                 var fileName = Path.Combine(OutputPath, configFile.HeaderFileName);
@@ -90,8 +90,8 @@ namespace SharpGen.Parser
         }
 
         private static string GenerateIncludeConfigContents(ConfigFile configRoot, ConfigFile configFile,
-                                                            IReadOnlyCollection<ConfigFile> filesWithIncludes,
-                                                            ISet<ConfigFile> filesWithExtensionHeaders,
+                                                            IReadOnlyCollection<ConfigFile> configsWithIncludes,
+                                                            ISet<ConfigFile> configsWithExtensionHeaders,
                                                             string prolog)
         {
             using var outputConfig = new StringWriter();
@@ -120,12 +120,12 @@ namespace SharpGen.Parser
             // Write includes to references
             foreach (var reference in configFile.References)
             {
-                if (filesWithIncludes.Contains(reference))
+                if (configsWithIncludes.Contains(reference))
                     outputConfig.WriteLine("#include \"{0}\"", reference.HeaderFileName);
             }
 
             // Dump Create from macros
-            if (filesWithExtensionHeaders.Contains(configFile))
+            if (configsWithExtensionHeaders.Contains(configFile))
             {
                 foreach (var typeBaseRule in configFile.Extension)
                 {
@@ -140,8 +140,7 @@ namespace SharpGen.Parser
                 outputConfig.WriteLine("#endif");
             }
 
-            var outputConfigStr = outputConfig.ToString();
-            return outputConfigStr;
+            return outputConfig.ToString();
         }
     }
 }

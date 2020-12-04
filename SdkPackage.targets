@@ -1,21 +1,15 @@
 <Project>
   <ItemGroup>
-    <Content Include="**/*.props" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
-    <Content Include="**/*.targets" Exclude="obj/**" PackagePath="build;buildMultiTargeting" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <PackageReference Update="*">
-        <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
+    <PackageReference Update="@(PackageReference)" PrivateAssets="all" />
+    <ProjectReference Update="@(ProjectReference)" PrivateAssets="all" />
   </ItemGroup>
 
-  <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
+  <Target Name="PackSdkPackageFiles" BeforeTargets="GenerateNuspec">
     <!--
-    The include needs to happen after output has been copied to build output folder
-    but before NuGet generates a nuspec.
+      The include needs to happen after output has been copied to build output folder
+      but before NuGet generates a nuspec.
     -->
-    
+
     <ItemGroup>
       <ReferencedAssemblies Include="bin\$(Configuration)\**\*.dll" />
       <ReferencedAssemblies Include="bin\$(Configuration)\**\*.pdb" Condition="'$(Configuration)' == 'Debug'" />
@@ -26,9 +20,7 @@
         <BuildAction>None</BuildAction>
       </_PackageFiles>
     </ItemGroup>
-  </Target>
 
-  <Target Name="PackDummyLibFile" BeforeTargets="GenerateNuspec">
     <Touch Files="$(BaseIntermediateOutputPath)$(Configuration)/_._" AlwaysCreate="true" />
 
     <ItemGroup>

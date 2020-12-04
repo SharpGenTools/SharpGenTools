@@ -44,8 +44,7 @@ namespace SharpGen.Model
         {
         }
 
-        [DataMember]
-        public bool Hidden { get; set; }
+        [DataMember] public bool? Hidden { get; set; }
 
         public override void FillDocItems(IList<string> docItems, IDocumentationLinker manager)
         {
@@ -64,8 +63,11 @@ namespace SharpGen.Model
 
             IsPersistent = tag.Persist.HasValue && tag.Persist.Value;
 
-            if(tag.CustomVtbl.HasValue)
+            if (tag.CustomVtbl.HasValue)
                 CustomVtbl = tag.CustomVtbl.Value;
+
+            if (tag.Hidden.HasValue)
+                Hidden = tag.Hidden.Value;
         }
 
         [DataMember]
@@ -82,5 +84,22 @@ namespace SharpGen.Model
 
         [DataMember]
         public int WindowsOffset { get; set; }
+
+        private bool IsPublicVisibilityForced(CsInterface parentInterface)
+        {
+            if (parentInterface == null)
+                return false;
+
+            if (parentInterface.AutoGenerateShadow)
+                return false;
+
+            var tagForMethod = CppElement?.GetMappingRule();
+
+            return tagForMethod?.IsKeepImplementPublic ??
+                   parentInterface.IsCallback && tagForMethod?.Hidden != true;
+        }
+
+        public bool IsPublicVisibilityForced(params CsInterface[] parentInterfaces) =>
+            parentInterfaces.Any(IsPublicVisibilityForced);
     }
 }

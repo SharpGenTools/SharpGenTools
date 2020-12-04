@@ -3,9 +3,7 @@ using SharpGen.CppModel;
 using SharpGen.Logging;
 using SharpGen.Model;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace SharpGen.Transform
 {
@@ -334,7 +332,6 @@ namespace SharpGen.Transform
                     else if (numIndirections > 1 && cppParameter.GetTypeNameWithMapping() != "void")
                     {
                         marshalType = publicType = typeRegistry.ImportType(typeof(IntPtr));
-                        parameterAttribute = CsParameterAttribute.In;
                         hasArray = false;
                     }
                     else if (publicType is CsFundamentalType fundamental && fundamental.Type == typeof(string)

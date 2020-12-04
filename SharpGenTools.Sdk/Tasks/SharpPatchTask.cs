@@ -1,17 +1,15 @@
-﻿using Microsoft.Build.Framework;
+﻿using System;
+using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using SharpPatch;
-using System;
 
-namespace SharpGenTools.Sdk
+namespace SharpGenTools.Sdk.Tasks
 {
-    public class SharpPatch : Task
+    public sealed class SharpPatchTask : Task
     {
-        [Required]
-        public string AssemblyToPatch { get; set; }
+        [Required] public string AssemblyToPatch { get; set; }
 
-        [Required]
-        public ITaskItem[] References { get; set; }
+        [Required] public ITaskItem[] References { get; set; }
 
         public override bool Execute()
         {

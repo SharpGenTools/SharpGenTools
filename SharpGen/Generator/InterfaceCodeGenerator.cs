@@ -1,25 +1,27 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.CodeAnalysis.CSharp;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Logging;
+using SharpGen.Model;
 using SharpGen.Transform;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
     class InterfaceCodeGenerator : MemberCodeGeneratorBase<CsInterface>
     {
         private readonly GlobalNamespaceProvider globalNamespace;
+        private readonly Logger logger;
 
-        public InterfaceCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation, ExternalDocCommentsReader docReader, GlobalNamespaceProvider globalNamespace)
+        public InterfaceCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation,
+            ExternalDocCommentsReader docReader, GlobalNamespaceProvider globalNamespace, Logger logger)
             : base(documentation, docReader)
         {
             Generators = generators;
             this.globalNamespace = globalNamespace;
+            this.logger = logger;
         }
 
         public IGeneratorRegistry Generators { get; }
@@ -36,9 +38,6 @@ namespace SharpGen.Generator
                         AttributeArgument(
                             LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(csElement.Guid))))))));
             }
-
-            var visibility = TokenList(ParseTokens(csElement.VisibilityName)
-                .Concat(new[] { Token(SyntaxKind.PartialKeyword) }));
 
             var baseList = default(BaseListSyntax);
 
@@ -226,12 +225,28 @@ namespace SharpGen.Generator
                 members.AddRange(csElement.Properties.SelectMany(prop => Generators.Property.GenerateCode(prop)));
             }
 
+            var methodWasHiddenByDefault = csElement.IsCallback && !csElement.AutoGenerateShadow;
+            var shouldIssueCompatMessage = false;
+
             foreach (var method in csElement.Methods)
             {
-                method.Hidden = csElement.IsCallback && !csElement.AutoGenerateShadow;
+                if (!method.Hidden.HasValue && methodWasHiddenByDefault)
+                {
+                    shouldIssueCompatMessage = true;
+
+                    // todo: compat mode
+                    // method.Hidden = true;
+                }
+
                 method.SignatureOnly = csElement.IsCallback;
+
                 members.AddRange(Generators.Method.GenerateCode(method));
             }
+
+            if (shouldIssueCompatMessage)
+                logger.Message(
+                    "SharpGen 2 now generates callback interface members automatically. Use 'hidden' rule to restore the old behavior."
+                );
 
             if (csElement.IsCallback && csElement.AutoGenerateShadow)
             {
@@ -241,17 +256,32 @@ namespace SharpGen.Generator
                 attributes = attributes?.AddAttributes(shadowAttribute) ?? AttributeList(SingletonSeparatedList(shadowAttribute));
             }
 
-            yield return csElement.IsCallback ?
-                (MemberDeclarationSyntax)InterfaceDeclaration(attributes != null ? SingletonList(attributes) : default,
-                TokenList(ParseTokens(csElement.VisibilityName)).Add(Token(SyntaxKind.PartialKeyword)),
-                Identifier(csElement.Name),
-                default, baseList, default, List(members))
-                :
-                ClassDeclaration(attributes != null ? SingletonList(attributes) : default,
-                TokenList(ParseTokens(csElement.VisibilityName)).Add(Token(SyntaxKind.PartialKeyword)),
-                Identifier(csElement.Name),
-                default, baseList, default, List(members))
-                ;
+            var attributeList = attributes != null ? SingletonList(attributes) : default;
+
+            var modifiers = TokenList(ParseTokens(csElement.VisibilityName))
+                .Add(Token(SyntaxKind.PartialKeyword));
+
+            var declaration = csElement.IsCallback
+                ? (MemberDeclarationSyntax) InterfaceDeclaration(
+                    attributeList,
+                    modifiers,
+                    Identifier(csElement.Name),
+                    default,
+                    baseList,
+                    default,
+                    List(members)
+                )
+                : ClassDeclaration(
+                    attributeList,
+                    modifiers,
+                    Identifier(csElement.Name),
+                    default,
+                    baseList,
+                    default,
+                    List(members)
+                );
+
+            yield return declaration.WithLeadingTrivia(Trivia(docComment));
         }
 
 

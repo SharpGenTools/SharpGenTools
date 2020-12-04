@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 
 namespace SharpGen.UnitTests
 {
-    class XUnitLogger : LoggerBase
+    internal class XUnitLogger : LoggerBase
     {
         private readonly ITestOutputHelper output;
 

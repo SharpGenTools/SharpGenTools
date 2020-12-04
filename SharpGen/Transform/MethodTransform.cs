@@ -128,7 +128,7 @@ namespace SharpGen.Transform
 
         public void Process(CsFunction csFunction)
         {
-            csFunction.Visibility = csFunction.Visibility | Visibility.Static;
+            csFunction.Visibility |= Visibility.Static;
             ProcessCallable(csFunction, true);
         }
 

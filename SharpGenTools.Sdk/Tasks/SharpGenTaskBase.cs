@@ -1,28 +1,29 @@
-﻿using Microsoft.Build.Framework;
+using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using SharpGen.Config;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Logger = SharpGen.Logging.Logger;
 
 namespace SharpGenTools.Sdk.Tasks
 {
     public abstract class SharpGenTaskBase : Task
     {
-        [Required]
-        public ITaskItem[] ConfigFiles { get; set; }
+        [Required] public ITaskItem[] ConfigFiles { get; set; }
 
         public string[] Macros { get; set; }
 
-        protected Logger SharpGenLogger { get; private set; }
+#if DEBUG
+        public bool DebugWaitForDebuggerAttach { get; set; }
+#endif
 
-        public override bool Execute()
+        protected Logger SharpGenLogger { get; set; }
+
+        public sealed override bool Execute()
         {
-            BindingRedirectResolution.Enable();
-
-            SharpGenLogger = new Logger(new MSBuildSharpGenLogger(Log), null);
+            PrepareExecute();
 
             var config = new ConfigFile
             {
@@ -55,5 +56,24 @@ namespace SharpGenTools.Sdk.Tasks
         }
 
         protected abstract bool Execute(ConfigFile config);
+
+        protected void PrepareExecute()
+        {
+            BindingRedirectResolution.Enable();
+
+#if DEBUG
+            if (DebugWaitForDebuggerAttach)
+                WaitForDebuggerAttach();
+#endif
+
+            SharpGenLogger = new Logger(new MSBuildSharpGenLogger(Log));
+        }
+
+        [Conditional("DEBUG")]
+        protected internal static void WaitForDebuggerAttach()
+        {
+            while (!Debugger.IsAttached)
+                Thread.Sleep(TimeSpan.FromSeconds(1));
+        }
     }
 }

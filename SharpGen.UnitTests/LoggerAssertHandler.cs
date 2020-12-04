@@ -1,4 +1,4 @@
 namespace SharpGen.UnitTests
 {
-    internal delegate void LoggerAssertHandler(XUnitLogEvent[] events);
+    public delegate void LoggerAssertHandler(XUnitLogEvent[] events);
 }

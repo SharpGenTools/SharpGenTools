@@ -104,16 +104,11 @@ namespace SharpGen.Model
 
         public string IntermediateMarshalName => Name[0] == '@' ? $"_{Name.Substring(1)}" : $"_{Name}";
 
-        public bool MappedToDifferentPublicType
-        {
-            get
-            {
-                return MarshalType != PublicType
-                && !IsBoolToInt
-                && !(MarshalType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr) && HasPointer)
-                && !(IsInterface && HasPointer);
-            }
-        }
+        public bool MappedToDifferentPublicType =>
+            MarshalType != PublicType
+            && !IsBoolToInt
+            && !(MarshalType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr) && HasPointer)
+            && !(IsInterface && HasPointer);
 
         [DataMember] public IList<MarshallableRelation> Relations { get; set; }
     }

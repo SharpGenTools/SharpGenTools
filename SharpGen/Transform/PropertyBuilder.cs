@@ -3,7 +3,6 @@ using SharpGen.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace SharpGen.Transform
@@ -38,36 +37,25 @@ namespace SharpGen.Transform
         {
             var getters = group.Where(method => GetPropertySpec(method).PropertyMethod == PropertyMethod.Getter).ToList();
             var setters = group.Where(method => GetPropertySpec(method).PropertyMethod == PropertyMethod.Setter).ToList();
+
             if (getters.Count == 0 && setters.Count == 0)
-            {
                 return null;
-            }
+
             if (getters.Count > 1 || setters.Count > 1)
-            {
                 return null;
-            }
 
             var getter = getters.Count == 0 ? null : getters[0];
             var setter = setters.Count == 0 ? null : setters[0];
 
-            var getterValid = ValidateGetter(getter);
-            var setterValid = ValidateSetter(setter);
-
-            if (!getterValid || !setterValid)
-            {
+            if (!ValidateGetter(getter) || !ValidateSetter(setter))
                 return null;
-            }
 
-            var isParamGetter = getterValid && getter != null && getter.Parameters.Count == 1;
+            var isParamGetter = getter != null && getter.Parameters.Count == 1;
             var getterPropType = isParamGetter ? getter.Parameters[0].PublicType : getter?.ReturnValue.PublicType;
             var setterPropType = setter?.Parameters[0].PublicType;
 
-            var typesMatch = getterPropType == null || setterPropType == null || getterPropType == setterPropType;
-
-            if (!typesMatch)
-            {
+            if (getterPropType != null && setterPropType != null && getterPropType != setterPropType)
                 return null;
-            }
 
             return new CsProperty(group.Key)
             {
@@ -81,21 +69,17 @@ namespace SharpGen.Transform
         private bool ValidateGetter(CsMethod getter)
         {
             if (getter == null)
-            {
                 return true;
-            }
 
-            if ((getter.ReturnValue.PublicType.Name == globalNamespace.GetTypeName(WellKnownName.Result) || !getter.HasReturnType)
-                && getter.Parameters.Count == 1
-                && getter.Parameters[0].IsOut && !getter.Parameters[0].IsArray)
+            return getter.Parameters.Count switch
             {
-                return true;
-            }
-            else if (getter.Parameters.Count == 0 && getter.HasReturnType)
-            {
-                return true;
-            }
-            return false;
+                1 when getter.Parameters[0].IsOut && !getter.Parameters[0].IsArray =>
+                !getter.HasReturnType ||
+                getter.ReturnValue.PublicType.Name == globalNamespace.GetTypeName(WellKnownName.Result),
+
+                0 => getter.HasReturnTypeValue,
+                _ => false
+            };
         }
 
         private bool ValidateSetter(CsMethod setter)
@@ -125,10 +109,8 @@ namespace SharpGen.Transform
 
         public void AttachPropertyToParent(CsProperty property)
         {
-            var underlyingMethod = property.Getter ?? property.Setter;
-
             // Associate the property with the underlying method's C++ element.
-            property.CppElement = underlyingMethod.CppElement;
+            property.CppElement = property.Getter?.CppElement ?? property.Setter?.CppElement;
 
             // If We have a getter, then we need to modify the documentation in order to print that we have Gets and Sets.
             if (property.Getter != null && property.Setter != null && !string.IsNullOrEmpty(property.Description))
@@ -136,23 +118,32 @@ namespace SharpGen.Transform
                 property.Description = MatchGet.Replace(property.Description, "$1$2 or sets");
             }
 
-            var parent = underlyingMethod.Parent;
+            var parent = property.Getter?.Parent ?? property.Setter?.Parent;
 
             // If mapping rule disallows properties, don't attach the property to the model.
-            if ((property.Getter?.AllowProperty == false) || (property.Setter?.AllowProperty == false))
+            if (parent is null || (property.Getter?.AllowProperty == false) || (property.Setter?.AllowProperty == false))
                 return;
 
             // Update visibility for getter and setter (set to internal)
             if (property.Getter != null)
             {
-                property.Getter.Visibility = Visibility.Internal;
+                var parentInterface = property.Getter.GetParent<CsInterface>();
+
+                if (!property.Getter.IsPublicVisibilityForced(parentInterface, parentInterface.IBase))
+                    property.Getter.Visibility = Visibility.Internal;
+
                 property.IsPersistent = property.Getter.IsPersistent;
             }
 
             if (property.Setter != null)
-                property.Setter.Visibility = Visibility.Internal;
+            {
+                var parentInterface = property.Setter.GetParent<CsInterface>();
 
-            if (property.Getter != null && property.Name.StartsWith("Is"))
+                if (!property.Setter.IsPublicVisibilityForced(parentInterface, parentInterface.IBase))
+                    property.Setter.Visibility = Visibility.Internal;
+            }
+
+            if (property.Getter != null && property.Name.StartsWith("is", StringComparison.InvariantCultureIgnoreCase))
                 property.Getter.Name += "_";
 
             parent.Add(property);

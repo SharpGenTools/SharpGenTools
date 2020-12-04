@@ -7,18 +7,30 @@
         <RestoreAdditionalProjectSources>$(MSBuildThisFileDirectory)LocalPackages</RestoreAdditionalProjectSources>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <SdkTestNative>$(MSBuildProjectName)</SdkTestNative>
+        <SharpGenWaitForDebuggerAttach>false</SharpGenWaitForDebuggerAttach>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="$(MSBuildThisFileDirectory)../SharpGen.Runtime/SharpGen.Runtime.csproj" />
-        <PackageReference Include="SharpGenTools.Sdk" Version="$(LocalPackageVersion)" IsImplicitlyDefined="true" PrivateAssets="All" />
+        <PackageReference Include="SharpGen.Runtime" Version="$(LocalPackageVersion)" IsImplicitlyDefined="true"/>
+        <PackageReference Include="SharpGenTools.Sdk" Version="$(LocalPackageVersion)" IsImplicitlyDefined="true" PrivateAssets="All"/>
 
-        <PackageReference Include="coverlet.msbuild" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" />
-        <PackageReference Include="xunit" />
-        <PackageReference Include="xunit.runner.visualstudio" />
+        <PackageReference Include="coverlet.msbuild"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk"/>
+        <PackageReference Include="xunit"/>
+        <PackageReference Include="xunit.runner.visualstudio"/>
 
-        <SharpGenConsumerMapping Include="$(MSBuildThisFileDirectory)../SharpGen.Runtime/Mapping.xml" />
-        <SharpGenMapping Include="Mapping.xml" />
+        <SharpGenMapping Include="Mapping.xml"/>
     </ItemGroup>
+
+    <Target Name="_ResolveCopyLocalNuGetPackagePdbsAndXml" AfterTargets="ResolveReferences">
+        <ItemGroup>
+            <ReferenceCopyLocalPaths
+                    Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).pdb')"
+                    Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).pdb')"/>
+            <ReferenceCopyLocalPaths
+                    Include="@(ReferenceCopyLocalPaths->'%(RootDir)%(Directory)%(Filename).xml')"
+                    Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' and Exists('%(RootDir)%(Directory)%(Filename).xml')"/>
+        </ItemGroup>
+    </Target>
 </Project>

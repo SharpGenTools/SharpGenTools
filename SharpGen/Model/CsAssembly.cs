@@ -17,15 +17,11 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
+
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Xml;
-using SharpGen.Logging;
-using SharpGen.Config;
-using System.Xml.Serialization;
 using System.Runtime.Serialization;
 
 namespace SharpGen.Model
@@ -60,15 +56,6 @@ namespace SharpGen.Model
         /// </value>
         [DataMember]
         public bool NeedsToBeUpdated { get; set; }
-        
-        /// <summary>
-        /// Gets the name of the check file for this assembly.
-        /// </summary>
-        /// <value>The name of the check file.</value>
-        public string CheckFileName
-        {
-            get { return QualifiedName + ".check"; }
-        }
 
         /// <summary>
         /// Gets the namespaces.

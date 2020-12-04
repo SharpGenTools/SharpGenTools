@@ -1,6 +1,6 @@
 <Project>
     <Import Project="../Directory.Build.props" />
     <Target Name="DumpVersion">
-        <WriteLinesToFile Lines="$(Version)" File="$(VersionDumpFile)" Overwrite="True" />
+        <WriteLinesToFile Lines="$([MSBuild]::ValueOrDefault('$(PackageVersion)', '$(Version)'))" File="$(VersionDumpFile)" Overwrite="True" />
     </Target>
 </Project>

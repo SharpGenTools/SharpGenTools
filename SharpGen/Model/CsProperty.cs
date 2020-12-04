@@ -17,45 +17,44 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System.Linq;
+
 using System.Runtime.Serialization;
-using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
     [DataContract(Name = "Property")]
-    public class CsProperty : CsMarshalBase
+    public sealed class CsProperty : CsMarshalBase
     {
         [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
         public CsProperty()
         {
         }
 
-        public CsProperty(string name)
+        public CsProperty(string name) => Name = name;
+
+        [DataMember] public CsMethod Getter { get; set; }
+
+        [DataMember] public CsMethod Setter { get; set; }
+
+        [DataMember] public bool IsPropertyParam { get; set; }
+
+        [DataMember] public bool IsPersistent { get; set; }
+
+        public override string DocUnmanagedName =>
+            FormatDocUnmanagedName(Getter?.DocUnmanagedName, Setter?.DocUnmanagedName);
+
+        public override string DocUnmanagedShortName =>
+            FormatDocUnmanagedName(Getter?.DocUnmanagedShortName, Setter?.DocUnmanagedShortName);
+
+        private static string FormatDocUnmanagedName(string getter, string setter)
         {
-            Name = name;
-        }
-
-        [DataMember]
-        public CsMethod Getter { get; set; }
-
-        [DataMember]
-        public CsMethod Setter { get; set; }
-
-        [DataMember]
-        public bool IsPropertyParam { get; set; }
-
-        [DataMember]
-        public bool IsPersistent { get; set; }
-
-        public override string DocUnmanagedName
-        {
-            get
-            {
-                if (Setter != null && Getter != null)
-                    return $"{Getter.CppElementName} / {Setter.CppElementName}";
-                return base.DocUnmanagedName;
-            }
+            if (!string.IsNullOrEmpty(getter) && !string.IsNullOrEmpty(setter))
+                return $"{getter} / {setter}";
+            if (!string.IsNullOrEmpty(getter))
+                return getter;
+            if (!string.IsNullOrEmpty(setter))
+                return setter;
+            return "Unknown";
         }
     }
 }

@@ -23,8 +23,14 @@
   </Choose>
 
   <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.csproj'">
-    <LangVersion>8</LangVersion>
+    <LangVersion>9</LangVersion>
     <AllowedOutputExtensionsInPackageBuildOutputFolder Condition="'$(Configuration)' == 'Debug'">$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(BuildingSdkTests)' == 'true' or '$(Configuration)' == 'Debug'">
+    <DeterministicSourcePaths>false</DeterministicSourcePaths>
+    <Deterministic>false</Deterministic>
+    <DisableSourceLink>true</DisableSourceLink>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(DisableSourceLink)' != 'true'">

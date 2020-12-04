@@ -36,11 +36,9 @@ namespace SharpGen.Generator
                 }
             }
 
-            return condition is null ?
-                statement
-                : IfStatement(
-                    condition,
-                    statement);
+            return condition is null
+                ? statement
+                : IfStatement(condition, statement);
         }
 
         public static string GetPlatformSpecificSuffix(PlatformDetectionType platform)

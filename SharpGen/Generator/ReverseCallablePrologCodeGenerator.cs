@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
 using System;
 using System.Collections.Generic;
+using Microsoft.CodeAnalysis;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
@@ -22,14 +23,14 @@ namespace SharpGen.Generator
         {
             var (csElement, interopSig) = callableSig;
             var interopParameters = interopSig.ParameterTypes;
-            if ((interopSig.Flags & InteropMethodSignatureFlags.ForcedReturnBufferSig) != 0)
+            if (interopSig.ForcedReturnBufferSig)
             {
                 foreach (var statement in GenerateNativeByRefProlog(csElement.ReturnValue, IdentifierName("returnSlot")))
                 {
                     yield return statement;
                 }
             }
-            else if (csElement.HasReturnType && (!csElement.HideReturnType || csElement.ForceReturnType))
+            else if (csElement.HasReturnTypeValue)
             {
                 foreach (var statement in GenerateProlog(csElement.ReturnValue, null))
                 {
@@ -61,6 +62,7 @@ namespace SharpGen.Generator
             {
                 publicType = ArrayType(publicType, SingletonList(ArrayRankSpecifier()));
             }
+            
             yield return LocalDeclarationStatement(
                 VariableDeclaration(publicType)
                 .AddVariables(
@@ -72,17 +74,23 @@ namespace SharpGen.Generator
             if (marshaller.GeneratesMarshalVariable(publicElement))
             {
                 var marshalTypeSyntax = marshaller.GetMarshalTypeSyntax(publicElement);
+
+                var initializerExpression = nativeParameter != null
+                    ? (ExpressionSyntax) CastExpression(marshalTypeSyntax, nativeParameter)
+                    : DefaultExpression(marshalTypeSyntax);
+
                 yield return LocalDeclarationStatement(
-                    VariableDeclaration(marshalTypeSyntax)
-                    .AddVariables(
-                        VariableDeclarator(generators.Marshalling.GetMarshalStorageLocationIdentifier(publicElement))
-                        .WithInitializer(
-                            EqualsValueClause(
-                                nativeParameter != null
-                                ? (ExpressionSyntax)CastExpression(
-                                    marshalTypeSyntax,
-                                    nativeParameter)
-                                : DefaultExpression(marshalTypeSyntax)))));
+                    VariableDeclaration(
+                        marshalTypeSyntax,
+                        SingletonSeparatedList(
+                            VariableDeclarator(
+                                generators.Marshalling.GetMarshalStorageLocationIdentifier(publicElement),
+                                null,
+                                EqualsValueClause(initializerExpression)
+                            )
+                        )
+                    )
+                );
             }
             else
             {

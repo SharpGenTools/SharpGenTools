@@ -74,7 +74,11 @@ namespace SharpGen.Config
         }
 
         [XmlAttribute("id")]
-        public string Id { get; set; }
+        public string Id
+        {
+            get => id ??= Guid.NewGuid().ToString();
+            set => id = value;
+        }
 
         [XmlElement("depends")]
         public List<string> Depends { get; set; } = new List<string>();
@@ -127,13 +131,11 @@ namespace SharpGen.Config
         [XmlArrayItem(typeof(ConstantRule))]
         public List<ExtensionBaseRule> Extension { get; set; } = new List<ExtensionBaseRule>();
 
-        [XmlIgnore]
-        public string ExtensionId => Id + "-ext";
+        [XmlIgnore] public string ExtensionId => Id + "-ext";
 
         /// <summary>
         /// Gets the name of the extension header file.
         /// </summary>
-        /// <value>The name of the extension header file.</value>
         [XmlIgnore]
         public string ExtensionFileName => ExtensionId + ".h";
 
@@ -157,14 +159,14 @@ namespace SharpGen.Config
         /// <summary>
         /// Finds all dependencies ConfigFile from this instance.
         /// </summary>
-        /// <param name="dependencyListOutput">The dependencies list to fill.</param>
-        public void FindAllDependencies(List<ConfigFile> dependencyListOutput)
+        /// <param name="dependencyListOutput">The dependencies set to fill.</param>
+        public void FindAllDependencies(ISet<ConfigFile> dependencyListOutput)
         {
-            foreach (var dependConfigFileId in Depends)
+            ConfigFile ConfigSelector(string dependConfigFileId) => GetRoot().mapIdToFile[dependConfigFileId];
+
+            foreach (var linkedConfig in Depends.Select(ConfigSelector))
             {
-                var linkedConfig = GetRoot().mapIdToFile[dependConfigFileId];
-                if (!dependencyListOutput.Contains(linkedConfig))
-                    dependencyListOutput.Add(linkedConfig);
+                dependencyListOutput.Add(linkedConfig);
 
                 linkedConfig.FindAllDependencies(dependencyListOutput);
             }
@@ -334,7 +336,7 @@ namespace SharpGen.Config
             Files.Clear();
 
             // Add this mapping file
-            GetRoot().mapIdToFile.Add(Id, this);            
+            GetRoot().mapIdToFile.Add(Id, this);
         }
 
         public IReadOnlyCollection<ConfigFile> ConfigFilesLoaded => GetRoot().mapIdToFile.Values;
@@ -382,7 +384,8 @@ namespace SharpGen.Config
             return root;
         }
 
-        private readonly Dictionary<string,ConfigFile> mapIdToFile = new Dictionary<string, ConfigFile>();
+        private readonly Dictionary<string, ConfigFile> mapIdToFile = new Dictionary<string, ConfigFile>();
+        private string id;
 
         private void Verify(Logger logger)
         {
@@ -391,16 +394,26 @@ namespace SharpGen.Config
             // TODO: verify Depends
             foreach (var depend in Depends)
             {
-                if (!GetRoot().mapIdToFile.ContainsKey(depend))
-                    logger.Error(LoggingCodes.MissingConfigDependency, $"Unable to resolve dependency [{depend}] for config file [{Id}]");
+                if (GetRoot().mapIdToFile.ContainsKey(depend)) continue;
+
+                logger.Error(
+                    LoggingCodes.MissingConfigDependency,
+                    "Unable to resolve dependency [{0}] for config file [{1}]",
+                    depend, Id
+                );
             }
 
             foreach (var includeDir in IncludeDirs)
             {
                 includeDir.Path = ExpandString(includeDir.Path, false, logger);
 
-                if (!includeDir.Path.StartsWith("=") && !Directory.Exists(includeDir.Path))
-                    logger.Error(LoggingCodes.IncludeDirectoryNotFound, $"Include directory {includeDir.Path} from config file [{Id}] not found");
+                if (includeDir.Path.StartsWith("=") || Directory.Exists(includeDir.Path)) continue;
+
+                logger.Error(
+                    LoggingCodes.IncludeDirectoryNotFound,
+                    "Include directory {0} from config file [{1}] not found",
+                    includeDir.Path, Id
+                );
             }
 
             // Verify all dependencies
