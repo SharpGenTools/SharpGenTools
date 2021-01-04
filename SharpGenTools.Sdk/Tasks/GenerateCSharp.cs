@@ -3,7 +3,6 @@ using Microsoft.Build.Utilities;
 using SharpGen.Generator;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using SharpGen;
 using Logger = SharpGen.Logging.Logger;
 using SharpGen.Model;
@@ -32,8 +31,18 @@ namespace SharpGenTools.Sdk.Tasks
 
         public ITaskItem[] ExternalDocumentation { get; set; }
 
+        protected Logger SharpGenLogger { get; set; }
+
+        protected void PrepareExecute()
+        {
+            BindingRedirectResolution.Enable();
+            SharpGenLogger = new Logger(new MSBuildSharpGenLogger(Log));
+        }
+
         public override bool Execute()
         {
+            PrepareExecute();
+
             var documentationFiles = new Dictionary<string, XmlDocument>();
 
             foreach (var file in ExternalDocumentation ?? Enumerable.Empty<ITaskItem>())
@@ -84,7 +93,7 @@ namespace SharpGenTools.Sdk.Tasks
             };
 
             var generator = new RoslynGenerator(
-                new Logger(new MSBuildSharpGenLogger(Log), null),
+                SharpGenLogger,
                 globalNamespace,
                 new CachedDocumentationLinker(DocLinkCache.ItemSpec),
                 new ExternalDocCommentsReader(documentationFiles),

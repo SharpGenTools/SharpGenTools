@@ -139,6 +139,5 @@ namespace SharpGen.Platform
             }
             return (path, success);
         }
-
     }
 }

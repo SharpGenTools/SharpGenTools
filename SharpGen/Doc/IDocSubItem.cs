@@ -18,27 +18,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#nullable enable
-
-using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace SharpGen.Doc
 {
     /// <summary>
-    /// A DocProvider is responsible to provide documentation to the Parser
-    /// in order to feed each C++ element with an associated documentation.
-    /// This is optional.
-    /// A client of Parser API could provide a documentation provider
-    /// in an external assembly.
+    /// Documentation sub-item, used for structure fields, enum items, and function parameters.
     /// </summary>
-    public interface IDocProvider
+    public interface IDocSubItem : IDocMutableItem
     {
-        /// <summary>
-        /// Finds the documentation for a particular C++ item.
-        /// </summary>
-        /// <param name="fullName">The full name. for top level elements (like struct, interfaces, enums, functions), It's the name itself of the element. For interface methods, the name is passed like this "IMyInterface::MyMethod".</param>
-        /// <param name="context">Environment for documenting, used to create items and subitems</param>
-        /// <returns>Non-null documentation item filled with information if successful</returns>
-        Task<IDocItem?> FindDocumentationAsync(string fullName, IDocumentationContext context);
+        string Term { get; set; }
+
+        string Description { get; set; }
+
+        IList<string> Attributes { get; }
     }
 }

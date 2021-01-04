@@ -2,7 +2,7 @@
 
 namespace SharpGenTools.Sdk
 {
-    internal class CodeGenFailedException : Exception
+    internal sealed class CodeGenFailedException : Exception
     {
         public CodeGenFailedException()
         {

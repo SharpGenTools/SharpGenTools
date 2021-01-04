@@ -84,6 +84,16 @@ namespace SharpGen.Model
                 return "double";
             if (type == typeof(long))
                 return "long";
+            if (type == typeof(uint))
+                return "uint";
+            if (type == typeof(ulong))
+                return "ulong";
+            if (type == typeof(ushort))
+                return "ushort";
+            if (type == typeof(byte))
+                return "byte";
+            if (type == typeof(sbyte))
+                return "sbyte";
 
             return type.FullName;
         }

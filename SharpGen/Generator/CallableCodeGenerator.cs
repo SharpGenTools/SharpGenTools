@@ -191,12 +191,9 @@ namespace SharpGen.Generator
             }
 
             // Return
-            if (csElement.HasPublicReturnType)
+            if (csElement.HasReturnStatement)
             {
-                if (csElement.HasReturnTypeParameter || csElement.ForceReturnType || !csElement.HideReturnType)
-                {
-                    statements.Add(ReturnStatement(IdentifierName(csElement.ReturnName)));
-                }
+                statements.Add(ReturnStatement(IdentifierName(csElement.ReturnName)));
             }
 
             yield return methodDeclaration.WithBody(Block(statements));

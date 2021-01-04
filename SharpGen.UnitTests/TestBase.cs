@@ -16,11 +16,12 @@ namespace SharpGen.UnitTests
             Logger = new Logger(loggerImpl);
         }
 
-        internal IDisposable LoggerEnvironment(LoggerAssertHandler handler)
+        public IDisposable LoggerEnvironment(LoggerAssertHandler handler)
         {
             return new LoggerTestEnvironment(loggerImpl, handler);
         }
 
+        // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Global
         public IDisposable LoggerCodeRequiredEnvironment(string code)
         {
             void AssertHandler(XUnitLogEvent[] events)

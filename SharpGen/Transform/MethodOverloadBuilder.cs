@@ -23,6 +23,9 @@ namespace SharpGen.Transform
             var newMethod = (CsMethod)original.Clone();
             foreach (var csSubParameter in newMethod.Parameters)
             {
+                if (csSubParameter.IsUsedAsReturnType)
+                    continue;
+
                 if (csSubParameter.IsInInterfaceArrayLike)
                 {
                     csSubParameter.PublicType = new CsInterfaceArray((CsInterface)csSubParameter.PublicType, globalNamespace.GetTypeName(WellKnownName.InterfaceArray));
@@ -40,6 +43,9 @@ namespace SharpGen.Transform
             rawMethod.Visibility = Visibility.Private;
             foreach (var csSubParameter in rawMethod.Parameters)
             {
+                if (csSubParameter.IsUsedAsReturnType)
+                    continue;
+                
                 if (csSubParameter.IsArray || csSubParameter.IsInterface || csSubParameter.HasPointer)
                 {
                     csSubParameter.PublicType = typeRegistry.ImportType(typeof(IntPtr));

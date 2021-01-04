@@ -6,7 +6,7 @@ using System.Text;
 
 namespace SharpGenTools.Sdk
 {
-    static class BindingRedirectResolution
+    internal static class BindingRedirectResolution
     {
         public static void Enable()
         {
@@ -14,14 +14,14 @@ namespace SharpGenTools.Sdk
 
         static BindingRedirectResolution()
         {
-#if NET46
+#if NETFRAMEWORK
             AppDomain.CurrentDomain.AssemblyResolve += (s, args) =>
             {
                 var assemblyPath = Assembly.GetExecutingAssembly().Location;
                 var referenceName = new AssemblyName(AppDomain.CurrentDomain.ApplyPolicy(args.Name));
                 var fileName = referenceName.Name + ".dll";
 
-                if (!String.IsNullOrEmpty(assemblyPath))
+                if (!string.IsNullOrEmpty(assemblyPath))
                 {
                     var probingPath = Path.Combine(Path.GetDirectoryName(assemblyPath), fileName);
                     if (File.Exists(probingPath))

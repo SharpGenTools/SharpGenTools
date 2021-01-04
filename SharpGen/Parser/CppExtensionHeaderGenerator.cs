@@ -22,7 +22,7 @@ namespace SharpGen.Parser
 
         public MacroManager MacroManager { get; }
 
-        public CppModule GenerateExtensionHeaders(ConfigFile configRoot, string outputPath, ISet<ConfigFile> filesWithExtensions, IReadOnlyCollection<ConfigFile> updatedConfigs)
+        public CppModule GenerateExtensionHeaders(ConfigFile configRoot, string outputPath, ISet<ConfigFile> configsWithExtensions, IReadOnlyCollection<ConfigFile> updatedConfigs)
         {
             var module = configRoot.CreateSkeletonModule();
             MacroManager.Parse(Path.Combine(outputPath, configRoot.HeaderFileName), module);
@@ -33,7 +33,7 @@ namespace SharpGen.Parser
             foreach (var configFile in configRoot.ConfigFilesLoaded)
             {
                 // Dump Create from macros
-                if (filesWithExtensions.Contains(configFile) && updatedConfigs.Contains(configFile))
+                if (configsWithExtensions.Contains(configFile) && updatedConfigs.Contains(configFile))
                 {
                     using var extension = File.Create(Path.Combine(outputPath, configFile.ExtensionFileName));
                     using var extensionWriter = new StreamWriter(extension);

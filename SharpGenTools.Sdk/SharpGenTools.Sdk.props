@@ -1,23 +1,6 @@
-﻿<Project>
+<Project>
   <PropertyGroup>
-    <MSBuildAllProjects Condition="'$(MSBuildToolsVersion)' != 'Current'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <SharpGenSdkUsedAsPackageReference Condition="'$(SharpGenSdkUsedAsPackageReference)' == ''">true</SharpGenSdkUsedAsPackageReference>
   </PropertyGroup>
-
-  <PropertyGroup>
-    <SharpGenGenerateConsumerBindMapping Condition="'$(SharpGenGenerateConsumerBindMapping)' == ''">true</SharpGenGenerateConsumerBindMapping>
-    <SharpGenGenerateDoc Condition="'$(SharpGenGenerateDoc)' == ''">false</SharpGenGenerateDoc>
-    <SharpGenSdkToolsDirectory Condition="'$(SharpGenSdkToolsDirectory)' == ''">$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', 'tools'))</SharpGenSdkToolsDirectory>
-    <CppStandard Condition="'$(CppStandard)' == ''">c++14</CppStandard>
-  </PropertyGroup>
-
-  <ItemDefinitionGroup>
-    <SharpGenMapping>
-      <Generator>MSBuild:Compile</Generator>
-    </SharpGenMapping>
-  </ItemDefinitionGroup>
-
-  <ItemGroup>
-    <AvailableItemName Include="SharpGenMapping" />
-    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)../build/SharpGenMapping.xaml" />
-  </ItemGroup>
+  <Import Project="$(MSBuildThisFileDirectory)..\Sdk\Sdk.props" />
 </Project>

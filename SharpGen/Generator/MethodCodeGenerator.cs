@@ -1,15 +1,12 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using Microsoft.CodeAnalysis.CSharp;
-using System.Linq;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Model;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    class MethodCodeGenerator : IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax>
+    internal sealed class MethodCodeGenerator : IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax>
     {
         public MethodCodeGenerator(IGeneratorRegistry generators)
         {
@@ -20,32 +17,40 @@ namespace SharpGen.Generator
 
         public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsMethod csElement)
         {
-            int defaultOffset = csElement.Offset;
-            if ((Generators.Config.Platforms & PlatformDetectionType.IsWindows) != 0)
-            {
-                // Use the Windows offset for the default offset in the custom vtable when the Windows platform is requested for compat reasons.
-                defaultOffset = csElement.WindowsOffset;
-            }
             if (csElement.CustomVtbl)
             {
+                var defaultOffset = csElement.Offset;
+
+                if ((Generators.Config.Platforms & PlatformDetectionType.IsWindows) != 0)
+                {
+                    // Use the Windows offset for the default offset in the custom vtable when the Windows platform is requested for compat reasons.
+                    defaultOffset = csElement.WindowsOffset;
+                }
+
                 yield return FieldDeclaration(
-                    VariableDeclaration(PredefinedType(Token(SyntaxKind.IntKeyword)),
+                    default,
+                    TokenList(Token(SyntaxKind.PrivateKeyword)),
+                    VariableDeclaration(
+                        PredefinedType(Token(SyntaxKind.IntKeyword)),
                         SingletonSeparatedList(
-                            VariableDeclarator($"{csElement.Name}__vtbl_index")
-                                .WithInitializer(EqualsValueClause(LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(defaultOffset))))))) 
-                    .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)));
+                            VariableDeclarator(
+                                Identifier($"{csElement.Name}__vtbl_index"),
+                                null,
+                                EqualsValueClause(
+                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(defaultOffset))
+                                )
+                            )
+                        )
+                    )
+                );
             }
 
             // If not hidden, generate body
-            if (csElement.Hidden)
-            {
+            if (csElement.Hidden.HasValue && csElement.Hidden.Value)
                 yield break;
-            }
 
             foreach (var member in Generators.Callable.GenerateCode(csElement))
-            {
                 yield return member;
-            }
         }
     }
 }

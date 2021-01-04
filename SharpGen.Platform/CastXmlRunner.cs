@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using SharpGen.Logging;
 using SharpGen.Parser;
@@ -34,23 +35,25 @@ namespace SharpGen.Platform
     /// </summary>
     public sealed class CastXmlRunner : ICastXmlRunner
     {
-        private static readonly Regex MatchError = new Regex("error:");
+        private static readonly Regex MatchError = new Regex("error:", RegexOptions.Compiled);
+
+        // path/to/header.h:68:1: error:
+        private static readonly Regex MatchFileErrorRegex = new Regex(@"^(.*):(\d+):(\d+):\s+error:(.*)", RegexOptions.Compiled);
+
+        private IReadOnlyList<string> AdditionalArguments { get; }
+
+        public string OutputPath { get; set; }
 
         /// <summary>
         /// Gets or sets the executable path of castxml.
         /// </summary>
         /// <value>The executable path.</value>
-        public string ExecutablePath { get; }
-        public IReadOnlyList<string> AdditionalArguments { get; }
-        public string OutputPath { get; set; }
+        private string ExecutablePath { get; }
+
+        private Logger Logger { get; }
 
         private readonly IncludeDirectoryResolver directoryResolver;
 
-        public Logger Logger { get; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CastXmlRunner"/> class.
-        /// </summary>
         public CastXmlRunner(Logger logger, IncludeDirectoryResolver directoryResolver,
                              string executablePath, IReadOnlyList<string> additionalArguments)
         {
@@ -77,7 +80,7 @@ namespace SharpGen.Platform
                 if (!File.Exists(headerFile))
                     Logger.Fatal("C++ Header file [{0}] not found", headerFile);
 
-                RunCastXml(headerFile, OutputDataCallback, $"-E -dD");
+                RunCastXml(headerFile, OutputDataCallback, "-E -dD");
             });
         }
 
@@ -118,69 +121,59 @@ namespace SharpGen.Platform
 
         private void RunCastXml(string headerFile, DataReceivedEventHandler outputDataCallback, string additionalArguments)
         {
-            using (var currentProcess = new Process())
+            var arguments = GetCastXmlArgs().Append(additionalArguments)
+                                            .Concat(directoryResolver.IncludePaths);
+            var argumentsString = string.Join(" ", arguments);
+
+            Logger.Message("CastXML {0}", argumentsString);
+            using var currentProcess = new Process
             {
-                var startInfo = new ProcessStartInfo(ExecutablePath)
+                StartInfo = new ProcessStartInfo(ExecutablePath)
                 {
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true,
-                    WorkingDirectory = OutputPath
-                };
-
-                var arguments = GetCastXmlArgs();
-                var builder = new System.Text.StringBuilder();
-                builder.Append(arguments).Append(" ").Append(additionalArguments);
-
-                foreach (var directory in directoryResolver.IncludePaths)
-                {
-                    builder.Append(" ").Append(directory);
+                    WorkingDirectory = OutputPath,
+                    Arguments = $"{argumentsString} \"{headerFile}\""
                 }
-                arguments = builder.ToString();
+            };
+            currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
+            currentProcess.OutputDataReceived += outputDataCallback;
+            currentProcess.Start();
+            currentProcess.BeginOutputReadLine();
+            currentProcess.BeginErrorReadLine();
 
-                startInfo.Arguments = arguments + " " + $"\"{headerFile}\"";
-                Logger.Message($"CastXML {builder}");
-                currentProcess.StartInfo = startInfo;
-                currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
-                currentProcess.OutputDataReceived += outputDataCallback;
-                currentProcess.Start();
-                currentProcess.BeginOutputReadLine();
-                currentProcess.BeginErrorReadLine();
+            currentProcess.WaitForExit();
 
-                currentProcess.WaitForExit();
-
-                if (Logger.HasErrors)
-                {
-                    Logger.Error(LoggingCodes.CastXmlFailed, "Failed to run CastXML. Check previous errors.");
-                }
+            if (Logger.HasErrors)
+            {
+                Logger.Error(LoggingCodes.CastXmlFailed, "Failed to run CastXML. Check previous errors.");
             }
         }
 
-        private string GetCastXmlArgs()
+        private IEnumerable<string> GetCastXmlArgs()
         {
-            var arguments = string.Join(" ", AdditionalArguments);
-            arguments += " --castxml-gccxml -x c++";
-            arguments += " -Wmacro-redefined -Wno-invalid-token-paste -Wno-ignored-attributes";
-            return arguments;
+            return AdditionalArguments.Append("--castxml-gccxml")
+                                      .Append("-x c++")
+                                      .Append("-Wmacro-redefined")
+                                      .Append("-Wno-invalid-token-paste")
+                                      .Append("-Wno-ignored-attributes");
         }
-
-        // path/to/header.h:68:1: error:
-        private static Regex matchFileErrorRegex = new Regex(@"^(.*):(\d+):(\d+):\s+error:(.*)");
 
         /// <summary>
         /// Processes the error from header file.
         /// </summary>
         /// <param name="sender">The sender.</param>
         /// <param name="e">The <see cref="System.Diagnostics.DataReceivedEventArgs"/> instance containing the event data.</param>
-        void ProcessErrorFromHeaderFile(object sender, DataReceivedEventArgs e)
+        private void ProcessErrorFromHeaderFile(object sender, DataReceivedEventArgs e)
         {
             var popContext = false;
             try
             {
                 if (e.Data != null)
                 {
-                    var matchError = matchFileErrorRegex.Match(e.Data);
+                    var matchError = MatchFileErrorRegex.Match(e.Data);
 
                     var errorText = e.Data;
 
@@ -209,7 +202,7 @@ namespace SharpGen.Platform
         /// </summary>
         /// <param name="sender">The sender.</param>
         /// <param name="e">The <see cref="System.Diagnostics.DataReceivedEventArgs"/> instance containing the event data.</param>
-        void LogCastXmlOutput(object sender, DataReceivedEventArgs e)
+        private void LogCastXmlOutput(object sender, DataReceivedEventArgs e)
         {
             if (e.Data != null)
                 Logger.Message(e.Data);

@@ -18,18 +18,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using SharpGen.Logging;
 using SharpGen.Config;
 using SharpGen.CppModel;
+using SharpGen.Logging;
 using SharpGen.Model;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Transform
 {
@@ -259,9 +254,9 @@ namespace SharpGen.Transform
 
         private CsInterface CreateNativeCallbackType(CsInterface interfaceType)
         {
-            var cppInterface = (CppInterface)interfaceType.CppElement;
+            var cppInterface = (CppInterface) interfaceType.CppElement;
             var tagForInterface = cppInterface.GetMappingRule();
-            var nativeCallback = new CsInterface(interfaceType.CppElement as CppInterface)
+            var nativeCallback = new CsInterface(cppInterface)
             {
                 Name = interfaceType.Name + "Native"
             };
@@ -278,7 +273,7 @@ namespace SharpGen.Transform
             nativeCallback.Base = interfaceType.Base ?? CppObjectType;
 
             // If Parent is a DualInterface, then inherit from Default Callback
-            if (interfaceType.Base is CsInterface baseInterface && baseInterface.IsDualCallback)
+            if (interfaceType.Base is { } baseInterface && baseInterface.IsDualCallback)
             {
                 nativeCallback.Base = baseInterface.GetNativeImplementationOrThis();
             }
@@ -286,22 +281,22 @@ namespace SharpGen.Transform
             nativeCallback.IBase = interfaceType;
             interfaceType.NativeImplementation = nativeCallback;
 
-            foreach (var innerElement in interfaceType.Items)
+            foreach (var method in interfaceType.Items.OfType<CsMethod>())
             {
-                if (innerElement is CsMethod method)
+                var newCsMethod = (CsMethod) method.Clone();
+
+                var keepImplementPublic = interfaceType.AutoGenerateShadow ||
+                                          method.IsPublicVisibilityForced(interfaceType);
+
+                if (!keepImplementPublic)
                 {
-                    var newCsMethod = (CsMethod)method.Clone();
-                    var tagForMethod = method.CppElement.GetMappingRule();
-                    var keepMethodPublic = interfaceType.AutoGenerateShadow || tagForMethod.IsKeepImplementPublic == true;
-                    if (!keepMethodPublic)
-                    {
-                        newCsMethod.Visibility = Visibility.Internal;
-                        newCsMethod.Name = newCsMethod.Name + "_";
-                    }
-                    nativeCallback.Add(newCsMethod);
+                    newCsMethod.Visibility = Visibility.Internal;
+                    newCsMethod.Name += "_";
                 }
+
+                nativeCallback.Add(newCsMethod);
             }
-            
+
             nativeCallback.IsCallback = false;
             nativeCallback.IsDualCallback = true;
             return nativeCallback;
@@ -324,7 +319,7 @@ namespace SharpGen.Transform
 
         private void GenerateSpecialOverloads(CsInterface interfaceType, CsMethod csMethod)
         {
-            var hasInterfaceArrayLike = csMethod.Parameters.Any(param => param.IsInInterfaceArrayLike);
+            var hasInterfaceArrayLike = csMethod.Parameters.Any(param => param.IsInInterfaceArrayLike && !param.IsUsedAsReturnType);
 
             if (hasInterfaceArrayLike)
             {

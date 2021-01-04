@@ -18,7 +18,7 @@ if (!$SkipUnitTests) {
     }
 }
 
-if (!$SkipOuterloopTests) {
+if (!$SkipOuterloopTests -and !($env:ReleaseTag -and ($Configuration -eq "Release"))) {
     Write-Debug "Deploying test packages"
     if (!(./build/deploy-test-packages $Configuration)) {
         Write-Error "Failed to deploy test packages"

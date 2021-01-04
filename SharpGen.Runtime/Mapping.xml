@@ -7,6 +7,7 @@
     <define struct="SharpGen.Runtime.NativeLong" sizeof="8" primitive="true" />
     <define struct="SharpGen.Runtime.NativeULong" sizeof="8" primitive="true" />
   </extension>
+
   <bindings>
     <!-- Primitive bindings -->
     <bind from="void" to="System.Void" />
@@ -26,7 +27,7 @@
     <bind from="bool" to="System.Boolean" marshal="System.Byte" />
     <bind from="__function__stdcall" to="SharpGen.Runtime.FunctionCallback" />
     <bind from="GUID" to="System.Guid" />
-  </bindings>  
+  </bindings>
 
   <!-- global doc mappings -->
   <mapping>
