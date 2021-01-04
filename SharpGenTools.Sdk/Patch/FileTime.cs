@@ -17,19 +17,20 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.IO;
 
-namespace SharpPatch
+namespace SharpGenTools.Sdk.Patch
 {
     /// <summary>
     /// FileTime.
     /// </summary>
-    class FileTime
+    internal class FileTime
     {
-        private DateTime CreateTime;
-        private DateTime LastAccessTime;
-        private DateTime LastWriteTime;
+        private readonly DateTime CreateTime;
+        private readonly DateTime LastAccessTime;
+        private readonly DateTime LastWriteTime;
 
         public FileTime(string file)
         {
@@ -40,7 +41,7 @@ namespace SharpPatch
 
         public void UpdateCheckFile(string checkFile)
         {
-            File.WriteAllText(checkFile, "");
+            File.WriteAllText(checkFile, string.Empty);
             UpdateFile(checkFile);
         }
 
@@ -48,7 +49,7 @@ namespace SharpPatch
         /// Checks the file.
         /// </summary>
         /// <param name="checkfile">The file to check.</param>
-        /// <returns>true if the file exist and has the same LastWriteTime </returns>
+        /// <returns>true if the file exist and has the same LastWriteTime</returns>
         public bool CheckFileUpToDate(string checkfile)
         {
             return File.Exists(checkfile) && File.GetLastWriteTime(checkfile) == LastWriteTime;

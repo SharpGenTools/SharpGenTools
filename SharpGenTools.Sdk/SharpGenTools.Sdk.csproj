@@ -38,11 +38,12 @@
     <PackageReference Include="Polly" />
     <PackageReference Include="Polly.Contrib.WaitAndRetry" />
     <PackageReference Include="Nullable" />
+    <PackageReference Include="Microsoft.Extensions.DependencyModel" />
+    <PackageReference Include="Mono.Cecil" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SharpGen.Platform\SharpGen.Platform.csproj" />
-    <ProjectReference Include="..\SharpPatch\SharpPatch.csproj" />
   </ItemGroup>
 
   <ItemGroup>

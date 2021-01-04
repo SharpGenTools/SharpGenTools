@@ -53,8 +53,8 @@ struct InterfaceWithProperties
     virtual int __stdcall GetValuePersistent() = 0;
     virtual RESULT __stdcall GetValue2Persistent(int* value) = 0;
 
-    virtual InterfaceWithProperties* GetSelfPersistent() = 0;
-    virtual RESULT GetSelfOutPersistent(InterfaceWithProperties** child) = 0;
+    virtual InterfaceWithProperties* __stdcall GetSelfPersistent() = 0;
+    virtual RESULT __stdcall GetSelfOutPersistent(InterfaceWithProperties** child) = 0;
 };
 
 extern "C" __declspec(dllexport) IInterface2* __stdcall CreateInstance(void);

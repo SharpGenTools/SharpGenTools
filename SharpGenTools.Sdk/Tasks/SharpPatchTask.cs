@@ -1,28 +1,25 @@
 ﻿using System;
 using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
-using SharpPatch;
+using SharpGenTools.Sdk.Patch;
 
 namespace SharpGenTools.Sdk.Tasks
 {
-    public sealed class SharpPatchTask : Task
+    public sealed class SharpPatchTask : SharpTaskBase
     {
+        // ReSharper disable MemberCanBePrivate.Global, UnusedAutoPropertyAccessor.Global
         [Required] public string AssemblyToPatch { get; set; }
 
         [Required] public ITaskItem[] References { get; set; }
+        // ReSharper restore UnusedAutoPropertyAccessor.Global, MemberCanBePrivate.Global
 
         public override bool Execute()
         {
-            BindingRedirectResolution.Enable();
+            PrepareExecute();
+
             try
             {
-                var patchApp = new InteropApp
-                {
-                    AssemblyResolver = new MSBuildAssemblyResolver(References),
-                    Logger = new MSBuildSharpPatchLogger(Log),
-                };
-                patchApp.PatchFile(AssemblyToPatch);
-                return true;
+                AssemblyPatcher patchApp = new(new MSBuildAssemblyResolver(References), SharpGenLogger);
+                return patchApp.PatchFile(AssemblyToPatch);
             }
             catch (Exception ex)
             {
