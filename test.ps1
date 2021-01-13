@@ -34,6 +34,7 @@ if (!$SkipOuterloopTests -and !($env:ReleaseTag -and ($Configuration -eq "Releas
     # Peter Franta, CC BY-SA 3.0, https://stackoverflow.com/a/10242325
     function CartesianProduct-Lists
     {
+        [Diagnostics.CodeAnalysis.SuppressMessage("PSUseApprovedVerbs", "", Scope="function")]
         param($Lists)
 
         function Make-List
@@ -52,7 +53,7 @@ if (!$SkipOuterloopTests -and !($env:ReleaseTag -and ($Configuration -eq "Releas
             ,$Result
         }
 
-        # if Head..Tail 
+        # if Head..Tail
         if (@($Lists).Count -gt 1)
         {
             $Head = $Lists[0]

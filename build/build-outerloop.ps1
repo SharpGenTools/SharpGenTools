@@ -20,7 +20,7 @@ if ($env:Path -notmatch [Regex]::Escape($netFxRoot)){
 foreach ($test in $Projects) {
     Remove-Item -Recurse -Force "$RepoRoot/SdkTests/$test/bin" -ErrorAction Ignore
     Remove-Item -Recurse -Force "$RepoRoot/SdkTests/$test/obj" -ErrorAction Ignore
-} 
+}
 
 $SdkTestsSolution = "$RepoRoot/SdkTests/SdkTests.sln"
 
