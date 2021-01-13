@@ -1,11 +1,11 @@
-﻿using Microsoft.Build.Framework;
-using Mono.Cecil;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Build.Framework;
+using Mono.Cecil;
 
-namespace SharpGenTools.Sdk
+namespace SharpGenTools.Sdk.Patch
 {
     internal sealed class MSBuildAssemblyResolver : IAssemblyResolver
     {
@@ -14,8 +14,8 @@ namespace SharpGenTools.Sdk
         public MSBuildAssemblyResolver(IEnumerable<ITaskItem> references)
         {
             this.references = references
-                .Select(item => (Path.GetFileNameWithoutExtension(item.ItemSpec), new Lazy<AssemblyDefinition>(() => AssemblyDefinition.ReadAssembly(item.ItemSpec, new ReaderParameters { AssemblyResolver = this }))))
-                .ToDictionary((element) => element.Item1, (element) => element.Item2);
+                             .Select(item => (Path.GetFileNameWithoutExtension(item.ItemSpec), new Lazy<AssemblyDefinition>(() => AssemblyDefinition.ReadAssembly(item.ItemSpec, new ReaderParameters { AssemblyResolver = this }))))
+                             .ToDictionary((element) => element.Item1, (element) => element.Item2);
         }
 
         public void Dispose()

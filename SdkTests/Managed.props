@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <TargetFramework>netcoreapp2.1</TargetFramework>
+        <Platforms>x86;x64</Platforms>
         <IsPackable>false</IsPackable>
         <RestorePackagesPath>$(MSBuildThisFileDirectory)RestoredPackages/</RestorePackagesPath>
         <RestoreNoCache>true</RestoreNoCache>
@@ -9,6 +9,11 @@
         <SdkTestNative>$(MSBuildProjectName)</SdkTestNative>
         <SharpGenWaitForDebuggerAttach>false</SharpGenWaitForDebuggerAttach>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == 'true' and '$(VisualStudioVersion)' != ''">
+        <TargetFramework>net5.0</TargetFramework>
+        <TargetPlatform>x86</TargetPlatform>
     </PropertyGroup>
 
     <ItemGroup>
@@ -22,6 +27,27 @@
 
         <SharpGenMapping Include="Mapping.xml"/>
     </ItemGroup>
+
+<!--
+    <Target Name="SharpGenSdkTestsSetDebuggerAttach" BeforeTargets="SharpGenExecute">
+        <PropertyGroup>
+            <SharpGenWaitForDebuggerAttach>true</SharpGenWaitForDebuggerAttach>
+        </PropertyGroup>
+    </Target>
+
+    <Target Name="SharpGenSdkTestsClearDebuggerAttach" AfterTargets="SharpGenExecute">
+        <PropertyGroup>
+            <SharpGenWaitForDebuggerAttach>false</SharpGenWaitForDebuggerAttach>
+        </PropertyGroup>
+    </Target>
+-->
+
+    <Target Name="SharpGenSdkTestsVerifyTFM" BeforeTargets="BeforeCompile;CoreCompile">
+        <Error Text="TFM not set properly"
+               Condition="'$(TargetFramework)' != 'net472' and '$(TargetFramework)' != 'netcoreapp2.1' and '$(TargetFramework)' != 'net5.0'"/>
+        <Error Text="TP not set properly"
+               Condition="'$(TargetPlatform)' != 'x86' and '$(TargetPlatform)' != 'x64'"/>
+    </Target>
 
     <Target Name="_ResolveCopyLocalNuGetPackagePdbsAndXml" AfterTargets="ResolveReferences">
         <ItemGroup>
