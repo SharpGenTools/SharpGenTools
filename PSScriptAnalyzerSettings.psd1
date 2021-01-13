@@ -1,0 +1,3 @@
+@{
+    ExcludeRules=@('PSAvoidUsingWriteHost')
+}
