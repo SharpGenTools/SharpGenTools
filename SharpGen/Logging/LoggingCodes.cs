@@ -53,6 +53,12 @@ namespace SharpGen.Logging
 
         public const string InvalidGlobalNamespaceOverride = "SG0024";
 
+        public const string ExtensionLoadFailure = "SG0025";
+
+        public const string ExtensibilityInternalError = "SG0026";
+
+        public const string DocumentationProviderInternalError = "SG0027";
+
         public const string CastXmlError = "CX0001";
 
         public const string CastXmlWarning = "CX0002";
@@ -65,5 +71,8 @@ namespace SharpGen.Logging
 
         [SuppressMessage("ReSharper", "UnusedMember.Global")]
         public const string MissingExplicitRuntimePackageReferenceForPackageReferenceSdk = "SD0002";
+
+        [SuppressMessage("ReSharper", "UnusedMember.Global")]
+        public const string SharpGenExtensionPackageForPackageReferenceSdk = "SD0003";
     }
 }

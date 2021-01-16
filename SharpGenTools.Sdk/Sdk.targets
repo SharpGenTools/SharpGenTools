@@ -73,6 +73,7 @@
   <ItemGroup>
     <SharpGenPropertyCache Include="$(SharpGenIntermediateDir)PropertyCache.bin" />
     <SharpGenInputsCache Include="$(SharpGenIntermediateDir)InputsCache.txt" />
+    <SharpGenDocumentationCache Include="$(SharpGenIntermediateDir)DocumentationCache.json" />
 
     <GeneratedCSharpFiles Include="$(SharpGenGeneratedCodeFolder)Enumerations.cs" />
     <GeneratedCSharpFiles Include="$(SharpGenGeneratedCodeFolder)Functions.cs" />
@@ -223,20 +224,25 @@
     They should not take part in MSBuild up-to-date checking mechanism.
   -->
   <Target Name="SharpGenExecute"
-          Inputs="@(SharpGenSdkAssembly);@(SharpGenCastXml);@(SharpGenMapping);@(SharpGenConsumerMapping);@(SharpGenInputs);@(SharpGenExternalDocs);@(SharpGenPropertyCache)"
-          Outputs="@(SharpGenInputsCache);@(GeneratedCSharpFiles)">
+          Inputs="@(SharpGenSdkAssembly);@(SharpGenCastXml);@(SharpGenExtension);@(SharpGenMapping);@(SharpGenConsumerMapping);@(SharpGenInputs);@(SharpGenExternalDocs);@(SharpGenPropertyCache)"
+          Outputs="@(SharpGenInputsCache);@(GeneratedCSharpFiles);@(SharpGenDocumentationCache)">
     <SharpGenTask CastXmlArguments="@(CastXmlArg)"
                   CastXmlExecutable="@(SharpGenCastXml)"
                   ConfigFiles="@(SharpGenMapping);@(SharpGenConsumerMapping)"
                   ConsumerBindMappingConfig="@(SharpGenConsumerBindMappingFile)"
+                  ConsumerBindMappingConfigId="$(SharpGenConsumerBindMappingConfigId)"
                   DebugWaitForDebuggerAttach="$(SharpGenWaitForDebuggerAttach)"
+                  DocumentationCache="@(SharpGenDocumentationCache)"
+                  DocumentationFailuresAsErrors="$(SharpGenDocumentationFailuresAsErrors)"
+                  ExtensionAssemblies="@(SharpGenExtension)"
                   ExternalDocumentation="@(SharpGenExternalDocs)"
                   GeneratedCodeFolder="$(SharpGenGeneratedCodeFolder)"
                   GlobalNamespaceOverrides="@(SharpGenGlobalNamespaceOverrides)"
                   InputsCache="@(SharpGenInputsCache)"
                   Macros="$(SharpGenMacros)"
                   OutputPath="$(SharpGenIntermediateDir)"
-                  Platforms="@(SharpGenPlatforms)" />
+                  Platforms="@(SharpGenPlatforms)"
+                  SilenceMissingDocumentationErrorIdentifierPatterns="@(SharpGenSilenceMissingDocumentationErrorIdentifierPatterns)" />
 
     <!-- MSBuild will include these items even when target is considered up-to-date. -->
     <!-- Added bonus: these don't show up in IDE file tree (no clutter) -->
@@ -261,7 +267,11 @@
                             CastXmlExecutable="@(SharpGenCastXml)"
                             ConfigFiles="@(SharpGenMapping);@(SharpGenConsumerMapping)"
                             ConsumerBindMappingConfig="@(SharpGenConsumerBindMappingFile)"
+                            ConsumerBindMappingConfigId="$(SharpGenConsumerBindMappingConfigId)"
                             DebugWaitForDebuggerAttach="$(SharpGenWaitForDebuggerAttach)"
+                            DocumentationCache="@(SharpGenDocumentationCache)"
+                            DocumentationFailuresAsErrors="$(SharpGenDocumentationFailuresAsErrors)"
+                            ExtensionAssemblies="@(SharpGenExtension)"
                             ExternalDocumentation="@(SharpGenExternalDocs)"
                             GeneratedCodeFolder="$(SharpGenGeneratedCodeFolder)"
                             GlobalNamespaceOverrides="@(SharpGenGlobalNamespaceOverrides)"
@@ -269,7 +279,8 @@
                             Macros="$(SharpGenMacros)"
                             OutputPath="$(SharpGenIntermediateDir)"
                             Platforms="@(SharpGenPlatforms)"
-                            PropertyCache="@(SharpGenPropertyCache)" />
+                            PropertyCache="@(SharpGenPropertyCache)"
+                            SilenceMissingDocumentationErrorIdentifierPatterns="@(SharpGenSilenceMissingDocumentationErrorIdentifierPatterns)" />
   </Target>
 
   <Target Name="GenerateConsumerBindMappingFile"
@@ -340,6 +351,29 @@
            File="$(MSBuildProjectFullPath)"
            Code="SD0002"
            Condition="'$(SharpGenSdkUsedAsPackageReference)' == 'true' and '@(_ExistingSharpGenRuntimePackageReference)' == ''" />
+  </Target>
+
+  <!--
+    ============================================================
+              IncludeSharpGenExtensionPackageReferences
+
+       Add package references for @(SharpGenExtensionPackage)
+    ============================================================
+    -->
+  <Target Name="IncludeSharpGenExtensionPackageReferences"
+          BeforeTargets="_CheckForInvalidConfigurationAndPlatform;CollectPackageReferences"
+          Condition="'@(SharpGenExtensionPackage)' != ''">
+    <ItemGroup Condition="'$(SharpGenSdkUsedAsPackageReference)' != 'true'">
+      <PackageReference Include="@(SharpGenExtensionPackage)"
+                        Version="%(SharpGenExtensionPackage.Version)"
+                        IsImplicitlyDefined="true"
+                        PrivateAssets="All" />
+    </ItemGroup>
+
+    <Error Text="SharpGenExtensionPackage only works when SharpGenTools is used as a MSBuild SDK."
+           File="$(MSBuildProjectFullPath)"
+           Code="SD0003"
+           Condition="'$(SharpGenSdkUsedAsPackageReference)' == 'true' and '$(SharpGenDisableSharpGenExtensionPackageForPackageReferenceSdkError)' != 'true'" />
   </Target>
 
 </Project>

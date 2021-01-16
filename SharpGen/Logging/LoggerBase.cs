@@ -1,76 +1,179 @@
-﻿// Copyright (c) 2010-2014 SharpDX - Alexandre Mutel
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 using System;
-using System.IO;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace SharpGen.Logging
 {
-    /// <summary>
-    /// <see cref="ILogger"/> base implementation.
-    /// </summary>
-    public abstract class LoggerBase : ILogger
+    public abstract class LoggerBase
     {
         /// <summary>
-        /// Exits the process with the specified reason.
+        ///   Gets or sets the logger output.
         /// </summary>
-        /// <param name="reason">The reason.</param>
-        /// <param name="exitCode">The exit code</param>
-        public abstract void Exit(string reason, int exitCode);
+        /// <value>The logger output.</value>
+        public abstract ILogger LoggerOutput { get; }
 
         /// <summary>
-        /// Logs the specified log message.
+        ///   Gets a value indicating whether this instance has errors.
         /// </summary>
-        /// <param name="logLevel">The log level</param>
-        /// <param name="logLocation">The log location.</param>
-        /// <param name="context">The context.</param>
-        /// <param name="message">The message.</param>
-        /// <param name="exception">The exception.</param>
-        /// <param name="parameters">The parameters.</param>
-        public abstract void Log(LogLevel logLevel, LogLocation logLocation, string context, string code, string message, Exception exception, params object[] parameters);
-
+        /// <value>
+        ///   <c>true</c> if this instance has errors; otherwise, <c>false</c>.
+        /// </value>
+        public abstract bool HasErrors { get; }
 
         /// <summary>
-        /// Formats the message.
+        ///   Gets or sets the progress report.
         /// </summary>
-        /// <param name="logLevel">The log level.</param>
-        /// <param name="logLocation">The log location.</param>
-        /// <param name="context">The context.</param>
-        /// <param name="message">The message.</param>
-        /// <param name="exception">The exception.</param>
-        /// <param name="parameters">The parameters.</param>
-        /// <returns></returns>
-        public static string FormatMessage(LogLevel logLevel, LogLocation logLocation, string context, string message, Exception exception, params object[] parameters)
+        /// <value>The progress report.</value>
+        public abstract IProgressReport ProgressReport { get; }
+
+        /// <summary>
+        ///   Runs a delegate in the specified log context.
+        /// </summary>
+        /// <param name = "context">The context.</param>
+        /// <param name = "method">The method.</param>
+        public void RunInContext(string context, Action method)
         {
-            var lineMessage = new StringBuilder();
-
-            if (logLocation != null)
-                lineMessage.AppendFormat("{0}({1},{2}): ", logLocation.File, logLocation.Line, logLocation.Column);
-
-            // Write log parsable by Visual Studio
-            var levelName = Enum.GetName(typeof (LogLevel), logLevel).ToLower();
-            lineMessage.AppendFormat("{0}:{1}{2}", levelName , (context != null) ? $" in {context} " : "", message != null ? string.Format(message, parameters) : "");
-
-            return lineMessage.ToString();
+            try
+            {
+                PushContext(context);
+                method();
+            }
+            finally
+            {
+                PopContext();
+            }
         }
+
+        /// <summary>
+        ///   Pushes a context string.
+        /// </summary>
+        /// <param name = "context">The context.</param>
+        public abstract void PushContext(string context);
+
+        /// <summary>
+        ///   Pushes a context location.
+        /// </summary>
+        /// <param name = "fileName">Name of the file.</param>
+        /// <param name = "line">The line.</param>
+        /// <param name = "column">The column.</param>
+        public abstract void PushLocation(string fileName, int line = 1, int column = 1);
+
+        /// <summary>
+        ///   Pops the context location.
+        /// </summary>
+        public abstract void PopLocation();
+
+        /// <summary>
+        ///   Pushes a context formatted string.
+        /// </summary>
+        /// <param name = "context">The context.</param>
+        /// <param name = "parameters">The parameters.</param>
+        public abstract void PushContext(string context, params object[] parameters);
+
+        /// <summary>
+        ///   Pops the context.
+        /// </summary>
+        public abstract void PopContext();
+
+        /// <summary>
+        ///   Logs the specified message.
+        /// </summary>
+        /// <param name = "message">The message.</param>
+        public void Message(string message)
+        {
+            Message("{0}", message);
+        }
+
+        /// <summary>
+        ///   Logs the specified message.
+        /// </summary>
+        /// <param name = "message">The message.</param>
+        /// <param name = "parameters">The parameters.</param>
+        public void Message(string message, params object[] parameters)
+        {
+            LogRawMessage(LogLevel.Info, null, message, null, parameters);
+        }
+
+        /// <summary>
+        ///   Logs the specified progress level and message.
+        /// </summary>
+        /// <param name = "level">The level.</param>
+        /// <param name = "message">The message.</param>
+        /// <param name = "parameters">The parameters.</param>
+        public abstract void Progress(int level, string message, params object[] parameters);
+
+        /// <summary>
+        ///   Logs the specified warning.
+        /// </summary>
+        /// <param name = "message">The message.</param>
+        public void Warning(string code, string message)
+        {
+            Warning(code, "{0}", message);
+        }
+
+        /// <summary>
+        ///   Logs the specified warning.
+        /// </summary>
+        public void Warning(string code, string message, params object[] parameters)
+        {
+            LogRawMessage(LogLevel.Warning, code, message, null, parameters);
+        }
+
+        /// <summary>
+        ///   Logs the specified error.
+        /// </summary>
+        public void Error(string code, string message, Exception ex, params object[] parameters)
+        {
+            LogRawMessage(LogLevel.Error, code, message, ex, parameters);
+        }
+
+        /// <summary>
+        ///   Logs the specified error.
+        /// </summary>
+        public void Error(string code, string message)
+        {
+            Error(code, "{0}", message);
+        }
+
+        /// <summary>
+        ///   Logs the specified error.
+        /// </summary>
+        public void Error(string code, string message, params object[] parameters)
+        {
+            Error(code, message, null, parameters);
+        }
+
+        /// <summary>
+        ///   Logs the specified fatal error.
+        /// </summary>
+        public void Fatal(string message, Exception ex, params object[] parameters)
+        {
+            LogRawMessage(LogLevel.Fatal, null, message, ex, parameters);
+            Exit("A fatal error occured");
+        }
+
+        /// <summary>
+        ///   Logs the specified fatal error.
+        /// </summary>
+        public void Fatal(string message)
+        {
+            Fatal("{0}", message);
+        }
+
+        /// <summary>
+        ///   Logs the specified fatal error.
+        /// </summary>
+        public void Fatal(string message, params object[] parameters)
+        {
+            Fatal(message, null, parameters);
+        }
+
+        /// <summary>
+        /// Exits the process.
+        /// </summary>
+        public abstract void Exit(string reason, params object[] parameters);
+
+        /// <summary>
+        ///   Logs the raw message to the LoggerOutput.
+        /// </summary>
+        public abstract void LogRawMessage(LogLevel type, string code, string message, Exception exception, params object[] parameters);
     }
 }

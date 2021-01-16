@@ -4,6 +4,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Build.Framework;
+using SharpGenTools.Sdk.Internal;
 
 namespace SharpGenTools.Sdk.Tasks
 {
@@ -22,7 +23,7 @@ namespace SharpGenTools.Sdk.Tasks
             PrepareExecute();
 
             var cacheItemSpec = PropertyCache.ItemSpec;
-            // TODO: Utilities.RequireAbsolutePath(cacheItemSpec, nameof(PropertyCache));
+            Utilities.RequireAbsolutePath(cacheItemSpec, nameof(PropertyCache));
 
             var currentHash = HashSettings();
 
@@ -78,6 +79,10 @@ namespace SharpGenTools.Sdk.Tasks
             WriteStringArray(CastXmlArguments);
             WriteTaskItem(CastXmlExecutable);
             WriteTaskItems(ConfigFiles);
+            WriteString(ConsumerBindMappingConfigId);
+            WriteTaskItem(DocumentationCache);
+            WriteBool(DocumentationFailuresAsErrors);
+            WriteTaskItems(ExtensionAssemblies);
             WriteTaskItems(ExternalDocumentation);
             WriteString(GeneratedCodeFolder);
             WriteTaskItems(GlobalNamespaceOverrides);
@@ -85,6 +90,7 @@ namespace SharpGenTools.Sdk.Tasks
             WriteStringArray(Macros);
             WriteString(OutputPath);
             WriteTaskItems(Platforms);
+            WriteTaskItems(SilenceMissingDocumentationErrorIdentifierPatterns);
             WriteTaskItem(ConsumerBindMappingConfig);
 
             void WriteString(string s)
@@ -131,6 +137,8 @@ namespace SharpGenTools.Sdk.Tasks
                     WriteTaskItem(items[i]);
                 }
             }
+
+            void WriteBool(bool v) => writer.Write(v);
         }
     }
 }

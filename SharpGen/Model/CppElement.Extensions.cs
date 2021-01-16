@@ -176,6 +176,7 @@ namespace SharpGen.Model
             }
             if (newRule.ParameterUsedAsReturnType != null) tag.ParameterUsedAsReturnType = newRule.ParameterUsedAsReturnType;
             if (newRule.Relation != null) tag.Relation = newRule.Relation;
+            if (newRule.Hidden != null) tag.Hidden = newRule.Hidden;
         }
     }
 }
