@@ -68,12 +68,13 @@ namespace SharpGen.Transform
             this.constantManager = constantManager;
             namespaceRegistry = new NamespaceRegistry(logger);
             marshalledElementFactory = new MarshalledElementFactory(Logger, GlobalNamespace, typeRegistry);
+            var interopSignatureTransform = new InteropSignatureTransform(globalNamespace, logger);
 
             EnumTransform = new EnumTransform(namingRules, logger, namespaceRegistry, typeRegistry);
 
             StructTransform = new StructTransform(namingRules, logger, namespaceRegistry, typeRegistry, marshalledElementFactory);
 
-            FunctionTransform = new MethodTransform(namingRules, logger, groupRegistry, marshalledElementFactory, globalNamespace, interopManager);
+            FunctionTransform = new MethodTransform(namingRules, logger, groupRegistry, marshalledElementFactory, globalNamespace, interopManager, interopSignatureTransform);
 
             InterfaceTransform = new InterfaceTransform(namingRules, logger, globalNamespace, FunctionTransform, FunctionTransform, typeRegistry, namespaceRegistry);
         }

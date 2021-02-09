@@ -3,18 +3,17 @@ using SharpGen.Model;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 
 namespace SharpGen.Transform
 {
-    internal class InteropSignatureTransform
+    internal sealed class InteropSignatureTransform : IInteropSignatureTransform
     {
         public class SignatureInteropTypeOverride
         {
             public SignatureInteropTypeOverride(InteropType newType, InteropMethodSignatureFlags? setFlags = null)
             {
                 NewType = newType ?? throw new ArgumentNullException(nameof(newType));
-                
+
                 if (setFlags.HasValue)
                     SetFlags = setFlags.Value;
             }
@@ -25,7 +24,7 @@ namespace SharpGen.Transform
             public static implicit operator SignatureInteropTypeOverride(Type input) =>
                 new SignatureInteropTypeOverride(input);
         }
-        
+
         private readonly GlobalNamespaceProvider provider;
         private readonly Logger logger;
         private readonly Dictionary<string, SignatureInteropTypeOverride> returnTypeOverrides;
@@ -36,11 +35,11 @@ namespace SharpGen.Transform
         {
             this.provider = provider;
             this.logger = logger;
-            
+
             returnTypeOverrides = new Dictionary<string, SignatureInteropTypeOverride>
             {
-                { provider.GetTypeName(WellKnownName.Result), typeof(int) },
-                { provider.GetTypeName(WellKnownName.PointerSize), typeof(void*) }
+                {provider.GetTypeName(WellKnownName.Result), typeof(int)},
+                {provider.GetTypeName(WellKnownName.PointerSize), typeof(void*)}
             };
 
             windowsOnlyReturnTypeOverrides = new Dictionary<string, SignatureInteropTypeOverride>
@@ -68,14 +67,21 @@ namespace SharpGen.Transform
             };
         }
 
-        public Dictionary<PlatformDetectionType, InteropMethodSignature> GetInteropSignatures(CsCallable callable, bool isFunction)
+        public IDictionary<PlatformDetectionType, InteropMethodSignature> GetInteropSignatures(CsCallable callable)
         {
             var interopSignatures = new Dictionary<PlatformDetectionType, InteropMethodSignature>();
+            var isFunction = callable is CsFunction;
+
             if (callable.IsReturnStructLarge)
             {
-                var sigWithRetBuf = GetNativeInteropSignatureWithForcedReturnBuffer(callable, isFunction);
-                interopSignatures.Add(PlatformDetectionType.IsWindows, sigWithRetBuf);
-                interopSignatures.Add(PlatformDetectionType.IsItaniumSystemV, GetNativeInteropSignature(callable, isFunction, PlatformDetectionType.IsItaniumSystemV));
+                interopSignatures.Add(
+                    PlatformDetectionType.IsWindows,
+                    GetNativeInteropSignatureWithForcedReturnBuffer(callable, false)
+                );
+                interopSignatures.Add(
+                    PlatformDetectionType.IsItaniumSystemV,
+                    GetNativeInteropSignature(callable, false, PlatformDetectionType.IsItaniumSystemV)
+                );
             }
             else
             {
@@ -84,19 +90,24 @@ namespace SharpGen.Transform
                 systemvOnlyReturnTypeOverrides.TryGetValue(returnType, out var systemvOverride);
 
                 if (windowsOverride == systemvOverride)
-                    interopSignatures.Add(PlatformDetectionType.Any, GetNativeInteropSignature(callable, isFunction, PlatformDetectionType.Any));
+                    interopSignatures.Add(PlatformDetectionType.Any,
+                                          GetNativeInteropSignature(callable, isFunction, PlatformDetectionType.Any));
                 else
                 {
-
-                    interopSignatures.Add(PlatformDetectionType.IsWindows, GetNativeInteropSignature(callable, isFunction, PlatformDetectionType.IsWindows));
-                    interopSignatures.Add(PlatformDetectionType.IsItaniumSystemV, GetNativeInteropSignature(callable, isFunction, PlatformDetectionType.IsItaniumSystemV));
+                    interopSignatures.Add(PlatformDetectionType.IsWindows,
+                                          GetNativeInteropSignature(callable, isFunction,
+                                                                    PlatformDetectionType.IsWindows));
+                    interopSignatures.Add(PlatformDetectionType.IsItaniumSystemV,
+                                          GetNativeInteropSignature(callable, isFunction,
+                                                                    PlatformDetectionType.IsItaniumSystemV));
                 }
             }
 
             return interopSignatures;
         }
 
-        private InteropMethodSignature GetNativeInteropSignatureWithForcedReturnBuffer(CsCallable callable, bool isFunction)
+        private InteropMethodSignature GetNativeInteropSignatureWithForcedReturnBuffer(
+            CsCallable callable, bool isFunction)
         {
             var cSharpInteropCalliSignature = new InteropMethodSignature
             {
@@ -112,11 +123,8 @@ namespace SharpGen.Transform
             return cSharpInteropCalliSignature;
         }
 
-        /// <summary>
-        /// Registers the native interop signature.
-        /// </summary>
-        /// <param name="callable">The cs method.</param>
-        private InteropMethodSignature GetNativeInteropSignature(CsCallable callable, bool isFunction, PlatformDetectionType platform)
+        private InteropMethodSignature GetNativeInteropSignature(CsCallable callable, bool isFunction,
+                                                                 PlatformDetectionType platform)
         {
             // Tag if the method is a function
             var cSharpInteropCalliSignature = new InteropMethodSignature
@@ -141,10 +149,14 @@ namespace SharpGen.Transform
 
                 if (interopType == null)
                 {
-                    logger.Error(LoggingCodes.InvalidMethodParameterType, "Invalid parameter {0} for method {1}", param.PublicType.QualifiedName, callable.CppElement);
+                    logger.Error(LoggingCodes.InvalidMethodParameterType, "Invalid parameter {0} for method {1}",
+                                 param.PublicType.QualifiedName, callable.CppElement);
+                    continue;
                 }
 
-                cSharpInteropCalliSignature.ParameterTypes.Add(interopType);
+                cSharpInteropCalliSignature.ParameterTypes.Add(
+                    interopType
+                );
             }
         }
 
