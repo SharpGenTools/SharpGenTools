@@ -71,7 +71,10 @@ namespace SharpGen.Transform
             var interopSignatures = new Dictionary<PlatformDetectionType, InteropMethodSignature>();
             var isFunction = callable is CsFunction;
 
-            if (callable.IsReturnStructLarge)
+            // On Windows x86 and x64, if we have a native member function signature with a struct return type, we need to do a by-ref return.
+            // see https://github.com/dotnet/runtime/issues/10901
+            // see https://github.com/dotnet/coreclr/pull/23145
+            if (callable.IsReturnStructLarge && !isFunction)
             {
                 interopSignatures.Add(
                     PlatformDetectionType.IsWindows,
