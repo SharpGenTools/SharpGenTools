@@ -36,6 +36,8 @@ namespace SharpGen.Transform
         private readonly Dictionary<Regex, InnerInterfaceMethod> _mapMoveMethodToInnerInterface = new Dictionary<Regex, InnerInterfaceMethod>();
         private readonly TypeRegistry typeRegistry;
         private readonly NamespaceRegistry namespaceRegistry;
+        private readonly InteropManager interopManager;
+        private readonly IInteropSignatureTransform interopSignatureTransform;
         private readonly PropertyBuilder propertyBuilder;
         private readonly MethodOverloadBuilder methodOverloadBuilder;
 
@@ -49,13 +51,17 @@ namespace SharpGen.Transform
             ITransformPreparer<CppMethod, CsMethod> methodPreparer,
             ITransformer<CsMethod> methodTransformer,
             TypeRegistry typeRegistry,
-            NamespaceRegistry namespaceRegistry)
+            NamespaceRegistry namespaceRegistry,
+            InteropManager interopManager,
+            IInteropSignatureTransform interopSignatureTransform)
             : base(namingRules, logger)
         {
             MethodPreparer = methodPreparer;
             MethodTransformer = methodTransformer;
             this.typeRegistry = typeRegistry;
             this.namespaceRegistry = namespaceRegistry;
+            this.interopManager = interopManager;
+            this.interopSignatureTransform = interopSignatureTransform;
             propertyBuilder = new PropertyBuilder(globalNamespace);
             methodOverloadBuilder = new MethodOverloadBuilder(globalNamespace, typeRegistry);
 
@@ -153,7 +159,11 @@ namespace SharpGen.Transform
                 MethodTransformer.Process(cSharpMethod);
 
                 // Add specialized method overloads
-                GenerateSpecialOverloads(interfaceType, cSharpMethod);
+                foreach (var overload in GenerateSpecialOverloads(cSharpMethod))
+                {
+                    interfaceType.Add(overload);
+                    MethodTransform.CreateNativeInteropSignatures(interopSignatureTransform, overload, interopManager);
+                }
             }
 
             MoveMethodsToInnerInterfaces(interfaceType);
@@ -174,7 +184,6 @@ namespace SharpGen.Transform
             }
 
             CreateProperties(generatedMethods);
-
 
             if (interfaceType.IsCallback)
             {
@@ -288,6 +297,8 @@ namespace SharpGen.Transform
                 if (newCsMethod.Hidden.HasValue && newCsMethod.Hidden.Value)
                     newCsMethod.Hidden = null;
 
+                MethodTransform.CreateNativeInteropSignatures(interopSignatureTransform, newCsMethod, interopManager);
+
                 var keepImplementPublic = interfaceType.AutoGenerateShadow ||
                                           method.IsPublicVisibilityForced(interfaceType);
 
@@ -320,18 +331,18 @@ namespace SharpGen.Transform
             }
         }
 
-        private void GenerateSpecialOverloads(CsInterface interfaceType, CsMethod csMethod)
+        private IEnumerable<CsMethod> GenerateSpecialOverloads(CsMethod csMethod)
         {
             var hasInterfaceArrayLike = csMethod.Parameters.Any(param => param.IsInInterfaceArrayLike && !param.IsUsedAsReturnType);
 
             if (hasInterfaceArrayLike)
             {
-                interfaceType.Add(methodOverloadBuilder.CreateInterfaceArrayOverload(csMethod));
+                yield return methodOverloadBuilder.CreateInterfaceArrayOverload(csMethod);
             }
 
             if (hasInterfaceArrayLike || csMethod.RequestRawPtr)
             {
-                interfaceType.Add(methodOverloadBuilder.CreateRawPtrOverload(csMethod));
+                yield return methodOverloadBuilder.CreateRawPtrOverload(csMethod);
             }
         }
 
