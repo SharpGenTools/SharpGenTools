@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SharpGen.Platform\SharpGen.Platform.csproj" />
     <ProjectReference Include="..\SharpGen.Runtime\SharpGen.Runtime.csproj" />
+    <ProjectReference Include="..\SharpGenTools.Sdk\SharpGenTools.Sdk.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -20,6 +21,7 @@
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="Xunit.SkippableFact" />
+    <PackageReference Include="System.Text.Json" />
   </ItemGroup>
 
 </Project>

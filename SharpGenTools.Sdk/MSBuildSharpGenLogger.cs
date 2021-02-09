@@ -2,10 +2,11 @@
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using SharpGen.Logging;
+using ILogger = SharpGen.Logging.ILogger;
 
 namespace SharpGenTools.Sdk
 {
-    internal sealed class MSBuildSharpGenLogger : LoggerBase
+    internal sealed class MSBuildSharpGenLogger : ILogger
     {
         private readonly TaskLoggingHelper log;
 
@@ -14,13 +15,13 @@ namespace SharpGenTools.Sdk
             this.log = log;
         }
 
-        public override void Exit(string reason, int exitCode)
+        public void Exit(string reason, int exitCode)
         {
             log.LogError(reason ?? "");
             throw new CodeGenFailedException(reason ?? "");
         }
 
-        public override void Log(LogLevel logLevel, LogLocation logLocation, string context, string code, string message, Exception exception, params object[] parameters)
+        public void Log(LogLevel logLevel, LogLocation logLocation, string context, string code, string message, Exception exception, params object[] parameters)
         {
             if (message == null)
             {

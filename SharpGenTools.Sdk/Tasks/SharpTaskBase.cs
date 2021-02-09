@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Logger = SharpGen.Logging.Logger;
 
@@ -8,9 +9,9 @@ namespace SharpGenTools.Sdk.Tasks
 {
     public abstract class SharpTaskBase : Task
     {
-        // ReSharper disable MemberCanBeProtected.Global, UnusedAutoPropertyAccessor.Global
-        public bool DebugWaitForDebuggerAttach { get; set; }
-        // ReSharper restore UnusedAutoPropertyAccessor.Global, MemberCanBeProtected.Global
+        // ReSharper disable MemberCanBePrivate.Global, UnusedAutoPropertyAccessor.Global
+        [Required] public bool DebugWaitForDebuggerAttach { get; set; }
+        // ReSharper restore UnusedAutoPropertyAccessor.Global, MemberCanBePrivate.Global
 
         protected Logger SharpGenLogger { get; private set; }
 
@@ -27,7 +28,7 @@ namespace SharpGenTools.Sdk.Tasks
         }
 
         [Conditional("DEBUG")]
-        protected void WaitForDebuggerAttach()
+        private void WaitForDebuggerAttach()
         {
             if (!Debugger.IsAttached)
             {

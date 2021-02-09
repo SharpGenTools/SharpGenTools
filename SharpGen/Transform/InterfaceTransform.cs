@@ -285,6 +285,9 @@ namespace SharpGen.Transform
             {
                 var newCsMethod = (CsMethod) method.Clone();
 
+                if (newCsMethod.Hidden.HasValue && newCsMethod.Hidden.Value)
+                    newCsMethod.Hidden = null;
+
                 var keepImplementPublic = interfaceType.AutoGenerateShadow ||
                                           method.IsPublicVisibilityForced(interfaceType);
 

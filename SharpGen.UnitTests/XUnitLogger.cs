@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 
 namespace SharpGen.UnitTests
 {
-    internal class XUnitLogger : LoggerBase
+    internal sealed class XUnitLogger : ILogger
     {
         private readonly ITestOutputHelper output;
 
@@ -17,15 +17,15 @@ namespace SharpGen.UnitTests
 
         public List<XUnitLogEvent> MessageLog { get; } = new List<XUnitLogEvent>();
 
-        public override void Exit(string reason, int exitCode)
+        public void Exit(string reason, int exitCode)
         {
             Assert.False(true, "SharpGen failed to run"); // Fail the test
         }
 
-        public override void Log(LogLevel logLevel, LogLocation logLocation, string context, string code, string message, Exception exception, params object[] parameters)
+        public void Log(LogLevel logLevel, LogLocation logLocation, string context, string code, string message, Exception exception, params object[] parameters)
         {
-            var lineMessage = FormatMessage(logLevel, logLocation, context, message, exception, parameters);
-            
+            var lineMessage = LogUtilities.FormatMessage(logLevel, logLocation, context, message, exception, parameters);
+
             MessageLog.Add(new XUnitLogEvent(code, lineMessage, exception, logLevel));
 
             output.WriteLine(lineMessage);

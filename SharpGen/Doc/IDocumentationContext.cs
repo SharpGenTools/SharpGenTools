@@ -1,4 +1,7 @@
+using System;
 using SharpGen.Logging;
+
+#nullable enable
 
 namespace SharpGen.Doc
 {
@@ -8,6 +11,14 @@ namespace SharpGen.Doc
 
         IDocSubItem CreateSubItem();
 
-        Logger Logger { get; }
+        LoggerBase Logger { get; }
+
+        IFindDocumentationResult CreateSuccessfulFindDocumentationResult(IDocItem item);
+
+        /// <remarks>
+        /// Real delay before attempts to retry will not match <see cref="retryDelay"/> with any precision.
+        /// It's more of a general guidance for the scheduler, rather than an actual time span.
+        /// </remarks>
+        IFindDocumentationResult CreateFailedFindDocumentationResult(TimeSpan retryDelay);
     }
 }
