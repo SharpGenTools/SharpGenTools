@@ -1,74 +1,50 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SharpGen.Model;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Model;
 
 namespace SharpGen.Generator.Marshallers
 {
-    class ValueTypeArrayFieldMarshaller : MarshallerBase, IMarshaller
+    internal class ValueTypeArrayFieldMarshaller : MarshallerBase, IMarshaller
     {
         public ValueTypeArrayFieldMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
         {
         }
 
-        public bool CanMarshal(CsMarshalBase csElement)
-        {
-            return csElement.IsValueType && csElement.IsArray && !csElement.MappedToDifferentPublicType && csElement is CsField;
-        }
+        public bool CanMarshal(CsMarshalBase csElement) => csElement.IsValueType && csElement.IsArray &&
+                                                           !csElement.MappedToDifferentPublicType &&
+                                                           csElement is CsField;
 
-        public ArgumentSyntax GenerateManagedArgument(CsParameter csElement)
-        {
-            throw new InvalidOperationException();
-        }
+        public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame) =>
+            GenerateCopyMemory(csElement, false);
 
-        public ParameterSyntax GenerateManagedParameter(CsParameter csElement)
-        {
-            throw new InvalidOperationException();
-        }
+        public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame) =>
+            GenerateCopyMemory(csElement, true);
 
-        public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            return GenerateCopyMemory(csElement, copyFromNative: false);
-        }
+        #region Non-supported operations
 
-        public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
-        {
-            throw new InvalidOperationException();
-        }
+        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement) => throw new NotSupportedException();
 
-        public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement)
-        {
-            throw new InvalidOperationException();
-        }
+        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement) => throw new NotSupportedException();
 
-        public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            throw new NotImplementedException();
-        }
+        public FixedStatementSyntax GeneratePin(CsParameter csElement) => throw new NotSupportedException();
 
-        public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            return GenerateCopyMemory(csElement, copyFromNative: true);
-        }
+        public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement) =>
+            throw new NotSupportedException();
 
-        public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
-        {
-            throw new InvalidOperationException();
-        }
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement) =>
+            throw new NotSupportedException();
 
-        public FixedStatementSyntax GeneratePin(CsParameter csElement)
-        {
-            throw new InvalidOperationException();
-        }
+        public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement) =>
+            throw new NotSupportedException();
 
-        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement)
-        {
-            throw new InvalidOperationException();
-        }
+        public ArgumentSyntax GenerateManagedArgument(CsParameter csElement) => throw new NotSupportedException();
 
-        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement)
-        {
-            throw new InvalidOperationException();
-        }
+        public ParameterSyntax GenerateManagedParameter(CsParameter csElement) => throw new NotSupportedException();
+
+        public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame) =>
+            throw new NotSupportedException();
+
+        #endregion
     }
 }

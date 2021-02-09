@@ -1,216 +1,176 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+﻿using System.Collections.Generic;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
-using System.Collections.Generic;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    class BoolToIntArrayMarshaller : MarshallerBase, IMarshaller
+    internal class BoolToIntArrayMarshaller : MarshallerBase, IMarshaller
     {
         public BoolToIntArrayMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
         {
         }
 
-        public bool CanMarshal(CsMarshalBase csElement)
-        {
-            return csElement.IsBoolToInt && csElement.IsArray;
-        }
+        public bool CanMarshal(CsMarshalBase csElement) => csElement.IsBoolToInt && csElement.IsArray;
 
-        public ArgumentSyntax GenerateManagedArgument(CsParameter csElement)
-        {
-            return Argument(IdentifierName(csElement.Name));
-        }
+        public ArgumentSyntax GenerateManagedArgument(CsParameter csElement) =>
+            Argument(IdentifierName(csElement.Name));
 
-        public ParameterSyntax GenerateManagedParameter(CsParameter csElement)
-        {
-            return GenerateManagedArrayParameter(csElement);
-        }
+        public ParameterSyntax GenerateManagedParameter(CsParameter csElement) =>
+            GenerateManagedArrayParameter(csElement);
 
         public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame)
         {
+            var marshalStorage = GetMarshalStorageLocation(csElement);
+
             // TODO: Reverse-callback support?
             if (singleStackFrame)
             {
-                return GenerateNullCheckIfNeeded(csElement,
-                    ExpressionStatement(
-                            InvocationExpression(
-                                MemberAccessExpression(
-                                    SyntaxKind.SimpleMemberAccessExpression,
-                                    globalNamespace.GetTypeNameSyntax(WellKnownName.BooleanHelpers),
-                                    IdentifierName("ConvertToIntArray")))
-                            .WithArgumentList(
-                                ArgumentList(
-                                    SeparatedList(
-                                        new[]
-                                        {
-                                                    Argument(IdentifierName(csElement.Name)),
-                                                    Argument(GetMarshalStorageLocation(csElement))
-                                        }
-                            )))));
+                return GenerateNullCheckIfNeeded(
+                    csElement, EmitConvertToIntArray(marshalStorage)
+                );
             }
             else
             {
                 return GenerateNullCheckIfNeeded(csElement,
-                    FixedStatement(
-                        VariableDeclaration(
-                            PointerType(
-                                ParseTypeName(csElement.MarshalType.QualifiedName)))
-                        .WithVariables(
-                            SingletonSeparatedList(
-                                VariableDeclarator(
-                                    Identifier("__ptr"))
-                                .WithInitializer(
-                                    EqualsValueClause(
-                                        PrefixUnaryExpression(
-                                            SyntaxKind.AddressOfExpression,
-                                           GetMarshalStorageLocation(csElement)))))),
-                        ExpressionStatement(
-                            InvocationExpression(
-                                MemberAccessExpression(
-                                    SyntaxKind.SimpleMemberAccessExpression,
-                                    globalNamespace.GetTypeNameSyntax(WellKnownName.BooleanHelpers),
-                                    IdentifierName("ConvertToIntArray")))
-                            .WithArgumentList(
-                                ArgumentList(
-                                    SeparatedList(
-                                        new[]
-                                        {
-                                                    Argument(IdentifierName(csElement.Name)),
-                                                    Argument(IdentifierName("__ptr"))
-                                        }
-                            ))))));
+                                                 FixedStatement(
+                                                     VariableDeclaration(GetMarshalTypeSyntax(csElement))
+                                                        .WithVariables(
+                                                             SingletonSeparatedList(
+                                                                 VariableDeclarator(
+                                                                         Identifier("__ptr"))
+                                                                    .WithInitializer(
+                                                                         EqualsValueClause(
+                                                                             PrefixUnaryExpression(
+                                                                                 SyntaxKind.AddressOfExpression,
+                                                                                 marshalStorage))))),
+                                                     EmitConvertToIntArray(IdentifierName("__ptr"))
+                                                 ));
             }
+
+            ExpressionStatementSyntax EmitConvertToIntArray(ExpressionSyntax destination) => ExpressionStatement(
+                InvocationExpression(
+                    MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        GlobalNamespace.GetTypeNameSyntax(WellKnownName.BooleanHelpers),
+                        IdentifierName("ConvertToIntArray")
+                    ),
+                    ArgumentList(
+                        SeparatedList(
+                            new[]
+                            {
+                                Argument(IdentifierName(csElement.Name)),
+                                Argument(destination)
+                            }
+                        )
+                    )
+                )
+            );
         }
 
         public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
         {
             yield return LocalDeclarationStatement(
-               VariableDeclaration(
-                   PointerType(
-                       ParseTypeName(csElement.MarshalType.QualifiedName)),
-                   SingletonSeparatedList(
-                       VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)))));
-                    yield return ExpressionStatement(
-                        AssignmentExpression(
-                            SyntaxKind.SimpleAssignmentExpression,
-                            IdentifierName(GetMarshalStorageLocationIdentifier(csElement)),
-                            CastExpression(
-                                PointerType(
-                                    ParseTypeName(csElement.MarshalType.QualifiedName)),
-                                LiteralExpression(
-                                    SyntaxKind.NumericLiteralExpression,
-                                    Literal(0)))));
-            yield return GenerateNullCheckIfNeeded(csElement,
+                VariableDeclaration(
+                    GetMarshalTypeSyntax(csElement),
+                    SingletonSeparatedList(VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)))
+                )
+            );
+            yield return ExpressionStatement(
+                AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    IdentifierName(GetMarshalStorageLocationIdentifier(csElement)),
+                    CastExpression(
+                        GetMarshalTypeSyntax(csElement),
+                        LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))
+                    )
+                )
+            );
+            yield return GenerateNullCheckIfNeeded(
+                csElement,
                 Block(
                     LocalDeclarationStatement(
                         VariableDeclaration(
-                            PointerType(ParseTypeName(csElement.MarshalType.QualifiedName)),
+                            GetMarshalTypeSyntax(csElement),
                             SingletonSeparatedList(
                                 VariableDeclarator(
-                                    Identifier(csElement.IntermediateMarshalName))
-                                .WithInitializer(
+                                    Identifier(csElement.IntermediateMarshalName),
+                                    null,
                                     EqualsValueClause(
                                         StackAllocArrayCreationExpression(
                                             ArrayType(
-                                                ParseTypeName(csElement.MarshalType.QualifiedName),
+                                                GetMarshalElementTypeSyntax(csElement),
                                                 SingletonList(
                                                     ArrayRankSpecifier(
                                                         SingletonSeparatedList<ExpressionSyntax>(
                                                             MemberAccessExpression(
                                                                 SyntaxKind.SimpleMemberAccessExpression,
                                                                 IdentifierName(csElement.Name),
-                                                                IdentifierName("Length")))))))))))),
+                                                                IdentifierName("Length")
+                                                            ))))))))))),
                     ExpressionStatement(
                         AssignmentExpression(
                             SyntaxKind.SimpleAssignmentExpression,
                             IdentifierName(GetMarshalStorageLocationIdentifier(csElement)),
-                            IdentifierName(csElement.IntermediateMarshalName)))));
+                            IdentifierName(csElement.IntermediateMarshalName)
+                        )
+                    )
+                )
+            );
         }
 
-        public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement)
-        {
-            return Argument(GetMarshalStorageLocation(csElement));
-        }
+        public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement) =>
+            Argument(GetMarshalStorageLocation(csElement));
 
-        public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            return null;
-        }
+        public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame) => null;
 
         public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame)
         {
+            var marshalStorage = GetMarshalStorageLocation(csElement);
             if (singleStackFrame)
             {
-                return GenerateNullCheckIfNeeded(csElement,
-                    ExpressionStatement(
-                            InvocationExpression(
-                                MemberAccessExpression(
-                                    SyntaxKind.SimpleMemberAccessExpression,
-                                    globalNamespace.GetTypeNameSyntax(WellKnownName.BooleanHelpers),
-                                    IdentifierName("ConvertToBoolArray")))
-                            .WithArgumentList(
-                                ArgumentList(
-                                    SeparatedList(
-                                        new[]
-                                        {
-                                            Argument(GetMarshalStorageLocation(csElement)),
-                                            Argument(IdentifierName(csElement.Name))
-                                        }
-                            )))));
+                return GenerateNullCheckIfNeeded(csElement, EmitConvertToBoolArray(marshalStorage));
             }
             else if (csElement is CsField)
             {
                 return GenerateNullCheckIfNeeded(csElement,
-                    FixedStatement(
-                        VariableDeclaration(
-                            PointerType(
-                                ParseTypeName(csElement.MarshalType.QualifiedName)))
-                        .WithVariables(
-                            SingletonSeparatedList(
-                                VariableDeclarator(
-                                    Identifier("__ptr"))
-                                .WithInitializer(
-                                    EqualsValueClause(
-                                        PrefixUnaryExpression(
-                                            SyntaxKind.AddressOfExpression,
-                                           GetMarshalStorageLocation(csElement)))))),
-                        ExpressionStatement(
-                            InvocationExpression(
-                                MemberAccessExpression(
-                                    SyntaxKind.SimpleMemberAccessExpression,
-                                    globalNamespace.GetTypeNameSyntax(WellKnownName.BooleanHelpers),
-                                    IdentifierName("ConvertToBoolArray")))
-                            .WithArgumentList(
-                                ArgumentList(
-                                    SeparatedList(
-                                        new[]
-                                        {
-                                            Argument(IdentifierName("__ptr")),
-                                            Argument(IdentifierName(csElement.Name))
-                                        }
-                            ))))));
+                                                 FixedStatement(
+                                                     VariableDeclaration(GetMarshalTypeSyntax(csElement))
+                                                        .WithVariables(
+                                                             SingletonSeparatedList(
+                                                                 VariableDeclarator(
+                                                                         Identifier("__ptr"))
+                                                                    .WithInitializer(
+                                                                         EqualsValueClause(
+                                                                             PrefixUnaryExpression(
+                                                                                 SyntaxKind.AddressOfExpression,
+                                                                                 marshalStorage))))),
+                                                     EmitConvertToBoolArray(IdentifierName("__ptr"))));
             }
             else // Reverse-callbacks
             {
-                return GenerateNullCheckIfNeeded(csElement,
-                    ExpressionStatement(
-                            InvocationExpression(
-                                MemberAccessExpression(
-                                    SyntaxKind.SimpleMemberAccessExpression,
-                                    globalNamespace.GetTypeNameSyntax(WellKnownName.BooleanHelpers),
-                                    IdentifierName("ConvertToBoolArray")))
-                            .WithArgumentList(
-                                ArgumentList(
-                                    SeparatedList(
-                                        new[]
-                                        {
-                                            Argument(GetMarshalStorageLocation(csElement)),
-                                            Argument(IdentifierName(csElement.Name))
-                                        }
-                            ))))
-                );
+                return GenerateNullCheckIfNeeded(csElement, EmitConvertToBoolArray(marshalStorage));
             }
+
+            ExpressionStatementSyntax EmitConvertToBoolArray(ExpressionSyntax storage) => ExpressionStatement(
+                InvocationExpression(
+                    MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        GlobalNamespace.GetTypeNameSyntax(WellKnownName.BooleanHelpers),
+                        IdentifierName("ConvertToBoolArray")
+                    ),
+                    ArgumentList(
+                        SeparatedList(
+                            new[]
+                            {
+                                Argument(storage),
+                                Argument(IdentifierName(csElement.Name))
+                            }
+                        )
+                    )
+                )
+            );
         }
 
         public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
@@ -218,19 +178,14 @@ namespace SharpGen.Generator.Marshallers
             yield return GenerateArrayNativeToManagedExtendedProlog(csElement);
         }
 
-        public FixedStatementSyntax GeneratePin(CsParameter csElement)
-        {
-            return null;
-        }
+        public FixedStatementSyntax GeneratePin(CsParameter csElement) => null;
 
-        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement)
-        {
-            return true;
-        }
+        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement) => true;
 
-        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement)
-        {
-            return PointerType(ParseTypeName(csElement.MarshalType.QualifiedName));
-        }
+        private static TypeSyntax GetMarshalElementTypeSyntax(CsMarshalBase csElement) =>
+            ParseTypeName(csElement.MarshalType.QualifiedName); 
+
+        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement) =>
+            PointerType(GetMarshalElementTypeSyntax(csElement));
     }
 }

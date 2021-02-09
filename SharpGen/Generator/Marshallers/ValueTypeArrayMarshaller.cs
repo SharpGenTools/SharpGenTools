@@ -1,33 +1,29 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
-using System.Collections.Generic;
-using System.Linq;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    class ValueTypeArrayMarshaller : MarshallerBase, IMarshaller
+    internal class ValueTypeArrayMarshaller : MarshallerBase, IMarshaller
     {
         public ValueTypeArrayMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
         {
         }
 
-        public bool CanMarshal(CsMarshalBase csElement)
-        {
-            return csElement.IsValueType && csElement.IsArray && !csElement.MappedToDifferentPublicType && !(csElement is CsField);
-        }
+        public bool CanMarshal(CsMarshalBase csElement) => csElement.IsValueType && csElement.IsArray &&
+                                                           !csElement.MappedToDifferentPublicType &&
+                                                           csElement is not CsField;
 
-        public ArgumentSyntax GenerateManagedArgument(CsParameter csElement)
-        {
-            return Argument(IdentifierName(csElement.Name));
-        }
+        public ArgumentSyntax GenerateManagedArgument(CsParameter csElement) =>
+            Argument(IdentifierName(csElement.Name));
 
-        public ParameterSyntax GenerateManagedParameter(CsParameter csElement)
-        {
-            return GenerateManagedArrayParameter(csElement);
-        }
+        public ParameterSyntax GenerateManagedParameter(CsParameter csElement) =>
+            GenerateManagedArrayParameter(csElement);
 
         public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame)
         {
@@ -39,20 +35,13 @@ namespace SharpGen.Generator.Marshallers
             return null;
         }
 
-        public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
-        {
-            return Enumerable.Empty<StatementSyntax>();
-        }
+        public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement) =>
+            Enumerable.Empty<StatementSyntax>();
 
-        public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement)
-        {
-            return Argument(GetMarshalStorageLocation(csElement));
-        }
+        public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement) =>
+            Argument(GetMarshalStorageLocation(csElement));
 
-        public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            return null;
-        }
+        public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame) => null;
 
         public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame)
         {
@@ -60,7 +49,7 @@ namespace SharpGen.Generator.Marshallers
             {
                 return GenerateCopyBlock(parameter, CopyBlockDirection.UnmanagedToFixedArray);
             }
-            
+
             return null;
         }
 
@@ -69,24 +58,22 @@ namespace SharpGen.Generator.Marshallers
             yield return GenerateArrayNativeToManagedExtendedProlog(csElement);
         }
 
-        public FixedStatementSyntax GeneratePin(CsParameter csElement)
-        {
-            return FixedStatement(VariableDeclaration(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
-               SingletonSeparatedList(
-                   VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)).WithInitializer(EqualsValueClause(
-                       IdentifierName(csElement.Name)
-                       )))), EmptyStatement());
-        }
+        public FixedStatementSyntax GeneratePin(CsParameter csElement) => FixedStatement(
+            VariableDeclaration(
+                GetMarshalTypeSyntax(csElement),
+                SingletonSeparatedList(
+                    VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)).WithInitializer(
+                        EqualsValueClause(IdentifierName(csElement.Name))
+                    )
+                )
+            ),
+            EmptyStatement()
+        );
 
-        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement)
-        {
-            return true;
-        }
+        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement) => true;
 
-        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement)
-        {
-            return PointerType(ParseTypeName(csElement.PublicType.QualifiedName));
-        }
+        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement) =>
+            PointerType(ParseTypeName(csElement.PublicType.QualifiedName));
 
         private enum CopyBlockDirection
         {
@@ -104,15 +91,6 @@ namespace SharpGen.Generator.Marshallers
                 .WithInitializer(EqualsValueClause(arrayIdentifier));
             
             var unsafeName = GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Unsafe);
-            
-            var sizeOfName = GenericName(
-                Identifier("SizeOf"),
-                TypeArgumentList(
-                    SingletonSeparatedList<TypeSyntax>(
-                        IdentifierName(parameter.PublicType.QualifiedName)
-                    )
-                )
-            );
 
             var destination = direction switch
             {
@@ -149,7 +127,14 @@ namespace SharpGen.Generator.Marshallers
                                             MemberAccessExpression(
                                                 SyntaxKind.SimpleMemberAccessExpression,
                                                 unsafeName,
-                                                sizeOfName
+                                                GenericName(
+                                                    Identifier(nameof(Unsafe.SizeOf)),
+                                                    TypeArgumentList(
+                                                        SingletonSeparatedList<TypeSyntax>(
+                                                            IdentifierName(parameter.PublicType.QualifiedName)
+                                                        )
+                                                    )
+                                                )
                                             )
                                         )
                                     )
@@ -162,7 +147,7 @@ namespace SharpGen.Generator.Marshallers
 
             return FixedStatement(
                 VariableDeclaration(
-                    PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
+                    VoidPtrType,
                     SingletonSeparatedList(fixedInitializer)
                 ),
                 ExpressionStatement(
@@ -170,7 +155,7 @@ namespace SharpGen.Generator.Marshallers
                         MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
                             unsafeName,
-                            IdentifierName("CopyBlockUnaligned")
+                            IdentifierName(nameof(Unsafe.CopyBlockUnaligned))
                         ),
                         invokeArguments
                     )

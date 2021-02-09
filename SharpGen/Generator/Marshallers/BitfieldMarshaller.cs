@@ -1,89 +1,76 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
-using System;
-using System.Collections.Generic;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    class BitfieldMarshaller : MarshallerBase, IMarshaller
+    internal class BitfieldMarshaller : MarshallerBase, IMarshaller
     {
         public BitfieldMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
         {
         }
 
-        public bool CanMarshal(CsMarshalBase csElement)
-        {
-            return csElement is CsField field && field.IsBitField;
-        }
-
-        public ArgumentSyntax GenerateManagedArgument(CsParameter csElement)
-        {
-            throw new InvalidOperationException();
-        }
-
-        public ParameterSyntax GenerateManagedParameter(CsParameter csElement)
-        {
-            throw new InvalidOperationException();
-        }
+        public bool CanMarshal(CsMarshalBase csElement) => csElement is CsField {IsBitField: true};
 
         public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame)
         {
-            var field = (CsField)csElement;
+            var field = (CsField) csElement;
             return ExpressionStatement(
-                AssignmentExpression(SyntaxKind.OrAssignmentExpression,
-                GetMarshalStorageLocation(csElement),
-                CastExpression(ParseTypeName(csElement.MarshalType.QualifiedName),
-                    ParenthesizedExpression(BinaryExpression(SyntaxKind.BitwiseAndExpression,
-                        IdentifierName(csElement.IntermediateMarshalName),
-                        LiteralExpression(
-                            SyntaxKind.NumericLiteralExpression,
-                            Literal(field.BitMask << field.BitOffset)))))));
+                AssignmentExpression(
+                    SyntaxKind.OrAssignmentExpression,
+                    GetMarshalStorageLocation(csElement),
+                    CastExpression(
+                        ParseTypeName(csElement.MarshalType.QualifiedName),
+                        ParenthesizedExpression(
+                            BinaryExpression(
+                                SyntaxKind.BitwiseAndExpression,
+                                IdentifierName(csElement.IntermediateMarshalName),
+                                LiteralExpression(
+                                    SyntaxKind.NumericLiteralExpression,
+                                    Literal(field.BitMask << field.BitOffset)
+                                )
+                            )
+                        )
+                    )
+                )
+            );
         }
 
-        public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
-        {
-            throw new InvalidOperationException();
-        }
+        public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame) =>
+            ExpressionStatement(
+                AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    IdentifierName(csElement.IntermediateMarshalName),
+                    GetMarshalStorageLocation(csElement)
+                )
+            );
 
-        public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement)
-        {
-            throw new InvalidOperationException();
-        }
+        #region Non-supported operations
 
-        public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            return null;
-        }
+        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement) => throw new NotSupportedException();
 
-        public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            var field = (CsField)csElement;
-            return ExpressionStatement(
-                AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                IdentifierName(csElement.IntermediateMarshalName),
-                GetMarshalStorageLocation(csElement)));
-        }
+        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement) => throw new NotSupportedException();
 
-        public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
-        {
-            throw new InvalidOperationException();
-        }
+        public FixedStatementSyntax GeneratePin(CsParameter csElement) => throw new NotSupportedException();
 
-        public FixedStatementSyntax GeneratePin(CsParameter csElement)
-        {
-            throw new InvalidOperationException();
-        }
+        public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement) =>
+            throw new NotSupportedException();
 
-        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement)
-        {
-            throw new InvalidOperationException();
-        }
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement) =>
+            throw new NotSupportedException();
 
-        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement)
-        {
-            return ParseTypeName(csElement.PublicType.QualifiedName);
-        }
+        public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement) =>
+            throw new NotSupportedException();
+
+        public ArgumentSyntax GenerateManagedArgument(CsParameter csElement) => throw new NotSupportedException();
+
+        public ParameterSyntax GenerateManagedParameter(CsParameter csElement) => throw new NotSupportedException();
+
+        public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame) => null;
+
+        #endregion
     }
 }

@@ -28,10 +28,5 @@ namespace SharpGen.Generator.Marshallers
                 )
             );
         }
-
-        public StatementSyntax GenerateNativeToManaged(CsMarshalBase publicElement, CsMarshalBase relatedElement)
-        {
-            return null;
-        }
     }
 }

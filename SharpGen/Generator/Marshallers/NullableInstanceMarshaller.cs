@@ -1,91 +1,79 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
-using System.Collections.Generic;
-using System.Linq;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    class NullableInstanceMarshaller : MarshallerBase, IMarshaller
+    internal class NullableInstanceMarshaller : MarshallerBase, IMarshaller
     {
         public NullableInstanceMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
         {
         }
 
-        public bool CanMarshal(CsMarshalBase csElement)
-        {
-            return csElement.PassedByNullableInstance && !csElement.HasNativeValueType;
-        }
+        public bool CanMarshal(CsMarshalBase csElement) =>
+            csElement.PassedByNullableInstance && !csElement.HasNativeValueType;
 
-        public ArgumentSyntax GenerateManagedArgument(CsParameter csElement)
-        {
-            return GenerateManagedValueTypeArgument(csElement);
-        }
+        public ArgumentSyntax GenerateManagedArgument(CsParameter csElement) =>
+            GenerateManagedValueTypeArgument(csElement);
 
-        public ParameterSyntax GenerateManagedParameter(CsParameter csElement)
-        {
-            return GenerateManagedValueTypeParameter(csElement);
-        }
+        public ParameterSyntax GenerateManagedParameter(CsParameter csElement) =>
+            GenerateManagedValueTypeParameter(csElement);
 
-        public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            return GenerateNullCheckIfNeeded(csElement,
-                ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                    GetMarshalStorageLocation(csElement),
-                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                        IdentifierName(csElement.Name),
-                        IdentifierName("Value")))));
-        }
+        public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame) =>
+            GenerateNullCheckIfNeeded(
+                csElement,
+                ExpressionStatement(
+                    AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression,
+                        GetMarshalStorageLocation(csElement),
+                        MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            IdentifierName(csElement.Name),
+                            IdentifierName("Value")
+                        )
+                    )
+                )
+            );
 
         public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
         {
             yield return LocalDeclarationStatement(
-               VariableDeclaration(ParseTypeName(csElement.PublicType.QualifiedName),
-                   SingletonSeparatedList(
-                       VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)))));
+                VariableDeclaration(
+                    ParseTypeName(csElement.PublicType.QualifiedName),
+                    SingletonSeparatedList(VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)))
+                )
+            );
         }
 
-        public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement)
-        {
-            return Argument(GenerateNullCheckIfNeeded(csElement,
-                PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
-                    GetMarshalStorageLocation(csElement)),
+        public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement) => Argument(
+            GenerateNullCheckIfNeeded(
+                csElement,
+                PrefixUnaryExpression(SyntaxKind.AddressOfExpression, GetMarshalStorageLocation(csElement)),
                 CastExpression(
-                    PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
-                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)))));
-        }
+                    VoidPtrType,
+                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))
+                )
+            )
+        );
 
-        public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            return null;
-        }
+        public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame) => null;
 
-        public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            return ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                IdentifierName(csElement.Name),
-                GetMarshalStorageLocation(csElement)));
-        }
+        public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame) =>
+            ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                                                     IdentifierName(csElement.Name),
+                                                     GetMarshalStorageLocation(csElement)));
 
-        public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
-        {
-            return Enumerable.Empty<StatementSyntax>();
-        }
+        public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement) =>
+            Enumerable.Empty<StatementSyntax>();
 
-        public FixedStatementSyntax GeneratePin(CsParameter csElement)
-        {
-            return null;
-        }
+        public FixedStatementSyntax GeneratePin(CsParameter csElement) => null;
 
-        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement)
-        {
-            return true;
-        }
+        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement) => true;
 
-        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement)
-        {
-            return ParseTypeName(csElement.MarshalType.QualifiedName);
-        }
+        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement) =>
+            ParseTypeName(csElement.MarshalType.QualifiedName);
     }
 }

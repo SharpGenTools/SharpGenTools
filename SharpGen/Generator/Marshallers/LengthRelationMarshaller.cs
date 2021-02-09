@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using SharpGen.Model;
+﻿using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.CSharp;
+using SharpGen.Model;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    class LengthRelationMarshaller : MarshallerBase, IRelationMarshaller
+    internal class LengthRelationMarshaller : MarshallerBase, IRelationMarshaller
     {
         public LengthRelationMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
         {

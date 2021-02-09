@@ -1,130 +1,114 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+﻿using System.Collections.Generic;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
-using System.Collections.Generic;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    class ArrayOfInterfaceMarshaller : MarshallerBase, IMarshaller
+    internal class ArrayOfInterfaceMarshaller : MarshallerBase, IMarshaller
     {
         public ArrayOfInterfaceMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
         {
         }
 
-        public bool CanMarshal(CsMarshalBase csElement)
-        {
-            return csElement.IsArray && csElement.IsInterface;
-        }
+        public bool CanMarshal(CsMarshalBase csElement) => csElement.IsArray && csElement.IsInterface;
 
-        public ArgumentSyntax GenerateManagedArgument(CsParameter csElement)
-        {
-            return Argument(IdentifierName(csElement.Name));
-        }
+        public ArgumentSyntax GenerateManagedArgument(CsParameter csElement) =>
+            Argument(IdentifierName(csElement.Name));
 
-        public ParameterSyntax GenerateManagedParameter(CsParameter csElement)
-        {
-            return GenerateManagedArrayParameter(csElement);
-        }
+        public ParameterSyntax GenerateManagedParameter(CsParameter csElement) =>
+            GenerateManagedArrayParameter(csElement);
 
-        public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            return LoopThroughArrayParameter(
-               csElement,
-               (publicElement, marshalElement) =>
-                   MarshalInterfaceInstanceToNative(csElement, publicElement, marshalElement));
-        }
+        public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame) =>
+            LoopThroughArrayParameter(
+                csElement,
+                (publicElement, marshalElement) =>
+                    MarshalInterfaceInstanceToNative(csElement, publicElement, marshalElement));
 
         public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
         {
             yield return LocalDeclarationStatement(
-               VariableDeclaration(
-                   PointerType(
-                       QualifiedName(
-                           IdentifierName("System"),
-                           IdentifierName("IntPtr"))),
-                   SingletonSeparatedList(
-                       VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)))));
-                    yield return ExpressionStatement(
-                        AssignmentExpression(
-                            SyntaxKind.SimpleAssignmentExpression,
-                            IdentifierName(GetMarshalStorageLocationIdentifier(csElement)),
-                            CastExpression(
-                                PointerType(
-                                    QualifiedName(
-                                        IdentifierName("System"),
-                                        IdentifierName("IntPtr"))),
-                                LiteralExpression(
-                                    SyntaxKind.NumericLiteralExpression,
-                                    Literal(0)))));
-            yield return GenerateNullCheckIfNeeded(csElement,
+                VariableDeclaration(
+                    PointerType(IntPtrType),
+                    SingletonSeparatedList(VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)))
+                )
+            );
+            yield return ExpressionStatement(
+                AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    IdentifierName(GetMarshalStorageLocationIdentifier(csElement)),
+                    CastExpression(
+                        PointerType(IntPtrType),
+                        LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))
+                    )
+                )
+            );
+            yield return GenerateNullCheckIfNeeded(
+                csElement,
                 Block(
                     LocalDeclarationStatement(
                         VariableDeclaration(
-                            PointerType(
-                                QualifiedName(
-                                    IdentifierName("System"),
-                                    IdentifierName("IntPtr"))),
+                            PointerType(IntPtrType),
                             SingletonSeparatedList(
                                 VariableDeclarator(
-                                    Identifier(csElement.IntermediateMarshalName))
-                                .WithInitializer(
+                                    Identifier(csElement.IntermediateMarshalName),
+                                    null,
                                     EqualsValueClause(
                                         StackAllocArrayCreationExpression(
                                             ArrayType(
-                                                QualifiedName(
-                                                    IdentifierName("System"),
-                                                    IdentifierName("IntPtr")),
+                                                IntPtrType,
                                                 SingletonList(
-                                                        ArrayRankSpecifier(
-                                                            SingletonSeparatedList<ExpressionSyntax>(
-                                                                MemberAccessExpression(
-                                                                    SyntaxKind.SimpleMemberAccessExpression,
-                                                                    IdentifierName(csElement.Name),
-                                                                    IdentifierName("Length")))))))))))),
+                                                    ArrayRankSpecifier(
+                                                        SingletonSeparatedList<ExpressionSyntax>(
+                                                            MemberAccessExpression(
+                                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                                IdentifierName(csElement.Name),
+                                                                IdentifierName("Length")
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ),
                     ExpressionStatement(
                         AssignmentExpression(
                             SyntaxKind.SimpleAssignmentExpression,
                             IdentifierName(GetMarshalStorageLocationIdentifier(csElement)),
-                            IdentifierName(csElement.IntermediateMarshalName)))));
+                            IdentifierName(csElement.IntermediateMarshalName)
+                        )
+                    )
+                )
+            );
         }
 
-        public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement)
-        {
-            return Argument(CastExpression(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))), GetMarshalStorageLocation(csElement)));
-        }
+        public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement) =>
+            Argument(CastExpression(VoidPtrType, GetMarshalStorageLocation(csElement)));
 
-        public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            return GenerateGCKeepAlive(csElement);
-        }
+        public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame) =>
+            GenerateGCKeepAlive(csElement);
 
-        public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            return LoopThroughArrayParameter(
-               csElement,
-               (publicElement, marshalElement) =>
-                   MarshalInterfaceInstanceFromNative(csElement, publicElement, marshalElement));
-        }
+        public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame) =>
+            LoopThroughArrayParameter(
+                csElement,
+                (publicElement, marshalElement) =>
+                    MarshalInterfaceInstanceFromNative(csElement, publicElement, marshalElement)
+            );
 
         public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
         {
             yield return GenerateArrayNativeToManagedExtendedProlog(csElement);
         }
 
-        public FixedStatementSyntax GeneratePin(CsParameter csElement)
-        {
-            return null;
-        }
+        public FixedStatementSyntax GeneratePin(CsParameter csElement) => null;
 
-        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement)
-        {
-            return true;
-        }
+        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement) => true;
 
-        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement)
-        {
-            return PointerType(IntPtrType);
-        }
+        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement) => PointerType(IntPtrType);
     }
 }
