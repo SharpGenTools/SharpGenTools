@@ -1,29 +1,28 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SharpGen.Model;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Generator.Marshallers;
+using SharpGen.Model;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    class NativeInvocationCodeGenerator: ICodeGenerator<(CsCallable, PlatformDetectionType, InteropMethodSignature), ExpressionSyntax>
+    internal sealed class NativeInvocationCodeGenerator : INativeCallCodeGenerator
     {
+        private readonly IGeneratorRegistry generators;
+        private readonly GlobalNamespaceProvider globalNamespace;
+
         public NativeInvocationCodeGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
         {
-            Generators = generators;
-            this.globalNamespace = globalNamespace;
+            this.generators = generators ?? throw new ArgumentNullException(nameof(generators));
+            this.globalNamespace = globalNamespace ?? throw new ArgumentNullException(nameof(globalNamespace));
         }
 
-        readonly GlobalNamespaceProvider globalNamespace;
-
-        public IGeneratorRegistry Generators { get; }
-        
-        public ExpressionSyntax GenerateCode((CsCallable, PlatformDetectionType, InteropMethodSignature) sig)
+        public ExpressionSyntax GenerateCall(CsCallable callable, PlatformDetectionType platform,
+                                             InteropMethodSignature interopSig)
         {
-            var (callable, platform, interopSig) = sig;
             var arguments = new List<ArgumentSyntax>();
 
             if (callable is CsMethod)
@@ -37,10 +36,10 @@ namespace SharpGen.Generator
 
             if (isForcedReturnBufferSig)
             {
-                arguments.Add(Generators.Marshalling.GetMarshaller(callable.ReturnValue).GenerateNativeArgument(callable.ReturnValue)); 
+                arguments.Add(generators.Marshalling.GetMarshaller(callable.ReturnValue).GenerateNativeArgument(callable.ReturnValue)); 
             }
 
-            arguments.AddRange(callable.Parameters.Select(param => Generators.Marshalling.GetMarshaller(param).GenerateNativeArgument(param)));
+            arguments.AddRange(callable.Parameters.Select(param => generators.Marshalling.GetMarshaller(param).GenerateNativeArgument(param)));
 
             if (callable is CsMethod method)
             {
@@ -100,7 +99,7 @@ namespace SharpGen.Generator
             if (isForcedReturnBufferSig || !callable.HasReturnType)
                 return call;
 
-            var generatesMarshalVariable = Generators.Marshalling
+            var generatesMarshalVariable = generators.Marshalling
                                                      .GetMarshaller(callable.ReturnValue)
                                                      .GeneratesMarshalVariable(callable.ReturnValue);
 
