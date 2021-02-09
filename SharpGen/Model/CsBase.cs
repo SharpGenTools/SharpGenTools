@@ -97,7 +97,7 @@ namespace SharpGen.Model
             }
         }
 
-        protected void ResetItems()
+        protected virtual void ResetItems()
         {
             _items = new ObservableCollection<CsBase>();
             _items.CollectionChanged += ItemsChanged;
@@ -283,11 +283,6 @@ namespace SharpGen.Model
         {
             if (tag.Visibility.HasValue)
                 Visibility = tag.Visibility.Value;
-        }
-
-        public virtual object Clone()
-        {
-            return MemberwiseClone();
         }
 
         [ExcludeFromCodeCoverage]

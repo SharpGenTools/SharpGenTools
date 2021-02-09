@@ -129,9 +129,9 @@ namespace SharpGen.Model
         [DataMember]
         public bool OptionalParameter { get; set; }
 
-        public override object Clone()
+        public virtual CsParameter Clone()
         {
-            var parameter = (CsParameter)base.Clone();
+            var parameter = (CsParameter) MemberwiseClone();
             parameter.Parent = null;
             return parameter;
         }
