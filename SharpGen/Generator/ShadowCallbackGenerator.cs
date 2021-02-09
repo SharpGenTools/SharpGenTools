@@ -63,9 +63,9 @@ namespace SharpGen.Generator
                         : default)
                     .AddRange(
                         sig.ParameterTypes
-                            .Select((type, i) =>
-                                Parameter(Identifier($"arg{i}"))
-                                .WithType(ParseTypeName(type.TypeName)))
+                            .Select(type =>
+                                Parameter(Identifier(type.Name))
+                                .WithType(type.InteropTypeSyntax))
                         )))
             .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)));
         }
@@ -145,25 +145,13 @@ namespace SharpGen.Generator
                         .WithType(ParseTypeName("System.IntPtr")));
             }
 
-            var isForcedReturnBufferSig = sig.ForcedReturnBufferSig;
-            IEnumerable<InteropType> nativeParameters = sig.ParameterTypes;
-
-            if (isForcedReturnBufferSig)
-            {
-                nativeParameters = nativeParameters.Skip(1);
-                methodDecl = methodDecl
-                    .AddParameterListParameters(
-                        Parameter(Identifier("returnSlot"))
-                        .WithType(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword)))));
-            }
-
             methodDecl = methodDecl
                 .AddParameterListParameters(
-                    nativeParameters
-                            .Select((type, i) =>
-                                Parameter(Identifier($"param{i}"))
-                                .WithType(ParseTypeName(type.TypeName)))
-                            .ToArray());
+                    sig.ParameterTypes
+                       .Select(type =>
+                                   Parameter(Identifier(type.Name))
+                                      .WithType(type.InteropTypeSyntax))
+                       .ToArray());
 
             var statements = new List<StatementSyntax>();
 
@@ -278,6 +266,8 @@ namespace SharpGen.Generator
                     }
                 }
             }
+
+            var isForcedReturnBufferSig = sig.ForcedReturnBufferSig;
 
             var nativeReturnLocation = returnValueNeedsMarshalling
                                            ? MarshallerBase.GetMarshalStorageLocation(csElement.ReturnValue)

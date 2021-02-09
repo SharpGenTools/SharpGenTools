@@ -26,9 +26,9 @@ namespace SharpGen.Generator
             }
 
             method = method.AddParameterListParameters(
-                csElement.ParameterTypes.Select((param, i) =>
-                    Parameter(Identifier($"param{i}"))
-                        .WithType(ParseTypeName(param.TypeName))).ToArray());
+                csElement.ParameterTypes.Select(param =>
+                    Parameter(Identifier(param.Name))
+                        .WithType(param.InteropTypeSyntax)).ToArray());
 
             method = method.AddParameterListParameters(
                 Parameter(Identifier(csElement.IsFunction ? "funcPtr" : "methodPtr"))

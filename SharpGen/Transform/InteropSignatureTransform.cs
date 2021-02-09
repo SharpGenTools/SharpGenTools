@@ -117,7 +117,7 @@ namespace SharpGen.Transform
                 CallingConvention = callable.CallingConvention,
                 ForcedReturnBufferSig = true,
                 ReturnType = typeof(void*),
-                ParameterTypes = {typeof(void*)}
+                ParameterTypes = {new InteropMethodSignatureParameter(typeof(void*), callable.ReturnValue, "returnSlot")}
             };
 
             InitCalliSignatureParameters(callable, cSharpInteropCalliSignature);
@@ -158,7 +158,7 @@ namespace SharpGen.Transform
                 }
 
                 cSharpInteropCalliSignature.ParameterTypes.Add(
-                    interopType
+                    new InteropMethodSignatureParameter(interopType, param)
                 );
             }
         }
