@@ -2,7 +2,6 @@
 using SharpGen.Model;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace SharpGen.Transform
 {
@@ -141,11 +140,12 @@ namespace SharpGen.Transform
             return cSharpInteropCalliSignature;
         }
 
-        private void InitCalliSignatureParameters(CsCallable callable, InteropMethodSignature cSharpInteropCalliSignature)
+        private void InitCalliSignatureParameters(CsCallable callable,
+                                                  InteropMethodSignature cSharpInteropCalliSignature)
         {
             foreach (var param in callable.Parameters)
             {
-                var interopType = GetInteropTypeForParameter(param);
+                var interopType = GetInteropTypeForParameter(provider, param);
 
                 if (interopType == null)
                 {
@@ -160,102 +160,88 @@ namespace SharpGen.Transform
             }
         }
 
-        private void InitSignatureWithReturnType(CsCallable callable, InteropMethodSignature cSharpInteropCalliSignature, PlatformDetectionType platform)
+        private void InitSignatureWithReturnType(CsCallable callable,
+                                                 InteropMethodSignature cSharpInteropCalliSignature,
+                                                 PlatformDetectionType platform)
         {
-            Debug.Assert((platform & (PlatformDetectionType.IsWindows | PlatformDetectionType.IsItaniumSystemV)) != (PlatformDetectionType.IsWindows | PlatformDetectionType.IsItaniumSystemV) || !callable.IsReturnStructLarge);
-            var platformSpecificReturnTypeOverrides = (platform & PlatformDetectionType.IsWindows) != 0
-                ? windowsOnlyReturnTypeOverrides
-                : systemvOnlyReturnTypeOverrides;
-            // Handle Return Type parameter
-            // MarshalType.Type == null, then check that it is a structure
-            if (callable.ReturnValue.PublicType is CsStruct || callable.ReturnValue.PublicType is CsEnum)
+            InteropMethodSignatureFlags flags = default;
+
+            var returnType = GetInteropTypeForReturnValue(callable.ReturnValue, platform, ref flags);
+
+            if (returnType == null)
             {
-                var returnQualifiedName = callable.ReturnValue.PublicType.QualifiedName;
-                if (returnTypeOverrides.TryGetValue(returnQualifiedName, out var interopType))
-                {
-                    cSharpInteropCalliSignature.ReturnType = interopType.NewType;
-                    cSharpInteropCalliSignature.Flags |= interopType.SetFlags;
-                }
-                else if (platformSpecificReturnTypeOverrides.TryGetValue(returnQualifiedName, out interopType))
-                {
-                    cSharpInteropCalliSignature.ReturnType = interopType.NewType;
-                    cSharpInteropCalliSignature.Flags |= interopType.SetFlags;
-                }
-                else if (callable.ReturnValue.HasNativeValueType)
-                    cSharpInteropCalliSignature.ReturnType = $"{callable.ReturnValue.MarshalType.QualifiedName}.__Native";
-                else
-                    cSharpInteropCalliSignature.ReturnType = callable.ReturnValue.MarshalType.QualifiedName;
+                logger.Error(LoggingCodes.InvalidMethodReturnType, "Invalid return type {0} for method {1}",
+                             callable.ReturnValue.PublicType.QualifiedName, callable.CppElement);
+                returnType = callable.ReturnValue.PublicType.QualifiedName;
             }
-            else if (callable.ReturnValue.MarshalType is CsFundamentalType fundamentalReturn)
-            {
-                cSharpInteropCalliSignature.ReturnType = fundamentalReturn.Type;
-            }
-            else if (callable.ReturnValue.HasPointer)
-            {
-                if (callable.ReturnValue.IsInterface)
-                {
-                    cSharpInteropCalliSignature.ReturnType = typeof(IntPtr);
-                }
-                else
-                {
-                    cSharpInteropCalliSignature.ReturnType = typeof(void*);
-                }
-            }
-            else
-            {
-                cSharpInteropCalliSignature.ReturnType = callable.ReturnValue.PublicType.QualifiedName;
-                logger.Error(LoggingCodes.InvalidMethodReturnType, "Invalid return type {0} for method {1}", callable.ReturnValue.PublicType.QualifiedName, callable.CppElement);
-            }
+
+            if (flags != default)
+                cSharpInteropCalliSignature.Flags |= flags;
+
+            cSharpInteropCalliSignature.ReturnType = returnType;
         }
 
-        private InteropType GetInteropTypeForParameter(CsParameter param)
+        private InteropType GetInteropTypeForReturnValue(CsReturnValue returnValue,
+                                                         PlatformDetectionType platform,
+                                                         ref InteropMethodSignatureFlags flags)
         {
-            InteropType interopType;
-            var publicName = param.PublicType.QualifiedName;
-            if (publicName == provider.GetTypeName(WellKnownName.PointerSize))
+            var platformSpecificReturnTypeOverrides = (platform & PlatformDetectionType.IsWindows) != 0
+                                                          ? windowsOnlyReturnTypeOverrides
+                                                          : systemvOnlyReturnTypeOverrides;
+
+            // Handle Return Type parameter
+            // MarshalType.Type == null, then check that it is a structure
+            if (returnValue.PublicType is CsStruct || returnValue.PublicType is CsEnum)
             {
-                interopType = typeof(void*);
-            }
-            else if (param.HasPointer)
-            {
-                interopType = typeof(void*);
-            }
-            else if (param.MarshalType is CsFundamentalType marshalFundamental)
-            {
-                var type = marshalFundamental.Type;
-                if (type == typeof(IntPtr))
-                    type = typeof(void*);
-                interopType = type;
-            }
-            else if (param.PublicType is CsFundamentalType publicFundamental)
-            {
-                var type = publicFundamental.Type;
-                if (type == typeof(IntPtr))
-                    type = typeof(void*);
-                interopType = type;
-            }
-            else if (param.PublicType is CsStruct csStruct)
-            {
-                // If parameter is a struct, then a LocalInterop is needed
-                if (csStruct.HasMarshalType)
+                var returnQualifiedName = returnValue.PublicType.QualifiedName;
+
+                if (returnTypeOverrides.TryGetValue(returnQualifiedName, out var interopType))
                 {
-                    interopType = $"{csStruct.QualifiedName}.__Native";
+                    flags |= interopType.SetFlags;
+                    return interopType.NewType;
                 }
-                else
+
+                if (platformSpecificReturnTypeOverrides.TryGetValue(returnQualifiedName, out interopType))
                 {
-                    interopType = csStruct.QualifiedName;
+                    flags |= interopType.SetFlags;
+                    return interopType.NewType;
                 }
-            }
-            else if (param.PublicType is CsEnum csEnum)
-            {
-                interopType = csEnum.UnderlyingType.Type;
-            }
-            else
-            {
-                interopType = null;
+
+                return returnValue.HasNativeValueType
+                           ? $"{returnValue.MarshalType.QualifiedName}.__Native"
+                           : returnValue.MarshalType.QualifiedName;
             }
 
-            return interopType;
+            if (returnValue.MarshalType is CsFundamentalType fundamentalReturn)
+                return fundamentalReturn.Type;
+
+            if (returnValue.HasPointer)
+                return returnValue.IsInterface ? typeof(IntPtr) : typeof(void*);
+
+            return null;
+        }
+
+        private static InteropType GetInteropTypeForParameter(GlobalNamespaceProvider nsProvider, CsParameter param)
+        {
+            if (param.HasPointer)
+                return typeof(void*);
+
+            if (param.PublicType.QualifiedName == nsProvider.GetTypeName(WellKnownName.PointerSize))
+                return typeof(void*);
+
+            static Type IntPtrToVoidPtr(Type type) => type == typeof(IntPtr) ? typeof(void*) : type;
+
+            if (param.MarshalType is CsFundamentalType marshalFundamental)
+                return IntPtrToVoidPtr(marshalFundamental.Type);
+
+            return param.PublicType switch
+            {
+                CsFundamentalType publicFundamental => IntPtrToVoidPtr(publicFundamental.Type),
+                CsStruct {HasMarshalType: true} csStruct => $"{csStruct.QualifiedName}.__Native",
+                CsStruct csStruct => csStruct.QualifiedName,
+                CsEnum csEnum => csEnum.UnderlyingType.Type,
+                _ => null
+            };
         }
     }
 }
