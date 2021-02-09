@@ -1,26 +1,27 @@
-﻿﻿// Licensed to the .NET Foundation under one or more agreements.
+﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
 #nullable enable
 
- using System;
- using System.Collections.Generic;
- using System.Collections.Immutable;
- using System.Diagnostics;
- using System.IO;
- using System.Linq;
- using System.Reflection;
- using System.Reflection.Metadata;
- using System.Reflection.PortableExecutable;
- using System.Runtime.CompilerServices;
- using System.Threading;
- using Microsoft.CodeAnalysis;
- using SharpGen.Doc;
- using SharpGenTools.Sdk.Internal;
- using SharpGenTools.Sdk.Internal.Roslyn;
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using Microsoft.CodeAnalysis;
+using SharpGen.Doc;
+using SharpGenTools.Sdk.Internal;
+using SharpGenTools.Sdk.Internal.Roslyn;
 
- namespace SharpGenTools.Sdk.Extensibility
+namespace SharpGenTools.Sdk.Extensibility
 {
     /// <summary>
     /// Represents analyzers stored in an analyzer assembly file.
@@ -112,8 +113,7 @@
                     InitializeDisplayAndId();
                 }
 
-                // Use MemberNotNull when available https://github.com/dotnet/roslyn/issues/41964
-                return _lazyDisplay!;
+                return _lazyDisplay;
             }
         }
 
@@ -126,11 +126,11 @@
                     InitializeDisplayAndId();
                 }
 
-                // Use MemberNotNull when available https://github.com/dotnet/roslyn/issues/41964
-                return _lazyIdentity!;
+                return _lazyIdentity;
             }
         }
 
+        [MemberNotNull(nameof(_lazyIdentity), nameof(_lazyDisplay))]
         private void InitializeDisplayAndId()
         {
             try
@@ -139,23 +139,12 @@
                 // Use our metadata reader to do the equivalent thing.
                 using var reader = new PEReader(Utilities.OpenRead(FullPath));
 
-                var assemblyIdentity = ReadAssemblyIdentityOrThrow(reader.GetMetadataReader());
-                if (assemblyIdentity != null)
-                {
-                    _lazyDisplay = assemblyIdentity.Name;
-                    _lazyIdentity = assemblyIdentity;
-                }
-                else
-                {
-                    Fallback();
-                }
+                var metadataReader = reader.GetMetadataReader();
+                var assemblyIdentity = ReadAssemblyIdentityOrThrow(metadataReader);
+                _lazyDisplay = assemblyIdentity.Name;
+                _lazyIdentity = assemblyIdentity;
             }
             catch
-            {
-                Fallback();
-            }
-
-            void Fallback()
             {
                 _lazyDisplay = FileNameUtilities.GetFileName(FullPath, false);
                 _lazyIdentity = _lazyDisplay;
@@ -163,11 +152,8 @@
         }
 
         /// <exception cref="BadImageFormatException">An exception from metadata reader.</exception>
-        internal static AssemblyIdentity? ReadAssemblyIdentityOrThrow(MetadataReader reader)
+        private static AssemblyIdentity ReadAssemblyIdentityOrThrow(MetadataReader reader)
         {
-            if (!reader.IsAssembly)
-                return null;
-
             var assemblyDef = reader.GetAssemblyDefinition();
 
             return CreateAssemblyIdentityOrThrow(reader,
@@ -192,7 +178,7 @@
             string nameStr = reader.GetString(name);
             var cultureName = culture.IsNil ? null : reader.GetString(culture);
 
-            ImmutableArray<byte> publicKeyOrToken = reader.GetBlobContent(publicKey);
+            var publicKeyOrToken = reader.GetBlobContent(publicKey);
             bool hasPublicKey;
 
             if (isReference)
@@ -275,7 +261,7 @@
         private static bool IsDocProviderPredicate(ModuleMetadata module, InterfaceImplementation interfaceImpl)
         {
             if (!GetTypeNamespaceAndName(module.GetMetadataReader(), interfaceImpl.Interface,
-                                              out var namespaceHandle, out var nameHandle))
+                                         out var namespaceHandle, out var nameHandle))
                 return false;
 
             var comparer = module.GetMetadataReader().StringComparer;

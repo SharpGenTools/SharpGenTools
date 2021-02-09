@@ -30,7 +30,7 @@ namespace SharpGenTools.Sdk.Tasks
         {
             PrepareExecute();
 
-            ExtensibilityDriver.Instance.LoadExtensions(ExtensionAssemblies.Select(x => x.ItemSpec).ToArray());
+            ExtensibilityDriver.Instance.LoadExtensions(SharpGenLogger, ExtensionAssemblies.Select(x => x.ItemSpec).ToArray());
 
             var config = new ConfigFile
             {

@@ -32,11 +32,11 @@ namespace SharpGenTools.Sdk.Extensibility
 
         public ImmutableHashSet<ExtensionReference> ExtensionReferences => extensionsImmutable ??= extensionReferences.ToImmutableHashSet();
 
-        public bool LoadExtensions(IReadOnlyCollection<string> references)
+        public bool LoadExtensions(LoggerBase logger, IReadOnlyCollection<string> references)
         {
             var loaded = false;
 
-            foreach (var reference in ResolveExtensionReferences(references))
+            foreach (var reference in ResolveExtensionReferences(logger, references))
             {
                 if (!extensionReferences.Add(reference)) continue;
 
@@ -49,7 +49,7 @@ namespace SharpGenTools.Sdk.Extensibility
             return loaded;
         }
 
-        private void ResolveExtensibilityPoints(Logger logger, out ImmutableArray<IDocProvider> docProviders)
+        private void ResolveExtensibilityPoints(LoggerBase logger, out ImmutableArray<IDocProvider> docProviders)
         {
             var docProviderBuilder = ImmutableArray.CreateBuilder<IDocProvider>();
 
@@ -85,7 +85,7 @@ namespace SharpGenTools.Sdk.Extensibility
             docProviders = docProviderBuilder.ToImmutable();
         }
 
-        public async Task DocumentModule(Logger logger, DocItemCache cache, CppModule module, Lazy<DocumentationContext> context)
+        public async Task DocumentModule(LoggerBase logger, DocItemCache cache, CppModule module, Lazy<DocumentationContext> context)
         {
             ResolveExtensibilityPoints(logger, out var documentationProviders);
 
@@ -101,29 +101,35 @@ namespace SharpGenTools.Sdk.Extensibility
             }
         }
 
-        private IEnumerable<ExtensionReference> ResolveExtensionReferences(IReadOnlyCollection<string> references)
+        private IEnumerable<ExtensionReference> ResolveExtensionReferences(LoggerBase logger, IReadOnlyCollection<string> references)
         {
             foreach (var path in references)
             {
-                if (PathUtilities.IsAbsolute(path))
+                if (!PathUtilities.IsAbsolute(path))
                 {
-                    var fullPath = Utilities.TryNormalizeAbsolutePath(path);
+                    logger.Warning(LoggingCodes.ExtensionRelativePath, "Extension path {0} is not absolute, ignoring...", path);
+                    continue;
+                }
 
-                    if (fullPath != null && File.Exists(fullPath))
-                    {
-                        AssemblyLoader.AddDependencyLocation(fullPath);
-                    }
+                var fullPath = Utilities.TryNormalizeAbsolutePath(path);
+
+                if (fullPath != null && File.Exists(fullPath))
+                {
+                    AssemblyLoader.AddDependencyLocation(fullPath);
                 }
             }
 
             foreach (var cmdLineReference in references)
             {
+                if (!PathUtilities.IsAbsolute(cmdLineReference))
+                    continue;
+
                 yield return ResolveExtensionReference(cmdLineReference, AssemblyLoader)
                           ?? new UnresolvedExtensionReference(cmdLineReference);
             }
         }
 
-        private static ExtensionReference? ResolveExtensionReference(string reference, ExtensibilityAssemblyLoader analyzerLoader)
+        private static ExtensionReference? ResolveExtensionReference(string? reference, ExtensibilityAssemblyLoader analyzerLoader)
         {
             if (reference != null)
             {

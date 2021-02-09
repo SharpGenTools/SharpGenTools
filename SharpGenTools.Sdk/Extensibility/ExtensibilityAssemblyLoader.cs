@@ -16,9 +16,9 @@ namespace SharpGenTools.Sdk.Extensibility
 {
     internal abstract class ExtensibilityAssemblyLoader
     {
-        private readonly object _guard = new object();
+        private readonly object _guard = new();
 
-        internal static readonly ImmutableHashSet<string> WellKnownAssemblyNames =
+        private static readonly ImmutableHashSet<string> WellKnownAssemblyNames =
             new[]
             {
                 "SharpGen",
@@ -28,9 +28,10 @@ namespace SharpGenTools.Sdk.Extensibility
             }.ToImmutableHashSet();
 
         // lock _guard to read/write
-        private readonly Dictionary<string, AssemblyIdentity> _loadedAssemblyIdentitiesByPath = new Dictionary<string, AssemblyIdentity>();
-        private readonly Dictionary<AssemblyIdentity, Assembly> _loadedAssembliesByIdentity = new Dictionary<AssemblyIdentity, Assembly>();
-        private readonly HashSet<string> _dependencyLocations = new HashSet<string>(PathUtilities.Comparer); 
+        private readonly Dictionary<string, AssemblyIdentity> _loadedAssemblyIdentitiesByPath = new();
+        private readonly Dictionary<AssemblyIdentity, Assembly> _loadedAssembliesByIdentity = new();
+
+        private readonly HashSet<string> _dependencyLocations = new(PathUtilities.Comparer); 
 
         protected abstract Assembly LoadFromPathImpl(string fullPath);
 

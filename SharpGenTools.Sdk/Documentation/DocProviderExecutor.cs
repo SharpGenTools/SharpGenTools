@@ -103,7 +103,7 @@ namespace SharpGenTools.Sdk.Documentation
                         {
                             var type = docProvider.GetType();
                             var name = type.FullName;
-                            return string.IsNullOrEmpty(name) ? type.Name : name;
+                            return string.IsNullOrEmpty(name) ? type.Name : name!;
                         }
                     },
                     LazyThreadSafetyMode.None
@@ -123,18 +123,16 @@ namespace SharpGenTools.Sdk.Documentation
                                 delay = nextDelay.Value;
                             else
                             {
-                                if (backoffIndex == 5)
-                                {
-                                    context.Logger.Message("SharpGen internal invalid state on delay: backoffIndex == 5");
-                                    if (Debugger.IsAttached) Debugger.Break();
-                                }
-                                else if (backoffIndex > 5)
+                                // TODO: fix the bug and remove this hack
+                                if (backoffIndex >= 5)
                                 {
                                     context.Logger.Message(
-                                        $"SharpGen internal invalid state on delay: backoffIndex = {backoffIndex}");
+                                        $"SharpGen internal invalid state on delay: backoffIndex == {backoffIndex}"
+                                    );
                                     if (Debugger.IsAttached) Debugger.Break();
                                     backoffIndex = 0;
                                 }
+
                                 delay = backoff[backoffIndex++];
                             }
                             if (delay > TimeSpan.Zero)
@@ -161,14 +159,12 @@ namespace SharpGenTools.Sdk.Documentation
                                     if (retryDelay <= TimeSpan.Zero)
                                         nextDelay = TimeSpan.Zero;
 
-                                    if (backoffIndex == 5)
+                                    // TODO: fix the bug and remove this hack
+                                    if (backoffIndex >= 5)
                                     {
-                                        context.Logger.Message("SharpGen internal invalid state on reschedule: backoffIndex == 5");
-                                        if (Debugger.IsAttached) Debugger.Break();
-                                    }
-                                    else if (backoffIndex > 5)
-                                    {
-                                        context.Logger.Message($"SharpGen internal invalid state on reschedule: backoffIndex = {backoffIndex}");
+                                        context.Logger.Message(
+                                            $"SharpGen internal invalid state on reschedule: backoffIndex = {backoffIndex}"
+                                        );
                                         if (Debugger.IsAttached) Debugger.Break();
                                         (backoff, backoffIndex, nextDelay) = GenerateBackoff(retryDelay);
                                     }
@@ -228,8 +224,7 @@ namespace SharpGenTools.Sdk.Documentation
         }
 
         private static (TimeSpan[] backoff, int index, TimeSpan? nextDelay) GenerateBackoff(TimeSpan offset) =>
-            // BUG: 5 should be sufficient, but causes IndexOutOfBounds
-            (Backoff.DecorrelatedJitterBackoffV2(offset + TenthOfSecond, 6).ToArray(), 0, null);
+            (Backoff.DecorrelatedJitterBackoffV2(offset + TenthOfSecond, 5).ToArray(), 0, null);
 
         private static async Task DocumentCallable(IDocProvider? docProvider, DocItemCache cache,
                                                    CppCallable callable, DocumentationContext context,

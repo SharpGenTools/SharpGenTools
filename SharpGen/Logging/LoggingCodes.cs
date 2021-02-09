@@ -59,6 +59,8 @@ namespace SharpGen.Logging
 
         public const string DocumentationProviderInternalError = "SG0027";
 
+        public const string ExtensionRelativePath = "SG0028";
+
         public const string CastXmlError = "CX0001";
 
         public const string CastXmlWarning = "CX0002";
