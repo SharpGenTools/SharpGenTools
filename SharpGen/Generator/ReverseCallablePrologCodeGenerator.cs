@@ -4,6 +4,7 @@ using SharpGen.Model;
 using System;
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
+using SharpGen.Generator.Marshallers;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
@@ -84,7 +85,7 @@ namespace SharpGen.Generator
                         marshalTypeSyntax,
                         SingletonSeparatedList(
                             VariableDeclarator(
-                                generators.Marshalling.GetMarshalStorageLocationIdentifier(publicElement),
+                                MarshallerBase.GetMarshalStorageLocationIdentifier(publicElement),
                                 null,
                                 EqualsValueClause(initializerExpression)
                             )
@@ -146,7 +147,7 @@ namespace SharpGen.Generator
                     .WithVariables(
                         SingletonSeparatedList(
                             VariableDeclarator(
-                                generators.Marshalling.GetMarshalStorageLocationIdentifier(publicElement))
+                                MarshallerBase.GetMarshalStorageLocationIdentifier(publicElement))
                             .WithInitializer(
                                 EqualsValueClause(
                                     refToNativeExpression)))));

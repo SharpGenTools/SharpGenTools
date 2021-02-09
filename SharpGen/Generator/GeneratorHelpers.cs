@@ -2,98 +2,93 @@
 using SharpGen.Model;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using Microsoft.CodeAnalysis.CSharp;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
     internal static class GeneratorHelpers
     {
-        private static readonly PlatformDetectionType[] platforms = (PlatformDetectionType[])Enum.GetValues(typeof(PlatformDetectionType));
+        private static readonly PlatformDetectionType[] Platforms = (PlatformDetectionType[])Enum.GetValues(typeof(PlatformDetectionType));
+        private static readonly PlatformDetectionType[] PlatformsNoAny = Platforms.Where(x => x != PlatformDetectionType.Any).ToArray();
+        private static readonly int PlatformsNoAnyStringLength = PlatformsNoAny.Select(x => x.ToString().Length).Max() + 2;
 
-        private static StatementSyntax PlatformSpecificStatement(GlobalNamespaceProvider globalNamespace, PlatformDetectionType allPlatformBitmap, PlatformDetectionType platform, StatementSyntax statement)
-        {
-            if ((platform & allPlatformBitmap) == allPlatformBitmap)
-            {
-                return statement;
-            }
-
-            ExpressionSyntax condition = null;
-
-            foreach (PlatformDetectionType flag in platforms)
-            {
-                if ((platform & flag) == flag && flag != PlatformDetectionType.Any)
-                {
-                    var newCondition = MemberAccessExpression(
-                                Microsoft.CodeAnalysis.CSharp.SyntaxKind.SimpleMemberAccessExpression,
-                                globalNamespace.GetTypeNameSyntax(WellKnownName.PlatformDetection),
-                                IdentifierName(flag.ToString()));
-                    condition = condition is null ?
-                        (ExpressionSyntax)newCondition
-                        : BinaryExpression(Microsoft.CodeAnalysis.CSharp.SyntaxKind.LogicalAndExpression,
-                            condition,
-                            newCondition);
-                }
-            }
-
-            return condition is null
-                ? statement
-                : IfStatement(condition, statement);
-        }
+        private static readonly ThrowStatementSyntax ThrowPlatformNotSupportedStatement = ThrowStatement(
+            ObjectCreationExpression(
+                ParseTypeName("System.PlatformNotSupportedException")
+            ).WithArgumentList(ArgumentList())
+        );
 
         public static string GetPlatformSpecificSuffix(PlatformDetectionType platform)
         {
             if (platform == PlatformDetectionType.Any)
-            {
                 return "_";
+
+            StringBuilder str = new("_", PlatformsNoAnyStringLength);
+            foreach (var flag in PlatformsNoAny)
+            {
+                if ((platform & flag) != flag)
+                    continue;
+
+                str.Append(flag);
+                str.Append('_');
             }
 
-            StringBuilder str = new StringBuilder("_");
-            foreach (PlatformDetectionType flag in platforms)
-            {
-                if ((platform & flag) == flag && flag != PlatformDetectionType.Any)
-                {
-                    str.Append(flag);
-                    str.Append('_');
-                }
-            }
             return str.ToString();
         }
 
-        public static StatementSyntax GetPlatformSpecificStatements(GlobalNamespaceProvider globalNamespace, GeneratorConfig config, IEnumerable<PlatformDetectionType> types, Func<PlatformDetectionType, StatementSyntax> syntaxBuilder)
+        public static StatementSyntax GetPlatformSpecificStatements(GlobalNamespaceProvider globalNamespace,
+                                                                    GeneratorConfig config,
+                                                                    IEnumerable<PlatformDetectionType> types,
+                                                                    Func<PlatformDetectionType, StatementSyntax> syntaxBuilder)
         {
-            List<IfStatementSyntax> ifStatements = new List<IfStatementSyntax>();
+            List<IfStatementSyntax> ifStatements = new();
 
             var allPlatformBitmap = config.Platforms;
 
             foreach (var platform in types)
             {
+                var platformStatement = syntaxBuilder(platform);
+
                 if ((platform & allPlatformBitmap) == allPlatformBitmap)
+                    return platformStatement;
+
+                ExpressionSyntax condition = null;
+
+                foreach (var flag in PlatformsNoAny)
                 {
-                    return PlatformSpecificStatement(globalNamespace, allPlatformBitmap, platform, syntaxBuilder(platform));
+                    if ((platform & flag) != flag)
+                        continue;
+
+                    var newCondition = MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        globalNamespace.GetTypeNameSyntax(WellKnownName.PlatformDetection),
+                        IdentifierName(flag.ToString())
+                    );
+
+                    condition = condition is null
+                                    ? newCondition
+                                    : BinaryExpression(SyntaxKind.LogicalAndExpression, condition, newCondition);
                 }
 
-                IfStatementSyntax statement = (IfStatementSyntax)PlatformSpecificStatement(globalNamespace, allPlatformBitmap, platform, syntaxBuilder(platform));
-                ifStatements.Add(statement);
+                ifStatements.Add(
+                    condition is null
+                        ? (IfStatementSyntax) platformStatement
+                        : IfStatement(condition, platformStatement)
+                );
             }
 
             IfStatementSyntax platformDetectionIfStatement = null;
 
-            for (int i = ifStatements.Count - 1; i >= 0; i--)
+            for (var i = ifStatements.Count - 1; i >= 0; i--)
             {
-                if (platformDetectionIfStatement is null)
-                {
-                    platformDetectionIfStatement = ifStatements[i]
-                        .WithElse(
-                        ElseClause(
-                            ThrowStatement(
-                                ObjectCreationExpression(ParseTypeName("System.PlatformNotSupportedException"))
-                                    .WithArgumentList(ArgumentList()))));
-                }
-                else
-                {
-                    platformDetectionIfStatement = ifStatements[i].WithElse(ElseClause(platformDetectionIfStatement));
-                }
+                platformDetectionIfStatement = ifStatements[i].WithElse(
+                    platformDetectionIfStatement is null
+                        ? ElseClause(ThrowPlatformNotSupportedStatement)
+                        : ElseClause(platformDetectionIfStatement)
+                );
             }
 
             return platformDetectionIfStatement;

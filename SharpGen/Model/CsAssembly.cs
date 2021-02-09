@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -41,7 +42,6 @@ namespace SharpGen.Model
         /// Initializes a new instance of the <see cref="CsAssembly"/> class.
         /// </summary>
         /// <param name="assemblyName">Name of the assembly.</param>
-        /// <param name="appType">The application type this assembly is generated for. (Used for the check file)</param>
         public CsAssembly(string assemblyName)
             :this()
         {
@@ -78,6 +78,7 @@ namespace SharpGen.Model
         /// </summary>
         /// <param name="file">The file.</param>
         /// <returns>A C++ module</returns>
+        [Obsolete("XML serialization ability is a non-public API contract")]
         public static CsAssembly Read(string file)
         {
             using (var input = new FileStream(file, FileMode.Open))
@@ -91,6 +92,7 @@ namespace SharpGen.Model
         /// </summary>
         /// <param name="input">The input.</param>
         /// <returns>A C++ module</returns>
+        [Obsolete("XML serialization ability is a non-public API contract")]
         public static CsAssembly Read(Stream input)
         {
             var ds = GetSerializer();
@@ -140,6 +142,7 @@ namespace SharpGen.Model
         /// Writes this instance to the specified file.
         /// </summary>
         /// <param name="file">The file.</param>
+        [Obsolete("XML serialization ability is a non-public API contract")]
         public void Write(string file)
         {
             using (var output = new FileStream(file, FileMode.Create))
@@ -152,6 +155,7 @@ namespace SharpGen.Model
         /// Writes this instance to the specified output.
         /// </summary>
         /// <param name="output">The output.</param>
+        [Obsolete("XML serialization ability is a non-public API contract")]
         public void Write(Stream output)
         {
             var ds = GetSerializer();

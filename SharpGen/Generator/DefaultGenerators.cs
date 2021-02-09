@@ -8,7 +8,7 @@ using System.Text;
 
 namespace SharpGen.Generator
 {
-    class DefaultGenerators : IGeneratorRegistry
+    internal sealed class DefaultGenerators : IGeneratorRegistry
     {
         public DefaultGenerators(
             GlobalNamespaceProvider globalNamespace,
@@ -53,17 +53,11 @@ namespace SharpGen.Generator
         public IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax> Function { get; }
         public IMultiCodeGenerator<CsInterface, MemberDeclarationSyntax> Interface { get; }
         public IMultiCodeGenerator<CsGroup, MemberDeclarationSyntax> Group { get; }
-
         public ICodeGenerator<CsAssembly, ClassDeclarationSyntax> LocalInterop { get; }
-
         public IMultiCodeGenerator<InteropMethodSignature, MemberDeclarationSyntax> InteropMethod { get; }
-
         public ICodeGenerator<CsInterface, MemberDeclarationSyntax> Shadow { get; }
-
         public ICodeGenerator<CsInterface, MemberDeclarationSyntax> Vtbl { get; }
-
         public IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> ShadowCallable { get; }
-
         public IMultiCodeGenerator<(CsCallable, InteropMethodSignature), StatementSyntax> ReverseCallableProlog { get; }
 
         public MarshallingRegistry Marshalling { get; }

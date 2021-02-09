@@ -56,11 +56,9 @@ namespace SharpGen.Model
         {
             get
             {
-                if (Attribute == CsParameterAttribute.Ref || Attribute == CsParameterAttribute.RefIn)
-                {
+                if (IsRef || IsRefIn)
                     return !(PassedByNullableInstance || RefInPassedByValue);
-                }
-                if (Attribute == CsParameterAttribute.Out && !IsBoolToInt)
+                if (IsOut && !IsBoolToInt)
                     return true;
                 if (IsArray && !IsInterfaceArray)
                     return true;

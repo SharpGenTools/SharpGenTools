@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
 using System.Collections.Generic;
 using System.Linq;
+using SharpGen.Generator.Marshallers;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
@@ -96,17 +97,20 @@ namespace SharpGen.Generator
             if (interopSig.CastToNativeULong)
                 call = CastExpression(globalNamespace.GetTypeNameSyntax(WellKnownName.NativeULong), call);
 
-            return isForcedReturnBufferSig || !callable.HasReturnType
-                ? call
-                : AssignmentExpression(
-                    SyntaxKind.SimpleAssignmentExpression,
-                    Generators.Marshalling.GetMarshaller(callable.ReturnValue)
-                        .GeneratesMarshalVariable(callable.ReturnValue)
-                        ? IdentifierName(
-                            Generators.Marshalling.GetMarshalStorageLocationIdentifier(callable.ReturnValue))
-                        : IdentifierName(callable.ReturnValue.Name),
-                    call
-                );
+            if (isForcedReturnBufferSig || !callable.HasReturnType)
+                return call;
+
+            var generatesMarshalVariable = Generators.Marshalling
+                                                     .GetMarshaller(callable.ReturnValue)
+                                                     .GeneratesMarshalVariable(callable.ReturnValue);
+
+            return AssignmentExpression(
+                SyntaxKind.SimpleAssignmentExpression,
+                generatesMarshalVariable
+                    ? MarshallerBase.GetMarshalStorageLocation(callable.ReturnValue)
+                    : IdentifierName(callable.ReturnValue.Name),
+                call
+            );
         }
 
     }
