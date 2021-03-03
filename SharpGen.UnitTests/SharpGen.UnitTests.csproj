@@ -10,7 +10,6 @@
   <ItemGroup>
     <ProjectReference Include="..\SharpGen.Platform\SharpGen.Platform.csproj" />
     <ProjectReference Include="..\SharpGen.Runtime\SharpGen.Runtime.csproj" />
-    <ProjectReference Include="..\SharpGenTools.Sdk\SharpGenTools.Sdk.csproj" />
   </ItemGroup>
 
   <ItemGroup>

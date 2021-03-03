@@ -3,7 +3,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
-namespace SharpGenTools.Sdk.Internal
+namespace SharpGen.Platform
 {
     public sealed class ObservableSet<T> : ObservableCollection<T>
     {

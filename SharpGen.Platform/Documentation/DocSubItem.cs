@@ -2,12 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using SharpGen.Doc;
-using SharpGenTools.Sdk.Internal;
 
-namespace SharpGenTools.Sdk.Documentation
+namespace SharpGen.Platform.Documentation
 {
     /// <inheritdoc />
-    public sealed class DocSubItem : IDocSubItem
+    internal sealed class DocSubItem : IDocSubItem
     {
         private readonly ObservableSet<string> attributes =
             new(StringComparer.InvariantCultureIgnoreCase);

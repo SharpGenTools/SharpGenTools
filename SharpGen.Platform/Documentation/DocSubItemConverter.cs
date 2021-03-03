@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using SharpGen.Doc;
-using static SharpGenTools.Sdk.Documentation.DocConverterUtilities;
+using static SharpGen.Platform.Documentation.DocConverterUtilities;
 
-namespace SharpGenTools.Sdk.Documentation
+namespace SharpGen.Platform.Documentation
 {
     internal sealed class DocSubItemConverter : JsonConverter<IDocSubItem>
     {

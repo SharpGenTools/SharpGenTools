@@ -4,11 +4,10 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
 using SharpGen.Doc;
-using SharpGenTools.Sdk.Internal;
 
-namespace SharpGenTools.Sdk.Documentation
+namespace SharpGen.Platform.Documentation
 {
-    public sealed class DocItem : IDocItem
+    internal sealed class DocItem : IDocItem
     {
         private readonly ObservableCollection<IDocSubItem> items = new();
 

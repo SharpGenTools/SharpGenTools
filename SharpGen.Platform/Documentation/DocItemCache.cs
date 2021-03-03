@@ -4,11 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using SharpGen.Doc;
-using SharpGenTools.Sdk.Internal;
 
-namespace SharpGenTools.Sdk.Documentation
+namespace SharpGen.Platform.Documentation
 {
-    internal class DocItemCache
+    public sealed class DocItemCache
     {
         private readonly object syncObject = new();
 
@@ -41,8 +40,6 @@ namespace SharpGenTools.Sdk.Documentation
 
         public static DocItemCache Read(string file)
         {
-            Utilities.RequireAbsolutePath(file, nameof(file));
-
             return JsonSerializer.Deserialize<DocItemCache>(File.ReadAllBytes(file), JsonSerializerOptions);
         }
 
@@ -52,8 +49,6 @@ namespace SharpGenTools.Sdk.Documentation
         /// <param name="file">The file.</param>
         public void Write(string file)
         {
-            Utilities.RequireAbsolutePath(file, nameof(file));
-
             using var output = File.Create(file);
             using var writer = new Utf8JsonWriter(output);
 
@@ -69,8 +64,6 @@ namespace SharpGenTools.Sdk.Documentation
         /// <param name="file">The file.</param>
         public void WriteIfDirty(string file)
         {
-            Utilities.RequireAbsolutePath(file, nameof(file));
-
             if (File.Exists(file))
             {
                 bool touch;
