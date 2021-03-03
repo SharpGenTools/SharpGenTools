@@ -1,6 +1,6 @@
 using System.Linq;
 using System.Text.Json;
-using SharpGenTools.Sdk.Documentation;
+using SharpGen.Platform.Documentation;
 using Xunit;
 using Xunit.Abstractions;
 

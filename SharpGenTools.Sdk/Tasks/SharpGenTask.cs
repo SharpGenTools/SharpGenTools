@@ -13,6 +13,7 @@ using SharpGen.Logging;
 using SharpGen.Model;
 using SharpGen.Parser;
 using SharpGen.Platform;
+using SharpGen.Platform.Documentation;
 using SharpGen.Transform;
 using SharpGenTools.Sdk.Documentation;
 using SharpGenTools.Sdk.Extensibility;

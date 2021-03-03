@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Polly.Contrib.WaitAndRetry;
 using SharpGen.CppModel;
 using SharpGen.Doc;
+using SharpGen.Platform.Documentation;
 
 namespace SharpGenTools.Sdk.Documentation
 {

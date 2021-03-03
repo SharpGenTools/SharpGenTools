@@ -1,10 +1,8 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using SharpGen.Doc;
-using SharpGenTools.Sdk.Internal;
 
-namespace SharpGenTools.Sdk.Documentation
+namespace SharpGen.Platform.Documentation
 {
     internal static class DocConverterUtilities
     {

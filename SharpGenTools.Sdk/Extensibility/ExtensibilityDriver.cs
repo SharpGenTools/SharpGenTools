@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using SharpGen.CppModel;
 using SharpGen.Doc;
 using SharpGen.Logging;
+using SharpGen.Platform.Documentation;
 using SharpGenTools.Sdk.Documentation;
 using SharpGenTools.Sdk.Internal;
 using SharpGenTools.Sdk.Internal.Roslyn;
