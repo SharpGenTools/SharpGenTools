@@ -141,67 +141,63 @@ namespace SharpGen.Generator.Marshallers
 
             if (csElement.IsArray) // Fixed-length character array
             {
-                if (!csElement.IsWideChar || !singleStackFrame)
-                {
-                    const string ptrName = "__ptr";
+                if (csElement.IsWideChar && singleStackFrame)
+                    return null;
 
-                    return FixedStatement(
-                        VariableDeclaration(
-                            VoidPtrType,
-                            SingletonSeparatedList(
-                                VariableDeclarator(ptrName)
-                                   .WithInitializer(
-                                        EqualsValueClause(
-                                            PrefixUnaryExpression(
-                                                SyntaxKind.AddressOfExpression,
-                                                GetMarshalStorageLocation(csElement)
-                                            )
+                const string ptrName = "__ptr";
+
+                return FixedStatement(
+                    VariableDeclaration(
+                        VoidPtrType,
+                        SingletonSeparatedList(
+                            VariableDeclarator(ptrName)
+                               .WithInitializer(
+                                    EqualsValueClause(
+                                        PrefixUnaryExpression(
+                                            SyntaxKind.AddressOfExpression,
+                                            GetMarshalStorageLocation(csElement)
                                         )
                                     )
-                            )
-                        ),
-                        ExpressionStatement(
-                            AssignmentExpression(
-                                SyntaxKind.SimpleAssignmentExpression,
-                                IdentifierName(csElement.Name),
-                                InvocationExpression(
-                                    PtrToString(GlobalNamespace.GetTypeNameSyntax(WellKnownName.StringHelpers)),
-                                    ArgumentList(
-                                        SeparatedList(
-                                            new[]
-                                            {
-                                                Argument(CastExpression(IntPtrType, IdentifierName(ptrName))),
-                                                Argument(
-                                                    LiteralExpression(
-                                                        SyntaxKind.NumericLiteralExpression,
-                                                        Literal(csElement.ArrayDimensionValue - 1)
-                                                    )
+                                )
+                        )
+                    ),
+                    ExpressionStatement(
+                        AssignmentExpression(
+                            SyntaxKind.SimpleAssignmentExpression,
+                            IdentifierName(csElement.Name),
+                            InvocationExpression(
+                                PtrToString(GlobalNamespace.GetTypeNameSyntax(WellKnownName.StringHelpers)),
+                                ArgumentList(
+                                    SeparatedList(
+                                        new[]
+                                        {
+                                            Argument(CastExpression(IntPtrType, IdentifierName(ptrName))),
+                                            Argument(
+                                                LiteralExpression(
+                                                    SyntaxKind.NumericLiteralExpression,
+                                                    Literal(csElement.ArrayDimensionValue - 1)
                                                 )
-                                            }
-                                        )
+                                            )
+                                        }
                                     )
                                 )
                             )
                         )
-                    );
-                }
-                return null;
-            }
-
-            if (!csElement.IsWideChar || !singleStackFrame) // Variable-length string represented as a pointer.
-            {
-                return ExpressionStatement(
-                    AssignmentExpression(
-                        SyntaxKind.SimpleAssignmentExpression,
-                        IdentifierName(csElement.Name),
-                        InvocationExpression(
-                            PtrToString(GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Marshal)),
-                            ArgumentList(SingletonSeparatedList(Argument(GetMarshalStorageLocation(csElement))))
-                        )
                     )
                 );
             }
-            return null;
+
+            // Variable-length string represented as a pointer.
+            return ExpressionStatement(
+                AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    IdentifierName(csElement.Name),
+                    InvocationExpression(
+                        PtrToString(GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Marshal)),
+                        ArgumentList(SingletonSeparatedList(Argument(GetMarshalStorageLocation(csElement))))
+                    )
+                )
+            );
         }
 
         public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement) =>
