@@ -46,19 +46,17 @@ namespace SharpGen.Transform
         private readonly NamespaceRegistry namespaceRegistry;
         private readonly MarshalledElementFactory marshalledElementFactory;
         private readonly ConstantManager constantManager;
-        private readonly InteropManager interopManager = new InteropManager();
         private readonly GroupRegistry groupRegistry = new GroupRegistry();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TransformManager"/> class.
         /// </summary>
-        public TransformManager(
-            GlobalNamespaceProvider globalNamespace,
-            NamingRulesManager namingRules,
-            Logger logger,
-            TypeRegistry typeRegistry,
-            IDocumentationLinker docLinker,
-            ConstantManager constantManager)
+        public TransformManager(GlobalNamespaceProvider globalNamespace,
+                                NamingRulesManager namingRules,
+                                Logger logger,
+                                TypeRegistry typeRegistry,
+                                IDocumentationLinker docLinker,
+                                ConstantManager constantManager)
         {
             GlobalNamespace = globalNamespace;
             Logger = logger;
@@ -74,9 +72,9 @@ namespace SharpGen.Transform
 
             StructTransform = new StructTransform(namingRules, logger, namespaceRegistry, typeRegistry, marshalledElementFactory);
 
-            FunctionTransform = new MethodTransform(namingRules, logger, groupRegistry, marshalledElementFactory, globalNamespace, interopManager, interopSignatureTransform);
+            FunctionTransform = new MethodTransform(namingRules, logger, groupRegistry, marshalledElementFactory, globalNamespace, interopSignatureTransform);
 
-            InterfaceTransform = new InterfaceTransform(namingRules, logger, globalNamespace, FunctionTransform, FunctionTransform, typeRegistry, namespaceRegistry, interopManager, interopSignatureTransform);
+            InterfaceTransform = new InterfaceTransform(namingRules, logger, globalNamespace, FunctionTransform, FunctionTransform, typeRegistry, namespaceRegistry, interopSignatureTransform);
         }
 
         /// <summary>
@@ -521,10 +519,7 @@ namespace SharpGen.Transform
             Logger.Progress(80, "Transforming functions...");
             ProcessTransform(FunctionTransform, selectedCSharpType.OfType<CsFunction>());
 
-            var asm = new CsAssembly
-            {
-                Interop = interopManager
-            };
+            CsAssembly asm = new();
 
             foreach (var ns in namespaceRegistry.Namespaces)
             {
