@@ -25,9 +25,7 @@ namespace SharpGen.Generator
         IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> ShadowCallable { get; }
         IMultiCodeGenerator<(CsCallable, InteropMethodSignature), StatementSyntax> ReverseCallableProlog { get; }
         IMultiCodeGenerator<CsGroup, MemberDeclarationSyntax> Group { get; }
-        ICodeGenerator<CsAssembly, ClassDeclarationSyntax> LocalInterop { get; }
 
-        IMultiCodeGenerator<InteropMethodSignature, MemberDeclarationSyntax> InteropMethod { get; }
         MarshallingRegistry Marshalling { get; }
         GeneratorConfig Config { get; }
     }

@@ -35,7 +35,6 @@ namespace SharpGen.Model
     {
         public CsAssembly()
         {
-            Interop = new InteropManager();
         }
 
         /// <summary>
@@ -43,7 +42,6 @@ namespace SharpGen.Model
         /// </summary>
         /// <param name="assemblyName">Name of the assembly.</param>
         public CsAssembly(string assemblyName)
-            :this()
         {
             Name = assemblyName;
         }
@@ -65,13 +63,6 @@ namespace SharpGen.Model
         {
             get { return Items.OfType<CsNamespace>(); }
         }
-
-        /// <summary>
-        /// Gets or sets the interop associated with this AssemblyContainer.
-        /// </summary>
-        /// <value>The interop.</value>
-        [DataMember]
-        public InteropManager Interop { get; set; }
 
         /// <summary>
         /// Reads the module from the specified file.

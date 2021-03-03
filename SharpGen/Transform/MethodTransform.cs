@@ -34,7 +34,6 @@ namespace SharpGen.Transform
         private readonly GroupRegistry groupRegistry;
         private readonly MarshalledElementFactory factory;
         private readonly GlobalNamespaceProvider globalNamespace;
-        private readonly InteropManager interopManager;
         private readonly IInteropSignatureTransform signatureTransform;
 
         public MethodTransform(NamingRulesManager namingRules,
@@ -42,14 +41,12 @@ namespace SharpGen.Transform
                                GroupRegistry groupRegistry,
                                MarshalledElementFactory factory,
                                GlobalNamespaceProvider globalNamespace,
-                               InteropManager interopManager,
                                IInteropSignatureTransform interopSignatureTransform)
             : base(namingRules, logger)
         {
             this.groupRegistry = groupRegistry;
             this.factory = factory;
             this.globalNamespace = globalNamespace;
-            this.interopManager = interopManager;
             signatureTransform = interopSignatureTransform;
         }
 
@@ -117,7 +114,7 @@ namespace SharpGen.Transform
 
                 ProcessMethod(csCallable);
 
-                CreateNativeInteropSignatures(signatureTransform, csCallable, interopManager);
+                CreateNativeInteropSignatures(signatureTransform, csCallable);
             }
             finally
             {
@@ -173,14 +170,11 @@ namespace SharpGen.Transform
             }
         }
 
-        internal static void CreateNativeInteropSignatures(IInteropSignatureTransform sigTransform, CsCallable callable, InteropManager interopManager)
+        internal static void CreateNativeInteropSignatures(IInteropSignatureTransform sigTransform, CsCallable callable)
         {
             callable.InteropSignatures = new Dictionary<PlatformDetectionType, InteropMethodSignature>();
             foreach (var sig in sigTransform.GetInteropSignatures(callable))
-            {
-                interopManager.Add(sig.Value);
                 callable.InteropSignatures.Add(sig.Key, sig.Value);
-            }
         }
     }
 }

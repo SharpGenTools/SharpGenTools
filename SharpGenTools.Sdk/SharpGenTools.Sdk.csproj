@@ -18,7 +18,7 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <DevelopmentDependency>true</DevelopmentDependency>
     <RuntimeIdentifiers>win;unix</RuntimeIdentifiers>
-    <Description>MSBuild tooling for SharpGen and SharpPatch. Tooling for generating efficient C# code from C++ and COM headers.</Description>
+    <Description>MSBuild tooling for SharpGen. Tooling for generating efficient C# code from C++ and COM headers.</Description>
     <ExtrasBuildEachRuntimeIdentifier>true</ExtrasBuildEachRuntimeIdentifier>
     <EnsureRuntimePackageDependencies>false</EnsureRuntimePackageDependencies>
     <ExtrasIncludeDefaultProjectBuildOutputInPackTarget>IncludeDefaultProjectBuildOutputInPack</ExtrasIncludeDefaultProjectBuildOutputInPackTarget>
@@ -47,7 +47,6 @@
 
   <ItemGroup>
     <Content Include="../CastXML/**/*" PackagePath="tools/CastXML/%(RecursiveDir)%(FileName)%(Extension)" />
-    <Content Include="GetSnPath.*.props" PackagePath="Sdk" />
     <Content Include="SharpGenMapping.xaml" PackagePath="build" />
     <Content Include="Sdk.props" PackagePath="Sdk" />
     <Content Include="Sdk.targets" PackagePath="Sdk" />

@@ -30,8 +30,6 @@ namespace SharpGen.Generator
             Function = new FunctionCodeGenerator(this);
             Interface = new InterfaceCodeGenerator(this, documentation, docReader, globalNamespace, logger);
             Group = new GroupCodeGenerator(this, documentation, docReader);
-            LocalInterop = new LocalInteropCodeGenerator(this);
-            InteropMethod = new InteropMethodCodeGenerator();
             ShadowCallable = new ShadowCallbackGenerator(this, globalNamespace);
             ReverseCallableProlog = new ReverseCallablePrologCodeGenerator(this, globalNamespace);
             Vtbl = new VtblGenerator(this, globalNamespace);
@@ -53,8 +51,6 @@ namespace SharpGen.Generator
         public IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax> Function { get; }
         public IMultiCodeGenerator<CsInterface, MemberDeclarationSyntax> Interface { get; }
         public IMultiCodeGenerator<CsGroup, MemberDeclarationSyntax> Group { get; }
-        public ICodeGenerator<CsAssembly, ClassDeclarationSyntax> LocalInterop { get; }
-        public IMultiCodeGenerator<InteropMethodSignature, MemberDeclarationSyntax> InteropMethod { get; }
         public ICodeGenerator<CsInterface, MemberDeclarationSyntax> Shadow { get; }
         public ICodeGenerator<CsInterface, MemberDeclarationSyntax> Vtbl { get; }
         public IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> ShadowCallable { get; }

@@ -36,7 +36,6 @@ namespace SharpGen.Transform
         private readonly Dictionary<Regex, InnerInterfaceMethod> _mapMoveMethodToInnerInterface = new Dictionary<Regex, InnerInterfaceMethod>();
         private readonly TypeRegistry typeRegistry;
         private readonly NamespaceRegistry namespaceRegistry;
-        private readonly InteropManager interopManager;
         private readonly IInteropSignatureTransform interopSignatureTransform;
         private readonly PropertyBuilder propertyBuilder;
         private readonly MethodOverloadBuilder methodOverloadBuilder;
@@ -52,7 +51,6 @@ namespace SharpGen.Transform
             ITransformer<CsMethod> methodTransformer,
             TypeRegistry typeRegistry,
             NamespaceRegistry namespaceRegistry,
-            InteropManager interopManager,
             IInteropSignatureTransform interopSignatureTransform)
             : base(namingRules, logger)
         {
@@ -60,7 +58,6 @@ namespace SharpGen.Transform
             MethodTransformer = methodTransformer;
             this.typeRegistry = typeRegistry;
             this.namespaceRegistry = namespaceRegistry;
-            this.interopManager = interopManager;
             this.interopSignatureTransform = interopSignatureTransform;
             propertyBuilder = new PropertyBuilder(globalNamespace);
             methodOverloadBuilder = new MethodOverloadBuilder(globalNamespace, typeRegistry);
@@ -162,7 +159,7 @@ namespace SharpGen.Transform
                 foreach (var overload in GenerateSpecialOverloads(cSharpMethod))
                 {
                     interfaceType.Add(overload);
-                    MethodTransform.CreateNativeInteropSignatures(interopSignatureTransform, overload, interopManager);
+                    MethodTransform.CreateNativeInteropSignatures(interopSignatureTransform, overload);
                 }
             }
 
@@ -297,7 +294,7 @@ namespace SharpGen.Transform
                 if (newCsMethod.Hidden.HasValue && newCsMethod.Hidden.Value)
                     newCsMethod.Hidden = null;
 
-                MethodTransform.CreateNativeInteropSignatures(interopSignatureTransform, newCsMethod, interopManager);
+                MethodTransform.CreateNativeInteropSignatures(interopSignatureTransform, newCsMethod);
 
                 var keepImplementPublic = interfaceType.AutoGenerateShadow ||
                                           method.IsPublicVisibilityForced(interfaceType);

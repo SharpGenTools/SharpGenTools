@@ -12,7 +12,7 @@ Param(
 dotnet test "$RepoRoot/$TestSubdirectory/$Project/$Project.csproj" --no-build --no-restore -c $Configuration `
     /bl:"$RepoRoot/artifacts/binlog/$Project$Hint.binlog" $Parameters `
     /p:CollectCoverage=$CollectCoverage /p:CoverletOutputFormat=opencover /p:IncludeTestAssembly=true `
-    /p:Include='[SharpGen]*%2c[SharpGen.Runtime]*%2c[SharpGen.Platform]*%2c[SharpGenTools.Sdk]*%2c[SharpPatch]*' `
+    /p:Include='[SharpGen]*%2c[SharpGen.Runtime]*%2c[SharpGen.Platform]*%2c[SharpGenTools.Sdk]*' `
     /p:CoverletOutput="$RepoRoot/artifacts/coverage/$Project$Hint.xml" `
     --logger "trx;LogFileName=$RepoRoot/artifacts/test-results/$Project$Hint.trx" `
     $RunSettings | Write-Host
