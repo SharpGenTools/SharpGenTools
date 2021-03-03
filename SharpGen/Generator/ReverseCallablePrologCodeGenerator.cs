@@ -1,36 +1,31 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SharpGen.Model;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using Microsoft.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Generator.Marshallers;
+using SharpGen.Model;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    class ReverseCallablePrologCodeGenerator : IMultiCodeGenerator<(CsCallable, InteropMethodSignature), StatementSyntax>
+    internal sealed class ReverseCallablePrologCodeGenerator : IMultiCodeGenerator<(CsCallable, InteropMethodSignature), StatementSyntax>
     {
         private readonly IGeneratorRegistry generators;
         private readonly GlobalNamespaceProvider globalNamespace;
 
         public ReverseCallablePrologCodeGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
         {
-            this.generators = generators;
-            this.globalNamespace = globalNamespace;
+            this.generators = generators ?? throw new ArgumentNullException(nameof(generators));
+            this.globalNamespace = globalNamespace ?? throw new ArgumentNullException(nameof(globalNamespace));
         }
 
         public IEnumerable<StatementSyntax> GenerateCode((CsCallable, InteropMethodSignature) callableSig)
         {
             var (csElement, interopSig) = callableSig;
             var interopParameters = interopSig.ParameterTypes;
-            if (interopSig.ForcedReturnBufferSig)
-            {
-                foreach (var statement in GenerateNativeByRefProlog(csElement.ReturnValue, IdentifierName("returnSlot")))
-                {
-                    yield return statement;
-                }
-            }
-            else if (csElement.HasReturnTypeValue)
+
+            if (!interopSig.ForcedReturnBufferSig && csElement.HasReturnTypeValue)
             {
                 foreach (var statement in GenerateProlog(csElement.ReturnValue, null))
                 {
@@ -38,13 +33,13 @@ namespace SharpGen.Generator
                 }
             }
 
-            for (int i = 0; i < csElement.Parameters.Count; i++)
+            foreach (var signatureParameter in interopParameters)
             {
-                var publicParameter = csElement.Parameters[i];
-                var nativeParameter = IdentifierName($"param{i}");
+                var publicParameter = signatureParameter.Item;
+                var nativeParameter = IdentifierName(signatureParameter.Name);
                 var prologBuilder = publicParameter.PassedByNativeReference && !publicParameter.IsArray
-                    ? (Func<CsMarshalCallableBase, ExpressionSyntax, IEnumerable<StatementSyntax>>)GenerateNativeByRefProlog
-                    : GenerateProlog;
+                                        ? (Func<CsMarshalCallableBase, ExpressionSyntax, IEnumerable<StatementSyntax>>)GenerateNativeByRefProlog
+                                        : GenerateProlog;
                 foreach (var statement in prologBuilder(publicParameter, nativeParameter))
                 {
                     yield return statement;
@@ -84,7 +79,7 @@ namespace SharpGen.Generator
                         marshalTypeSyntax,
                         SingletonSeparatedList(
                             VariableDeclarator(
-                                generators.Marshalling.GetMarshalStorageLocationIdentifier(publicElement),
+                                MarshallerBase.GetMarshalStorageLocationIdentifier(publicElement),
                                 null,
                                 EqualsValueClause(initializerExpression)
                             )
@@ -115,7 +110,7 @@ namespace SharpGen.Generator
                 MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
                     GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Unsafe),
-                    GenericName(Identifier("AsRef"))
+                    GenericName(Identifier(nameof(Unsafe.AsRef)))
                     .WithTypeArgumentList(
                         TypeArgumentList(
                             SingletonSeparatedList(
@@ -146,7 +141,7 @@ namespace SharpGen.Generator
                     .WithVariables(
                         SingletonSeparatedList(
                             VariableDeclarator(
-                                generators.Marshalling.GetMarshalStorageLocationIdentifier(publicElement))
+                                MarshallerBase.GetMarshalStorageLocationIdentifier(publicElement))
                             .WithInitializer(
                                 EqualsValueClause(
                                     refToNativeExpression)))));

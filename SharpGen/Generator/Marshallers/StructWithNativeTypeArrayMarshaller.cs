@@ -1,35 +1,27 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+﻿using System.Collections.Generic;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
-using System.Collections.Generic;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    class StructWithNativeTypeArrayMarshaller : MarshallerBase, IMarshaller
+    internal class StructWithNativeTypeArrayMarshaller : MarshallerBase, IMarshaller
     {
         public StructWithNativeTypeArrayMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
         {
         }
 
-        public bool CanMarshal(CsMarshalBase csElement)
-        {
-            return csElement.HasNativeValueType && csElement.IsArray;
-        }
+        public bool CanMarshal(CsMarshalBase csElement) => csElement.HasNativeValueType && csElement.IsArray;
 
-        public ArgumentSyntax GenerateManagedArgument(CsParameter csElement)
-        {
-            return Argument(IdentifierName(csElement.Name));
-        }
+        public ArgumentSyntax GenerateManagedArgument(CsParameter csElement) =>
+            Argument(IdentifierName(csElement.Name));
 
-        public ParameterSyntax GenerateManagedParameter(CsParameter csElement)
-        {
-            return GenerateManagedArrayParameter(csElement);
-        }
+        public ParameterSyntax GenerateManagedParameter(CsParameter csElement) =>
+            GenerateManagedArrayParameter(csElement);
 
-        public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            return LoopThroughArrayParameter(
+        public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame) =>
+            LoopThroughArrayParameter(
                 csElement,
                 (publicElement, marshalElement) =>
                 {
@@ -43,72 +35,70 @@ namespace SharpGen.Generator.Marshallers
                         return Block(
                             CreateMarshalCustomNewStatement(csElement, marshalElement),
                             marshalTo
-                            );
+                        );
                     }
                     return marshalTo;
                 });
-        }
 
         public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
         {
+            var elementType = ParseTypeName($"{csElement.PublicType.QualifiedName}.__Native");
             yield return LocalDeclarationStatement(
                 VariableDeclaration(
-                    ArrayType(ParseTypeName($"{csElement.PublicType.QualifiedName}.__Native"), SingletonList(ArrayRankSpecifier())),
+                    ArrayType(elementType, SingletonList(ArrayRankSpecifier())),
                     SingletonSeparatedList(
                         VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement))
                             .WithInitializer(EqualsValueClause(
                                 GenerateNullCheckIfNeeded(csElement,
-                                    ObjectCreationExpression(
-                                        ArrayType(ParseTypeName($"{csElement.PublicType.QualifiedName}.__Native"),
-                                        SingletonList(ArrayRankSpecifier(
-                                            SingletonSeparatedList<ExpressionSyntax>(
-                                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                    IdentifierName(csElement.Name),
-                                                    IdentifierName("Length"))))))),
-                                    LiteralExpression(SyntaxKind.NullLiteralExpression)))))));
+                                                          ObjectCreationExpression(
+                                                              ArrayType(elementType,
+                                                                        SingletonList(ArrayRankSpecifier(
+                                                                            SingletonSeparatedList<ExpressionSyntax>(
+                                                                                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                                                                    IdentifierName(csElement.Name),
+                                                                                    IdentifierName("Length"))))))),
+                                                          LiteralExpression(SyntaxKind.NullLiteralExpression)))))));
         }
 
-        public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement)
-        {
-            return Argument(IdentifierName(csElement.IntermediateMarshalName));
-        }
+        public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement) =>
+            Argument(IdentifierName(csElement.IntermediateMarshalName));
 
-        public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            return LoopThroughArrayParameter(csElement,
-               (publicElement, marshalElement) =>
-                   CreateMarshalStructStatement(csElement, StructMarshalMethod.Free, publicElement, marshalElement));
-        }
+        public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame) =>
+            LoopThroughArrayParameter(
+                csElement,
+                (publicElement, marshalElement) =>
+                    CreateMarshalStructStatement(csElement, StructMarshalMethod.Free, publicElement, marshalElement)
+            );
 
-        public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            return LoopThroughArrayParameter(csElement,
-               (publicElement, marshalElement) =>
-                   CreateMarshalStructStatement(csElement, StructMarshalMethod.From, publicElement, marshalElement));
-        }
+        public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame) =>
+            LoopThroughArrayParameter(
+                csElement,
+                (publicElement, marshalElement) =>
+                    CreateMarshalStructStatement(csElement, StructMarshalMethod.From, publicElement, marshalElement)
+            );
 
         public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement)
         {
             yield return GenerateArrayNativeToManagedExtendedProlog(csElement);
         }
 
-        public FixedStatementSyntax GeneratePin(CsParameter csElement)
-        {
-            return FixedStatement(VariableDeclaration(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword))),
-               SingletonSeparatedList(
-                   VariableDeclarator(Identifier(csElement.IntermediateMarshalName)).WithInitializer(EqualsValueClause(
-                       GetMarshalStorageLocation(csElement)
-                       )))), EmptyStatement());
-        }
+        public FixedStatementSyntax GeneratePin(CsParameter csElement) => FixedStatement(
+            VariableDeclaration(
+                VoidPtrType,
+                SingletonSeparatedList(
+                    VariableDeclarator(
+                        Identifier(csElement.IntermediateMarshalName),
+                        null,
+                        EqualsValueClause(GetMarshalStorageLocation(csElement))
+                    )
+                )
+            ),
+            EmptyStatement()
+        );
 
-        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement)
-        {
-            return true;
-        }
+        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement) => true;
 
-        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement)
-        {
-            return PointerType(ParseTypeName($"{csElement.PublicType.QualifiedName}.__Native"));
-        }
+        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement) =>
+            PointerType(ParseTypeName($"{csElement.PublicType.QualifiedName}.__Native"));
     }
 }

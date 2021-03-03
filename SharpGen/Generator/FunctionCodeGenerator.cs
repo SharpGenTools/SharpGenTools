@@ -76,9 +76,9 @@ namespace SharpGen.Generator
                                                         IdentifierName("CallingConvention")))
                                         })))))))
                     .WithParameterList(ParameterList(SeparatedList(
-                        sig.Value.ParameterTypes.Select((param, i) =>
-                            Parameter(Identifier($"param{i}"))
-                                .WithType(ParseTypeName(param.TypeName))))))
+                        sig.Value.ParameterTypes.Select(param =>
+                            Parameter(Identifier(param.Name))
+                                .WithType(param.InteropTypeSyntax)))))
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)); 
             }
         }

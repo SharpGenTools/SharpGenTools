@@ -17,7 +17,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using SharpGen.Config;
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -69,6 +70,7 @@ namespace SharpGen.CppModel
         /// </summary>
         /// <param name="file">The file.</param>
         /// <returns>A C++ module</returns>
+        [Obsolete("XML serialization ability is a non-public API contract")]
         public static CppModule Read(string file)
         {
             using (var input = new FileStream(file, FileMode.Open))
@@ -82,6 +84,7 @@ namespace SharpGen.CppModel
         /// </summary>
         /// <param name="input">The input.</param>
         /// <returns>A C++ module</returns>
+        [Obsolete("XML serialization ability is a non-public API contract")]
         public static CppModule Read(Stream input)
         {
             var ds = new XmlSerializer(typeof (CppModule));
@@ -100,6 +103,7 @@ namespace SharpGen.CppModel
         /// Writes this instance to the specified file.
         /// </summary>
         /// <param name="file">The file.</param>
+        [Obsolete("XML serialization ability is a non-public API contract")]
         public void Write(string file)
         {
             using (var output = new FileStream(file, FileMode.Create))
@@ -112,6 +116,7 @@ namespace SharpGen.CppModel
         /// Writes this instance to the specified output.
         /// </summary>
         /// <param name="output">The output.</param>
+        [Obsolete("XML serialization ability is a non-public API contract")]
         public void Write(Stream output)
         {
             var ds = new XmlSerializer(typeof (CppModule));

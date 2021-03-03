@@ -3,6 +3,7 @@ using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Transform;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Runtime.Serialization;
 
@@ -36,7 +37,7 @@ namespace SharpGen.Model
         }
 
         private List<CsParameter> _parameters;
-        public List<CsParameter> Parameters => _parameters ??= Items.OfType<CsParameter>().ToList();
+        public IReadOnlyList<CsParameter> Parameters => _parameters ??= Items.OfType<CsParameter>().ToList();
 
         public IEnumerable<CsParameter> PublicParameters => Items.OfType<CsParameter>()
             .Where(param => !param.IsUsedAsReturnType && (param.Relations?.Count ?? 0) == 0);
@@ -100,9 +101,20 @@ namespace SharpGen.Model
         public bool RequestRawPtr { get; set; }
 
         [DataMember]
-        public Dictionary<PlatformDetectionType, InteropMethodSignature> InteropSignatures { get; set; } = new Dictionary<PlatformDetectionType, InteropMethodSignature>();
+        public Dictionary<PlatformDetectionType, InteropMethodSignature> InteropSignatures
+        {
+            get => interopSignatures ?? throw new InvalidOperationException($"Accessing non-initialized {nameof(InteropSignatures)}");
+            set
+            {
+                if (interopSignatures != null)
+                    throw new InvalidOperationException($"Setting initialized {nameof(InteropSignatures)}");
+
+                interopSignatures = value;
+            }
+        }
 
         private string _cppSignature;
+        private Dictionary<PlatformDetectionType, InteropMethodSignature> interopSignatures;
 
         [DataMember]
         public string CppSignature
@@ -142,7 +154,6 @@ namespace SharpGen.Model
 
         [DataMember]
         public CsReturnValue ReturnValue { get; set; }
-
 
         /// <summary>
         /// Returns true if a parameter is marked to be used as the return type.
@@ -199,15 +210,33 @@ namespace SharpGen.Model
             }
         }
 
-        public override object Clone()
+        protected override void ResetItems()
         {
-            var method = (CsCallable)base.Clone();
+            base.ResetItems();
+            Items.CollectionChanged += ItemsOnCollectionChanged;
+        }
+
+        private void ItemsOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (interopSignatures == null) return;
+            foreach (CsBase item in e.NewItems)
+            {
+                if (item is not CsParameter) continue;
+                interopSignatures = null;
+                return;
+            }
+        }
+
+        public virtual CsCallable Clone()
+        {
+            var method = (CsCallable) MemberwiseClone();
 
             // Clear cached parameters
             method._parameters = null;
+            method.interopSignatures = null;
             method.ResetItems();
             foreach (var parameter in Parameters)
-                method.Add((CsParameter)parameter.Clone());
+                method.Add(parameter.Clone());
             method.Parent = null;
             return method;
         }

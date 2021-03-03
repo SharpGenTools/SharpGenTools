@@ -51,9 +51,7 @@ namespace SharpGen.Model
             {
                 if (!IsPointer)
                 {
-#pragma warning disable 0618
                     return Marshal.SizeOf(Type);
-#pragma warning restore 0618
                 }
                 // We need to ensure that we always return 8 (64-bit) even when running the generator on x64.
                 return 8;

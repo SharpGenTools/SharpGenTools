@@ -26,47 +26,37 @@ namespace SharpGen.Model
     /// <summary>
     /// Type used for template
     /// </summary>
-    public class InteropType
+    public sealed class InteropType : IEquatable<InteropType>
     {
+        private string typeName;
+
         [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
         public InteropType()
         {
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="InteropType"/> class.
-        /// </summary>
-        /// <param name="typeName">Name of the type.</param>
         public InteropType(string typeName)
         {
+            if (string.IsNullOrEmpty(typeName))
+                throw new ArgumentException("Value cannot be null or empty.", nameof(typeName));
             TypeName = typeName;
         }
 
-        /// <summary>
-        /// Performs an implicit conversion from <see cref="System.Type"/> to <see cref="InteropType"/>.
-        /// </summary>
-        /// <param name="input">The input.</param>
-        /// <returns>The result of the conversion.</returns>
-        public static implicit operator InteropType(Type input)
-        {
-            return new InteropType(TransformTypeName(input));
-        }
+        public static implicit operator InteropType(Type input) => new(TransformTypeName(input));
 
-        /// <summary>
-        /// Performs an implicit conversion from <see cref="System.String"/> to <see cref="InteropType"/>.
-        /// </summary>
-        /// <param name="input">The input.</param>
-        /// <returns>The result of the conversion.</returns>
-        public static implicit operator InteropType(string input)
-        {
-            return new InteropType(input);
-        }
+        public static implicit operator InteropType(string input) => new(input);
 
-        /// <summary>
-        /// Gets the name of the type.
-        /// </summary>
-        /// <value>The name of the type.</value>
-        public string TypeName { get; set; }
+        public string TypeName
+        {
+            get => typeName;
+            set
+            {
+                if (!string.IsNullOrEmpty(typeName))
+                    throw new InvalidOperationException($"{nameof(InteropType)} is immutable once assigned");
+
+                typeName = value;
+            }
+        }
 
         private static string TransformTypeName(Type type)
         {
@@ -74,8 +64,6 @@ namespace SharpGen.Model
                 return "int";
             if (type == typeof(short))
                 return "short";
-            if (type == typeof(void*))
-                return "void*";
             if (type == typeof(void))
                 return "void";
             if (type == typeof(float))
@@ -94,68 +82,38 @@ namespace SharpGen.Model
                 return "byte";
             if (type == typeof(sbyte))
                 return "sbyte";
+            if (type == typeof(bool))
+                return "bool";
+            if (type == typeof(char))
+                return "char";
+            if (type == typeof(decimal))
+                return "decimal";
+
+            if (type.IsPointer)
+            {
+                var elementType = type.GetElementType();
+                if (elementType is not null)
+                    if (elementType.IsPrimitive || elementType.IsPointer || elementType == typeof(void))
+                        return $"{TransformTypeName(elementType)}*";
+            }
 
             return type.FullName;
         }
 
-        /// <summary>
-        /// Determines whether the specified <see cref="System.Object"/> is equal to this instance.
-        /// </summary>
-        /// <param name="obj">The <see cref="System.Object"/> to compare with this instance.</param>
-        /// <returns>
-        /// 	<c>true</c> if the specified <see cref="System.Object"/> is equal to this instance; otherwise, <c>false</c>.
-        /// </returns>
-        public override bool Equals(object obj)
+        public bool Equals(InteropType other)
         {
-            var against = obj as InteropType;
-            if (against == null)
-                return false;
-            return TypeName == against.TypeName;
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return typeName == other.typeName;
         }
 
-        /// <summary>
-        /// Implements the operator ==.
-        /// </summary>
-        /// <param name="a">A.</param>
-        /// <param name="b">The b.</param>
-        /// <returns>The result of the operator.</returns>
-        public static bool operator ==(InteropType a, InteropType b)
-        {
-            // If both are null, or both are same instance, return true.
-            if (System.Object.ReferenceEquals(a, b))
-            {
-                return true;
-            }
+        public override bool Equals(object obj) =>
+            ReferenceEquals(this, obj) || obj is InteropType other && Equals(other);
 
-            // If one is null, but not both, return false.
-            if (((object)a == null) || ((object)b == null))
-            {
-                return false;
-            }
+        public override int GetHashCode() => typeName != null ? typeName.GetHashCode() : 0;
 
-            return a.Equals(b);
-        }
+        public static bool operator ==(InteropType left, InteropType right) => Equals(left, right);
 
-        /// <summary>
-        /// Implements the operator !=.
-        /// </summary>
-        /// <param name="a">A.</param>
-        /// <param name="b">The b.</param>
-        /// <returns>The result of the operator.</returns>
-        public static bool operator !=(InteropType a, InteropType b)
-        {
-            return !(a == b);
-        }
-
-        /// <summary>
-        /// Returns a hash code for this instance.
-        /// </summary>
-        /// <returns>
-        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
-        /// </returns>
-        public override int GetHashCode()
-        {
-            return TypeName.GetHashCode();
-        }
+        public static bool operator !=(InteropType left, InteropType right) => !Equals(left, right);
     }
 }

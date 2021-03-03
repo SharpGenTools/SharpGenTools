@@ -21,16 +21,16 @@ namespace SharpGen.Transform
         {
             // Create a new method and transforms all array of CppObject to InterfaceArray<CppObject>
             var newMethod = (CsMethod)original.Clone();
-            foreach (var csSubParameter in newMethod.Parameters)
+            foreach (var csParameter in newMethod.Parameters)
             {
-                if (csSubParameter.IsUsedAsReturnType)
+                if (csParameter.IsUsedAsReturnType)
                     continue;
 
-                if (csSubParameter.IsInInterfaceArrayLike)
-                {
-                    csSubParameter.PublicType = new CsInterfaceArray((CsInterface)csSubParameter.PublicType, globalNamespace.GetTypeName(WellKnownName.InterfaceArray));
-                    csSubParameter.MarshalType = typeRegistry.ImportType(typeof(IntPtr));
-                }
+                if (!csParameter.IsInInterfaceArrayLike)
+                    continue;
+
+                csParameter.PublicType = new CsInterfaceArray((CsInterface)csParameter.PublicType, globalNamespace.GetTypeName(WellKnownName.InterfaceArray));
+                csParameter.MarshalType = typeRegistry.ImportType(typeof(IntPtr));
             }
             return newMethod;
         }

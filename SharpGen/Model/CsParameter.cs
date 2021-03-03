@@ -56,11 +56,9 @@ namespace SharpGen.Model
         {
             get
             {
-                if (Attribute == CsParameterAttribute.Ref || Attribute == CsParameterAttribute.RefIn)
-                {
+                if (IsRef || IsRefIn)
                     return !(PassedByNullableInstance || RefInPassedByValue);
-                }
-                if (Attribute == CsParameterAttribute.Out && !IsBoolToInt)
+                if (IsOut && !IsBoolToInt)
                     return true;
                 if (IsArray && !IsInterfaceArray)
                     return true;
@@ -131,9 +129,9 @@ namespace SharpGen.Model
         [DataMember]
         public bool OptionalParameter { get; set; }
 
-        public override object Clone()
+        public virtual CsParameter Clone()
         {
-            var parameter = (CsParameter)base.Clone();
+            var parameter = (CsParameter) MemberwiseClone();
             parameter.Parent = null;
             return parameter;
         }

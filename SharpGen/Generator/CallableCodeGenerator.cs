@@ -1,14 +1,12 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.CodeAnalysis.CSharp;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
-using SharpGen.Transform;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Logging;
+using SharpGen.Model;
+using SharpGen.Transform;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
@@ -89,7 +87,7 @@ namespace SharpGen.Generator
                         }
                         else
                         {
-                            var relatedParameter = csElement.Parameters.Find(p => p.CppElementName == relatedMarshallableName);
+                            var relatedParameter = csElement.Parameters.SingleOrDefault(p => p.CppElementName == relatedMarshallableName);
 
                             if (relatedParameter is null)
                             {
@@ -118,7 +116,6 @@ namespace SharpGen.Generator
                         .GenerateManagedToNativeProlog(csElement.ReturnValue));
             }
 
-
             foreach (var param in csElement.Parameters)
             {
                 if (param.IsIn || param.IsRefIn || param.IsRef)
@@ -137,12 +134,13 @@ namespace SharpGen.Generator
                 .Where(stmt => stmt != null).ToList();
 
             var callStmt = GeneratorHelpers.GetPlatformSpecificStatements(
-                    globalNamespace,
-                    Generators.Config,
-                    csElement.InteropSignatures.Keys,
-                    (platform) => 
-                        ExpressionStatement(
-                            Generators.NativeInvocation.GenerateCode((csElement, platform, csElement.InteropSignatures[platform]))));
+                globalNamespace, Generators.Config, csElement.InteropSignatures.Keys,
+                platform => ExpressionStatement(
+                    Generators.NativeInvocation.GenerateCall(
+                        csElement, platform, csElement.InteropSignatures[platform]
+                    )
+                )
+            );
 
             var fixedStatement = fixedStatements.FirstOrDefault()?.WithStatement(callStmt);
             foreach (var statement in fixedStatements.Skip(1))
@@ -201,17 +199,18 @@ namespace SharpGen.Generator
 
         private StatementSyntax GenerateManagedHiddenMarshallableProlog(CsMarshalCallableBase csElement)
         {
-            var type = csElement.IsArray ?
-                ArrayType(
-                    ParseTypeName(csElement.PublicType.QualifiedName),
-                    SingletonList(ArrayRankSpecifier()))
-                : ParseTypeName(csElement.PublicType.QualifiedName);
+            var type = csElement.IsArray
+                           ? ArrayType(
+                               ParseTypeName(csElement.PublicType.QualifiedName),
+                               SingletonList(ArrayRankSpecifier()))
+                           : ParseTypeName(csElement.PublicType.QualifiedName);
 
             return LocalDeclarationStatement(
                 VariableDeclaration(
                     type,
-                    SingletonSeparatedList(
-                        VariableDeclarator(csElement.Name))));
+                    SingletonSeparatedList(VariableDeclarator(csElement.Name))
+                )
+            );
         }
 
         private static bool ValidRelationInScenario(MarshallableRelation relation)

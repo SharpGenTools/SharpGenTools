@@ -1,23 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using SharpGen.Model;
-using Microsoft.CodeAnalysis.CSharp;
 using System.Linq;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Model;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    class VtblGenerator : ICodeGenerator<CsInterface, MemberDeclarationSyntax>
+    internal sealed class VtblGenerator : ICodeGenerator<CsInterface, MemberDeclarationSyntax>
     {
-        private readonly GlobalNamespaceProvider globalNamespace;
         private readonly IGeneratorRegistry generators;
+        private readonly GlobalNamespaceProvider globalNamespace;
 
         public VtblGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
         {
-            this.generators = generators;
-            this.globalNamespace = globalNamespace;
+            this.generators = generators ?? throw new ArgumentNullException(nameof(generators));
+            this.globalNamespace = globalNamespace ?? throw new ArgumentNullException(nameof(globalNamespace));
         }
 
         public MemberDeclarationSyntax GenerateCode(CsInterface csElement)
@@ -33,8 +31,8 @@ namespace SharpGen.Generator
                     BaseList(
                         SingletonSeparatedList<BaseTypeSyntax>(
                             SimpleBaseType(
-                                csElement.Base != null ?
-                                    (NameSyntax)IdentifierName(csElement.Base.VtblName)
+                                csElement.Base != null
+                                    ? IdentifierName(csElement.Base.VtblName)
                                     : globalNamespace.GetTypeNameSyntax(WellKnownName.CppObjectVtbl)))))
                 .WithMembers(
                     List(
@@ -80,7 +78,7 @@ namespace SharpGen.Generator
                                                                 {
                                                                     Argument(
                                                                         ObjectCreationExpression(
-                                                                            IdentifierName($"{method.Name}Delegate{GeneratorHelpers.GetPlatformSpecificSuffix(platform)}"))
+                                                                            IdentifierName(GetMethodDelegateName(method, platform)))
                                                                         .WithArgumentList(
                                                                             ArgumentList(
                                                                                 SingletonSeparatedList(
@@ -95,5 +93,8 @@ namespace SharpGen.Generator
                     .Concat(csElement.Methods
                                 .SelectMany(method => generators.ShadowCallable.GenerateCode(method)))));
         }
+
+        internal static string GetMethodDelegateName(CsCallable csElement, PlatformDetectionType platform) =>
+            csElement.Name + "Delegate" + GeneratorHelpers.GetPlatformSpecificSuffix(platform);
     }
 }

@@ -1,23 +1,25 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Generator.Marshallers;
 using SharpGen.Model;
 
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    class ShadowCallbackGenerator : IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax>
+    internal sealed class ShadowCallbackGenerator : IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax>
     {
-        private readonly GlobalNamespaceProvider globalNamespace;
         private readonly IGeneratorRegistry generators;
+        private readonly GlobalNamespaceProvider globalNamespace;
 
         public ShadowCallbackGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
         {
-            this.generators = generators;
-            this.globalNamespace = globalNamespace;
+            this.generators = generators ?? throw new ArgumentNullException(nameof(generators));
+            this.globalNamespace = globalNamespace ?? throw new ArgumentNullException(nameof(globalNamespace));
         }
 
         public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsCallable csElement)
@@ -31,7 +33,7 @@ namespace SharpGen.Generator
 
         private DelegateDeclarationSyntax GenerateDelegateDeclaration(CsCallable csElement, PlatformDetectionType platform, InteropMethodSignature sig)
         {
-            return DelegateDeclaration(ParseTypeName(sig.ReturnType.TypeName), $"{csElement.Name}Delegate{GeneratorHelpers.GetPlatformSpecificSuffix(platform)}")
+            return DelegateDeclaration(ParseTypeName(sig.ReturnType.TypeName), VtblGenerator.GetMethodDelegateName(csElement, platform))
                 .AddAttributeLists(
                     AttributeList(
                         SingletonSeparatedList(
@@ -61,9 +63,9 @@ namespace SharpGen.Generator
                         : default)
                     .AddRange(
                         sig.ParameterTypes
-                            .Select((type, i) =>
-                                Parameter(Identifier($"arg{i}"))
-                                .WithType(ParseTypeName(type.TypeName)))
+                            .Select(type =>
+                                Parameter(Identifier(type.Name))
+                                .WithType(type.InteropTypeSyntax))
                         )))
             .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)));
         }
@@ -109,7 +111,7 @@ namespace SharpGen.Generator
                                             IdentifierName("RaiseException")))
                                     .WithArgumentList(
                                         ArgumentList(
-                                            SingletonSeparatedList<ArgumentSyntax>(
+                                            SingletonSeparatedList(
                                                 Argument(
                                                     IdentifierName(exceptionVariableIdentifier)))))));
 
@@ -143,25 +145,13 @@ namespace SharpGen.Generator
                         .WithType(ParseTypeName("System.IntPtr")));
             }
 
-            var isForcedReturnBufferSig = sig.ForcedReturnBufferSig;
-            IEnumerable<InteropType> nativeParameters = sig.ParameterTypes;
-
-            if (isForcedReturnBufferSig)
-            {
-                nativeParameters = nativeParameters.Skip(1);
-                methodDecl = methodDecl
-                    .AddParameterListParameters(
-                        Parameter(Identifier("returnSlot"))
-                        .WithType(PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword)))));
-            }
-
             methodDecl = methodDecl
                 .AddParameterListParameters(
-                    nativeParameters
-                            .Select((type, i) =>
-                                Parameter(Identifier($"param{i}"))
-                                .WithType(ParseTypeName(type.TypeName)))
-                            .ToArray());
+                    sig.ParameterTypes
+                       .Select(type =>
+                                   Parameter(Identifier(type.Name))
+                                      .WithType(type.InteropTypeSyntax))
+                       .ToArray());
 
             var statements = new List<StatementSyntax>();
 
@@ -277,9 +267,11 @@ namespace SharpGen.Generator
                 }
             }
 
-            ExpressionSyntax nativeReturnLocation = returnValueNeedsMarshalling
-                                ? IdentifierName(generators.Marshalling.GetMarshalStorageLocationIdentifier(csElement.ReturnValue))
-                                : IdentifierName(csElement.ReturnValue.Name);
+            var isForcedReturnBufferSig = sig.ForcedReturnBufferSig;
+
+            var nativeReturnLocation = returnValueNeedsMarshalling
+                                           ? MarshallerBase.GetMarshalStorageLocation(csElement.ReturnValue)
+                                           : IdentifierName(csElement.ReturnValue.Name);
 
             var doReturnResult = csElement.ReturnValue.PublicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.Result);
 
@@ -331,10 +323,12 @@ namespace SharpGen.Generator
             }
             else if (csElement.HasReturnType)
             {
-                var returnStatement = isForcedReturnBufferSig ?
-                    ReturnStatement(IdentifierName("returnSlot"))
-                    : ReturnStatement(DefaultExpression(returnValueMarshaller.GetMarshalTypeSyntax(csElement.ReturnValue)));
-                
+                var returnStatement = ReturnStatement(
+                    isForcedReturnBufferSig
+                        ? IdentifierName("returnSlot")
+                        : DefaultExpression(returnValueMarshaller.GetMarshalTypeSyntax(csElement.ReturnValue))
+                );
+
                 catchClause = GenerateCatchClause(catchClause, csElement, exceptionVariableIdentifier, returnStatement);
             }
             else

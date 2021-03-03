@@ -18,10 +18,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using SharpGen.Logging;
+using System.Collections.Generic;
 using SharpGen.Config;
 using SharpGen.CppModel;
+using SharpGen.Logging;
 using SharpGen.Model;
 
 namespace SharpGen.Transform
@@ -35,22 +35,22 @@ namespace SharpGen.Transform
         private readonly MarshalledElementFactory factory;
         private readonly GlobalNamespaceProvider globalNamespace;
         private readonly InteropManager interopManager;
-        private readonly InteropSignatureTransform signatureTransform;
+        private readonly IInteropSignatureTransform signatureTransform;
 
-        public MethodTransform(
-            NamingRulesManager namingRules,
-            Logger logger,
-            GroupRegistry groupRegistry,
-            MarshalledElementFactory factory,
-            GlobalNamespaceProvider globalNamespace,
-            InteropManager interopManager)
+        public MethodTransform(NamingRulesManager namingRules,
+                               Logger logger,
+                               GroupRegistry groupRegistry,
+                               MarshalledElementFactory factory,
+                               GlobalNamespaceProvider globalNamespace,
+                               InteropManager interopManager,
+                               IInteropSignatureTransform interopSignatureTransform)
             : base(namingRules, logger)
         {
             this.groupRegistry = groupRegistry;
             this.factory = factory;
             this.globalNamespace = globalNamespace;
             this.interopManager = interopManager;
-            signatureTransform = new InteropSignatureTransform(globalNamespace, logger);
+            signatureTransform = interopSignatureTransform;
         }
 
         /// <summary>
@@ -106,19 +106,18 @@ namespace SharpGen.Transform
             csElement.Offset += methodRule.LayoutOffsetTranslate;
             csElement.WindowsOffset += methodRule.LayoutOffsetTranslate;
 
-            ProcessCallable(csElement, false);
+            ProcessCallable(csElement);
         }
 
-        private void ProcessCallable(CsCallable csElement, bool isFunction)
+        private void ProcessCallable(CsCallable csCallable)
         {
             try
             {
-                var csMethod = csElement;
-                Logger.PushContext("Method {0}", csMethod.CppElement);
+                Logger.PushContext("Method {0}", csCallable.CppElement);
 
-                ProcessMethod(csMethod);
+                ProcessMethod(csCallable);
 
-                RegisterNativeInteropSignatures(csMethod, isFunction);
+                CreateNativeInteropSignatures(signatureTransform, csCallable, interopManager);
             }
             finally
             {
@@ -129,7 +128,7 @@ namespace SharpGen.Transform
         public void Process(CsFunction csFunction)
         {
             csFunction.Visibility |= Visibility.Static;
-            ProcessCallable(csFunction, true);
+            ProcessCallable(csFunction);
         }
 
         /// <summary>
@@ -174,10 +173,10 @@ namespace SharpGen.Transform
             }
         }
 
-        private void RegisterNativeInteropSignatures(CsCallable callable, bool isFunction)
+        internal static void CreateNativeInteropSignatures(IInteropSignatureTransform sigTransform, CsCallable callable, InteropManager interopManager)
         {
-            var signatures = signatureTransform.GetInteropSignatures(callable, isFunction);
-            foreach (var sig in signatures)
+            callable.InteropSignatures = new Dictionary<PlatformDetectionType, InteropMethodSignature>();
+            foreach (var sig in sigTransform.GetInteropSignatures(callable))
             {
                 interopManager.Add(sig.Value);
                 callable.InteropSignatures.Add(sig.Key, sig.Value);

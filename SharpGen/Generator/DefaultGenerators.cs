@@ -8,7 +8,7 @@ using System.Text;
 
 namespace SharpGen.Generator
 {
-    class DefaultGenerators : IGeneratorRegistry
+    internal sealed class DefaultGenerators : IGeneratorRegistry
     {
         public DefaultGenerators(
             GlobalNamespaceProvider globalNamespace,
@@ -47,23 +47,17 @@ namespace SharpGen.Generator
         public IMultiCodeGenerator<CsField, MemberDeclarationSyntax> ExplicitOffsetField { get; }
         public IMultiCodeGenerator<CsField, MemberDeclarationSyntax> AutoLayoutField { get; }
         public IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax> Struct { get; }
-        public ICodeGenerator<(CsCallable, PlatformDetectionType, InteropMethodSignature), ExpressionSyntax> NativeInvocation { get; }
+        public INativeCallCodeGenerator NativeInvocation { get; }
         public IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> Callable { get; }
         public IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax> Method { get; }
         public IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax> Function { get; }
         public IMultiCodeGenerator<CsInterface, MemberDeclarationSyntax> Interface { get; }
         public IMultiCodeGenerator<CsGroup, MemberDeclarationSyntax> Group { get; }
-
         public ICodeGenerator<CsAssembly, ClassDeclarationSyntax> LocalInterop { get; }
-
         public IMultiCodeGenerator<InteropMethodSignature, MemberDeclarationSyntax> InteropMethod { get; }
-
         public ICodeGenerator<CsInterface, MemberDeclarationSyntax> Shadow { get; }
-
         public ICodeGenerator<CsInterface, MemberDeclarationSyntax> Vtbl { get; }
-
         public IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> ShadowCallable { get; }
-
         public IMultiCodeGenerator<(CsCallable, InteropMethodSignature), StatementSyntax> ReverseCallableProlog { get; }
 
         public MarshallingRegistry Marshalling { get; }

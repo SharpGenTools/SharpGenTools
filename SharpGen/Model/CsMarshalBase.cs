@@ -61,42 +61,25 @@ namespace SharpGen.Model
 
         public virtual bool IsFastOut => false;
 
-        public int Size => MarshalType.Size * ((ArrayDimensionValue > 1) ? ArrayDimensionValue : 1);
+        public int Size => MarshalType.Size * (ArrayDimensionValue > 1 ? ArrayDimensionValue : 1);
 
-        public bool IsValueType
-        {
-            get { return (PublicType is CsStruct csStruct && !csStruct.GenerateAsClass) || PublicType is CsEnum ||
-                    (PublicType is CsFundamentalType type && (type.Type.GetTypeInfo().IsValueType || type.Type.GetTypeInfo().IsPrimitive)); }
-        }
+        public bool IsValueType =>
+            PublicType is CsStruct {GenerateAsClass: false} || PublicType is CsEnum ||
+            PublicType is CsFundamentalType type && (type.Type.GetTypeInfo().IsValueType || type.Type.GetTypeInfo().IsPrimitive);
 
         public bool PassedByNullableInstance => IsRefIn && IsValueType && !IsArray && IsOptional;
 
-        public bool IsInterface
-        {
-            get
-            {
-                return PublicType is CsInterface;
-            }
-        }
+        public bool IsInterface => PublicType is CsInterface;
 
-        public bool IsStructClass
-        {
-            get { return PublicType is CsStruct csStruct && csStruct.GenerateAsClass; }
-        }
+        public bool IsStructClass => PublicType is CsStruct {GenerateAsClass: true};
 
-        public bool IsPrimitive
-        {
-            get { return PublicType is CsFundamentalType type && type.Type.GetTypeInfo().IsPrimitive; }
-        }
+        public bool IsPrimitive => PublicType is CsFundamentalType type && type.Type.GetTypeInfo().IsPrimitive;
 
-        public bool IsString
-        {
-            get { return PublicType is CsFundamentalType type && type.Type == typeof(string); }
-        }
+        public bool IsString => PublicType is CsFundamentalType type && type.Type == typeof(string);
 
-        public bool HasNativeValueType => (PublicType is CsStruct csStruct && csStruct.HasMarshalType);
+        public bool HasNativeValueType => PublicType is CsStruct {HasMarshalType: true};
 
-        public bool IsStaticMarshal => (PublicType is CsStruct csStruct && csStruct.IsStaticMarshal);
+        public bool IsStaticMarshal => PublicType is CsStruct {IsStaticMarshal: true};
 
         public bool IsInterfaceArray => PublicType is CsInterfaceArray;
 

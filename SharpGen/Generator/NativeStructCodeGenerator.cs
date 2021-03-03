@@ -1,25 +1,23 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using SharpGen.Model;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using Microsoft.CodeAnalysis.CSharp;
 using System.Linq;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Model;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    class NativeStructCodeGenerator : IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax>
+    internal sealed class NativeStructCodeGenerator : IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax>
     {
+        private readonly IGeneratorRegistry generators;
+        private readonly GlobalNamespaceProvider globalNamespace;
+
         public NativeStructCodeGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
         {
-            Generators = generators;
-            this.globalNamespace = globalNamespace;
+            this.generators = generators ?? throw new ArgumentNullException(nameof(generators));
+            this.globalNamespace = globalNamespace ?? throw new ArgumentNullException(nameof(globalNamespace));
         }
-
-        readonly GlobalNamespaceProvider globalNamespace;
-
-        public IGeneratorRegistry Generators { get; }
 
         public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsStruct csElement)
         {
@@ -112,17 +110,26 @@ namespace SharpGen.Generator
             }
         }
 
-        private MethodDeclarationSyntax GenerateMarshalFree(CsStruct csStruct)
-            => MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "__MarshalFree")
-                .WithParameterList(ParameterList(SingletonSeparatedList(
-                    Parameter(Identifier("@ref")).WithType(RefType(ParseTypeName("__Native")))))).WithBody(
-                Block(
-                    List(csStruct.Fields
-                        .Where(field => !field.IsArray)
-                    .Select(field => Generators.Marshalling.GetMarshaller(field).GenerateNativeCleanup(field, false))
-                        .Where(statement => statement != null))))
-            .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)));
+        private StatementSyntax GenerateMarshalFreeForField(CsMarshalBase field) =>
+            generators.Marshalling.GetMarshaller(field)?.GenerateNativeCleanup(field, false);
 
+        private MethodDeclarationSyntax GenerateMarshalFree(CsStruct csStruct) =>
+            MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "__MarshalFree")
+               .WithParameterList(
+                    ParameterList(SingletonSeparatedList(
+                                      Parameter(Identifier("@ref")).WithType(RefType(ParseTypeName("__Native")))))
+                )
+               .WithBody(
+                    Block(
+                        List(
+                            csStruct.Fields
+                                    .Where(field => !field.IsArray)
+                                    .Select(GenerateMarshalFreeForField)
+                                    .Where(statement => statement != null)
+                        )
+                    )
+                )
+               .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)));
 
         private MethodDeclarationSyntax GenerateMarshalTo(CsStruct csStruct)
         {
@@ -130,13 +137,13 @@ namespace SharpGen.Generator
             {
                 if ((field.Relations?.Count ?? 0) == 0)
                 {
-                    yield return Generators.Marshalling.GetMarshaller(field).GenerateManagedToNative(field, false);
+                    yield return generators.Marshalling.GetMarshaller(field).GenerateManagedToNative(field, false);
                     yield break;
                 }
 
                 foreach (var relation in field.Relations)
                 {
-                    var marshaller = Generators.Marshalling.GetRelationMarshaller(relation);
+                    var marshaller = generators.Marshalling.GetRelationMarshaller(relation);
                     CsField publicElement = null;
                     
                     if (relation is LengthRelation related)
@@ -172,7 +179,7 @@ namespace SharpGen.Generator
                         csStruct.Fields
                             .Where(field => (field.Relations?.Count ?? 0) == 0)
                             .Select(field =>
-                                Generators.Marshalling.GetMarshaller(field).GenerateNativeToManaged(field, false))
+                                generators.Marshalling.GetMarshaller(field).GenerateNativeToManaged(field, false))
                             .Where(statement => statement != null)
                     )
                 );
