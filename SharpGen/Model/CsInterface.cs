@@ -66,6 +66,7 @@ namespace SharpGen.Model
             IsCallback = tag.IsCallbackInterface ?? false;
             IsDualCallback = tag.IsDualCallbackInterface ?? false;
             AutoGenerateShadow = tag.AutoGenerateShadow ?? false;
+            StaticVtbl = tag.StaticVtbl ?? true;
             ShadowName = tag.ShadowName;
             VtblName = tag.VtblName;
         }
@@ -120,12 +121,18 @@ namespace SharpGen.Model
         [DataMember]
         public string VtblName
         {
-            get => vtblName ?? $"{ShadowName}.{Name}Vtbl";
+            get => vtblName ?? DefaultVtblFullName;
             set => vtblName = value;
         }
 
+        public string DefaultVtblName => $"{Name}Vtbl";
+        public string DefaultVtblFullName => $"{ShadowName}.{DefaultVtblName}";
+
         [DataMember]
         public bool AutoGenerateShadow { get; set; }
+
+        [DataMember]
+        public bool StaticVtbl { get; set; }
 
         /// <summary>
         ///   List of declared inner structs
