@@ -231,12 +231,7 @@ namespace SharpGen.Generator
             foreach (var method in csElement.Methods)
             {
                 if (!method.Hidden.HasValue && methodWasHiddenByDefault)
-                {
                     shouldIssueCompatMessage = true;
-
-                    // todo: compat mode
-                    // method.Hidden = true;
-                }
 
                 method.SignatureOnly = csElement.IsCallback;
 
