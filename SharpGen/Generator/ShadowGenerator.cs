@@ -8,7 +8,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    class ShadowGenerator : ICodeGenerator<CsInterface, MemberDeclarationSyntax>
+    internal sealed class ShadowGenerator : ICodeGenerator<CsInterface, MemberDeclarationSyntax>
     {
         private readonly GlobalNamespaceProvider globalNamespace;
         private readonly IGeneratorRegistry generators;
@@ -46,12 +46,10 @@ namespace SharpGen.Generator
 
             List<MemberDeclarationSyntax> members = new();
 
-            if (csElement.VtblName == csElement.DefaultVtblName || csElement.VtblName == csElement.DefaultVtblFullName)
-            {
+            if (csElement.AutoGenerateVtbl)
                 members.Add(generators.Vtbl.GenerateCode(csElement));
-            }
 
-            if (csElement.StaticVtbl)
+            if (csElement.StaticShadowVtbl)
             {
                 var vtblInstanceName = Identifier("VtblInstance");
 
@@ -74,7 +72,8 @@ namespace SharpGen.Generator
                         )
                        .WithModifiers(
                             TokenList(Token(SyntaxKind.PrivateKeyword), Token(SyntaxKind.StaticKeyword),
-                                      Token(SyntaxKind.ReadOnlyKeyword)))
+                                      Token(SyntaxKind.ReadOnlyKeyword))
+                        )
                 );
 
                 vtblProperty = vtblProperty
@@ -117,9 +116,7 @@ namespace SharpGen.Generator
                            )
                        )
                    )
-                  .WithMembers(
-                       new SyntaxList<MemberDeclarationSyntax>(members)
-                   );
+                  .WithMembers(new SyntaxList<MemberDeclarationSyntax>(members));
         }
     }
 }

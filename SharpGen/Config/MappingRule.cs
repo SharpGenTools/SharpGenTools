@@ -324,13 +324,22 @@ namespace SharpGen.Config
             set => AutoGenerateShadow = value;
         }
 
-        [XmlIgnore] public bool? StaticVtbl { get; set; }
+        [XmlIgnore] public bool? AutoGenerateVtbl { get; set; }
+
+        [XmlAttribute("autogen-vtbl")]
+        public bool _AutoGenerateVtbl_
+        {
+            get => AutoGenerateVtbl.Value;
+            set => AutoGenerateVtbl = value;
+        }
+
+        [XmlIgnore] public bool? StaticShadowVtbl { get; set; }
 
         [XmlAttribute("vtbl-static")]
-        public bool _StaticVtbl_
+        public bool _StaticShadowVtbl_
         {
-            get => StaticVtbl.Value;
-            set => StaticVtbl = value;
+            get => StaticShadowVtbl.Value;
+            set => StaticShadowVtbl = value;
         }
 
         [XmlAttribute("shadow-name")] public string ShadowName { get; set; }
@@ -474,7 +483,9 @@ namespace SharpGen.Config
 
         public bool ShouldSerialize_AutoGenerateShadow_() => AutoGenerateShadow != null;
 
-        public bool ShouldSerialize_StaticVtbl_() => StaticVtbl != null;
+        public bool ShouldSerialize_AutoGenerateVtbl_() => AutoGenerateVtbl != null;
+
+        public bool ShouldSerialize_StaticShadowVtbl_() => StaticShadowVtbl != null;
 
         public bool ShouldSerialize_IsKeepImplementPublic_() => IsKeepImplementPublic != null;
 
