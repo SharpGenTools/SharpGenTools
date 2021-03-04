@@ -53,5 +53,8 @@ namespace SharpGen.Runtime
         {
             AddMethod(method, methods.Count);
         }
+
+        protected static T ToShadow<T>(IntPtr thisPtr) where T : CppObjectShadow =>
+            CppObjectShadow.ToShadow<T>(thisPtr);
     }
 }

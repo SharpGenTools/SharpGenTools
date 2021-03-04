@@ -69,7 +69,7 @@ namespace SharpGen.Runtime
             base.Dispose(disposing);
         }
 
-        protected static T ToShadow<T>(IntPtr thisPtr) where T : CppObjectShadow
+        protected internal static T ToShadow<T>(IntPtr thisPtr) where T : CppObjectShadow
         {
             unsafe
             {

@@ -90,9 +90,6 @@ namespace SharpGen.Model
             if (parentInterface == null)
                 return false;
 
-            if (parentInterface.AutoGenerateShadow)
-                return false;
-
             var tagForMethod = CppElement?.GetMappingRule();
 
             return tagForMethod?.IsKeepImplementPublic ??
