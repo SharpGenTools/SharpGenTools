@@ -73,7 +73,7 @@ stages:
             pathToPublish: '$(Build.ArtifactStagingDirectory)'
             artifactName: NuGet Packages
 - stage: Deploy
-  condition: eq(variables['Build.SourceBranchName'], 'master')
+  condition: or(eq(variables['Build.SourceBranchName'], 'master'), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
   dependsOn: Build
   jobs:
     - job: MyGet_Deploy
