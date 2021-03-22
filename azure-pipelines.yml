@@ -35,9 +35,9 @@ stages:
         - group: SharpGenTools
       steps:
         - pwsh: |
-            if ($env:SourceBranch -match 'refs/tags/v(.+)')
+            if ($env:SourceBranch -match 'refs/tags/v(?<Version>.+)')
             {
-              Write-Host "##vso[task.setvariable variable=ReleaseVersion;]$Matches[1]"
+              Write-Host "##vso[task.setvariable variable=ReleaseVersion;]$($Matches.Version)"
             }
           displayName: 'Get Release Name (if this is a tag-triggered build)'
           env:
