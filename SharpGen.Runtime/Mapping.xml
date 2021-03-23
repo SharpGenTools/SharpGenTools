@@ -6,6 +6,7 @@
     <define struct="SharpGen.Runtime.PointerSize" sizeof="8" primitive="true" />
     <define struct="SharpGen.Runtime.NativeLong" sizeof="8" primitive="true" />
     <define struct="SharpGen.Runtime.NativeULong" sizeof="8" primitive="true" />
+    <define struct="SharpGen.Runtime.RawBool" sizeof="4" />
   </extension>
 
   <bindings>
