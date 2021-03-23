@@ -215,7 +215,7 @@ namespace SharpGen.Generator
 
         private static bool ValidRelationInScenario(MarshallableRelation relation)
         {
-            return relation is ConstantValueRelation || relation is LengthRelation;
+            return relation is ConstantValueRelation or LengthRelation;
         }
     }
 }

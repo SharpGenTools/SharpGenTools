@@ -177,7 +177,7 @@ namespace SharpGen.Logging
             else
                 LoggerOutput.Log(type, logLocation, ContextAsText, code, message, exception, parameters);
 
-            if (type == LogLevel.Error || type == LogLevel.Fatal)
+            if (type is LogLevel.Error or LogLevel.Fatal)
                 _errorCount++;
         }
     }

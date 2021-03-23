@@ -248,7 +248,7 @@ namespace SharpGen.Transform
             var marshalType = param.MarshalType;
 
             var parameterAttribute = CsParameterAttribute.In;
-            var numIndirections = cppParameter.Pointer?.Count(p => p == '*' || p == '&') ?? 0;
+            var numIndirections = cppParameter.Pointer?.Count(p => p is '*' or '&') ?? 0;
 
             if (hasArray)
             {
@@ -266,7 +266,7 @@ namespace SharpGen.Transform
                 if (publicType is CsInterface publicInterface)
                 {
                     // Force Interface** to be ParamAttribute.Out when None
-                    if (cppAttribute == ParamAttribute.In || cppAttribute == ParamAttribute.None)
+                    if (cppAttribute is ParamAttribute.In or ParamAttribute.None)
                     {
                         if (numIndirections == 2)
                         {

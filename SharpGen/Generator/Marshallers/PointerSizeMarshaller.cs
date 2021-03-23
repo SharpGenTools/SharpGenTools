@@ -16,7 +16,7 @@ namespace SharpGen.Generator.Marshallers
             (csElement.PublicType.QualifiedName == GlobalNamespace.GetTypeName(WellKnownName.PointerSize)
           || (csElement.PublicType is CsFundamentalType {IsPointer: true}))
          && !csElement.IsArray
-         && (csElement is CsParameter {IsIn: true} || csElement is CsReturnValue);
+         && (csElement is CsParameter {IsIn: true} or CsReturnValue);
 
         public ArgumentSyntax GenerateManagedArgument(CsParameter csElement) =>
             GenerateManagedValueTypeArgument(csElement);
