@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Config;
 using SharpGen.Model;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -22,75 +24,108 @@ namespace SharpGen.Generator
         {
             var vtblClassName = csElement.VtblName.Split('.').Last();
 
-            return ClassDeclaration(vtblClassName)
-                  .WithModifiers(
-                       ModelUtilities.VisibilityToTokenList(csElement.VtblVisibility, SyntaxKind.UnsafeKeyword, SyntaxKind.PartialKeyword)
-                   )
-                .WithBaseList(
-                    BaseList(
-                        SingletonSeparatedList<BaseTypeSyntax>(
-                            SimpleBaseType(
-                                csElement.Base != null
-                                    ? IdentifierName(csElement.Base.VtblName)
-                                    : globalNamespace.GetTypeNameSyntax(WellKnownName.CppObjectVtbl)))))
-                .WithMembers(
-                    List(
-                        new MemberDeclarationSyntax[]
-                        {
-                            ConstructorDeclaration(
-                                Identifier(vtblClassName))
-                            .WithModifiers(
-                                TokenList(
-                                    Token(SyntaxKind.PublicKeyword)))
-                            .WithParameterList(
-                                ParameterList(
-                                    SingletonSeparatedList(
-                                        Parameter(
-                                            Identifier("numberOfCallbackMethods"))
-                                        .WithType(
-                                            PredefinedType(
-                                                Token(SyntaxKind.IntKeyword))))))
-                            .WithInitializer(
-                                ConstructorInitializer(
-                                    SyntaxKind.BaseConstructorInitializer,
+            // Default: at least protected to enable inheritance.
+            var vtblVisibility = csElement.VtblVisibility ?? Visibility.ProtectedInternal;
+
+            StatementSyntax VtblMethodSelector(CsMethod method)
+            {
+                StatementSyntax MethodBuilder(PlatformDetectionType platform)
+                {
+                    var arguments = new[]
+                    {
+                        Argument(
+                            ObjectCreationExpression(IdentifierName(GetMethodDelegateName(method, platform)))
+                               .WithArgumentList(
                                     ArgumentList(
                                         SingletonSeparatedList(
                                             Argument(
-                                                BinaryExpression(
-                                                    SyntaxKind.AddExpression,
-                                                    IdentifierName("numberOfCallbackMethods"),
-                                                    LiteralExpression(
-                                                        SyntaxKind.NumericLiteralExpression,
-                                                        Literal(csElement.Methods.Count()))))))))
-                            .WithBody(
-                                Block(csElement.Methods
-                                        .OrderBy(method => method.Offset)
-                                        .Select(method => GeneratorHelpers.GetPlatformSpecificStatements(globalNamespace, generators.Config, method.InteropSignatures.Keys,
-                                            platform  =>
-                                                ExpressionStatement(
-                                                    InvocationExpression(
-                                                        IdentifierName("AddMethod"))
-                                                    .WithArgumentList(
-                                                        ArgumentList(
-                                                            SeparatedList(
-                                                                new []
-                                                                {
-                                                                    Argument(
-                                                                        ObjectCreationExpression(
-                                                                            IdentifierName(GetMethodDelegateName(method, platform)))
-                                                                        .WithArgumentList(
-                                                                            ArgumentList(
-                                                                                SingletonSeparatedList(
-                                                                                    Argument(
-                                                                                        IdentifierName($"{method.Name}{GeneratorHelpers.GetPlatformSpecificSuffix(platform)}")))))),
-                                                                    Argument(
-                                                                        LiteralExpression(SyntaxKind.NumericLiteralExpression,
-                                                                            Literal((platform & PlatformDetectionType.IsWindows) != 0 ? method.WindowsOffset : method.Offset)))
-                                                                }
-                                                                ))))))))
-                        }
-                    .Concat(csElement.Methods
-                                .SelectMany(method => generators.ShadowCallable.GenerateCode(method)))));
+                                                IdentifierName(
+                                                    $"{method.Name}{GeneratorHelpers.GetPlatformSpecificSuffix(platform)}"
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                        ),
+                        Argument(
+                            LiteralExpression(
+                                SyntaxKind.NumericLiteralExpression,
+                                Literal((platform & PlatformDetectionType.IsWindows) != 0
+                                            ? method.WindowsOffset
+                                            : method.Offset)
+                            )
+                        )
+                    };
+
+                    return ExpressionStatement(
+                        InvocationExpression(IdentifierName("AddMethod"))
+                           .WithArgumentList(ArgumentList(SeparatedList(arguments)))
+                    );
+                }
+
+                return GeneratorHelpers.GetPlatformSpecificStatements(globalNamespace, generators.Config,
+                                                                      method.InteropSignatures.Keys, MethodBuilder);
+            }
+
+            List<MemberDeclarationSyntax> members = new()
+            {
+                ConstructorDeclaration(Identifier(vtblClassName))
+                   .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+                   .WithParameterList(
+                        ParameterList(
+                            SingletonSeparatedList(
+                                Parameter(Identifier("numberOfCallbackMethods"))
+                                   .WithType(PredefinedType(Token(SyntaxKind.IntKeyword)))
+                            )
+                        )
+                    )
+                   .WithInitializer(
+                        ConstructorInitializer(
+                            SyntaxKind.BaseConstructorInitializer,
+                            ArgumentList(
+                                SingletonSeparatedList(
+                                    Argument(
+                                        BinaryExpression(
+                                            SyntaxKind.AddExpression,
+                                            IdentifierName("numberOfCallbackMethods"),
+                                            LiteralExpression(
+                                                SyntaxKind.NumericLiteralExpression,
+                                                Literal(csElement.Methods.Count())
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                   .WithBody(
+                        Block(
+                            csElement.Methods
+                                     .OrderBy(method => method.Offset)
+                                     .Select(VtblMethodSelector)
+                        )
+                    )
+            };
+
+            members.AddRange(csElement.Methods.SelectMany(method => generators.ShadowCallable.GenerateCode(method)));
+
+            return ClassDeclaration(vtblClassName)
+                  .WithModifiers(
+                       ModelUtilities.VisibilityToTokenList(vtblVisibility, SyntaxKind.UnsafeKeyword,
+                                                            SyntaxKind.PartialKeyword)
+                   )
+                  .WithBaseList(
+                       BaseList(
+                           SingletonSeparatedList<BaseTypeSyntax>(
+                               SimpleBaseType(
+                                   csElement.Base != null
+                                       ? IdentifierName(csElement.Base.VtblName)
+                                       : globalNamespace.GetTypeNameSyntax(WellKnownName.CppObjectVtbl)
+                               )
+                           )
+                       )
+                   )
+                  .WithMembers(List(members));
         }
 
         internal static string GetMethodDelegateName(CsCallable csElement, PlatformDetectionType platform) =>

@@ -67,8 +67,8 @@ namespace SharpGen.Model
         public Visibility? ShadowVisibility { get; set; }
 
         /// <summary>
-        /// Gets or sets the <see cref="Visibility"/> of the Shadow of this interface.
-        /// Default is empty, if no <c>partial</c> part is present it will be <c>private</c> (member of a class).
+        /// Gets or sets the <see cref="Visibility"/> of the Vtbl of this interface.
+        /// Default is <c>protected internal</c>.
         /// </summary>
         public Visibility? VtblVisibility { get; set; }
 
