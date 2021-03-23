@@ -73,6 +73,32 @@ namespace SharpGen.Config
             set => NativeCallbackVisibility = value;
         }
 
+        /// <summary>
+        ///     General visibility for Shadow class
+        /// </summary>
+        [XmlIgnore]
+        public Visibility? ShadowVisibility { get; set; }
+
+        [XmlAttribute("shadow-visibility")]
+        public Visibility _ShadowVisibility_
+        {
+            get => ShadowVisibility.Value;
+            set => ShadowVisibility = value;
+        }
+
+        /// <summary>
+        ///     General visibility for Vtbl class
+        /// </summary>
+        [XmlIgnore]
+        public Visibility? VtblVisibility { get; set; }
+
+        [XmlAttribute("vtbl-visibility")]
+        public Visibility _VtblVisibility_
+        {
+            get => VtblVisibility.Value;
+            set => VtblVisibility = value;
+        }
+
         [XmlIgnore] public NamingFlags? NamingFlags { get; set; }
 
         [XmlAttribute("naming")]
@@ -439,6 +465,19 @@ namespace SharpGen.Config
             set => Hidden = value;
         }
 
+        /// <summary>
+        ///     Best-effort flag for retaining pointers in generated bindings.
+        /// </summary>
+        [XmlIgnore]
+        public bool? KeepPointers { get; set; }
+
+        [XmlAttribute("keep-pointers")]
+        public bool _KeepPointers_
+        {
+            get => KeepPointers.Value;
+            set => KeepPointers = value;
+        }
+
         public bool ShouldSerialize_MethodCheckReturnType_() => MethodCheckReturnType != null;
 
         public bool ShouldSerialize_AlwaysReturnHResult_() => AlwaysReturnHResult != null;
@@ -446,6 +485,10 @@ namespace SharpGen.Config
         public bool ShouldSerialize_Visibility_() => Visibility != null;
 
         public bool ShouldSerialize_NativeCallbackVisibility_() => NativeCallbackVisibility != null;
+
+        public bool ShouldSerialize_ShadowVisibility_() => ShadowVisibility != null;
+
+        public bool ShouldSerialize_VtblVisibility_() => VtblVisibility != null;
 
         public bool ShouldSerialize_NamingFlags_() => NamingFlags != null;
 
@@ -496,5 +539,7 @@ namespace SharpGen.Config
         public bool ShouldSerialize_ParameterUsedAsReturnType_() => ParameterUsedAsReturnType != null;
 
         public bool ShouldSerialize_Hidden_() => Hidden != null;
+
+        public bool ShouldSerialize_KeepPointers_() => KeepPointers != null;
     }
 }

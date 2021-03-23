@@ -22,8 +22,6 @@ using System;
 using System.Text.RegularExpressions;
 using SharpGen.Config;
 using SharpGen.CppModel;
-using System.Reflection;
-using SharpGen.Transform;
 using System.Collections.Generic;
 
 namespace SharpGen.Model
@@ -128,6 +126,10 @@ namespace SharpGen.Model
             if (newRule.Visibility.HasValue) tag.Visibility = newRule.Visibility;
             if (newRule.NativeCallbackVisibility.HasValue)
                 tag.NativeCallbackVisibility = newRule.NativeCallbackVisibility;
+            if (newRule.ShadowVisibility.HasValue)
+                tag.ShadowVisibility = newRule.ShadowVisibility;
+            if (newRule.VtblVisibility.HasValue)
+                tag.VtblVisibility = newRule.VtblVisibility;
             if (newRule.NativeCallbackName != null)
                 tag.NativeCallbackName = RegexRename(patchRegex, element.FullName, newRule.NativeCallbackName);
             if (newRule.Property.HasValue) tag.Property = newRule.Property;
@@ -194,6 +196,7 @@ namespace SharpGen.Model
                 tag.ParameterUsedAsReturnType = newRule.ParameterUsedAsReturnType;
             if (newRule.Relation != null) tag.Relation = newRule.Relation;
             if (newRule.Hidden != null) tag.Hidden = newRule.Hidden;
+            if (newRule.KeepPointers != null) tag.KeepPointers = newRule.KeepPointers;
         }
     }
 }
