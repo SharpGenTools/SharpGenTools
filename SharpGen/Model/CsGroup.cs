@@ -29,7 +29,7 @@ namespace SharpGen.Model
     {
         public CsGroup()
         {
-            Visibility = Config.Visibility.PublicProtected | Config.Visibility.Static;
+            Visibility = Config.Visibility.SharpGenGroup | Config.Visibility.Static;
             Description = "Functions";
         }
 

@@ -46,7 +46,7 @@ namespace SharpGen.Generator
                                         )))))
                                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
                             })))
-                    .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
+                    .WithModifiers(csElement.VisibilityTokenList)
                     .WithLeadingTrivia(Trivia(docComments));
                 yield return GenerateBackingField(csElement, csElement.MarshalType, explicitLayout ? csElement.Offset : (int?)null);
             }
@@ -81,7 +81,7 @@ namespace SharpGen.Generator
                                         .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
                                         .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)))
                                 })))
-                    .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
+                    .WithModifiers(csElement.VisibilityTokenList)
                     .WithLeadingTrivia(Trivia(docComments));
 
                 yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : (int?)null, isArray: true);
@@ -100,7 +100,7 @@ namespace SharpGen.Generator
                                         GenerateBitFieldSetter(csElement, GenerateBoolToIntConversion)
                                     }
                                     )))
-                    .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
+                    .WithModifiers(csElement.VisibilityTokenList)
                     .WithLeadingTrivia(Trivia(docComments));
                 }
                 else
@@ -116,7 +116,7 @@ namespace SharpGen.Generator
                                         GenerateBitFieldSetter(csElement)
                                     }
                                     )))
-                    .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
+                    .WithModifiers(csElement.VisibilityTokenList)
                     .WithLeadingTrivia(Trivia(docComments));
                 }
                 yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : (int?)null);
@@ -225,7 +225,7 @@ namespace SharpGen.Generator
                    SingletonSeparatedList(
                        VariableDeclarator(propertyBacking ? field.IntermediateMarshalName : field.Name)
                    )))
-               .WithModifiers(propertyBacking ? TokenList(Token(SyntaxKind.InternalKeyword)) : TokenList(ParseTokens(field.VisibilityName)));
+               .WithModifiers(propertyBacking ? TokenList(Token(SyntaxKind.InternalKeyword)) : field.VisibilityTokenList);
 
             if (offset.HasValue)
             {

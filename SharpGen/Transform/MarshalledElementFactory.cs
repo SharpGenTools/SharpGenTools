@@ -114,11 +114,8 @@ namespace SharpGen.Transform
                         marshalType = null;
                     }
 
-                    if (marshalType == null)
-                    {
-                        // Otherwise, get the registered marshal type if one exists
-                        marshalType = typeRegistry.FindBoundMarshalType(publicTypeName);
-                    }
+                    // Otherwise, get the registered marshal type if one exists
+                    marshalType ??= typeRegistry.FindBoundMarshalType(publicTypeName);
 
                     if (publicType is CsStruct csStruct)
                     {
@@ -139,7 +136,7 @@ namespace SharpGen.Transform
                             marshalType = publicType;
                         }
                     }
-                    else if (publicType is CsEnum referenceEnum)
+                    else if (publicType is CsEnum)
                     {
                         marshalType = null; // enums don't need a marshal type. They can always marshal as their underlying type.
                     }
@@ -151,9 +148,12 @@ namespace SharpGen.Transform
                 marshalType is CsFundamentalType marshalFundamental && IsIntegerFundamentalType(marshalFundamental)
                 && publicType is CsFundamentalType publicFundamental && publicFundamental.Type == typeof(bool);
 
+            var mappingRule = marshallable.GetMappingRule();
+
             if (publicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.PointerSize))
             {
-                marshalType = typeRegistry.ImportType(typeof(IntPtr));
+                var pointerType = PointerType(mappingRule);
+                marshalType = typeRegistry.ImportType(pointerType);
             }
 
             // Present void* elements as IntPtr. Marshal strings as IntPtr
@@ -161,8 +161,9 @@ namespace SharpGen.Transform
             {
                 if (publicTypeName == "void")
                 {
-                    publicType = typeRegistry.ImportType(typeof(IntPtr));
-                    marshalType = typeRegistry.ImportType(typeof(IntPtr));
+                    var pointerType = PointerType(mappingRule);
+                    publicType = typeRegistry.ImportType(pointerType);
+                    marshalType = typeRegistry.ImportType(pointerType);
                 }
                 else if (publicType == typeRegistry.ImportType(typeof(string)))
                 {
@@ -173,10 +174,14 @@ namespace SharpGen.Transform
             csMarshallable.PublicType = publicType;
             csMarshallable.MarshalType = marshalType ?? publicType;
 
-            csMarshallable.Relations = RelationParser.ParseRelation(marshallable.GetMappingRule().Relation, logger);
+            csMarshallable.Relations = RelationParser.ParseRelation(mappingRule.Relation, logger);
 
             return csMarshallable;
         }
+
+        private static Type PointerType(MappingRule mappingRule) => mappingRule.KeepPointers != true
+                                                                        ? typeof(IntPtr)
+                                                                        : typeof(void*);
 
         private static bool IsIntegerFundamentalType(CsFundamentalType marshalType)
         {
@@ -243,7 +248,7 @@ namespace SharpGen.Transform
             var marshalType = param.MarshalType;
 
             var parameterAttribute = CsParameterAttribute.In;
-            var numIndirections = cppParameter.Pointer?.Count(p => p == '*' || p == '&') ?? 0;
+            var numIndirections = cppParameter.Pointer?.Count(p => p is '*' or '&') ?? 0;
 
             if (hasArray)
             {
@@ -261,7 +266,7 @@ namespace SharpGen.Transform
                 if (publicType is CsInterface publicInterface)
                 {
                     // Force Interface** to be ParamAttribute.Out when None
-                    if (cppAttribute == ParamAttribute.In || cppAttribute == ParamAttribute.None)
+                    if (cppAttribute is ParamAttribute.In or ParamAttribute.None)
                     {
                         if (numIndirections == 2)
                         {
@@ -297,39 +302,40 @@ namespace SharpGen.Transform
                 {
                     if ((cppAttribute & ParamAttribute.In) != 0)
                     {
-                        var fundamentalType = (publicType as CsFundamentalType)?.Type;
-                        parameterAttribute = fundamentalType == typeof(IntPtr)
-                                            || publicType.Name == globalNamespace.GetTypeName(WellKnownName.FunctionCallback)
-                                            || fundamentalType == typeof(string)
-                                                    ? CsParameterAttribute.In
-                                                    : CsParameterAttribute.RefIn;
+                        var fundamentalType = publicType as CsFundamentalType;
+                        parameterAttribute = (fundamentalType?.IsPointer ?? false)
+                                          || publicType.Name == globalNamespace.GetTypeName(WellKnownName.FunctionCallback)
+                                          || fundamentalType?.Type == typeof(string)
+                                                 ? CsParameterAttribute.In
+                                                 : CsParameterAttribute.RefIn;
                     }
                     else if ((cppAttribute & ParamAttribute.InOut) != 0)
                     {
                         if ((cppAttribute & ParamAttribute.Optional) != 0)
                         {
-                            publicType = typeRegistry.ImportType(typeof(IntPtr));
-                            marshalType = typeRegistry.ImportType(typeof(IntPtr));
+                            var pointerType = PointerType(paramRule);
+                            publicType = typeRegistry.ImportType(pointerType);
+                            marshalType = typeRegistry.ImportType(pointerType);
                             parameterAttribute = CsParameterAttribute.In;
                         }
                         else
                         {
                             parameterAttribute = CsParameterAttribute.Ref;
                         }
-
                     }
                     else if ((cppAttribute & ParamAttribute.Out) != 0)
                         parameterAttribute = CsParameterAttribute.Out;
 
                     // Handle void* with Buffer attribute
-                    if (cppParameter.GetTypeNameWithMapping() == "void" && (cppAttribute & ParamAttribute.Buffer) != 0)
+                    var typeNameWithMapping = cppParameter.GetTypeNameWithMapping();
+                    if (typeNameWithMapping == "void" && (cppAttribute & ParamAttribute.Buffer) != 0)
                     {
                         hasArray = false;
                         parameterAttribute = CsParameterAttribute.In;
                     }
                     // There's no way to know how to deallocate native-allocated memory correctly since we don't know what allocator the native memory uses
                     // so we treat double-pointer indirections as IntPtr
-                    else if (numIndirections > 1 && cppParameter.GetTypeNameWithMapping() != "void")
+                    else if (numIndirections > 1 && typeNameWithMapping != "void")
                     {
                         marshalType = publicType = typeRegistry.ImportType(typeof(IntPtr));
                         hasArray = false;

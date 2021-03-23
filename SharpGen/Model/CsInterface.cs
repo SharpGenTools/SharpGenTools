@@ -60,6 +60,18 @@ namespace SharpGen.Model
             get { return Items.OfType<CsVariable>(); }
         }
 
+        /// <summary>
+        /// Gets or sets the <see cref="Visibility"/> of the Shadow of this interface.
+        /// Default is empty, if no <c>partial</c> part is present it will be <c>internal</c> (top-level type).
+        /// </summary>
+        public Visibility? ShadowVisibility { get; set; }
+
+        /// <summary>
+        /// Gets or sets the <see cref="Visibility"/> of the Shadow of this interface.
+        /// Default is empty, if no <c>partial</c> part is present it will be <c>private</c> (member of a class).
+        /// </summary>
+        public Visibility? VtblVisibility { get; set; }
+
         protected override void UpdateFromMappingRule(MappingRule tag)
         {
             base.UpdateFromMappingRule(tag);
@@ -70,6 +82,10 @@ namespace SharpGen.Model
             StaticShadowVtbl = tag.StaticShadowVtbl ?? true;
             ShadowName = tag.ShadowName;
             VtblName = tag.VtblName;
+            if (tag.ShadowVisibility.HasValue)
+                ShadowVisibility = tag.ShadowVisibility.Value;
+            if (tag.VtblVisibility.HasValue)
+                VtblVisibility = tag.VtblVisibility.Value;
         }
 
         /// <summary>

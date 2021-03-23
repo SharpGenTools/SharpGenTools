@@ -163,7 +163,7 @@ namespace SharpGen.Generator
             yield return PropertyDeclaration(
                 ParseTypeName(csElement.PublicType.QualifiedName),
                 Identifier(csElement.Name))
-                .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
+                .WithModifiers(csElement.VisibilityTokenList)
                 .WithAccessorList(AccessorList(List(accessors)))
                 .WithLeadingTrivia(Trivia(documentation));
 

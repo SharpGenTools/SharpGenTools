@@ -17,39 +17,28 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Xml.Serialization;
 
 namespace SharpGen.Config
 {
     [Flags]
-    public enum Visibility
-    {        
-        [XmlEnum("public")] 
-        Public = 0x01,
-        [XmlEnum("internal")]
-        Internal = 0x02,
-        [XmlEnum("protected")] 
-        Protected = 0x04,
-        [XmlEnum("public-protected")] 
-        PublicProtected = 0x08,
-        [XmlEnum("private")]
-        Private = 0x10,
-        [XmlEnum("override")]
-        Override = 0x20,
-        [XmlEnum("abstract")]
-        Abstract = 0x40,
-        [XmlEnum("partial")]
-        Partial = 0x80,
-        [XmlEnum("static")]
-        Static = 0x100,
-        [XmlEnum("const")]
-        Const = 0x200,
-        [XmlEnum("virtual")]
-        Virtual = 0x400,
-        [XmlEnum("readonly")]
-        Readonly = 0x800,
-        [XmlEnum("sealed")]
-        Sealed = 0x1000,
+    public enum Visibility : uint
+    {
+        [XmlEnum("public")] Public = 0x01,
+        [XmlEnum("internal")] Internal = 0x02,
+        [XmlEnum("protected")] Protected = 0x04,
+        [XmlEnum("sharpgen-group")] SharpGenGroup = 0x08,
+        [XmlEnum("private")] Private = 0x10,
+        [XmlEnum("override")] Override = 0x20,
+        [XmlEnum("abstract")] Abstract = 0x40,
+        [XmlEnum("static")] Static = 0x80,
+        [XmlEnum("const")] Const = 0x100,
+        [XmlEnum("virtual")] Virtual = 0x200,
+        [XmlEnum("readonly")] Readonly = 0x400,
+        [XmlEnum("sealed")] Sealed = 0x800,
+        [XmlEnum("protected-internal")] ProtectedInternal = 0x1000,
+        [XmlEnum("private-protected")] PrivateProtected = 0x2000,
     }
 }

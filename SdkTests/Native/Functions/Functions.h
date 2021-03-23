@@ -107,4 +107,11 @@ DECL(int) ArrayRelationSumStructWithMarshal(int length, StructWithMarshal array[
 
 DECL(bool) VerifyReservedParam(int reserved);
 
+DECL(bool) PreserveVoidPointer1_None(void* array);
+DECL(bool) PreserveVoidPointer1_False(void* array);
+DECL(bool) PreserveVoidPointer1_True(void* array);
+DECL(bool) PreserveVoidPointer2_None(void* array);
+DECL(bool) PreserveVoidPointer2_False(void* array);
+DECL(bool) PreserveVoidPointer2_True(void* array);
+
 DECL(StructAsClassWrapper) GetWrapper();

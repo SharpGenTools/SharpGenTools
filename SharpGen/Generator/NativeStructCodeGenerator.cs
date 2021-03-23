@@ -98,7 +98,7 @@ namespace SharpGen.Generator
                 }
 
             }
-            else if (field.PublicType is CsStruct fieldType && fieldType.HasMarshalType)
+            else if (field.PublicType is CsStruct {HasMarshalType: true})
             {
                 yield return fieldDecl.WithDeclaration(VariableDeclaration(
                     ParseTypeName($"{field.MarshalType.QualifiedName}.__Native"), SingletonSeparatedList(

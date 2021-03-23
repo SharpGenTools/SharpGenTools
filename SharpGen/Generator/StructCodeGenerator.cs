@@ -59,26 +59,36 @@ namespace SharpGen.Generator
                 marshallingStructAndConversions = Generators.NativeStruct.GenerateCode(csElement);
             }
 
-            yield return (csElement.GenerateAsClass ?
-                (MemberDeclarationSyntax)ClassDeclaration(
-                    !csElement.HasMarshalType ? SingletonList(AttributeList(SingletonSeparatedList(structLayoutAttribute))) : default,
-                    TokenList(ParseTokens(csElement.VisibilityName)).Add(Token(SyntaxKind.PartialKeyword)),
-                    Identifier(csElement.Name),
-                    default,
-                    default,
-                    default,
-                    List(innerStructs.Concat(constants).Concat(fields).Concat(marshallingStructAndConversions)))
-                .WithLeadingTrivia(Trivia(documentationTrivia))
-                    :
-                StructDeclaration(
-                    !csElement.HasMarshalType ? SingletonList(AttributeList(SingletonSeparatedList(structLayoutAttribute))) : default,
-                    TokenList(ParseTokens(csElement.VisibilityName)).Add(Token(SyntaxKind.PartialKeyword)),
-                    Identifier(csElement.Name),
-                    default,
-                    default,
-                    default,
-                    List(innerStructs.Concat(constants).Concat(fields).Concat(marshallingStructAndConversions))))
-                .WithLeadingTrivia(Trivia(documentationTrivia));
+            var attributeList = !csElement.HasMarshalType
+                                    ? SingletonList(AttributeList(SingletonSeparatedList(structLayoutAttribute)))
+                                    : default;
+            var modifierTokenList = csElement.VisibilityTokenList.Add(Token(SyntaxKind.PartialKeyword));
+            var identifier = Identifier(csElement.Name);
+            var memberList = List(
+                innerStructs.Concat(constants).Concat(fields).Concat(marshallingStructAndConversions)
+            );
+
+            MemberDeclarationSyntax declaration = csElement.GenerateAsClass
+                                                      ? ClassDeclaration(
+                                                          attributeList,
+                                                          modifierTokenList,
+                                                          identifier,
+                                                          default,
+                                                          default,
+                                                          default,
+                                                          memberList
+                                                      )
+                                                      : StructDeclaration(
+                                                          attributeList,
+                                                          modifierTokenList,
+                                                          identifier,
+                                                          default,
+                                                          default,
+                                                          default,
+                                                          memberList
+                                                      );
+
+            yield return declaration.WithLeadingTrivia(Trivia(documentationTrivia));
         }
     }
 }

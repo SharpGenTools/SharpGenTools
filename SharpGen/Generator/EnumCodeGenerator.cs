@@ -21,7 +21,7 @@ namespace SharpGen.Generator
         {
             var enumDecl = EnumDeclaration(csElement.Name);
             var underlyingType = ParseTypeName(csElement.UnderlyingType?.Type.FullName ?? "int");
-            enumDecl = enumDecl.WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
+            enumDecl = enumDecl.WithModifiers(csElement.VisibilityTokenList)
                 .WithBaseList(
                     BaseList().
                         WithTypes(SingletonSeparatedList<BaseTypeSyntax>

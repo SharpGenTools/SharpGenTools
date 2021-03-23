@@ -52,5 +52,7 @@
         <map function="ArrayRelationOut(.*)" name="$1" />
         <map param="ArrayRelationInInterfaceArray::length" type="longlong" />
         <map param="VerifyReservedParam::reserved" relation="const(42)" />
+        <map param="PreserveVoidPointer.*_False::array" keep-pointers="false" />
+        <map param="PreserveVoidPointer.*_True::array" keep-pointers="true" />
     </mapping>
 </config>

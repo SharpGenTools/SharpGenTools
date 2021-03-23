@@ -64,8 +64,7 @@ namespace SharpGen.Model
         public int Size => MarshalType.Size * (ArrayDimensionValue > 1 ? ArrayDimensionValue : 1);
 
         public bool IsValueType =>
-            PublicType is CsStruct {GenerateAsClass: false} || PublicType is CsEnum ||
-            PublicType is CsFundamentalType type && (type.Type.GetTypeInfo().IsValueType || type.Type.GetTypeInfo().IsPrimitive);
+            PublicType is CsStruct {GenerateAsClass: false} or CsEnum || PublicType is CsFundamentalType type && (type.Type.GetTypeInfo().IsValueType || type.Type.GetTypeInfo().IsPrimitive);
 
         public bool PassedByNullableInstance => IsRefIn && IsValueType && !IsArray && IsOptional;
 
@@ -90,7 +89,7 @@ namespace SharpGen.Model
         public bool MappedToDifferentPublicType =>
             MarshalType != PublicType
             && !IsBoolToInt
-            && !(MarshalType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr) && HasPointer)
+            && !(MarshalType is CsFundamentalType {IsPointer: true} && HasPointer)
             && !(IsInterface && HasPointer);
 
         [DataMember] public IList<MarshallableRelation> Relations { get; set; }

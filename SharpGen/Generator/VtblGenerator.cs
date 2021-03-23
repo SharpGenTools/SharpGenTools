@@ -23,10 +23,9 @@ namespace SharpGen.Generator
             var vtblClassName = csElement.VtblName.Split('.').Last();
 
             return ClassDeclaration(vtblClassName)
-                .WithModifiers(
-                    TokenList(
-                        Token(SyntaxKind.ProtectedKeyword),
-                        Token(SyntaxKind.UnsafeKeyword)))
+                  .WithModifiers(
+                       ModelUtilities.VisibilityToTokenList(csElement.VtblVisibility, SyntaxKind.UnsafeKeyword, SyntaxKind.PartialKeyword)
+                   )
                 .WithBaseList(
                     BaseList(
                         SingletonSeparatedList<BaseTypeSyntax>(

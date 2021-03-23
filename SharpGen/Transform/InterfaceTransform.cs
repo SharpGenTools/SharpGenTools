@@ -174,7 +174,7 @@ namespace SharpGen.Transform
             }
             else
             {
-                if (!interfaceType.IsCallback && interfaceType.Base != null && interfaceType.Base.IsDualCallback)
+                if (!interfaceType.IsCallback && interfaceType.Base is {IsDualCallback: true})
                 {
                     interfaceType.Base = interfaceType.Base.GetNativeImplementationOrThis();
                 }
@@ -279,7 +279,7 @@ namespace SharpGen.Transform
             nativeCallback.Base = interfaceType.Base ?? CppObjectType;
 
             // If Parent is a DualInterface, then inherit from Default Callback
-            if (interfaceType.Base is { } baseInterface && baseInterface.IsDualCallback)
+            if (interfaceType.Base is {IsDualCallback: true} baseInterface)
             {
                 nativeCallback.Base = baseInterface.GetNativeImplementationOrThis();
             }

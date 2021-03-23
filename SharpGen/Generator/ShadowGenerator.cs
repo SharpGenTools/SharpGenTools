@@ -105,6 +105,9 @@ namespace SharpGen.Generator
             members.Add(vtblProperty);
 
             return ClassDeclaration(shadowClassName)
+                  .WithModifiers(
+                       ModelUtilities.VisibilityToTokenList(csElement.ShadowVisibility, SyntaxKind.PartialKeyword)
+                   )
                   .WithBaseList(
                        BaseList(
                            SingletonSeparatedList<BaseTypeSyntax>(

@@ -223,6 +223,39 @@ DECL(bool) VerifyReservedParam(int reserved)
     return reserved == 42;
 }
 
+DECL(bool) PreserveVoidPointer1_None(void* array)
+{
+    int* v = (int*)array;
+    return *v == 42;
+}
+
+DECL(bool) PreserveVoidPointer1_False(void* array)
+{
+    int* v = (int*)array;
+    return *v == 42;
+}
+
+DECL(bool) PreserveVoidPointer1_True(void* array)
+{
+    int* v = (int*)array;
+    return *v == 42;
+}
+
+DECL(bool) PreserveVoidPointer2_None(void* array)
+{
+    return (size_t) array == 42u;
+}
+
+DECL(bool) PreserveVoidPointer2_False(void* array)
+{
+    return (size_t) array == 42u;
+}
+
+DECL(bool) PreserveVoidPointer2_True(void* array)
+{
+    return (size_t) array == 42u;
+}
+
 DECL(StructAsClassWrapper) GetWrapper()
 {
     return {{1}};

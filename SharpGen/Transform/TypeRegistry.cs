@@ -1,18 +1,15 @@
-﻿using SharpGen.Config;
-using SharpGen.Logging;
+﻿using SharpGen.Logging;
 using SharpGen.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace SharpGen.Transform
 {
     public class TypeRegistry
     {
-        private readonly Dictionary<string, (CsTypeBase CSharpType, CsTypeBase MarshalType)> _mapCppNameToCSharpType = new Dictionary<string, (CsTypeBase CSharpType, CsTypeBase MarshalType)>();
-        private readonly Dictionary<string, CsTypeBase> _mapDefinedCSharpType = new Dictionary<string, CsTypeBase>();
+        private readonly Dictionary<string, (CsTypeBase CSharpType, CsTypeBase MarshalType)> _mapCppNameToCSharpType = new();
+        private readonly Dictionary<string, CsTypeBase> _mapDefinedCSharpType = new();
 
         private Logger Logger { get; }
         public IDocumentationLinker DocLinker { get; }
@@ -43,12 +40,13 @@ namespace SharpGen.Transform
         {
             if (!_mapDefinedCSharpType.TryGetValue(typeName, out CsTypeBase cSharpType))
             {
+                if (typeName == "void")
+                    return ImportType(typeof(void));
+                if (typeName == "void*")
+                    return ImportType(typeof(void*));
+
                 var type = Type.GetType(typeName);
 
-                if (typeName == "void")
-                {
-                    return ImportType(typeof(void));
-                }
                 if (type == null)
                 {
                     Logger.Warning(LoggingCodes.TypeNotDefined, "Type [{0}] is not defined", typeName);
@@ -56,6 +54,7 @@ namespace SharpGen.Transform
                     DefineType(cSharpType);
                     return cSharpType;
                 }
+
                 return ImportType(type);
             }
             return cSharpType;

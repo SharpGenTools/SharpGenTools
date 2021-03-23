@@ -39,13 +39,6 @@ namespace SharpGen.Model
         [DataMember]
         public bool IsBitField { get; set; }
 
-        public bool IsFixedArrayOfStruct
-        {
-            get
-            {
-                return MarshalType is CsStruct || PublicType is CsFundamentalType fundamental && fundamental.Type == typeof(System.IntPtr);
-            }
-        }
         [DataMember]
         public int Offset { get; set; }
     }
