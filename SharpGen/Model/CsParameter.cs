@@ -71,13 +71,7 @@ namespace SharpGen.Model
             get { return Attribute == CsParameterAttribute.In; }
         }
 
-        public bool IsInInterfaceArrayLike
-        {
-            get
-            {
-                return IsArray && PublicType is CsInterface iface && !iface.IsCallback && !IsOut;
-            }
-        }
+        public bool IsInInterfaceArrayLike => IsArray && PublicType is CsInterface {IsCallback: false} && !IsOut;
 
         public override bool IsOptional => OptionalParameter;
 

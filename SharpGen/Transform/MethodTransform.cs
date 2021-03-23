@@ -147,7 +147,7 @@ namespace SharpGen.Transform
             // Get the inferred return type
             method.ReturnValue = factory.Create(cppMethod.ReturnValue);
 
-            if (method.ReturnValue.PublicType is CsInterface iface && iface.IsCallback)
+            if (method.ReturnValue.PublicType is CsInterface {IsCallback: true} iface)
             {
                 method.ReturnValue.PublicType = iface.GetNativeImplementationOrThis();
             }
