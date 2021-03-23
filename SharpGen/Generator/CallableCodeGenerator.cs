@@ -32,7 +32,7 @@ namespace SharpGen.Generator
 
             // method signature
             var methodDeclaration = MethodDeclaration(ParseTypeName(csElement.PublicReturnTypeQualifiedName), csElement.Name)
-                .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)).Add(Token(SyntaxKind.UnsafeKeyword)))
+                .WithModifiers(csElement.VisibilityTokenList.Add(Token(SyntaxKind.UnsafeKeyword)))
                 .WithParameterList(
                     ParameterList(
                         SeparatedList(

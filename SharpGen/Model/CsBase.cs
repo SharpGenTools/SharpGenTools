@@ -24,7 +24,7 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
+using Microsoft.CodeAnalysis;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Transform;
@@ -141,51 +141,7 @@ namespace SharpGen.Model
         [DataMember]
         public Visibility Visibility { get; set; } = Visibility.Public;
 
-        /// <summary>
-        /// Returns a textual representation of the <see cref="Visibility"/> property.
-        /// </summary>
-        /// <value>The full name of the visibility.</value>
-        public string VisibilityName
-        {
-            get
-            {
-                var builder = new StringBuilder();
-
-                if ((Visibility & Visibility.Public) != 0)
-                    builder.Append("public ");
-                else if ((Visibility & Visibility.Protected) != 0)
-                    builder.Append("protected ");
-                else if ((Visibility & Visibility.Internal) != 0)
-                    builder.Append("internal ");
-                else if ((Visibility & Visibility.Private) != 0)
-                    builder.Append("private ");
-                else if ((Visibility & Visibility.PublicProtected) != 0)
-                    builder.Append("");
-
-                if ((Visibility & Visibility.Const) != 0)
-                    builder.Append("const ");
-
-                if ((Visibility & Visibility.Static) != 0)
-                    builder.Append("static ");
-
-                if ((Visibility & Visibility.Sealed) != 0)
-                    builder.Append("sealed ");
-
-                if ((Visibility & Visibility.Readonly) != 0)
-                    builder.Append("readonly ");
-
-                if ((Visibility & Visibility.Override) != 0)
-                    builder.Append("override ");
-
-                if ((Visibility & Visibility.Abstract) != 0)
-                    builder.Append("abstract ");
-
-                if ((Visibility & Visibility.Virtual) != 0)
-                    builder.Append("virtual ");
-
-                return builder.ToString();
-            }
-        }
+        public SyntaxTokenList VisibilityTokenList => ModelUtilities.VisibilityToTokenList(Visibility);
 
         /// <summary>
         /// Gets or sets a value indicating whether this instance is already fully mapped.

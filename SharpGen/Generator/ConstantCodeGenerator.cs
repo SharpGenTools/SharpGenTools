@@ -47,7 +47,7 @@ namespace SharpGen.Generator
                             Identifier(var.Name))
                         .WithInitializer(
                             EqualsValueClause(ParseExpression(var.Value))))))
-                .WithModifiers(TokenList(ParseTokens(var.VisibilityName)))
+                .WithModifiers(var.VisibilityTokenList)
                 .WithLeadingTrivia(GenerateConstantDocumentationTrivia(var));
         }
     }

@@ -253,7 +253,7 @@ namespace SharpGen.Generator
 
             var attributeList = attributes != null ? SingletonList(attributes) : default;
 
-            var modifiers = TokenList(ParseTokens(csElement.VisibilityName))
+            var modifiers = csElement.VisibilityTokenList
                 .Add(Token(SyntaxKind.PartialKeyword));
 
             var declaration = csElement.IsCallback

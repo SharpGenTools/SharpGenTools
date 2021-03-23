@@ -24,8 +24,7 @@ namespace SharpGen.Generator
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsGroup csElement)
         {
             yield return ClassDeclaration(Identifier(csElement.Name))
-                .WithModifiers(TokenList(ParseTokens(csElement.VisibilityName)))
-                .AddModifiers(Token(SyntaxKind.PartialKeyword))
+                .WithModifiers(csElement.VisibilityTokenList.Add(Token(SyntaxKind.PartialKeyword)))
                 .WithMembers(
                     List(
                         csElement.Variables.SelectMany(var => Generators.Constant.GenerateCode(var))
