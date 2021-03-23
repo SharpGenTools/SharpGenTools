@@ -22,10 +22,7 @@ namespace SharpGen.Model
         [DataMember]
         public string BuiltinTypeName
         {
-            get
-            {
-                return Type?.FullName;
-            }
+            get => Type?.FullName;
             set
             {
                 if (value != null)
@@ -37,21 +34,16 @@ namespace SharpGen.Model
 
         private int? size;
 
-        public override int Size
-        {
-            get
-            {
-                return size ?? (size = GetSize()).Value;
-            }
-        }
+        public override int Size => size ??= GetSize();
 
         private int GetSize()
         {
             try
             {
-                if (!IsPointer)
+                var type = Type;
+                if (!IsPointerType(type))
                 {
-                    return Marshal.SizeOf(Type);
+                    return Marshal.SizeOf(type);
                 }
                 // We need to ensure that we always return 8 (64-bit) even when running the generator on x64.
                 return 8;
@@ -62,7 +54,10 @@ namespace SharpGen.Model
             }
         }
 
-        private bool IsPointer => Type == typeof(IntPtr) || Type == typeof(UIntPtr);
+        public bool IsPointer => IsPointerType(Type);
+
+        private static bool IsPointerType(Type type) =>
+            type == typeof(IntPtr) || type == typeof(UIntPtr) || type == typeof(void*);
 
         /// <summary>
         /// Calculates the natural alignment of a type. -1 if it is a pointer alignment (4 on x86, 8 on x64)
@@ -70,28 +65,30 @@ namespace SharpGen.Model
         /// <returns>System.Int32.</returns>
         public override int CalculateAlignment()
         {
-            if (Type == typeof(long) || Type == typeof(ulong) || Type == typeof(double))
+            var type = Type;
+
+            if (type == typeof(long) || type == typeof(ulong) || type == typeof(double))
             {
                 return 8;
             }
 
-            if (Type == typeof(int) || Type == typeof(uint) ||
-                Type == typeof(float))
+            if (type == typeof(int) || type == typeof(uint) ||
+                type == typeof(float))
             {
                 return 4;
             }
 
-            if (Type == typeof(short) || Type == typeof(ushort) || Type == typeof(char))
+            if (type == typeof(short) || type == typeof(ushort) || type == typeof(char))
             {
                 return 2;
             }
 
-            if (Type == typeof(byte) || Type == typeof(sbyte))
+            if (type == typeof(byte) || type == typeof(sbyte))
             {
                 return 1;
             }
 
-            if (IsPointer)
+            if (IsPointerType(type))
             {
                 return -1;
             }

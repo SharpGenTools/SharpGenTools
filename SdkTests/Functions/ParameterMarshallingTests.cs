@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using SharpGen.Runtime;
 using Xunit;
 
@@ -243,6 +244,27 @@ namespace Functions
             var test = new [] { MyEnum.TestValue, MyEnum.TestValue };
 
             Assert.Equal(MyEnum.TestValue, NativeFunctions.FirstEnumElement(test));
+        }
+
+        [Fact]
+        public unsafe void PreserveVoidPointer1()
+        {
+            var ptr = Marshal.AllocHGlobal(4);
+            Marshal.WriteInt32(ptr, 42);
+
+            Assert.True(NativeFunctions.PreserveVoidPointer1None(ptr));
+            Assert.True(NativeFunctions.PreserveVoidPointer1False(ptr));
+            Assert.True(NativeFunctions.PreserveVoidPointer1True((void*) ptr));
+
+            Marshal.FreeHGlobal(ptr);
+        }
+
+        [Fact]
+        public unsafe void PreserveVoidPointer2()
+        {
+            Assert.True(NativeFunctions.PreserveVoidPointer2None((IntPtr) 42));
+            Assert.True(NativeFunctions.PreserveVoidPointer2False((IntPtr) 42));
+            Assert.True(NativeFunctions.PreserveVoidPointer2True((void*) 42));
         }
     }
 }

@@ -90,7 +90,7 @@ namespace SharpGen.Model
         public bool MappedToDifferentPublicType =>
             MarshalType != PublicType
             && !IsBoolToInt
-            && !(MarshalType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr) && HasPointer)
+            && !(MarshalType is CsFundamentalType {IsPointer: true} && HasPointer)
             && !(IsInterface && HasPointer);
 
         [DataMember] public IList<MarshallableRelation> Relations { get; set; }

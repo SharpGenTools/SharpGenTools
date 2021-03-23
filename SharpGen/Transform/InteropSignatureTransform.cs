@@ -232,7 +232,9 @@ namespace SharpGen.Transform
             if (param.PublicType.QualifiedName == nsProvider.GetTypeName(WellKnownName.PointerSize))
                 return typeof(void*);
 
-            static Type IntPtrToVoidPtr(Type type) => type == typeof(IntPtr) ? typeof(void*) : type;
+            static Type IntPtrToVoidPtr(Type type) => type == typeof(IntPtr) || type == typeof(UIntPtr)
+                                                          ? typeof(void*)
+                                                          : type;
 
             if (param.MarshalType is CsFundamentalType marshalFundamental)
                 return IntPtrToVoidPtr(marshalFundamental.Type);

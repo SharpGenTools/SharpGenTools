@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
@@ -15,7 +14,7 @@ namespace SharpGen.Generator.Marshallers
 
         public bool CanMarshal(CsMarshalBase csElement) =>
             (csElement.PublicType.QualifiedName == GlobalNamespace.GetTypeName(WellKnownName.PointerSize)
-          || (csElement.PublicType is CsFundamentalType fundamental && fundamental.Type == typeof(IntPtr)))
+          || (csElement.PublicType is CsFundamentalType {IsPointer: true}))
          && !csElement.IsArray
          && (csElement is CsParameter {IsIn: true} || csElement is CsReturnValue);
 
