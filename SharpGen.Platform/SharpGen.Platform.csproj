@@ -9,6 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="ClangSharp" />
         <PackageReference Include="Microsoft.Win32.Registry" Condition="'$(TargetFramework)' != 'net472'" />
         <PackageReference Include="System.Diagnostics.Process" Condition="'$(TargetFramework)' != 'net472'" />
         <PackageReference Include="System.Text.Json" />

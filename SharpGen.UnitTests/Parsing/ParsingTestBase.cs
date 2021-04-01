@@ -12,7 +12,9 @@ namespace SharpGen.UnitTests.Parsing
 {
     public abstract class ParsingTestBase : FileSystemTestBase
     {
+#if true
         private static readonly string CastXmlDirectoryPath = Path.Combine("CastXML", "bin", "castxml.exe");
+#endif
 
         protected ParsingTestBase(ITestOutputHelper outputHelper) : base(outputHelper)
         {
@@ -42,6 +44,7 @@ namespace SharpGen.UnitTests.Parsing
             };
         }
 
+#if true
         protected CastXmlRunner GetCastXml(ConfigFile config, string[] additionalArguments = null)
         {
             var resolver = new IncludeDirectoryResolver(Logger);
@@ -61,6 +64,7 @@ namespace SharpGen.UnitTests.Parsing
                 OutputPath = TestDirectory.FullName
             };
         }
+#endif
 
         protected CppModule ParseCpp(ConfigFile config)
         {
@@ -75,6 +79,7 @@ namespace SharpGen.UnitTests.Parsing
                          .GenerateCppHeaders(loaded, configsWithIncludes, configsWithExtensionHeaders)
                          .UpdatedConfigs;
 
+#if true
             var castXml = GetCastXml(loaded);
 
             var macro = new MacroManager(castXml);
@@ -96,6 +101,9 @@ namespace SharpGen.UnitTests.Parsing
             using var xmlReader = castXml.Process(parser.RootConfigHeaderFileName);
 
             return parser.Run(skeleton, xmlReader);
+#else
+            throw new NotImplementedException();
+#endif
         }
     }
 }

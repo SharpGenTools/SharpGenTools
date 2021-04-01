@@ -1,6 +1,7 @@
 <Project>
 
   <ItemGroup>
+    <PackageReference Update="ClangSharp" Version="11.0.0-beta3" />
     <PackageReference Update="coverlet.msbuild" Version="3.0.3">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

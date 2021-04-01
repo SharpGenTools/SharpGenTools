@@ -33,6 +33,7 @@ namespace SharpGen.UnitTests.Parsing
                 }
             };
 
+#if true
             var castXml = GetCastXml(ConfigFile.Load(config, Array.Empty<string>(), Logger));
 
             var macroManager = new MacroManager(castXml);
@@ -40,6 +41,9 @@ namespace SharpGen.UnitTests.Parsing
             macroManager.Parse(Path.Combine(includeRule.Path, "includer.h"), new CppModule("SharpGenTestModule"));
 
             Assert.Contains(includeRule.Path + "/included.h", macroManager.IncludedFiles);
+#else
+            throw new NotImplementedException();
+#endif
         }
     }
 }
