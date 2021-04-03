@@ -18,26 +18,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Runtime.Serialization;
-using System.Xml.Serialization;
+using SharpGen.CppModel;
 
 namespace SharpGen.Model
 {
-    [DataContract(Name = "Enum-Item")]
     public class CsEnumItem : CsBase
     {
-        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
-        public CsEnumItem()
+        public CsEnumItem(CppEnumItem cppElement, string name, string value) : base(cppElement, name)
         {
-        }
-
-        public CsEnumItem(string name, string value)
-        {
-            Name = name;
             Value = value;
         }
 
-        [DataMember]
-        public string Value { get; set; }
+        public string Value { get; }
     }
 }

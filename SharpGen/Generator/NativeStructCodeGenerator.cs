@@ -41,11 +41,10 @@ namespace SharpGen.Generator
         }
         private IEnumerable<MemberDeclarationSyntax> GenerateMarshallingStructAndConversions(CsStruct csStruct, AttributeListSyntax structLayoutAttributeList)
         {
-
             var marshalStruct = StructDeclaration("__Native")
-                .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.PartialKeyword)))
-                .WithAttributeLists(SingletonList(structLayoutAttributeList))
-                .WithMembers(List(csStruct.Fields.SelectMany(csField => GenerateMarshalStructField(csStruct, csField))));
+                               .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.PartialKeyword)))
+                               .WithAttributeLists(SingletonList(structLayoutAttributeList))
+                               .WithMembers(List(csStruct.Fields.SelectMany(GenerateMarshalStructField)));
 
             yield return marshalStruct;
 
@@ -54,59 +53,77 @@ namespace SharpGen.Generator
             yield return GenerateMarshalFrom(csStruct);
 
             yield return GenerateMarshalTo(csStruct);
-        }
 
+            IEnumerable<MemberDeclarationSyntax> GenerateMarshalStructField(CsField field)
+            {
+                var fieldDecl = FieldDeclaration(VariableDeclaration(ParseTypeName(field.MarshalType.QualifiedName)))
+                   .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
 
-        private IEnumerable<MemberDeclarationSyntax> GenerateMarshalStructField(CsStruct csStruct, CsField field)
-        {
-            var fieldDecl = FieldDeclaration(
-                    VariableDeclaration(
-                        ParseTypeName(field.MarshalType.QualifiedName)))
-                        .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
-            if (csStruct.ExplicitLayout)
-            {
-                fieldDecl = fieldDecl.WithAttributeLists(SingletonList(
-                    AttributeList(
-                        SingletonSeparatedList(Attribute(
-                            ParseName("System.Runtime.InteropServices.FieldOffset"),
-                            AttributeArgumentList(
-                                SingletonSeparatedList(AttributeArgument(
-                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(field.Offset))))))))
-                ));
-            }
-            if (field.IsArray)
-            {
-                yield return fieldDecl.WithDeclaration(fieldDecl.Declaration.AddVariables(
-                    VariableDeclarator(field.Name)
-                    ));
-                for (int i = 1; i < field.ArrayDimensionValue; i++)
+                if (csStruct.ExplicitLayout)
                 {
-                    var declaration = fieldDecl.WithDeclaration(fieldDecl.Declaration.AddVariables(VariableDeclarator($"__{field.Name}{i}")));
-                    if (csStruct.ExplicitLayout)
-                    {
-                        var offset = field.Offset + (field.Size / field.ArrayDimensionValue) * i;
-                        declaration = declaration.WithAttributeLists(SingletonList(
+                    fieldDecl = fieldDecl.WithAttributeLists(
+                        SingletonList(
                             AttributeList(
-                                SingletonSeparatedList(Attribute(
-                                    ParseName("System.Runtime.InteropServices.FieldOffset"),
-                                    AttributeArgumentList(
-                                        SingletonSeparatedList(AttributeArgument(
-                                            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(offset))))))))
+                                SingletonSeparatedList(
+                                    Attribute(
+                                        ParseName("System.Runtime.InteropServices.FieldOffset"),
+                                        AttributeArgumentList(
+                                            SingletonSeparatedList(
+                                                AttributeArgument(
+                                                    LiteralExpression(
+                                                        SyntaxKind.NumericLiteralExpression,
+                                                        Literal(field.Offset))))))))
                         ));
-                    }
-                    yield return declaration;
                 }
 
-            }
-            else if (field.PublicType is CsStruct {HasMarshalType: true})
-            {
-                yield return fieldDecl.WithDeclaration(VariableDeclaration(
-                    ParseTypeName($"{field.MarshalType.QualifiedName}.__Native"), SingletonSeparatedList(
-                        VariableDeclarator(field.Name))));
-            }
-            else
-            {
-                yield return fieldDecl.WithDeclaration(fieldDecl.Declaration.AddVariables(VariableDeclarator(field.Name)));
+                if (field.IsArray)
+                {
+                    yield return fieldDecl.WithDeclaration(
+                        fieldDecl.Declaration.AddVariables(VariableDeclarator(field.Name))
+                    );
+
+                    for (var i = 1; i < field.ArrayDimensionValue; i++)
+                    {
+                        var declaration = fieldDecl.WithDeclaration(
+                            fieldDecl.Declaration.AddVariables(VariableDeclarator($"__{field.Name}{i}"))
+                        );
+
+                        if (csStruct.ExplicitLayout)
+                        {
+                            var offset = field.Offset + (field.Size / field.ArrayDimensionValue) * i;
+                            declaration = declaration.WithAttributeLists(
+                                SingletonList(
+                                    AttributeList(
+                                        SingletonSeparatedList(
+                                            Attribute(
+                                                ParseName("System.Runtime.InteropServices.FieldOffset"),
+                                                AttributeArgumentList(
+                                                    SingletonSeparatedList(
+                                                        AttributeArgument(
+                                                            LiteralExpression(
+                                                                SyntaxKind.NumericLiteralExpression,
+                                                                Literal(offset))))))))
+                                ));
+                        }
+
+                        yield return declaration;
+                    }
+                }
+                else if (field.HasNativeValueType)
+                {
+                    yield return fieldDecl.WithDeclaration(
+                        VariableDeclaration(
+                            ParseTypeName($"{field.MarshalType.QualifiedName}.__Native"),
+                            SingletonSeparatedList(VariableDeclarator(field.Name))
+                        )
+                    );
+                }
+                else
+                {
+                    yield return fieldDecl.WithDeclaration(
+                        fieldDecl.Declaration.AddVariables(VariableDeclarator(field.Name))
+                    );
+                }
             }
         }
 

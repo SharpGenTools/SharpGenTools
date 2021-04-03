@@ -17,37 +17,39 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
-using System.Runtime.InteropServices;
-using System.Xml.Serialization;
-using SharpGen.Config;
+using SharpGen.CppModel;
 
 namespace SharpGen.Model
 {
-    [DataContract(Name = "Enum")]
-    public class CsEnum : CsTypeBase
+    public sealed class CsEnum : CsTypeBase
     {
-        [DataMember]
-        public CsFundamentalType UnderlyingType { get; set; }
+        public CsFundamentalType UnderlyingType { get; }
 
         public override int Size => UnderlyingType.Size;
 
-        [DataMember]
-        public bool IsFlag { get; set; }
+        public bool IsFlag { get; }
 
-        public IEnumerable<CsEnumItem> EnumItems
-        {
-            get { return Items.OfType<CsEnumItem>(); }
-        }
+        public IEnumerable<CsEnumItem> EnumItems => Items.OfType<CsEnumItem>();
 
-        protected override void UpdateFromMappingRule(MappingRule tag)
+        public CsEnum(CppEnum cppEnum, string name, CsFundamentalType underlyingType) : base(cppEnum, name)
         {
-            base.UpdateFromMappingRule(tag);
-            if (tag.EnumHasFlags.HasValue)
-                IsFlag = tag.EnumHasFlags.Value;
+            UnderlyingType = underlyingType ?? throw new ArgumentNullException(nameof(underlyingType));
+            
+            if (cppEnum == null)
+                return;
+
+            // If C++ enum name is ending with FLAG OR FLAGS, then tag this enum as flags
+            var cppEnumName = cppEnum.Name;
+            if (cppEnumName.EndsWith("FLAG") || cppEnumName.EndsWith("FLAGS"))
+                IsFlag = true;
+
+            var tag = cppEnum.Rule;
+
+            IsFlag = tag.EnumHasFlags ?? IsFlag;
         }
     }
 }

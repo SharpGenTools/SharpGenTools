@@ -17,64 +17,21 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System.Xml.Serialization;
 
 namespace SharpGen.CppModel
 {
     /// <summary>
     /// A C++ enum item Name = Value.
     /// </summary>
-    [XmlType("enum-item")]
-    public class CppEnumItem : CppElement
+    public sealed class CppEnumItem : CppElement
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CppEnumItem"/> class.
-        /// </summary>
-        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
-        public CppEnumItem()
-        {
-        }
+        public CppEnumItem(string name, string value) : base(name) => Value = value;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CppEnumItem"/> class.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <param name="value">The value.</param>
-        public CppEnumItem(string name, string value)
-        {
-            Name = name;
-            Value = value;
-        }
+        // Return empty string as enum items are global in C++.
+        private protected override string Path => string.Empty;
 
-        /// <summary>
-        /// Gets the path.
-        /// </summary>
-        /// <value>The path.</value>
-        public override string Path
-        {
-            get
-            {
-                // Return "" as enum items are global in C++.
-                return "";
-            }
-        }
+        public string Value { get; }
 
-        /// <summary>
-        /// Gets or sets the value.
-        /// </summary>
-        /// <value>The value.</value>
-        [XmlAttribute("value")]
-        public string Value { get; set; }
-
-        /// <summary>
-        /// Returns a <see cref="System.String"/> that represents this instance.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="System.String"/> that represents this instance.
-        /// </returns>
-        public override string ToString()
-        {
-            return "EnumItem [" + Name + "]";
-        }
+        public override string ToString() => "EnumItem [" + Name + "]";
     }
 }

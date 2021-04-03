@@ -31,7 +31,8 @@ namespace SharpGenTools.Sdk.Tasks
         {
             PrepareExecute();
 
-            ExtensibilityDriver.Instance.LoadExtensions(SharpGenLogger, ExtensionAssemblies.Select(x => x.ItemSpec).ToArray());
+            ExtensibilityDriver.Instance.LoadExtensions(SharpGenLogger,
+                                                        ExtensionAssemblies.Select(x => x.ItemSpec).ToArray());
 
             var config = new ConfigFile
             {
@@ -76,10 +77,14 @@ namespace SharpGenTools.Sdk.Tasks
 
             var macroManager = new MacroManager(castXml);
 
-            var cppExtensionGenerator = new CppExtensionHeaderGenerator(macroManager);
+            var cppExtensionGenerator = new CppExtensionHeaderGenerator();
 
-            var module = cppExtensionGenerator.GenerateExtensionHeaders(
-                config, OutputPath, configsWithExtensionHeaders, cppHeaderGenerationResult.UpdatedConfigs
+            var module = config.CreateSkeletonModule();
+
+            macroManager.Parse(Path.Combine(OutputPath, config.HeaderFileName), module);
+
+            cppExtensionGenerator.GenerateExtensionHeaders(
+                config, OutputPath, module, configsWithExtensionHeaders, cppHeaderGenerationResult.UpdatedConfigs
             );
 
             GenerateInputsCache(
@@ -110,89 +115,6 @@ namespace SharpGenTools.Sdk.Tasks
                 // Run the C++ parser
                 group = parser.Run(module, xmlReader);
             }
-
-            if (SharpGenLogger.HasErrors)
-                return false;
-
-            var documentationCacheItemSpec = DocumentationCache.ItemSpec;
-
-            Utilities.RequireAbsolutePath(documentationCacheItemSpec, nameof(DocumentationCache));
-
-            var cache = File.Exists(documentationCacheItemSpec)
-                            ? DocItemCache.Read(documentationCacheItemSpec)
-                            : new DocItemCache();
-
-            DocumentationLogger docLogger = new(SharpGenLogger) {MaxLevel = LogLevel.Warning};
-            var docContext = new Lazy<DocumentationContext>(() => new DocumentationContext(docLogger));
-            ExtensibilityDriver.Instance.DocumentModule(SharpGenLogger, cache, group, docContext).Wait();
-
-            if (docContext.IsValueCreated)
-            {
-                Regex[] silencePatterns = null;
-                var docLogLevelDefault = DocumentationFailuresAsErrors ? LogLevel.Error : LogLevel.Warning;
-
-                foreach (var queryFailure in docContext.Value.Failures)
-                {
-                    if (silencePatterns == null)
-                    {
-                        silencePatterns = new Regex[SilenceMissingDocumentationErrorIdentifierPatterns.Length];
-                        for (var i = 0; i < silencePatterns.Length; i++)
-                            silencePatterns[i] = new Regex(
-                                SilenceMissingDocumentationErrorIdentifierPatterns[i].ItemSpec,
-                                RegexOptions.CultureInvariant
-                            );
-                    }
-
-                    if (silencePatterns.Length != 0)
-                    {
-                        bool SilencePredicate(Regex x) => x.Match(queryFailure.Query).Success;
-
-                        if (silencePatterns.Any(SilencePredicate))
-                            continue;
-                    }
-
-                    var providerName = queryFailure.FailedProviderName ?? "<null>";
-
-                    var docLogLevel = queryFailure.TreatProviderFailuresAsErrors
-                                          ? docLogLevelDefault
-                                          : docLogLevelDefault > LogLevel.Warning
-                                              ? LogLevel.Warning
-                                              : docLogLevelDefault;
-
-                    if (queryFailure.Exceptions == null || queryFailure.Exceptions.Count <= 1)
-                    {
-                        SharpGenLogger.LogRawMessage(
-                            docLogLevel,
-                            LoggingCodes.DocumentationProviderInternalError,
-                            "Documentation provider [{0}] query for \"{1}\" failed.",
-                            queryFailure.Exceptions?.FirstOrDefault(),
-                            providerName,
-                            queryFailure.Query
-                        );
-                    }
-                    else
-                    {
-                        var exceptionsCount = queryFailure.Exceptions.Count;
-                        for (var index = 0; index < exceptionsCount; index++)
-                        {
-                            var exception = queryFailure.Exceptions[index];
-                            
-                            SharpGenLogger.LogRawMessage(
-                                docLogLevel,
-                                LoggingCodes.DocumentationProviderInternalError,
-                                "Documentation provider [{0}] query for \"{1}\" failed ({2}/{3}).",
-                                exception,
-                                providerName,
-                                queryFailure.Query,
-                                index + 1,
-                                exceptionsCount
-                            );
-                        }
-                    }
-                }
-            }
-
-            cache.WriteIfDirty(documentationCacheItemSpec);
 
             if (SharpGenLogger.HasErrors)
                 return false;
@@ -262,6 +184,89 @@ namespace SharpGenTools.Sdk.Tasks
             );
 
             GenerateConfigForConsumers(consumerConfig);
+
+            if (SharpGenLogger.HasErrors)
+                return false;
+
+            var documentationCacheItemSpec = DocumentationCache.ItemSpec;
+
+            Utilities.RequireAbsolutePath(documentationCacheItemSpec, nameof(DocumentationCache));
+
+            var cache = File.Exists(documentationCacheItemSpec)
+                            ? DocItemCache.Read(documentationCacheItemSpec)
+                            : new DocItemCache();
+
+            DocumentationLogger docLogger = new(SharpGenLogger) {MaxLevel = LogLevel.Warning};
+            var docContext = new Lazy<DocumentationContext>(() => new DocumentationContext(docLogger));
+            ExtensibilityDriver.Instance.DocumentModule(SharpGenLogger, cache, solution, docContext).Wait();
+
+            if (docContext.IsValueCreated)
+            {
+                Regex[] silencePatterns = null;
+                var docLogLevelDefault = DocumentationFailuresAsErrors ? LogLevel.Error : LogLevel.Warning;
+
+                foreach (var queryFailure in docContext.Value.Failures)
+                {
+                    if (silencePatterns == null)
+                    {
+                        silencePatterns = new Regex[SilenceMissingDocumentationErrorIdentifierPatterns.Length];
+                        for (var i = 0; i < silencePatterns.Length; i++)
+                            silencePatterns[i] = new Regex(
+                                SilenceMissingDocumentationErrorIdentifierPatterns[i].ItemSpec,
+                                RegexOptions.CultureInvariant
+                            );
+                    }
+
+                    if (silencePatterns.Length != 0)
+                    {
+                        bool SilencePredicate(Regex x) => x.Match(queryFailure.Query).Success;
+
+                        if (silencePatterns.Any(SilencePredicate))
+                            continue;
+                    }
+
+                    var providerName = queryFailure.FailedProviderName ?? "<null>";
+
+                    var docLogLevel = queryFailure.TreatProviderFailuresAsErrors
+                                          ? docLogLevelDefault
+                                          : docLogLevelDefault > LogLevel.Warning
+                                              ? LogLevel.Warning
+                                              : docLogLevelDefault;
+
+                    if (queryFailure.Exceptions == null || queryFailure.Exceptions.Count <= 1)
+                    {
+                        SharpGenLogger.LogRawMessage(
+                            docLogLevel,
+                            LoggingCodes.DocumentationProviderInternalError,
+                            "Documentation provider [{0}] query for \"{1}\" failed.",
+                            queryFailure.Exceptions?.FirstOrDefault(),
+                            providerName,
+                            queryFailure.Query
+                        );
+                    }
+                    else
+                    {
+                        var exceptionsCount = queryFailure.Exceptions.Count;
+                        for (var index = 0; index < exceptionsCount; index++)
+                        {
+                            var exception = queryFailure.Exceptions[index];
+
+                            SharpGenLogger.LogRawMessage(
+                                docLogLevel,
+                                LoggingCodes.DocumentationProviderInternalError,
+                                "Documentation provider [{0}] query for \"{1}\" failed ({2}/{3}).",
+                                exception,
+                                providerName,
+                                queryFailure.Query,
+                                index + 1,
+                                exceptionsCount
+                            );
+                        }
+                    }
+                }
+            }
+
+            cache.WriteIfDirty(documentationCacheItemSpec);
 
             if (SharpGenLogger.HasErrors)
                 return false;
@@ -349,7 +354,7 @@ namespace SharpGenTools.Sdk.Tasks
                     foreach (var directory in sdkResolver.ResolveIncludeDirsForSdk(sdk))
                     {
                         SharpGenLogger.Message("Resolved include directory {0}", directory);
-                        cfg.IncludeDirs.Add(directory); 
+                        cfg.IncludeDirs.Add(directory);
                     }
                 }
             }

@@ -47,27 +47,15 @@ namespace SharpGen.UnitTests.Mapping
                 }
             };
 
-            var cppModel = new CppModule();
+            var cppModel = new CppModule("SharpGenTestModule");
 
-            var cppInclude = new CppInclude
-            {
-                Name = "cppEnum"
-            };
+            var cppInclude = new CppInclude("cppEnum");
 
-            var cppEnum = new CppEnum
-            {
-                Name = "TestEnum"
-            };
+            var cppEnum = new CppEnum("TestEnum");
 
-            var secondInclude = new CppInclude
-            {
-                Name = "secondFile"
-            };
+            var secondInclude = new CppInclude("secondFile");
 
-            var cppEnum2 = new CppEnum
-            {
-                Name = "AnotherEnum"
-            };
+            var cppEnum2 = new CppEnum("AnotherEnum");
 
             cppEnum.AddEnumItem("Element1", "0");
             cppEnum.AddEnumItem("Element2", "1");

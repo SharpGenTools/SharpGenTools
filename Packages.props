@@ -7,9 +7,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Update="FakeItEasy" Version="7.0.0" />
+    <PackageReference Update="FakeItEasy" Version="7.0.1" />
     <PackageReference Update="FakeItEasy.Analyzer.CSharp" Version="6.1.0" />
-    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="16.9.1" />
+    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="16.9.4" />
     <PackageReference Update="xunit" Version="2.4.1" />
     <PackageReference Update="xunit.runner.visualstudio" Version="2.4.3" />
     <PackageReference Update="Xunit.SkippableFact" Version="1.4.13" />

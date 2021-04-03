@@ -17,22 +17,15 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
-using System.Xml.Serialization;
 
 namespace SharpGen.CppModel
 {
-    /// <summary>
-    /// A C++ declared guid.
-    /// </summary>
-    [XmlType("guid")]
-    public class CppGuid : CppElement
+    public sealed class CppGuid : CppElement
     {
-        /// <summary>
-        /// Gets or sets the GUID.
-        /// </summary>
-        /// <value>The GUID.</value>
-        [XmlAttribute("guid")]
-        public Guid Guid { get; set; }
+        public Guid Guid { get; }
+
+        public CppGuid(string name, Guid guid) : base(name) => Guid = guid;
     }
 }

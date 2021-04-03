@@ -29,14 +29,14 @@ namespace SharpGen.Parser
     /// <summary>
     /// This class is responsible to get all macros defined from a C++ header file.
     /// </summary>
-    public class MacroManager
+    public sealed class MacroManager
     {
-        private static readonly Regex MatchIncludeLine = new Regex(@"^\s*#\s+\d+\s+""([^""]+)""", RegexOptions.Compiled);
-        private static readonly Regex MatchDefine = new Regex(@"^\s*#define\s+([a-zA-Z_][\w_]*)\s+(.*)", RegexOptions.Compiled);
+        private static readonly Regex MatchIncludeLine = new(@"^\s*#\s+\d+\s+""([^""]+)""", RegexOptions.Compiled);
+        private static readonly Regex MatchDefine = new(@"^\s*#define\s+([a-zA-Z_][\w_]*)\s+(.*)", RegexOptions.Compiled);
         private readonly ICastXmlRunner _gccxml;
-        private Dictionary<string, string> _currentMacros = null;
-        private readonly Dictionary<string, Dictionary<string, string>> _mapIncludeToMacros = new Dictionary<string, Dictionary<string, string>>();
-        private readonly List<string> _includedFiles = new List<string>();
+        private Dictionary<string, string> _currentMacros;
+        private readonly Dictionary<string, Dictionary<string, string>> _mapIncludeToMacros = new();
+        private readonly List<string> _includedFiles = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MacroManager"/> class.
@@ -64,7 +64,7 @@ namespace SharpGen.Parser
                 var include = group.FindInclude(includeId);
                 if (include == null)
                 {
-                    include = new CppInclude { Name = includeId };
+                    include = new CppInclude(includeId);
                     group.Add(include);
                 }
                 foreach (var macroDefinition in _mapIncludeToMacros[includeName])

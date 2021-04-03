@@ -70,7 +70,7 @@ namespace SharpGen.Generator
                                                                     IdentifierName("Runtime")),
                                                                 IdentifierName("InteropServices")),
                                                             IdentifierName("CallingConvention")),
-                                                        IdentifierName(csElement.CallingConvention)))
+                                                        IdentifierName(csElement.CppCallingConvention.ToManagedCallingConventionName())))
                                                 .WithNameEquals(
                                                     NameEquals(
                                                         IdentifierName("CallingConvention")))

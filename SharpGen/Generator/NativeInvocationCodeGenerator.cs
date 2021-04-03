@@ -119,22 +119,15 @@ namespace SharpGen.Generator
                                      .Append(ParseTypeName(interopSig.ReturnType.TypeName))
                                      .Select(FunctionPointerParameter);
 
-                var callConv = ((CppCallable) callable.CppElement).CallingConvention switch
-                {
-                    CppCallingConvention.StdCall => "Stdcall",
-                    CppCallingConvention.FastCall => "Fastcall",
-                    CppCallingConvention.ThisCall => "Thiscall",
-                    CppCallingConvention.CDecl => "Cdecl",
-                    _ => throw new ArgumentOutOfRangeException()
-                };
-
                 return CastExpression(
                     FunctionPointerType(
                         FunctionPointerCallingConvention(
                             Token(SyntaxKind.UnmanagedKeyword),
                             FunctionPointerUnmanagedCallingConventionList(
                                 SingletonSeparatedList(
-                                    FunctionPointerUnmanagedCallingConvention(Identifier(callConv))
+                                    FunctionPointerUnmanagedCallingConvention(
+                                        Identifier(callable.CppCallingConvention.ToCallConvShortName())
+                                    )
                                 )
                             )
                         ),

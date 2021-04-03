@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using FakeItEasy;
 using SharpGen.CppModel;
 using SharpGen.Model;
@@ -18,14 +19,11 @@ namespace SharpGen.UnitTests
             var csTypeName = "MyClass";
             var constantName = "Constant";
             constantManager.AddConstantFromMacroToCSharpType(new CppElementFinder(macro), "Macro", csTypeName, "int", constantName, "$1", null, "namespace");
-            var csStructure = new CsStruct
-            {
-                Name = csTypeName
-            };
+            var csStructure = new CsStruct(null, csTypeName);
             constantManager.AttachConstants(csStructure);
 
             Assert.Single(csStructure.Items);
-            var variable = (CsVariable)csStructure.Items[0];
+            var variable = (CsVariable)csStructure.Items.First();
 
             Assert.Equal(value, variable.Value);
             Assert.Equal(constantName, variable.Name);
@@ -37,24 +35,17 @@ namespace SharpGen.UnitTests
         {
             var constantManager = new ConstantManager(new NamingRulesManager(), A.Fake<IDocumentationLinker>());
             var guid = Guid.NewGuid();
-            var macro = new CppGuid
-            {
-                Name = "Macro",
-                Guid = guid
-            };
+            var macro = new CppGuid("Macro", guid);
             var csTypeName = "MyClass";
             var constantName = "Constant";
             constantManager.AddConstantFromMacroToCSharpType(new CppElementFinder(macro), "Macro", csTypeName, "int", constantName, "$1", null, "namespace");
-            var csStructure = new CsStruct
-            {
-                Name = csTypeName
-            };
+            var csStructure = new CsStruct(null, csTypeName);
             constantManager.AttachConstants(csStructure);
 
             Assert.Single(csStructure.Items);
-            var variable = (CsVariable)csStructure.Items[0];
+            var variable = (CsVariable)csStructure.Items.First();
 
-            Assert.Equal(guid.ToString(), variable.Value.ToString());
+            Assert.Equal(guid.ToString(), variable.Value);
             Assert.Equal(constantName, variable.Name);
 
         }

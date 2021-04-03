@@ -3,6 +3,7 @@ using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Logging;
 using SharpGen.Model;
+using SharpGen.Transform;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -36,23 +37,16 @@ namespace SharpGen.UnitTests.Mapping
                 }
             };
 
-            var cppStruct = new CppStruct
-            {
-                Name = "struct"
-            };
+            var cppStruct = new CppStruct("struct");
 
-            cppStruct.Add(new CppField
+            cppStruct.Add(new CppField("field")
             {
-                Name = "field",
                 TypeName = "int"
             });
 
-            var cppInclude = new CppInclude
-            {
-                Name = "simple"
-            };
+            var cppInclude = new CppInclude("simple");
 
-            var cppModule = new CppModule();
+            var cppModule = new CppModule("SharpGenTestModule");
 
             cppModule.Add(cppInclude);
             cppInclude.Add(cppStruct);
@@ -68,10 +62,7 @@ namespace SharpGen.UnitTests.Mapping
             var field = csStruct.Fields.First(fld => fld.Name == "Field");
 
             Assert.IsType<CsFundamentalType>(field.PublicType);
-
-            var fundamental = (CsFundamentalType)field.PublicType;
-
-            Assert.Equal(typeof(int), fundamental.Type);
+            Assert.Equal(TypeRegistry.Int32, field.PublicType);
         }
 
 
@@ -97,30 +88,22 @@ namespace SharpGen.UnitTests.Mapping
                 }
             };
 
-            var cppStruct = new CppStruct
-            {
-                Name = "struct"
-            };
+            var cppStruct = new CppStruct("struct");
 
-            cppStruct.Add(new CppField
+            cppStruct.Add(new CppField("field")
             {
-                Name = "field",
                 TypeName = "int"
             });
 
-            cppStruct.Add(new CppField
+            cppStruct.Add(new CppField("field2")
             {
-                Name = "field2",
                 TypeName = "int",
                 Offset = 1
             });
 
-            var cppInclude = new CppInclude
-            {
-                Name = "simple"
-            };
+            var cppInclude = new CppInclude("simple");
 
-            var cppModule = new CppModule();
+            var cppModule = new CppModule("SharpGenTestModule");
 
             cppModule.Add(cppInclude);
             cppInclude.Add(cppStruct);
@@ -159,36 +142,27 @@ namespace SharpGen.UnitTests.Mapping
                 }
             };
 
-            var baseStruct = new CppStruct
-            {
-                Name = "base"
-            };
+            var baseStruct = new CppStruct("base");
 
-            baseStruct.Add(new CppField
+            baseStruct.Add(new CppField("field")
             {
-                Name = "field",
                 TypeName = "int"
             });
 
-            var inheritingStruct = new CppStruct
+            var inheritingStruct = new CppStruct("inheriting")
             {
-                Name = "inheriting",
                 Base = "base"
             };
 
-            inheritingStruct.Add(new CppField
+            inheritingStruct.Add(new CppField("field2")
             {
-                Name = "field2",
                 TypeName = "int",
                 Offset = 1
             });
 
-            var cppInclude = new CppInclude
-            {
-                Name = "struct"
-            };
+            var cppInclude = new CppInclude("struct");
 
-            var cppModule = new CppModule();
+            var cppModule = new CppModule("SharpGenTestModule");
 
             cppModule.Add(cppInclude);
             cppInclude.Add(baseStruct);
@@ -238,25 +212,18 @@ namespace SharpGen.UnitTests.Mapping
                 }
             };
 
-            var structure = new CppStruct
-            {
-                Name = structName
-            };
+            var structure = new CppStruct(structName);
 
-            structure.Add(new CppField
+            structure.Add(new CppField("field")
             {
-                Name = "field",
                 TypeName = "int"
             });
 
-            var include = new CppInclude
-            {
-                Name = "test"
-            };
+            var include = new CppInclude("test");
 
             include.Add(structure);
 
-            var module = new CppModule();
+            var module = new CppModule("SharpGenTestModule");
             module.Add(include);
 
             var (solution, _) = MapModel(module, config);
@@ -295,42 +262,33 @@ namespace SharpGen.UnitTests.Mapping
             };
 
 
-            var structure = new CppStruct
-            {
-                Name = "Test"
-            };
+            var structure = new CppStruct("Test");
 
-            structure.Add(new CppField
+            structure.Add(new CppField("bitfield1")
             {
-                Name = "bitfield1",
                 TypeName = "int",
                 IsBitField = true,
                 BitOffset = 16,
                 Offset = 0,
             });
-            structure.Add(new CppField
+            structure.Add(new CppField("field")
             {
-                Name = "field",
                 TypeName = "int",
                 Offset = 1,
             });
-            structure.Add(new CppField
+            structure.Add(new CppField("bitfield2")
             {
-                Name = "bitfield2",
                 TypeName = "int",
                 IsBitField = true,
                 BitOffset = 16,
                 Offset = 2
             });
 
-            var include = new CppInclude
-            {
-                Name = "test"
-            };
+            var include = new CppInclude("test");
 
             include.Add(structure);
 
-            var module = new CppModule();
+            var module = new CppModule("SharpGenTestModule");
             module.Add(include);
 
             var (solution, _) = MapModel(module, config);
@@ -380,33 +338,27 @@ namespace SharpGen.UnitTests.Mapping
             };
 
 
-            var structure = new CppStruct
+            var structure = new CppStruct("Test")
             {
-                Name = "Test",
                 IsUnion = true
             };
 
-            structure.Add(new CppField
+            structure.Add(new CppField("pointer")
             {
-                Name = "pointer",
                 TypeName = "int",
                 Pointer = "*"
             });
 
-            structure.Add(new CppField
+            structure.Add(new CppField("scalar")
             {
-                Name = "scalar",
                 TypeName = "int"
             });
 
-            var include = new CppInclude
-            {
-                Name = "test"
-            };
+            var include = new CppInclude("test");
 
             include.Add(structure);
 
-            var module = new CppModule();
+            var module = new CppModule("SharpGenTestModule");
             module.Add(include);
 
             var (solution, _) = MapModel(module, config);
@@ -444,51 +396,41 @@ namespace SharpGen.UnitTests.Mapping
             };
 
 
-            var structure = new CppStruct
-            {
-                Name = "Test"
-            };
+            var structure = new CppStruct("Test");
 
-            structure.Add(new CppField
+            structure.Add(new CppField("bitfield1")
             {
-                Name = "bitfield1",
                 TypeName = "int",
                 IsBitField = true,
                 BitOffset = 16,
                 Offset = 0,
             });
-            structure.Add(new CppField
+            structure.Add(new CppField("bitfield2")
             {
-                Name = "bitfield2",
                 TypeName = "int",
                 IsBitField = true,
                 BitOffset = 16,
                 Offset = 0
             });
 
-            structure.Add(new CppField
+            structure.Add(new CppField("pointer")
             {
-                Name = "pointer",
                 TypeName = "int",
                 Pointer = "*",
                 Offset = 1
             });
 
-            structure.Add(new CppField
+            structure.Add(new CppField("field")
             {
-                Name = "field",
                 TypeName = "int",
                 Offset = 2,
             });
 
-            var include = new CppInclude
-            {
-                Name = "test"
-            };
+            var include = new CppInclude("test");
 
             include.Add(structure);
 
-            var module = new CppModule();
+            var module = new CppModule("SharpGenTestModule");
             module.Add(include);
 
             using (LoggerMessageCountEnvironment(1, LogLevel.Error))
@@ -529,51 +471,41 @@ namespace SharpGen.UnitTests.Mapping
             };
 
 
-            var structure = new CppStruct
-            {
-                Name = "Test"
-            };
+            var structure = new CppStruct("Test");
 
-            structure.Add(new CppField
+            structure.Add(new CppField("bitfield1")
             {
-                Name = "bitfield1",
                 TypeName = "int",
                 IsBitField = true,
                 BitOffset = 16,
                 Offset = 0,
             });
-            structure.Add(new CppField
+            structure.Add(new CppField("bitfield2")
             {
-                Name = "bitfield2",
                 TypeName = "int",
                 IsBitField = true,
                 BitOffset = 16,
                 Offset = 0
             });
 
-            structure.Add(new CppField
+            structure.Add(new CppField("pointer")
             {
-                Name = "pointer",
                 TypeName = "int",
                 Pointer = "*",
                 Offset = 1
             });
 
-            structure.Add(new CppField
+            structure.Add(new CppField("field")
             {
-                Name = "field",
                 TypeName = "int",
                 Offset = 2,
             });
 
-            var include = new CppInclude
-            {
-                Name = "test"
-            };
+            var include = new CppInclude("test");
 
             include.Add(structure);
 
-            var module = new CppModule();
+            var module = new CppModule("SharpGenTestModule");
             module.Add(include);
 
             var (solution, _) = MapModel(module, config);

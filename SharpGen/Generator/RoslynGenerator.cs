@@ -55,7 +55,7 @@ namespace SharpGen.Generator
             if (!Directory.Exists(generatedCodeFolder))
                 Directory.CreateDirectory(generatedCodeFolder);
 
-            logger.Message("Process Assembly {0} => {1}", csAssembly.Name, generatedCodeFolder);
+            logger.Message("Process Assembly => {0}", generatedCodeFolder);
 
             var trees = new[]
             {

@@ -17,32 +17,23 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System.Runtime.Serialization;
-using System.Xml.Serialization;
+
+using SharpGen.Config;
+using SharpGen.CppModel;
 
 namespace SharpGen.Model
 {
-    [DataContract(Name = "Variable")]
     public class CsVariable : CsBase
     {
-        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
-        public CsVariable()
+        public CsVariable(CppElement cppElement, string typeName, string name, string value) : base(cppElement, name)
         {
-        }
-
-        public CsVariable(string typeName, string name, string value)
-        {
-            CppElement = null;
             TypeName = typeName;
-            Name = name;
             Value = value;
-            Visibility = Config.Visibility.Public | Config.Visibility.Static;
+            Visibility = Visibility.Public | Visibility.Static;
         }
 
-        [DataMember]
-        public string Value { get; set; }
+        public string Value { get; }
 
-        [DataMember]
-        public string TypeName { get; set; }
+        public string TypeName { get; }
     }
 }

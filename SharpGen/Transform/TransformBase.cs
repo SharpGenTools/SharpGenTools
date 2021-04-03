@@ -17,14 +17,10 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using Microsoft.CodeAnalysis;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+
 using SharpGen.CppModel;
 using SharpGen.Logging;
 using SharpGen.Model;
-using System.Linq;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SharpGen.Transform
 {
@@ -35,10 +31,6 @@ namespace SharpGen.Transform
         where TCsElement : CsBase
         where TCppElement : CppElement
     {
-        /// <summary>
-        /// Initializes this instance with the specified <see cref="TransformManager"/>.
-        /// </summary>
-        /// <param name="manager">The manager.</param>
         protected TransformBase(NamingRulesManager namingRules, Logger logger)
         {
             NamingRules = namingRules;
@@ -49,12 +41,12 @@ namespace SharpGen.Transform
         /// Gets the naming rules manager.
         /// </summary>
         /// <value>The naming rules manager.</value>
-        public NamingRulesManager NamingRules { get; private set; }
+        protected NamingRulesManager NamingRules { get; }
 
         /// <summary>
         /// Gets the logger for this transformation
         /// </summary>
-        public Logger Logger { get; private set; }
+        protected Logger Logger { get; }
 
         /// <summary>
         /// Prepares the specified C++ element to a C# element.

@@ -18,116 +18,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Xml;
-using System.Xml.Serialization;
 
 namespace SharpGen.CppModel
 {
     /// <summary>
     /// A C++ module contains includes.
     /// </summary>
-    [XmlRoot("cpp-module", Namespace= NS)]
-    public class CppModule : CppElement
+    public sealed class CppModule : CppContainer
     {
-        internal const string NS = "urn:SharpGen.CppModel";
+        public override string FullName => string.Empty;
+        public IEnumerable<CppInclude> Includes => Iterate<CppInclude>();
 
-        /// <summary>
-        /// Gets the full name.
-        /// </summary>
-        /// <value>The full name.</value>
-        [XmlIgnore]
-        public override string FullName
+        public CppInclude FindInclude(string includeName) =>
+            Includes.FirstOrDefault(include => include.Name == includeName);
+
+        public CppModule(string name) : base(name)
         {
-            get { return ""; }
-        }
-
-        /// <summary>
-        /// Gets the includes.
-        /// </summary>
-        /// <value>The includes.</value>
-        [XmlIgnore]
-        public IEnumerable<CppInclude> Includes
-        {
-            get { return Iterate<CppInclude>(); }
-        }
-
-        /// <summary>
-        /// Finds the include.
-        /// </summary>
-        /// <param name="includeName">Name of the include.</param>
-        /// <returns></returns>
-        public CppInclude FindInclude(string includeName)
-        {
-            return Includes.FirstOrDefault(include => include.Name == includeName);
-        }
-
-        /// <summary>
-        /// Reads the module from the specified file.
-        /// </summary>
-        /// <param name="file">The file.</param>
-        /// <returns>A C++ module</returns>
-        [Obsolete("XML serialization ability is a non-public API contract")]
-        public static CppModule Read(string file)
-        {
-            using (var input = new FileStream(file, FileMode.Open))
-            {
-                return Read(input);
-            }
-        }
-
-        /// <summary>
-        /// Reads the module from the specified input.
-        /// </summary>
-        /// <param name="input">The input.</param>
-        /// <returns>A C++ module</returns>
-        [Obsolete("XML serialization ability is a non-public API contract")]
-        public static CppModule Read(Stream input)
-        {
-            var ds = new XmlSerializer(typeof (CppModule));
-
-            CppModule module = null;
-            using (XmlReader w = XmlReader.Create(input))
-            {
-                module = ds.Deserialize(w) as CppModule;
-            }
-            if (module != null)
-                module.ResetParents();
-            return module;
-        }
-
-        /// <summary>
-        /// Writes this instance to the specified file.
-        /// </summary>
-        /// <param name="file">The file.</param>
-        [Obsolete("XML serialization ability is a non-public API contract")]
-        public void Write(string file)
-        {
-            using (var output = new FileStream(file, FileMode.Create))
-            {
-                Write(output); 
-            }
-        }
-
-        /// <summary>
-        /// Writes this instance to the specified output.
-        /// </summary>
-        /// <param name="output">The output.</param>
-        [Obsolete("XML serialization ability is a non-public API contract")]
-        public void Write(Stream output)
-        {
-            var ds = new XmlSerializer(typeof (CppModule));
-
-            var settings = new XmlWriterSettings {Indent = true};
-            using (XmlWriter w = XmlWriter.Create(output, settings))
-            {
-                var ns = new XmlSerializerNamespaces();
-                ns.Add("", NS);
-                ds.Serialize(w, this, ns);
-            }
         }
     }
 }

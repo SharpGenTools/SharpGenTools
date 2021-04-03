@@ -17,57 +17,22 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System.Text;
-using System.Xml.Serialization;
 
 namespace SharpGen.CppModel
 {
     /// <summary>
     /// Type declaration.
     /// </summary>
-    public class CppMarshallable : CppElement
+    public abstract class CppMarshallable : CppElement
     {
-        /// <summary>
-        /// Gets or sets the name of the type.
-        /// </summary>
-        /// <value>The name of the type.</value>
-        [XmlAttribute("typename")]
         public string TypeName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the pointer.
-        /// </summary>
-        /// <value>The pointer.</value>
-        [XmlAttribute("ptr")]
         public string Pointer { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this <see cref="CppMarshallable"/> is const.
-        /// </summary>
-        /// <value><c>true</c> if const; otherwise, <c>false</c>.</value>
-        [XmlAttribute("const")]
         public bool Const { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this instance is array.
-        /// </summary>
-        /// <value><c>true</c> if this instance is array; otherwise, <c>false</c>.</value>
-        [XmlAttribute("array")]
         public bool IsArray { get; set; }
-
-        /// <summary>
-        /// Gets or sets the array dimension.
-        /// </summary>
-        /// <value>The array dimension.</value>
-        [XmlAttribute("array-dim")]
         public string ArrayDimension { get; set; }
 
-        /// <summary>
-        /// Returns a <see cref="System.String"/> that represents this instance.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="System.String"/> that represents this instance.
-        /// </returns>
         public override string ToString()
         {
             var builder = new StringBuilder();
@@ -78,22 +43,31 @@ namespace SharpGen.CppModel
 
             if (!string.IsNullOrEmpty(Name))
             {
-                builder.Append(" ");
+                builder.Append(' ');
                 builder.Append(Name);
             }
 
             if (IsArray)
             {
-                builder.Append("[");
+                builder.Append('[');
                 builder.Append(ArrayDimension);
-                builder.Append("]");
+                builder.Append(']');
             }
+
             return builder.ToString();
         }
 
-        public override string ToShortString()
+        public bool HasPointer
         {
-            return TypeName;
+            get
+            {
+                var pointer = Pointer;
+                return !string.IsNullOrEmpty(pointer) && (pointer.Contains("*") || pointer.Contains("&"));
+            }
+        }
+
+        protected CppMarshallable(string name) : base(name)
+        {
         }
     }
 }

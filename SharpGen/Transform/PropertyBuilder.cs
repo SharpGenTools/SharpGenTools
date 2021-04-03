@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using SharpGen.CppModel;
 
 namespace SharpGen.Transform
 {
@@ -15,7 +16,7 @@ namespace SharpGen.Transform
 
     public class PropertyBuilder
     {
-        private static readonly Regex MatchGet = new Regex(@"^\s*(\<[Pp]\>)?\s*(Gets?|Retrieves?|Returns)");
+        private static readonly Regex MatchGet = new(@"^\s*(\<[Pp]\>)?\s*(Gets?|Retrieves?|Returns)", RegexOptions.Compiled);
         private readonly GlobalNamespaceProvider globalNamespace;
 
         public PropertyBuilder(GlobalNamespaceProvider globalNamespace)
@@ -57,12 +58,12 @@ namespace SharpGen.Transform
             if (getterPropType != null && setterPropType != null && getterPropType != setterPropType)
                 return null;
 
-            return new CsProperty(group.Key)
+            // Associate the property with the underlying method's C++ element.
+            var cppElement = getter?.CppElement ?? setter?.CppElement;
+
+            return new CsProperty((CppMethod) cppElement, group.Key, getter, setter, isParamGetter)
             {
-                Getter = getter,
-                Setter = setter,
-                PublicType = getterPropType ?? setterPropType,
-                IsPropertyParam = isParamGetter
+                PublicType = getterPropType ?? setterPropType
             };
         }
 
@@ -74,10 +75,9 @@ namespace SharpGen.Transform
             return getter.Parameters.Count switch
             {
                 1 when getter.Parameters[0].IsOut && !getter.Parameters[0].IsArray =>
-                !getter.HasReturnType ||
-                getter.ReturnValue.PublicType.Name == globalNamespace.GetTypeName(WellKnownName.Result),
+                    !getter.HasReturnType || getter.IsReturnTypeResult(globalNamespace),
 
-                0 => getter.HasReturnTypeValue,
+                0 => getter.HasReturnTypeValue(globalNamespace),
                 _ => false
             };
         }
@@ -89,7 +89,7 @@ namespace SharpGen.Transform
                 return true;
             }
 
-            return (setter.ReturnValue?.PublicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.Result) || !setter.HasReturnType)
+            return (setter.IsReturnTypeResult(globalNamespace) || !setter.HasReturnType)
                 && setter.Parameters.Count == 1
                 && (setter.Parameters[0].IsRefIn
                     || setter.Parameters[0].IsIn
@@ -97,21 +97,18 @@ namespace SharpGen.Transform
                 && !setter.Parameters[0].IsArray;
         }
         
-        private (string PropertyName, PropertyMethod? PropertyMethod) GetPropertySpec(CsMethod csMethod)
+        private static (string PropertyName, PropertyMethod? PropertyMethod) GetPropertySpec(CsMethod csMethod)
         {
             var isIs = csMethod.Name.StartsWith("Is");
             var isGet = csMethod.Name.StartsWith("Get") || isIs;
             var isSet = csMethod.Name.StartsWith("Set");
 
             var propertyName = isIs ? csMethod.Name : csMethod.Name.Substring("Get".Length);
-            return (propertyName, isGet ? PropertyMethod.Getter : isSet ? PropertyMethod.Setter : (PropertyMethod?)null);
+            return (propertyName, isGet ? PropertyMethod.Getter : isSet ? PropertyMethod.Setter : null);
         }
 
-        public void AttachPropertyToParent(CsProperty property)
+        public static void AttachPropertyToParent(CsProperty property)
         {
-            // Associate the property with the underlying method's C++ element.
-            property.CppElement = property.Getter?.CppElement ?? property.Setter?.CppElement;
-
             // If We have a getter, then we need to modify the documentation in order to print that we have Gets and Sets.
             if (property.Getter != null && property.Setter != null && !string.IsNullOrEmpty(property.Description))
             {
@@ -121,32 +118,28 @@ namespace SharpGen.Transform
             var parent = property.Getter?.Parent ?? property.Setter?.Parent;
 
             // If mapping rule disallows properties, don't attach the property to the model.
-            if (parent is null || (property.Getter?.AllowProperty == false) || (property.Setter?.AllowProperty == false))
+            if (parent is null || property.Getter?.AllowProperty == false || property.Setter?.AllowProperty == false)
                 return;
 
             // Update visibility for getter and setter (set to internal)
-            if (property.Getter != null)
-            {
-                var parentInterface = property.Getter.GetParent<CsInterface>();
-
-                if (!property.Getter.IsPublicVisibilityForced(parentInterface, parentInterface.IBase))
-                    property.Getter.Visibility = Visibility.Internal;
-
-                property.IsPersistent = property.Getter.IsPersistent;
-            }
-
-            if (property.Setter != null)
-            {
-                var parentInterface = property.Setter.GetParent<CsInterface>();
-
-                if (!property.Setter.IsPublicVisibilityForced(parentInterface, parentInterface.IBase))
-                    property.Setter.Visibility = Visibility.Internal;
-            }
+            ReducePropertyMethodVisibility(property.Getter);
+            ReducePropertyMethodVisibility(property.Setter);
 
             if (property.Getter != null && property.Name.StartsWith("is", StringComparison.InvariantCultureIgnoreCase))
-                property.Getter.Name += "_";
+                property.Getter.SuffixName("_");
 
             parent.Add(property);
+        }
+
+        private static void ReducePropertyMethodVisibility(CsMethod method)
+        {
+            if (method == null)
+                return;
+
+            var parentInterface = method.GetParent<CsInterface>();
+
+            if (!method.IsPublicVisibilityForced(parentInterface, parentInterface.IBase))
+                method.Visibility = Visibility.Internal;
         }
     }
 }

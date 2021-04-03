@@ -2,6 +2,7 @@
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
+using SharpGen.Transform;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -51,21 +52,17 @@ namespace SharpGen.UnitTests.Mapping
                 }
             };
 
-            var function = new CppFunction
+            var function = new CppFunction("Test")
             {
-                Name = "Test",
                 ReturnValue = new CppReturnValue
                 {
                     TypeName = "int",
                 }
             };
 
-            var include = new CppInclude
-            {
-                Name = "func"
-            };
+            var include = new CppInclude("func");
 
-            var module = new CppModule();
+            var module = new CppModule("SharpGenTestModule");
 
             include.Add(function);
             module.Add(include);
@@ -80,7 +77,7 @@ namespace SharpGen.UnitTests.Mapping
             Assert.Single(group.Functions);
 
             var csFunc = group.Functions.First();
-            Assert.Equal(typeof(int), ((CsFundamentalType)csFunc.ReturnValue.PublicType).Type);
+            Assert.Equal(TypeRegistry.Int32, csFunc.ReturnValue.PublicType);
             Assert.Empty(csFunc.Parameters);
             Assert.Equal(Visibility.Static, csFunc.Visibility & Visibility.Static);
         }
@@ -116,29 +113,24 @@ namespace SharpGen.UnitTests.Mapping
                 }
             };
 
-            var iface = new CppInterface
+            var iface = new CppInterface("Interface")
             {
-                Name = "Interface",
                 TotalMethodCount = 1
             };
 
-            iface.Add(new CppMethod
+            iface.Add(new CppMethod("method")
             {
-                Name = "method",
                 ReturnValue = new CppReturnValue
                 {
                     TypeName = "int"
                 }
             });
 
-            var include = new CppInclude
-            {
-                Name = "pointerSize"
-            };
+            var include = new CppInclude("pointerSize");
 
             include.Add(iface);
 
-            var module = new CppModule();
+            var module = new CppModule("SharpGenTestModule");
             module.Add(include);
 
             var (solution, _) = MapModel(module, config);
@@ -185,29 +177,24 @@ namespace SharpGen.UnitTests.Mapping
                 }
             };
 
-            var iface = new CppInterface
+            var iface = new CppInterface("Interface")
             {
-                Name = "Interface",
                 TotalMethodCount = 1
             };
 
-            iface.Add(new CppMethod
+            iface.Add(new CppMethod("method")
             {
-                Name = "method",
                 ReturnValue = new CppReturnValue
                 {
                     TypeName = "NativePrimitive"
                 }
             });
 
-            var include = new CppInclude
-            {
-                Name = "pointerSize"
-            };
+            var include = new CppInclude("pointerSize");
 
             include.Add(iface);
 
-            var module = new CppModule();
+            var module = new CppModule("SharpGenTestModule");
             module.Add(include);
 
             var (solution, _) = MapModel(module, config);

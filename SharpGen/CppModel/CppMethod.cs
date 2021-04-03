@@ -17,29 +17,18 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Xml.Serialization;
 
 namespace SharpGen.CppModel
 {
-    /// <summary>
-    /// A C++ method.
-    /// </summary>
-    [XmlType("method")]
-    public class CppMethod : CppCallable
+    public sealed class CppMethod : CppCallable
     {
-        /// <summary>
-        /// Gets or sets the offset.
-        /// </summary>
-        /// <value>The offset.</value>
-        [XmlAttribute("offset")]
         public int Offset { get; set; }
-
-        [XmlAttribute("windows-offset")]
         public int WindowsOffset { get; set; }
 
         protected override CppCallingConvention DefaultCallingConvention => CppCallingConvention.ThisCall;
+
+        public CppMethod(string name) : base(name)
+        {
+        }
     }
 }

@@ -12,10 +12,7 @@ namespace SharpGen.UnitTests
             var manager = new NamingRulesManager();
 
             manager.AddShortNameRule("DESC", "Description");
-            Assert.Equal("ShaderDescription", manager.Rename(new CppElement
-            {
-                Name = "SHADER_DESC"
-            }));
+            Assert.Equal("ShaderDescription", manager.Rename(new CppStruct("SHADER_DESC")));
         }
 
         [Fact]
@@ -26,16 +23,9 @@ namespace SharpGen.UnitTests
             manager.AddShortNameRule("INFO", "Information");
             manager.AddShortNameRule("INFORMATION", "Information");
 
-            Assert.Equal("RawDeviceInformation", manager.Rename(new CppElement
-            {
-                Name = "RAW_DEVICE_INFO"
-            }));
+            Assert.Equal("RawDeviceInformation", manager.Rename(new CppStruct("RAW_DEVICE_INFO")));
 
-            Assert.Equal("RawDeviceInformation", manager.Rename(new CppElement
-            {
-                Name = "RAW_DEVICE_INFORMATION"
-            }));
-
+            Assert.Equal("RawDeviceInformation", manager.Rename(new CppStruct("RAW_DEVICE_INFORMATION")));
         }
     }
 }

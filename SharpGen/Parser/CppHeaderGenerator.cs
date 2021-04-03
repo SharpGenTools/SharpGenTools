@@ -9,12 +9,12 @@ using System.Text;
 
 namespace SharpGen.Parser
 {
-    public class CppHeaderGenerator
+    public sealed class CppHeaderGenerator
     {
         private const string Version = "1.1";
 
-        public Logger Logger { get; }
-        public string OutputPath { get; }
+        private Logger Logger { get; }
+        private string OutputPath { get; }
 
         public CppHeaderGenerator(Logger logger, string outputPath)
         {

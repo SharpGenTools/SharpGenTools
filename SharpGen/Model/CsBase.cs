@@ -23,7 +23,6 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.Serialization;
 using Microsoft.CodeAnalysis;
 using SharpGen.Config;
 using SharpGen.CppModel;
@@ -35,15 +34,30 @@ namespace SharpGen.Model
     /// Root class for all model elements.
     /// </summary>
     [DebuggerDisplay("Name: {" + nameof(Name) + "}")]
-    [DataContract(Name = "Element")]
-    public class CsBase
+    public abstract class CsBase
     {
         private ObservableCollection<CsBase> _items;
-        private CppElement _cppElement;
         private string _cppElementName;
+
+        protected CsBase(CppElement cppElement, string name)
+        {
+            CppElement = cppElement;
+            Name = name;
+
+            var tag = cppElement?.Rule;
+            Visibility = tag?.Visibility ?? Visibility;
+        }
 
         private void ItemsChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems.OfType<CsBase>())
+                {
+                    item.Parent = null;
+                }
+            }
+
             if (e.NewItems != null)
             {
                 foreach (var item in e.NewItems.OfType<CsBase>())
@@ -52,21 +66,23 @@ namespace SharpGen.Model
                 }
             }
 
-            if (e.OldItems != null)
-            {
-                foreach (var item in e.OldItems.OfType<CsBase>())
-                {
-                    item.Parent = null;
-                }
-            }
+            ExpireOnItemsChange();
+        }
+
+        private void ExpireOnItemsChange()
+        {
+            if (_items == null)
+                return;
+
+            foreach (var itemList in ExpiringOnItemsChange)
+                itemList?.Expire();
         }
 
         /// <summary>
         /// Gets or sets the parent of this container.
         /// </summary>
         /// <value>The parent.</value>
-        [DataMember]
-        public CsBase Parent { get; set; }
+        public CsBase Parent { get; private set; }
 
         /// <summary>
         /// Gets the parent of a specified type. This method goes back
@@ -77,7 +93,7 @@ namespace SharpGen.Model
         public T GetParent<T>() where T : CsBase
         {
             var parent = Parent;
-            while (parent != null && !(parent is T))
+            while (parent is { } and not T)
                 parent = parent.Parent;
             return (T) parent;
         }
@@ -86,8 +102,9 @@ namespace SharpGen.Model
         /// Gets items stored in this container.
         /// </summary>
         /// <value>The items.</value>
-        [DataMember]
-        public ObservableCollection<CsBase> Items
+        public IReadOnlyCollection<CsBase> Items => ItemsImpl;
+
+        private ObservableCollection<CsBase> ItemsImpl
         {
             get
             {
@@ -97,8 +114,11 @@ namespace SharpGen.Model
             }
         }
 
-        protected virtual void ResetItems()
+        public virtual IEnumerable<CsBase> AdditionalItems => Enumerable.Empty<CsBase>();
+
+        protected void ResetItems()
         {
+            ExpireOnItemsChange();
             _items = new ObservableCollection<CsBase>();
             _items.CollectionChanged += ItemsChanged;
         }
@@ -112,7 +132,7 @@ namespace SharpGen.Model
         /// <param name="innerCs">The inner container.</param>
         public void Add(CsBase innerCs)
         {
-            Items.Add(innerCs);
+            ItemsImpl.Add(innerCs);
         }
 
         /// <summary>
@@ -124,32 +144,22 @@ namespace SharpGen.Model
         /// <param name="innerCs">The inner container.</param>
         public void Remove(CsBase innerCs)
         {
-            Items.Remove(innerCs);
+            ItemsImpl.Remove(innerCs);
         }
 
         /// <summary>
         /// Gets or sets the name of this element.
         /// </summary>
         /// <value>The name.</value>
-        [DataMember]
-        public string Name { get; set; }
+        public string Name { get; private protected set; }
 
         /// <summary>
         /// Gets or sets the <see cref="Visibility"/> of this element. Default is public.
         /// </summary>
         /// <value>The visibility.</value>
-        [DataMember]
         public Visibility Visibility { get; set; } = Visibility.Public;
 
         public SyntaxTokenList VisibilityTokenList => ModelUtilities.VisibilityToTokenList(Visibility);
-
-        /// <summary>
-        /// Gets or sets a value indicating whether this instance is already fully mapped.
-        /// </summary>
-        /// <value>
-        /// 	<c>true</c> if this instance is fully mapped; otherwise, <c>false</c>.
-        /// </value>
-        public bool IsFullyMapped { get; set; } = true;
 
         /// <summary>
         /// Gets the full qualified name of this type.
@@ -160,7 +170,7 @@ namespace SharpGen.Model
             get
             {
                 var path = Parent?.QualifiedName;
-                var name = Name ?? "";
+                var name = Name ?? string.Empty;
                 return string.IsNullOrEmpty(path) ? name : path + "." + name;
             }
         }
@@ -169,31 +179,12 @@ namespace SharpGen.Model
         /// Gets or sets the C++ element associated to this container.
         /// </summary>
         /// <value>The C++ element.</value>
-        public virtual CppElement CppElement
-        {
-            get => _cppElement;
-            set
-            {
-                if (_cppElement == value)
-                    return;
-
-                _cppElement = value;
-
-                if (_cppElement == null)
-                    return;
-
-                DocId = string.IsNullOrEmpty(CppElement.Id) ? DocId : CppElement.Id;
-                Description = string.IsNullOrEmpty(CppElement.Description) ? Description : CppElement.Description;
-                Remarks = string.IsNullOrEmpty(CppElement.Remarks) ? Remarks : CppElement.Remarks;
-                UpdateFromMappingRule(CppElement.GetMappingRule());
-            }
-        }
+        public CppElement CppElement { get; }
 
         /// <summary>
         /// Gets the name of the C++ element.
         /// </summary>
         /// <value>The name of the C++ element.</value>
-        [DataMember(Name = "CppElement")]
         public string CppElementName
         {
             get => string.IsNullOrEmpty(_cppElementName) ? CppElement?.Name : _cppElementName;
@@ -203,24 +194,16 @@ namespace SharpGen.Model
         /// <summary>
         /// Gets or sets the doc id.
         /// </summary>
-        /// <value>
-        /// The id.
-        /// </value>
-        [DataMember]
         public string DocId { get; set; }
 
         /// <summary>
         /// Gets or sets the description documentation.
         /// </summary>
-        /// <value>The description.</value>
-        [DataMember]
         public string Description { get; set; } = "No documentation.";
 
         /// <summary>
         /// Gets or sets the remarks documentation.
         /// </summary>
-        /// <value>The remarks.</value>
-        [DataMember]
         public string Remarks { get; set; } = string.Empty;
 
         public virtual void FillDocItems(IList<string> docItems, IDocumentationLinker manager)
@@ -231,17 +214,17 @@ namespace SharpGen.Model
 
         public virtual string DocUnmanagedShortName => CppElementName;
 
-        /// <summary>
-        /// Updates this element from a tag.
-        /// </summary>
-        /// <param name="tag">The tag.</param>
-        protected virtual void UpdateFromMappingRule(MappingRule tag)
-        {
-            if (tag.Visibility.HasValue)
-                Visibility = tag.Visibility.Value;
-        }
-
         [ExcludeFromCodeCoverage]
         public override string ToString() => QualifiedName;
+
+        protected void ResetParentAfterClone()
+        {
+            Parent = null;
+        }
+
+        private protected virtual IEnumerable<IExpiring> ExpiringOnItemsChange => Enumerable.Empty<IExpiring>();
+
+        private protected static IEnumerable<CsBase> AppendNonNull(IEnumerable<CsBase> source, params CsBase[] values)
+            => source.Concat(values.Where(x => x != null).Distinct());
     }
 }

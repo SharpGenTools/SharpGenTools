@@ -35,7 +35,7 @@ namespace SharpGen.Generator.Marshallers
                 : CheckedExpression(
                     SyntaxKind.UncheckedExpression,
                     CastExpression(
-                        ParseTypeName(((CsEnum) csElement.PublicType).UnderlyingType?.Type.FullName ?? "int"),
+                        ParseTypeName(((CsEnum) csElement.PublicType).UnderlyingType.Name),
                         IdentifierName(csElement.Name)
                     )
                 )

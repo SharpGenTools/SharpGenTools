@@ -19,6 +19,8 @@
 // THE SOFTWARE.
 
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Logging;
@@ -55,21 +57,21 @@ namespace SharpGen.Transform
         /// </summary>
         /// <param name="cppMethod">The C++ element.</param>
         /// <returns>The C# element created and registered to the <see cref="TransformManager"/></returns>
-        public override CsMethod Prepare(CppMethod cppMethod) => new CsMethod(cppMethod);
+        public override CsMethod Prepare(CppMethod cppMethod) => new(cppMethod, NamingRules.Rename(cppMethod));
 
         public CsFunction Prepare(CppFunction cppFunction)
         {
-            var cSharpFunction = new CsFunction(cppFunction);
-            // All functions must have a tag
-            var tag = cppFunction.GetMappingRule();
+            CsFunction function = new(cppFunction, NamingRules.Rename(cppFunction));
 
-            if (tag == null || tag.Group == null)
+            var groupName = cppFunction.Rule.Group;
+
+            if (groupName == null)
             {
                 Logger.Error(LoggingCodes.FunctionNotAttachedToGroup, "CppFunction [{0}] is not tagged and attached to any Class/FunctionGroup", cppFunction);
                 return null;
             }
 
-            var csClass = groupRegistry.FindGroup(tag.Group);
+            var csClass = groupRegistry.FindGroup(groupName);
 
             if (csClass == null)
             {
@@ -77,13 +79,10 @@ namespace SharpGen.Transform
                 return null;
             }
 
-            // Set the DllName for this function
-            cSharpFunction.DllName = tag.FunctionDllName;
-
             // Add the function to the ClassType
-            csClass.Add(cSharpFunction);
+            csClass.Add(function);
 
-            return cSharpFunction;
+            return function;
         }
 
         /// <summary>
@@ -92,17 +91,6 @@ namespace SharpGen.Transform
         /// <param name="csElement">The C# element.</param>
         public override void Process(CsMethod csElement)
         {
-            var cppMethod = (CppMethod)csElement.CppElement;
-
-            csElement.Offset = cppMethod.Offset;
-            csElement.WindowsOffset = cppMethod.WindowsOffset;
-
-            var methodRule = cppMethod.GetMappingRule();
-
-            // Apply any offset to the method's vtable
-            csElement.Offset += methodRule.LayoutOffsetTranslate;
-            csElement.WindowsOffset += methodRule.LayoutOffsetTranslate;
-
             ProcessCallable(csElement);
         }
 
@@ -136,37 +124,26 @@ namespace SharpGen.Transform
         {
             var cppMethod = (CppCallable)method.CppElement;
 
-            method.Name = NamingRules.Rename(cppMethod);
-
             // For methods, the tag "type" is only used for return type
             // So we are overriding the return type here
-            var methodRule = cppMethod.GetMappingRule();
+            var methodRule = cppMethod.Rule;
             if (methodRule.MappingType != null)
-                cppMethod.ReturnValue.Rule = new MappingRule { MappingType = methodRule.MappingType };
+                cppMethod.ReturnValue.Rule.MappingType = methodRule.MappingType;
 
             // Get the inferred return type
             method.ReturnValue = factory.Create(cppMethod.ReturnValue);
 
-            if (method.ReturnValue.PublicType is CsInterface {IsCallback: true} iface)
-            {
-                method.ReturnValue.PublicType = iface.GetNativeImplementationOrThis();
-            }
+            var parameters = cppMethod.Parameters.ToArray();
+            var parameterNames = NamingRules.Rename(parameters);
 
-            // Hide return type only if it is a HRESULT and AlwaysReturnHResult is false
-            if (method.CheckReturnType && method.ReturnValue.PublicType != null &&
-                method.ReturnValue.PublicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.Result))
-            {
-                method.HideReturnType = !method.AlwaysReturnHResult;
-            }
+            Debug.Assert(parameters.Length == parameterNames.Count);
 
             // Iterates on parameters to convert them to C# parameters
-            foreach (var cppParameter in cppMethod.Parameters)
+            for (var index = 0; index < parameters.Length; index++)
             {
-                var paramMethod = factory.Create(cppParameter);
-
-                paramMethod.Name = NamingRules.Rename(cppParameter);
-
-                method.Add(paramMethod);
+                var cppParameter = parameters[index];
+                var parameterName = parameterNames[index];
+                method.Add(factory.Create(cppParameter, parameterName));
             }
         }
 

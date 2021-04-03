@@ -29,7 +29,7 @@ namespace SharpGen
     /// </summary>
     public class GlobalNamespaceProvider
     {
-        private readonly Dictionary<WellKnownName, string> overrides = new Dictionary<WellKnownName, string>();
+        private readonly Dictionary<WellKnownName, string> overrides = new();
 
         public string GetTypeName(WellKnownName name) =>
             overrides.TryGetValue(name, out var overridenName)

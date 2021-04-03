@@ -44,6 +44,12 @@ namespace SharpGen.Transform
             this.typeRegistry = typeRegistry;
         }
 
+        private static string GetTypeNameWithMapping(CppEnum cppEnum)
+        {
+            var rule = cppEnum.Rule;
+            return rule is {MappingType: { } mapType} ? mapType : cppEnum.UnderlyingType;
+        }
+
         /// <summary>
         /// Prepares the specified C++ element to a C# element.
         /// </summary>
@@ -51,13 +57,18 @@ namespace SharpGen.Transform
         /// <returns>The C# element created and registered to the <see cref="TransformManager"/></returns>
         public override CsEnum Prepare(CppEnum cppEnum)
         {
-            // Create C# enum
-            var newEnum = new CsEnum
+            // Determine enum type. Default is int
+            var typeName = GetTypeNameWithMapping(cppEnum);
+            var underlyingType = TypeRegistry.ImportPrimitiveType(typeName);
+
+            if (underlyingType == null)
             {
-                Name = NamingRules.Rename(cppEnum),
-                CppElement = cppEnum,
-                UnderlyingType = typeRegistry.ImportType(typeof(int))
-            };
+                Logger.Error(LoggingCodes.InvalidUnderlyingType, "Invalid type [{0}] for enum [{1}]", typeName, cppEnum);
+                return null;
+            }
+
+            // Create C# enum
+            CsEnum newEnum = new(cppEnum, NamingRules.Rename(cppEnum), underlyingType);
 
             // Get the namespace for this particular include and enum
             var nameSpace = namespaceRegistry.ResolveNamespace(cppEnum);
@@ -76,30 +87,6 @@ namespace SharpGen.Transform
         public override void Process(CsEnum newEnum)
         {
             var cppEnum = (CppEnum) newEnum.CppElement;
-
-            // Determine enum type. Default is int
-            var typeName = cppEnum.GetTypeNameWithMapping();
-            switch (typeName)
-            {
-                case "byte":
-                    newEnum.UnderlyingType = typeRegistry.ImportType(typeof(byte));
-                    break;
-                case "short":
-                    newEnum.UnderlyingType = typeRegistry.ImportType(typeof(short));
-                    break;
-                case "ushort":
-                    newEnum.UnderlyingType = typeRegistry.ImportType(typeof(ushort));
-                    break;
-                case "int":
-                    newEnum.UnderlyingType = typeRegistry.ImportType(typeof(int));
-                    break;
-                case "uint":
-                    newEnum.UnderlyingType = typeRegistry.ImportType(typeof(uint));
-                    break;
-                default:
-                    Logger.Error(LoggingCodes.InvalidUnderlyingType, "Invalid type [{0}] for enum [{1}]. Types supported are : int, byte, short", typeName, cppEnum);
-                    break;
-            }
 
             // Find Root Name of this enum
             // All enum items should start with the same root name and the root name should be at least 4 chars
@@ -129,29 +116,25 @@ namespace SharpGen.Transform
                 string enumName = NamingRules.Rename(cppEnumItem, rootName);
                 string enumValue = cppEnumItem.Value;
 
-                var csharpEnumItem = new CsEnumItem(enumName, enumValue) { CppElement = cppEnumItem };
+                var csharpEnumItem = new CsEnumItem(cppEnumItem, enumName, enumValue);
 
                 newEnum.Add(csharpEnumItem);
             }
 
-            var rule = cppEnum.GetMappingRule();
+            var rule = cppEnum.Rule;
 
-            bool tryToAddNone = rule.EnumHasNone ?? false;
+            // Add None if necessary
+            bool tryToAddNone;
+            if (rule.EnumHasNone is { } addNone)
+                tryToAddNone = addNone;
+            else if (newEnum.IsFlag)
+                tryToAddNone = newEnum.EnumItems.All(item => item.Name != "None");
+            else
+                tryToAddNone = false;
 
-            // If C++ enum name is ending with FLAG OR FLAGS
-            // Then tag this enum as flags and add None if necessary
-            if (cppEnum.Name.EndsWith("FLAG") || cppEnum.Name.EndsWith("FLAGS"))
-            {
-                newEnum.IsFlag = true;
-
-                if (!rule.EnumHasNone.HasValue)
-                    tryToAddNone = !newEnum.EnumItems.Any(item => item.Name == "None");
-            }
-
-            // Add None value
             if (tryToAddNone)
             {
-                var csharpEnumItem = new CsEnumItem("None", "0")
+                var csharpEnumItem = new CsEnumItem(null, "None", "0")
                 {
                     CppElementName = "None",
                     Description = "None"

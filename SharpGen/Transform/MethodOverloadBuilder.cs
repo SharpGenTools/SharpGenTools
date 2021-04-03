@@ -3,6 +3,7 @@ using SharpGen.Model;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using SharpGen.CppModel;
 
 namespace SharpGen.Transform
 {
@@ -21,16 +22,17 @@ namespace SharpGen.Transform
         {
             // Create a new method and transforms all array of CppObject to InterfaceArray<CppObject>
             var newMethod = (CsMethod)original.Clone();
-            foreach (var csParameter in newMethod.Parameters)
+            foreach (var csParameter in newMethod.PublicParameters)
             {
-                if (csParameter.IsUsedAsReturnType)
-                    continue;
-
                 if (!csParameter.IsInInterfaceArrayLike)
                     continue;
 
-                csParameter.PublicType = new CsInterfaceArray((CsInterface)csParameter.PublicType, globalNamespace.GetTypeName(WellKnownName.InterfaceArray));
-                csParameter.MarshalType = typeRegistry.ImportType(typeof(IntPtr));
+                csParameter.PublicType = new CsInterfaceArray(
+                    (CsInterface) csParameter.PublicType,
+                    globalNamespace.GetTypeName(WellKnownName.InterfaceArray)
+                );
+
+                csParameter.MarshalType = TypeRegistry.IntPtr;
             }
             return newMethod;
         }
@@ -41,15 +43,11 @@ namespace SharpGen.Transform
             // In order to be able to generate method taking single element
             var rawMethod = (CsMethod)original.Clone();
             rawMethod.Visibility = Visibility.Private;
-            foreach (var csSubParameter in rawMethod.Parameters)
+            foreach (var csSubParameter in rawMethod.PublicParameters)
             {
-                if (csSubParameter.IsUsedAsReturnType)
-                    continue;
-                
                 if (csSubParameter.IsArray || csSubParameter.IsInterface || csSubParameter.HasPointer)
                 {
-                    csSubParameter.PublicType = typeRegistry.ImportType(typeof(IntPtr));
-                    csSubParameter.MarshalType = typeRegistry.ImportType(typeof(IntPtr));
+                    csSubParameter.PublicType = csSubParameter.MarshalType = TypeRegistry.IntPtr;
                     csSubParameter.IsArray = false;
                     csSubParameter.Attribute = CsParameterAttribute.In;
                 }

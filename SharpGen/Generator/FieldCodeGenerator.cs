@@ -48,9 +48,9 @@ namespace SharpGen.Generator
                             })))
                     .WithModifiers(csElement.VisibilityTokenList)
                     .WithLeadingTrivia(Trivia(docComments));
-                yield return GenerateBackingField(csElement, csElement.MarshalType, explicitLayout ? csElement.Offset : (int?)null);
+                yield return GenerateBackingField(csElement, csElement.MarshalType, explicitLayout ? csElement.Offset : null);
             }
-            else if (csElement.IsArray && csElement.PublicType.QualifiedName != "System.String")
+            else if (csElement.IsArray && !csElement.IsString)
             {
                 yield return PropertyDeclaration(ArrayType(ParseTypeName(csElement.PublicType.QualifiedName), SingletonList(ArrayRankSpecifier())), csElement.Name)
                     .WithAccessorList(

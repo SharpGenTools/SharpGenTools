@@ -225,23 +225,10 @@ namespace SharpGen.Generator
                 members.AddRange(csElement.Properties.SelectMany(prop => Generators.Property.GenerateCode(prop)));
             }
 
-            var methodWasHiddenByDefault = csElement.IsCallback && !csElement.AutoGenerateShadow;
-            var shouldIssueCompatMessage = false;
-
             foreach (var method in csElement.Methods)
             {
-                if (!method.Hidden.HasValue && methodWasHiddenByDefault)
-                    shouldIssueCompatMessage = true;
-
-                method.SignatureOnly = csElement.IsCallback;
-
                 members.AddRange(Generators.Method.GenerateCode(method));
             }
-
-            if (shouldIssueCompatMessage)
-                logger.Message(
-                    "SharpGen 2 now generates callback interface members automatically. Use 'hidden' rule to restore the old behavior."
-                );
 
             if (csElement.IsCallback && csElement.AutoGenerateShadow)
             {

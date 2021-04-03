@@ -18,72 +18,52 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
 using System.Collections.Generic;
-using System.Reflection;
-using System.Runtime.Serialization;
+using SharpGen.CppModel;
+using SharpGen.Transform;
 
 namespace SharpGen.Model
 {
-    [DataContract]
-    public class CsMarshalBase : CsBase
+    public abstract class CsMarshalBase : CsBase
     {
         /// <summary>
         ///   Public type used for element.
         /// </summary>
-        [DataMember]
         public CsTypeBase PublicType { get; set; }
 
         /// <summary>
         ///   Internal type used for marshalling to native.
         /// </summary>
-        [DataMember]
         public CsTypeBase MarshalType { get; set; }
 
-        [DataMember]
-        public bool HasPointer { get; set; }
-
-        [DataMember]
+        public bool HasPointer { get; protected internal set; }
         public bool IsArray { get; set; }
-
-        [DataMember]
         public int ArrayDimensionValue { get; set; }
-
-        [DataMember]
         public bool IsWideChar { get; set; }
 
-        [DataMember]
-        public bool IsBoolToInt { get; set; }
+        public IList<MarshallableRelation> Relations { get; set; }
+
+        public bool IsBoolToInt => MarshalType is CsFundamentalType {IsIntegerType: true}
+                                && PublicType == TypeRegistry.Boolean;
 
         public virtual bool IsOptional => false;
-
         public virtual bool IsRefIn => false;
-
         public virtual bool IsFastOut => false;
 
         public int Size => MarshalType.Size * (ArrayDimensionValue > 1 ? ArrayDimensionValue : 1);
 
         public bool IsValueType =>
-            PublicType is CsStruct {GenerateAsClass: false} or CsEnum || PublicType is CsFundamentalType type && (type.Type.GetTypeInfo().IsValueType || type.Type.GetTypeInfo().IsPrimitive);
+            PublicType is CsStruct {GenerateAsClass: false} or CsEnum or CsFundamentalType {IsValueType: true};
 
         public bool PassedByNullableInstance => IsRefIn && IsValueType && !IsArray && IsOptional;
-
         public bool IsInterface => PublicType is CsInterface;
-
         public bool IsStructClass => PublicType is CsStruct {GenerateAsClass: true};
-
-        public bool IsPrimitive => PublicType is CsFundamentalType type && type.Type.GetTypeInfo().IsPrimitive;
-
-        public bool IsString => PublicType is CsFundamentalType type && type.Type == typeof(string);
-
+        public bool IsPrimitive => PublicType is CsFundamentalType {IsPrimitive: true};
+        public bool IsString => PublicType is CsFundamentalType {IsString: true};
         public bool HasNativeValueType => PublicType is CsStruct {HasMarshalType: true};
-
         public bool IsStaticMarshal => PublicType is CsStruct {IsStaticMarshal: true};
-
         public bool IsInterfaceArray => PublicType is CsInterfaceArray;
-
         public bool IsNullableStruct => PassedByNullableInstance && !IsStructClass;
-
         public string IntermediateMarshalName => Name[0] == '@' ? $"_{Name.Substring(1)}" : $"_{Name}";
 
         public bool MappedToDifferentPublicType =>
@@ -92,6 +72,37 @@ namespace SharpGen.Model
             && !(MarshalType is CsFundamentalType {IsPointer: true} && HasPointer)
             && !(IsInterface && HasPointer);
 
-        [DataMember] public IList<MarshallableRelation> Relations { get; set; }
+        protected CsMarshalBase(CppElement cppElement, string name) : base(cppElement, name)
+        {
+            if (cppElement is CppMarshallable cppMarshallable)
+            {
+                IsArray = cppMarshallable.IsArray;
+                HasPointer = cppMarshallable.HasPointer;
+
+                ArrayDimensionValue = ParseArrayDimensionValue(cppMarshallable.ArrayDimension);
+
+                // If array Dimension is 0, then it is not an array
+                if (ArrayDimensionValue == 0)
+                    IsArray = false;
+            }
+
+            int ParseArrayDimensionValue(string arrayDimension)
+            {
+                // TODO: handle multidimensional arrays
+                if (!IsArray)
+                    return 0;
+
+                if (string.IsNullOrEmpty(arrayDimension))
+                    return 0;
+
+                return int.TryParse(arrayDimension, out var arrayDimensionValue)
+                           ? arrayDimensionValue
+                           : 1;
+            }
+        }
+
+        public override IEnumerable<CsBase> AdditionalItems => AppendNonNull(
+            base.AdditionalItems, PublicType, MarshalType
+        );
     }
 }

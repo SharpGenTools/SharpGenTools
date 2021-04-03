@@ -241,7 +241,7 @@ namespace SharpGen.Generator.Marshallers
                                "Marshal storage location for a field cannot be represented by a token.",
                                nameof(marshallable)
                            ),
-                CsReturnValue returnValue => Identifier(returnValue.MarshalStorageLocation),
+                CsReturnValue => Identifier(CsReturnValue.MarshalStorageLocation),
                 _ => throw new ArgumentException(nameof(marshallable))
             };
 

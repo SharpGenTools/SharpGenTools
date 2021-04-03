@@ -1,32 +1,22 @@
-﻿using SharpGen.Config;
-using SharpGen.CppModel;
-using SharpGen.Model;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using SharpGen.Config;
+using SharpGen.CppModel;
+using SharpGen.Model;
 
 namespace SharpGen.Parser
 {
-    public class CppExtensionHeaderGenerator
+    public sealed class CppExtensionHeaderGenerator
     {
-        internal const string EndTagCustomEnumItem = "__sharpgen_enumitem__";
-        internal const string EndTagCustomVariable = "__sharpgen_var__";
-        private readonly Dictionary<string, string> _variableMacrosDefined = new Dictionary<string, string>();
-        
-        public CppExtensionHeaderGenerator(MacroManager macroManager)
+        public const string EndTagCustomEnumItem = "__sharpgen_enumitem__";
+        public const string EndTagCustomVariable = "__sharpgen_var__";
+
+        private readonly Dictionary<string, string> _variableMacrosDefined = new();
+
+        public void GenerateExtensionHeaders(ConfigFile configRoot, string outputPath, CppModule module, ISet<ConfigFile> configsWithExtensions, IReadOnlyCollection<ConfigFile> updatedConfigs)
         {
-            MacroManager = macroManager;
-        }
-
-        public MacroManager MacroManager { get; }
-
-        public CppModule GenerateExtensionHeaders(ConfigFile configRoot, string outputPath, ISet<ConfigFile> configsWithExtensions, IReadOnlyCollection<ConfigFile> updatedConfigs)
-        {
-            var module = configRoot.CreateSkeletonModule();
-            MacroManager.Parse(Path.Combine(outputPath, configRoot.HeaderFileName), module);
-
             var finder = new CppElementFinder(module);
 
             // Dump includes
@@ -47,8 +37,6 @@ namespace SharpGen.Parser
                     }
                 }
             }
-
-            return module;
         }
 
 

@@ -8,7 +8,7 @@ namespace SharpGen.Transform
 {
     public class ExternalDocCommentsReader
     {
-        public string GetCodeCommentsXPath(CsBase element)
+        public static string GetCodeCommentsXPath(CsBase element)
         {
             return $"/comments/comment[@id='{GetExternalDocCommentId(element)}']";
         }

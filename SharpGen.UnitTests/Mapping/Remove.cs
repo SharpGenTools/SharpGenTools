@@ -38,22 +38,13 @@ namespace SharpGen.UnitTests.Mapping
                 }
             };
 
-            var cppModel = new CppModule();
+            var cppModel = new CppModule("SharpGenTestModule");
 
-            var cppInclude = new CppInclude
-            {
-                Name = "cppEnum"
-            };
+            var cppInclude = new CppInclude("cppEnum");
 
-            var cppEnum = new CppEnum
-            {
-                Name = "TestEnum"
-            };
+            var cppEnum = new CppEnum("TestEnum");
             cppInclude.Add(cppEnum);
-            cppInclude.Add(new CppEnum
-            {
-                Name = "EnumToRemove1"
-            });
+            cppInclude.Add(new CppEnum("EnumToRemove1"));
             cppModel.Add(cppInclude);
 
             var (solution, _) = MapModel(cppModel, config);
@@ -88,27 +79,15 @@ namespace SharpGen.UnitTests.Mapping
                 }
             };
 
-            var cppModel = new CppModule();
+            var cppModel = new CppModule("SharpGenTestModule");
 
-            var cppInclude = new CppInclude
-            {
-                Name = "cppEnum"
-            };
+            var cppInclude = new CppInclude("cppEnum");
 
-            var cppIface = new CppInterface
-            {
-                Name = "TestInterface"
-            };
+            var cppIface = new CppInterface("TestInterface");
             cppInclude.Add(cppIface);
 
-            var cppMethod = new CppMethod
-            {
-                Name = "Method"
-            };
-            cppMethod.Add(new CppParameter
-            {
-                Name = "ParamToRemove"
-            });
+            var cppMethod = new CppMethod("Method");
+            cppMethod.Add(new CppParameter("ParamToRemove"));
             cppModel.Add(cppInclude);
 
             var (solution, _) = MapModel(cppModel, config);

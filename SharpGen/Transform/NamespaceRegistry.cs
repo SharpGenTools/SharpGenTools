@@ -11,13 +11,13 @@ namespace SharpGen.Transform
 {
     public class NamespaceRegistry
     {
-        private readonly Dictionary<string, CsNamespace> _mapIncludeToNamespace = new Dictionary<string, CsNamespace>();
-        private readonly Dictionary<Regex, CsNamespace> _mapTypeToNamespace = new Dictionary<Regex, CsNamespace>();
-        private readonly Dictionary<string, CsNamespace> _namespaces = new Dictionary<string, CsNamespace>();
+        private readonly Dictionary<string, CsNamespace> _mapIncludeToNamespace = new();
+        private readonly Dictionary<Regex, CsNamespace> _mapTypeToNamespace = new();
+        private readonly Dictionary<string, CsNamespace> _namespaces = new();
 
         public IEnumerable<CsNamespace> Namespaces => _namespaces.Values;
 
-        public Logger Logger { get; }
+        private Logger Logger { get; }
 
         public NamespaceRegistry(Logger logger)
         {
@@ -25,11 +25,8 @@ namespace SharpGen.Transform
         }
 
         /// <summary>
-        /// Gets the C# namespace by its name and its assembly name.
+        /// Gets the C# namespace by its name.
         /// </summary>
-        /// <param name="assemblyName">Name of the assembly.</param>
-        /// <param name="namespaceName">Name of the namespace.</param>
-        /// <returns>A C# namespace</returns>
         public CsNamespace GetOrCreateNamespace(string namespaceName)
         {
             if (_namespaces.TryGetValue(namespaceName, out var selectedNamespace))
@@ -49,7 +46,6 @@ namespace SharpGen.Transform
         /// <param name="includeName">Name of the include.</param>
         /// <param name="nameSpace">The namespace.</param>
         /// <param name="outputDirectory">The output directory for the namespace.</param>
-        /// 
         public void MapIncludeToNamespace(string includeName, string nameSpace, string outputDirectory)
         {
             var cSharpNamespace = GetOrCreateNamespace(nameSpace);
@@ -73,12 +69,12 @@ namespace SharpGen.Transform
             _mapTypeToNamespace.Add(new Regex(typeNameRegex), cSharpNamespace);
         }
 
-        public bool TryGetNamespaceForInclude(string includeName, out CsNamespace cSharpNamespace)
+        private bool TryGetNamespaceForInclude(string includeName, out CsNamespace cSharpNamespace)
         {
             return _mapIncludeToNamespace.TryGetValue(includeName, out cSharpNamespace);
         }
 
-        public (bool match, CsNamespace nameSpace) GetCsNamespaceForCppElement(CppElement element)
+        private (bool match, CsNamespace nameSpace) GetCsNamespaceForCppElement(CppElement element)
         {
             foreach (var regExp in _mapTypeToNamespace)
             {
@@ -96,24 +92,29 @@ namespace SharpGen.Transform
         /// <returns>The attached namespace for this C++ element.</returns>
         internal CsNamespace ResolveNamespace(CppElement element)
         {
-            var tag = element.GetMappingRule();
+            var tag = element.Rule;
 
             // If a type is redispatched to another namespace
             if (!string.IsNullOrEmpty(tag.Namespace))
-            {
                 return GetOrCreateNamespace(tag.Namespace);
+
+            var (match, nameSpace) = GetCsNamespaceForCppElement(element);
+            if (match)
+                return nameSpace;
+
+            var parentInclude = element.ParentInclude;
+            if (parentInclude == null)
+            {
+                Logger.Fatal("Unable to find parent include for element [{0}]", element);
+                return null;
             }
 
-            var namespaceFromElementName = GetCsNamespaceForCppElement(element);
-            if (namespaceFromElementName.match)
+            if (!TryGetNamespaceForInclude(parentInclude.Name, out var ns))
             {
-                return namespaceFromElementName.nameSpace;
+                Logger.Fatal("Unable to find namespace for element [{0}] from include [{1}]", element, parentInclude.Name);
+                return null;
             }
 
-            if (!TryGetNamespaceForInclude(element.ParentInclude.Name, out CsNamespace ns))
-            {
-                Logger.Fatal("Unable to find namespace for element [{0}] from include [{1}]", element, element.ParentInclude.Name);
-            }
             return ns;
         }
     }

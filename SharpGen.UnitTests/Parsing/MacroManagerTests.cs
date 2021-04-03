@@ -37,10 +37,9 @@ namespace SharpGen.UnitTests.Parsing
 
             var macroManager = new MacroManager(castXml);
 
-            macroManager.Parse(Path.Combine(includeRule.Path, "includer.h"), new CppModule());
+            macroManager.Parse(Path.Combine(includeRule.Path, "includer.h"), new CppModule("SharpGenTestModule"));
 
-            Assert.Contains(includeRule.Path + "/included.h",
-                macroManager.IncludedFiles);
+            Assert.Contains(includeRule.Path + "/included.h", macroManager.IncludedFiles);
         }
     }
 }

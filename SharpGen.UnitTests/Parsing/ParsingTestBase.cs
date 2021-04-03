@@ -18,7 +18,7 @@ namespace SharpGen.UnitTests.Parsing
         {
         }
 
-        public IncludeRule CreateCppFile(string cppFileName, string cppFile, [CallerMemberName] string testName = "")
+        protected IncludeRule CreateCppFile(string cppFileName, string cppFile, [CallerMemberName] string testName = "")
         {
             var includesDir = TestDirectory.CreateSubdirectory("includes");
             File.WriteAllText(Path.Combine(includesDir.FullName, cppFileName + ".h"), cppFile);
@@ -30,7 +30,7 @@ namespace SharpGen.UnitTests.Parsing
             };
         }
 
-        public IncludeRule CreateCppFile(string cppFileName, string cppFile, List<string> attaches, [CallerMemberName] string testName = "")
+        protected IncludeRule CreateCppFile(string cppFileName, string cppFile, List<string> attaches, [CallerMemberName] string testName = "")
         {
             var includesDir = TestDirectory.CreateSubdirectory("includes");
             File.WriteAllText(Path.Combine(includesDir.FullName, cppFileName + ".h"), cppFile);
@@ -62,7 +62,7 @@ namespace SharpGen.UnitTests.Parsing
             };
         }
 
-        protected CppModule ParseCpp(ConfigFile config, string[] additionalArguments = null)
+        protected CppModule ParseCpp(ConfigFile config)
         {
             var loaded = ConfigFile.Load(config, new string[0], Logger);
 
@@ -77,10 +77,15 @@ namespace SharpGen.UnitTests.Parsing
 
             var castXml = GetCastXml(loaded);
 
-            var extensionGenerator = new CppExtensionHeaderGenerator(new MacroManager(castXml));
+            var macro = new MacroManager(castXml);
+            var extensionGenerator = new CppExtensionHeaderGenerator();
 
-            var skeleton = extensionGenerator.GenerateExtensionHeaders(
-                loaded, TestDirectory.FullName, configsWithExtensionHeaders, updated
+            var skeleton = loaded.CreateSkeletonModule();
+
+            macro.Parse(Path.Combine(TestDirectory.FullName, loaded.HeaderFileName), skeleton);
+
+            extensionGenerator.GenerateExtensionHeaders(
+                loaded, TestDirectory.FullName, skeleton, configsWithExtensionHeaders, updated
             );
 
             var parser = new CppParser(Logger, loaded)

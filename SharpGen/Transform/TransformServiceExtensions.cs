@@ -47,7 +47,7 @@ namespace SharpGen.Transform
             }
             else
             {
-                docItems.Add($"<include file='{externalCommentsPath}' path=\"{reader.GetCodeCommentsXPath(element)}/*\"");
+                docItems.Add($"<include file='{externalCommentsPath}' path=\"{ExternalDocCommentsReader.GetCodeCommentsXPath(element)}/*\"");
             }
 
             if (element.CppElementName != null)

@@ -17,27 +17,19 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
-using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
     /// <summary>
     /// A Namespace container.
     /// </summary>
-    [DataContract(Name = "Namespace")]
-    public class CsNamespace : CsBase
+    public sealed class CsNamespace : CsBase
     {
-        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
-        public CsNamespace()
+        public CsNamespace(string nameSpace) : base(null, nameSpace)
         {
-        }
-
-        public CsNamespace(string nameSpace)
-        {
-            Name = nameSpace;
         }
 
         /// <summary>
@@ -45,55 +37,36 @@ namespace SharpGen.Model
         /// and equals to <see cref="CsBase.Name"/> property.
         /// </summary>
         /// <value>The full name.</value>
-        public override string QualifiedName
-        {
-            get
-            {
-                return Name;
-            }
-        }
+        public override string QualifiedName => Name;
 
         /// <summary>
         /// Gets or sets the output directory for generated files for this namespace.
         /// </summary>
         /// <value>The output directory.</value>
-        [DataMember]
-        public string OutputDirectory { get; set;}
+        public string OutputDirectory { get; set; }
 
         /// <summary>
         /// Gets all declared enums from this namespace.
         /// </summary>
         /// <value>The enums.</value>
-        public IEnumerable<CsEnum> Enums
-        {
-            get { return Items.OfType<CsEnum>(); }
-        }
+        public IEnumerable<CsEnum> Enums => Items.OfType<CsEnum>();
 
         /// <summary>
         /// Gets all declared structs from this namespace.
         /// </summary>
         /// <value>The structs.</value>
-        public IEnumerable<CsStruct> Structs
-        {
-            get { return Items.OfType<CsStruct>(); }
-        }
+        public IEnumerable<CsStruct> Structs => Items.OfType<CsStruct>();
 
         /// <summary>
         /// Gets all declared interfaces from this namespace.
         /// </summary>
         /// <value>The interfaces.</value>
-        public IEnumerable<CsInterface> Interfaces
-        {
-            get { return Items.OfType<CsInterface>(); }
-        }
+        public IEnumerable<CsInterface> Interfaces => Items.OfType<CsInterface>();
 
         /// <summary>
         /// Gets all declared classes from this namespace.
         /// </summary>
         /// <value>The function groups.</value>
-        public IEnumerable<CsGroup> Classes
-        {
-            get { return Items.OfType<CsGroup>(); }
-        }
+        public IEnumerable<CsGroup> Classes => Items.OfType<CsGroup>();
     }
 }

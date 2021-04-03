@@ -13,7 +13,7 @@ namespace SharpGen.Generator.Marshallers
         }
 
         public bool CanMarshal(CsMarshalBase csElement) =>
-            (csElement.PublicType.QualifiedName == GlobalNamespace.GetTypeName(WellKnownName.PointerSize)
+            (csElement.PublicType.IsWellKnownType(GlobalNamespace, WellKnownName.PointerSize)
           || csElement.PublicType is CsFundamentalType {IsPointer: true})
          && !csElement.IsArray
          && csElement is CsParameter {IsIn: true} or CsReturnValue;

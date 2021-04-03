@@ -18,29 +18,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using SharpGen.Config;
 using SharpGen.CppModel;
-using System.Runtime.Serialization;
-using System.Xml.Serialization;
 
 namespace SharpGen.Model
 {
-    [DataContract(Name = "Function")]
-    public class CsFunction : CsCallable
+    public sealed class CsFunction : CsCallable
     {
-        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
-        public CsFunction()
+        public CsFunction(CppFunction cppFunction, string name) : base(cppFunction, name)
         {
+            var tag = cppFunction.Rule;
 
-        }
-
-        public CsFunction(CppFunction cppFunction) : base(cppFunction)
-        {
+            // Set the DllName for this function
+            DllName = tag.FunctionDllName;
         }
 
         protected override int MaxSizeReturnParameter => 8;
-        
-        [DataMember]
-        public string DllName { get; set; }
+
+        public string DllName { get; }
     }
 }

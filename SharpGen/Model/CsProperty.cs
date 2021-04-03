@@ -18,27 +18,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Runtime.Serialization;
+using SharpGen.CppModel;
 
 namespace SharpGen.Model
 {
-    [DataContract(Name = "Property")]
     public sealed class CsProperty : CsMarshalBase
     {
-        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
-        public CsProperty()
+        public CsProperty(CppMethod cppCallable, string name, CsMethod getter, CsMethod setter, bool isPropertyParam = false) : base(cppCallable, name)
         {
+            Getter = getter;
+            Setter = setter;
+            IsPropertyParam = isPropertyParam;
+            IsPersistent = getter?.IsPersistent ?? IsPersistent;
         }
 
-        public CsProperty(string name) => Name = name;
+        public CsMethod Getter { get; }
 
-        [DataMember] public CsMethod Getter { get; set; }
+        public CsMethod Setter { get; }
 
-        [DataMember] public CsMethod Setter { get; set; }
+        public bool IsPropertyParam { get; }
 
-        [DataMember] public bool IsPropertyParam { get; set; }
-
-        [DataMember] public bool IsPersistent { get; set; }
+        public bool IsPersistent { get; }
 
         public override string DocUnmanagedName =>
             FormatDocUnmanagedName(Getter?.DocUnmanagedName, Setter?.DocUnmanagedName);

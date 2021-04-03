@@ -108,10 +108,7 @@ namespace SharpGen.Transform
                     return constantDefinition;
             }
 
-            var constantToAdd = new CsVariable(typeName, fieldName, value)
-            {
-                CppElement = cppElement
-            };
+            var constantToAdd = new CsVariable(cppElement, typeName, fieldName, value);
             constantDefinitions.Add(constantToAdd);
 
             DocumentationLinker.AddOrUpdateDocLink(cppElement.Name, constantToAdd.QualifiedName);
@@ -128,14 +125,13 @@ namespace SharpGen.Transform
             foreach (var innerElement in csType.Items)
                 AttachConstants(innerElement);
 
-            foreach (var keyValuePair in _mapConstantToCSharpType)
-            {
-                if (csType.QualifiedName == keyValuePair.Key)
-                {
-                    foreach (var constantDef in keyValuePair.Value)
-                        csType.Add(constantDef);
-                }
-            }
+            var qualifiedName = csType.QualifiedName;
+
+            if (!_mapConstantToCSharpType.TryGetValue(qualifiedName, out var list))
+                return;
+
+            foreach (var constantDef in list)
+                csType.Add(constantDef);
         }
     }
 }

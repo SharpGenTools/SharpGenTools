@@ -1,17 +1,21 @@
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using SharpGen.Config;
+using SharpGen.CppModel;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Model
 {
     public static class ModelUtilities
     {
-        public static SyntaxTokenList VisibilityToTokenList(Visibility? visibility, params SyntaxKind[]? additionalKinds)
+        public static SyntaxTokenList VisibilityToTokenList(Visibility? visibility,
+                                                            params SyntaxKind[]? additionalKinds)
         {
             var additionalKindsSequence = additionalKinds ?? Enumerable.Empty<SyntaxKind>();
 
@@ -78,5 +82,24 @@ namespace SharpGen.Model
 
             return list;
         }
+
+        public static string ToManagedCallingConventionName(this CppCallingConvention callConv) =>
+            callConv switch
+            {
+                CppCallingConvention.StdCall => nameof(CallingConvention.StdCall),
+                CppCallingConvention.CDecl => nameof(CallingConvention.Cdecl),
+                CppCallingConvention.ThisCall => nameof(CallingConvention.ThisCall),
+                CppCallingConvention.FastCall => nameof(CallingConvention.FastCall),
+                _ => nameof(CallingConvention.Winapi)
+            };
+
+        public static string ToCallConvShortName(this CppCallingConvention callConv) => callConv switch
+        {
+            CppCallingConvention.StdCall => "Stdcall",
+            CppCallingConvention.CDecl => "Cdecl",
+            CppCallingConvention.ThisCall => "Thiscall",
+            CppCallingConvention.FastCall => "Fastcall",
+            _ => throw new ArgumentOutOfRangeException(nameof(callConv))
+        };
     }
 }

@@ -17,8 +17,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System.Collections.Generic;
-using System.Xml.Serialization;
 
 namespace SharpGen.CppModel
 {
@@ -26,67 +26,14 @@ namespace SharpGen.CppModel
     /// A C++ include contains C++ types declarations for macros, enums, structs, 
     /// interfaces and functions.
     /// </summary>
-    [XmlType("include")]
-    public class CppInclude : CppElement
+    public sealed class CppInclude : CppContainer
     {
-        /// <summary>
-        /// Gets the full name.
-        /// </summary>
-        /// <value>The full name.</value>
-        [XmlIgnore]
-        public override string FullName
-        {
-            get { return ""; }
-        }
+        public override string FullName => string.Empty;
 
-        /// <summary>
-        /// Gets the macros.
-        /// </summary>
-        /// <value>The macros.</value>
-        [XmlIgnore]
-        public IEnumerable<CppDefine> Macros
-        {
-            get { return Iterate<CppDefine>(); }
-        }
+        public IEnumerable<CppDefine> Macros => Iterate<CppDefine>();
 
-        /// <summary>
-        /// Gets the interfaces.
-        /// </summary>
-        /// <value>The interfaces.</value>
-        [XmlIgnore]
-        public IEnumerable<CppInterface> Interfaces
+        public CppInclude(string name) : base(name)
         {
-            get { return Iterate<CppInterface>(); }
-        }
-
-        /// <summary>
-        /// Gets the functions.
-        /// </summary>
-        /// <value>The functions.</value>
-        [XmlIgnore]
-        public IEnumerable<CppFunction> Functions
-        {
-            get { return Iterate<CppFunction>(); }
-        }
-
-        /// <summary>
-        /// Gets the structs.
-        /// </summary>
-        /// <value>The structs.</value>
-        [XmlIgnore]
-        public IEnumerable<CppStruct> Structs
-        {
-            get { return Iterate<CppStruct>(); }
-        }
-
-        /// <summary>
-        /// Gets the enums.
-        /// </summary>
-        /// <value>The enums.</value>
-        [XmlIgnore]
-        public IEnumerable<CppEnum> Enums
-        {
-            get { return Iterate<CppEnum>(); }
         }
     }
 }
