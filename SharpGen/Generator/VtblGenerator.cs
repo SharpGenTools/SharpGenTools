@@ -90,7 +90,7 @@ namespace SharpGen.Generator
                                             IdentifierName("numberOfCallbackMethods"),
                                             LiteralExpression(
                                                 SyntaxKind.NumericLiteralExpression,
-                                                Literal(csElement.Methods.Count())
+                                                Literal(csElement.MethodList.Count)
                                             )
                                         )
                                     )

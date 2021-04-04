@@ -17,46 +17,21 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System.Collections.Generic;
-using System.Xml.Serialization;
 
 namespace SharpGen.CppModel
 {
-    /// <summary>
-    /// A C++ interface.
-    /// </summary>
-    [XmlType("interface")]
-    public class CppInterface : CppElement
+    public sealed class CppInterface : CppContainer
     {
-        /// <summary>
-        /// Gets or sets the GUID.
-        /// </summary>
-        /// <value>The GUID.</value>
-        [XmlAttribute("guid")]
         public string Guid { get; set; }
-
-        /// <summary>
-        /// Gets or sets the name of the parent.
-        /// </summary>
-        /// <value>The name of the parent.</value>
-        [XmlAttribute("base")]
         public string Base { get; set; }
-
-        /// <summary>
-        /// Gets the methods.
-        /// </summary>
-        /// <value>The methods.</value>
-        [XmlIgnore]
-        public IEnumerable<CppMethod> Methods
-        {
-            get { return Iterate<CppMethod>(); }
-        }
-
-        /// <summary>
-        /// Gets or sets the total method count.
-        /// </summary>
-        /// <value>The total method count.</value>
-        [XmlIgnore]
         public int TotalMethodCount { get; set; }
+
+        public IEnumerable<CppMethod> Methods => Iterate<CppMethod>();
+
+        public CppInterface(string name) : base(name)
+        {
+        }
     }
 }

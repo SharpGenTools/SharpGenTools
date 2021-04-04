@@ -17,21 +17,22 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
-using System.Reflection;
-using System.Runtime.Serialization;
-using System.Xml.Serialization;
+
+using SharpGen.CppModel;
 
 namespace SharpGen.Model
 {
-    [DataContract]
     public abstract class CsTypeBase : CsBase
     {
         public virtual int Size => 0;
 
-        public virtual int CalculateAlignment()
+        public virtual int CalculateAlignment() => 4;
+
+        protected CsTypeBase(CppElement cppElement, string name) : base(cppElement, name)
         {
-            return 4;
         }
+
+        public bool IsWellKnownType(GlobalNamespaceProvider globalNamespace, WellKnownName name) =>
+            QualifiedName == globalNamespace.GetTypeName(name);
     }
 }

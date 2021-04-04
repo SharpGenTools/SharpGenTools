@@ -14,7 +14,7 @@ namespace Struct
 
             str.__MarshalTo(ref native);
 
-            Assert.Equal(sizeof(StructSizeRelation.__Native), native.CbSize);
+            Assert.Equal(sizeof(StructSizeRelation.__Native), native.Size);
         }
 
         [Fact]

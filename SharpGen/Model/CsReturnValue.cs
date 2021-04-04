@@ -1,19 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using System.Text;
+﻿using SharpGen.CppModel;
 
 namespace SharpGen.Model
 {
-    [DataContract(Name = "Return")]
-    public class CsReturnValue : CsMarshalCallableBase
+    public sealed class CsReturnValue : CsMarshalCallableBase
     {
-        public CsReturnValue()
+        public CsReturnValue(CppReturnValue cppReturnValue) : base(cppReturnValue, "__result__")
         {
-            Name = "__result__";
         }
 
-        public string MarshalStorageLocation => "__result__native";
+        public static string MarshalStorageLocation => "__result__native";
 
         public override bool IsOut => true;
 

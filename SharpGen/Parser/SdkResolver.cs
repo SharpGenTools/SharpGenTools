@@ -8,14 +8,14 @@ using System.Runtime.InteropServices;
 
 namespace SharpGen.Parser
 {
-    public class SdkResolver
+    public sealed class SdkResolver
     {
         public SdkResolver(Logger logger)
         {
             Logger = logger;
         }
 
-        public Logger Logger { get; }
+        private Logger Logger { get; }
 
         public IEnumerable<IncludeDirRule> ResolveIncludeDirsForSdk(SdkRule sdkRule)
         {

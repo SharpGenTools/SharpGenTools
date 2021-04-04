@@ -1,13 +1,11 @@
-﻿using SharpGen.CppModel;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace SharpGen.CppModel
 {
-    public class CppElementFinder
+    public sealed class CppElementFinder
     {
         public enum SelectionMode
         {
@@ -20,108 +18,66 @@ namespace SharpGen.CppModel
             Root = root;
         }
 
-        public CppElement Root { get; }
+        private CppElement Root { get; }
 
-        /// <summary>
-        ///   Gets the context find list.
-        /// </summary>
-        /// <value>The context find list.</value>
-        private List<string> CurrentContexts { get; } = new List<string>();
+        private List<string> CurrentContexts { get; } = new();
 
-
-        /// <summary>
-        ///   Adds a context to the finder.
-        /// </summary>
-        /// <param name = "contextName">Name of the context.</param>
-        public void AddContext(string contextName)
+        private void AddContext(string contextName)
         {
             CurrentContexts.Add(contextName);
         }
 
-        /// <summary>
-        ///   Adds a set of context to the finder.
-        /// </summary>
-        /// <param name = "contextNames">The context names.</param>
         public void AddContexts(IEnumerable<string> contextNames)
         {
             foreach (var contextName in contextNames)
                 AddContext(contextName);
         }
 
-        /// <summary>
-        ///   Clears the context finder.
-        /// </summary>
         public void ClearCurrentContexts()
         {
             CurrentContexts.Clear();
         }
 
-        /// <summary>
-        ///   Finds the specified elements by regex.
-        /// </summary>
-        /// <typeparam name = "T"></typeparam>
-        /// <param name = "regex">The regex.</param>
-        /// <param name="mode">The selection mode.</param>
-        /// <returns>The selected elements.</returns>
         public IEnumerable<T> Find<T>(Regex regex, SelectionMode mode = SelectionMode.MatchedElement)
             where T : CppElement
         {
-            return Find<T>(Root, regex, mode).OfType<T>();
+            return Find<T>(Root, regex, mode);
         }
 
-        /// <summary>
-        /// Finds the specified elements by regex.
-        /// </summary>
-        /// <typeparam name="T">The type of element to find</typeparam>
-        /// <param name="currentNode">The current node in the search.</param>
-        /// <param name="regex">The regex.</param>
-        /// <param name="mode">The selection mode.</param>
-        /// <returns>The selected elements.</returns>
         private IEnumerable<T> Find<T>(CppElement currentNode, Regex regex, SelectionMode mode) where T : CppElement
         {
             var path = currentNode.FullName;
 
-            CppElement selectedElement;
-
-            switch (mode)
+            var selectedElement = mode switch
             {
-                case SelectionMode.MatchedElement:
-                    selectedElement = currentNode;
-                    break;
-                case SelectionMode.Parent:
-                    selectedElement = currentNode.Parent;
-                    break;
-                default:
-                    throw new ArgumentException("Invalid selection mode.", nameof(mode));
-            }
+                SelectionMode.MatchedElement => currentNode,
+                SelectionMode.Parent => currentNode.Parent,
+                _ => throw new ArgumentException("Invalid selection mode.", nameof(mode))
+            };
 
-            if (path != null && (selectedElement is T cppElement) && regex.Match(path).Success)
+            if (path != null && selectedElement is T cppElement && regex.Match(path).Success)
             {
                 yield return cppElement;
             }
 
+            if (currentNode is not CppContainer container)
+                yield break;
+
+            var elements = container.AllItems;
+
+            // Optimized version with context attributes
             if (currentNode == Root && CurrentContexts.Count != 0)
             {
-                // Optimized version with context attributes
-                foreach (var innerElement in currentNode.AllItems.Where(element => CurrentContexts.Contains(element.Name)))
-                {
-                    foreach (var item in Find<T>(innerElement, regex, mode))
-                    {
-                        yield return item;
-                    }
-                }
+                elements = elements.Where(element => CurrentContexts.Contains(element.Name));
             }
-            else
+
+            foreach (var innerElement in elements)
             {
-                foreach (var innerElement in currentNode.AllItems)
+                foreach (var item in Find<T>(innerElement, regex, mode))
                 {
-                    foreach (var item in Find<T>(innerElement, regex, mode))
-                    {
-                        yield return item;
-                    }
+                    yield return item;
                 }
             }
         }
-
     }
 }

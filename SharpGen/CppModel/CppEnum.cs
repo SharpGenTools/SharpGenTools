@@ -17,39 +17,24 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System.Collections.Generic;
-using System.Xml.Serialization;
 
 namespace SharpGen.CppModel
 {
-    /// <summary>
-    /// A C++ enum.
-    /// </summary>
-    [XmlType("enum")]
-    public class CppEnum : CppElement
+    public sealed class CppEnum : CppContainer
     {
-        /// <summary>
-        /// Adds an enum item to this enum.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <param name="value">The value.</param>
+        public CppEnum(string name) : base(name)
+        {
+        }
+
         public void AddEnumItem(string name, string value)
         {
             Add(new CppEnumItem(name, value));
         }
 
-        /// <summary>
-        /// Gets the enum items.
-        /// </summary>
-        /// <value>The enum items.</value>
-        [XmlIgnore]
-        public IEnumerable<CppEnumItem> EnumItems
-        {
-            get { return Iterate<CppEnumItem>(); }
-        }
+        public IEnumerable<CppEnumItem> EnumItems => Iterate<CppEnumItem>();
 
-
-        [XmlAttribute("underlying-type")]
         public string UnderlyingType { get; set; } = "int";
     }
 }

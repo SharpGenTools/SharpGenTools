@@ -17,34 +17,41 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
+
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
-using System.Runtime.Serialization;
-using System.Xml.Serialization;
-using SharpGen.Config;
 using SharpGen.CppModel;
-using SharpGen.Generator;
 using SharpGen.Transform;
 
 namespace SharpGen.Model
 {
-    [DataContract]
-    public class CsMethod : CsCallable
+    public sealed class CsMethod : CsCallable
     {
         protected override int MaxSizeReturnParameter => 4;
 
-        public CsMethod()
+        public CsMethod(CppMethod cppMethod, string name) : base(cppMethod, name)
         {
+            var tag = cppMethod?.Rule;
+
+            AllowProperty = tag?.Property ?? AllowProperty;
+            IsPersistent = tag?.Persist ?? IsPersistent;
+            Hidden = tag?.Hidden ?? Hidden;
+            CustomVtbl = tag?.CustomVtbl ?? CustomVtbl;
+            IsKeepImplementPublic = tag?.IsKeepImplementPublic ?? IsKeepImplementPublic;
+
+            if (cppMethod == null)
+                return;
+
+            // Apply any offset to the method's vtable
+            var offset = tag.LayoutOffsetTranslate;
+
+            Offset = cppMethod.Offset + offset;
+            WindowsOffset = cppMethod.WindowsOffset + offset;
         }
 
-        public CsMethod(CppMethod cppMethod)
-            :base(cppMethod)
-        {
-        }
+        public bool Hidden { get; set; }
 
-        [DataMember] public bool? Hidden { get; set; }
+        private bool IsKeepImplementPublic { get; }
 
         public override void FillDocItems(IList<string> docItems, IDocumentationLinker manager)
         {
@@ -55,48 +62,30 @@ namespace SharpGen.Model
                 docItems.Add("<returns>" + GetReturnTypeDoc(manager) + "</returns>");
         }
 
-        protected override void UpdateFromMappingRule(MappingRule tag)
-        {
-            base.UpdateFromMappingRule(tag);
+        public bool AllowProperty { get; } = true;
 
-            AllowProperty = !tag.Property.HasValue || tag.Property.Value;
+        public bool CustomVtbl { get; }
 
-            IsPersistent = tag.Persist.HasValue && tag.Persist.Value;
+        public bool IsPersistent { get; }
 
-            if (tag.CustomVtbl.HasValue)
-                CustomVtbl = tag.CustomVtbl.Value;
+        public int Offset { get; }
 
-            if (tag.Hidden.HasValue)
-                Hidden = tag.Hidden.Value;
-        }
+        public int WindowsOffset { get; }
 
-        [DataMember]
-        public bool AllowProperty { get; set; }
-
-        [DataMember]
-        public bool CustomVtbl { get; set; }
-
-        [DataMember]
-        public bool IsPersistent { get; set; }
-
-        [DataMember]
-        public int Offset { get; set; }
-
-        [DataMember]
-        public int WindowsOffset { get; set; }
-
-        private bool IsPublicVisibilityForced(CsInterface parentInterface)
+        public bool IsPublicVisibilityForced(CsInterface parentInterface)
         {
             if (parentInterface == null)
                 return false;
 
-            var tagForMethod = CppElement?.GetMappingRule();
-
-            return tagForMethod?.IsKeepImplementPublic ??
-                   parentInterface.IsCallback && tagForMethod?.Hidden != true;
+            return IsKeepImplementPublic || parentInterface.IsCallback && !Hidden;
         }
 
         public bool IsPublicVisibilityForced(params CsInterface[] parentInterfaces) =>
             parentInterfaces.Any(IsPublicVisibilityForced);
+
+        public void SuffixName(string suffix)
+        {
+            Name += suffix;
+        }
     }
 }

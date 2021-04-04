@@ -46,7 +46,7 @@ namespace SharpGen.Generator
             }
 
             // If not hidden, generate body
-            if (csElement.Hidden.HasValue && csElement.Hidden.Value)
+            if (csElement.Hidden)
                 yield break;
 
             foreach (var member in Generators.Callable.GenerateCode(csElement))

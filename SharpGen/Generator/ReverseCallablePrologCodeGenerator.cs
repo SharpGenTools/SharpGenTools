@@ -25,7 +25,7 @@ namespace SharpGen.Generator
             var (csElement, interopSig) = callableSig;
             var interopParameters = interopSig.ParameterTypes;
 
-            if (!interopSig.ForcedReturnBufferSig && csElement.HasReturnTypeValue)
+            if (!interopSig.ForcedReturnBufferSig && csElement.HasReturnTypeValue(globalNamespace))
             {
                 foreach (var statement in GenerateProlog(csElement.ReturnValue, null))
                 {

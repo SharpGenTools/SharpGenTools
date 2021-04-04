@@ -19,18 +19,12 @@
 // THE SOFTWARE.
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Text.RegularExpressions;
 using SharpGen.Logging;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
-using System.Reflection;
-using System.Xml.Serialization;
 
 namespace SharpGen.Transform
 {
@@ -39,14 +33,14 @@ namespace SharpGen.Transform
     /// </summary>
     public class TransformManager
     {
-        private readonly List<string> _includesToProcess = new List<string>();
+        private readonly List<string> _includesToProcess = new();
 
         private readonly IDocumentationLinker docLinker;
         private readonly TypeRegistry typeRegistry;
         private readonly NamespaceRegistry namespaceRegistry;
         private readonly MarshalledElementFactory marshalledElementFactory;
         private readonly ConstantManager constantManager;
-        private readonly GroupRegistry groupRegistry = new GroupRegistry();
+        private readonly GroupRegistry groupRegistry = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TransformManager"/> class.
@@ -81,31 +75,31 @@ namespace SharpGen.Transform
         /// Gets the naming rules manager.
         /// </summary>
         /// <value>The naming rules manager.</value>
-        public NamingRulesManager NamingRules { get; private set; }
+        public NamingRulesManager NamingRules { get; }
         
         /// <summary>
         /// Gets or sets the enum transformer.
         /// </summary>
         /// <value>The enum transformer.</value>
-        private EnumTransform EnumTransform { get; set; }
+        private EnumTransform EnumTransform { get; }
 
         /// <summary>
         /// Gets or sets the struct transformer.
         /// </summary>
         /// <value>The struct transformer.</value>
-        private StructTransform StructTransform { get; set; }
+        private StructTransform StructTransform { get; }
 
         /// <summary>
         /// Gets or sets the method transformer.
         /// </summary>
         /// <value>The method transformer.</value>
-        private MethodTransform FunctionTransform { get; set; }
+        private MethodTransform FunctionTransform { get; }
 
         /// <summary>
         /// Gets or sets the interface transformer.
         /// </summary>
         /// <value>The interface transformer.</value>
-        private InterfaceTransform InterfaceTransform { get; set; }
+        private InterfaceTransform InterfaceTransform { get; }
 
         public GlobalNamespaceProvider GlobalNamespace { get; }
         public Logger Logger { get; }
@@ -113,8 +107,6 @@ namespace SharpGen.Transform
         /// <summary>
         /// Initializes this instance with the specified C++ module and config.
         /// </summary>
-        /// <param name="cppModule">The C++ module.</param>
-        /// <param name="config">The root config file.</param>
         /// <returns>The module to transform after mapping rules have been applied.</returns>
         private CppModule MapModule(CppModule cppModule, IReadOnlyCollection<ConfigFile> configFiles)
         {
@@ -137,17 +129,12 @@ namespace SharpGen.Transform
 
             // Strip out includes we aren't processing from transformation
 
-            var moduleToTransform = new CppModule
-            {
-                Name = cppModule.Name
-            };
+            var moduleToTransform = new CppModule(cppModule.Name);
 
-            foreach (var include in cppModule.Includes
-                                             .Where(cppInclude => _includesToProcess.Contains(cppInclude.Name))
-                                             .ToArray())
-            {
-                moduleToTransform.Add(include);
-            }
+            moduleToTransform.AddRange(
+                cppModule.Includes
+                         .Where(cppInclude => _includesToProcess.Contains(cppInclude.Name))
+            );
 
             return moduleToTransform;
         }
@@ -211,76 +198,71 @@ namespace SharpGen.Transform
         {
             foreach (var defineRule in file.Extension.OfType<DefineExtensionRule>())
             {
-                CsTypeBase defineType = null;
+                CsTypeBase defineType;
 
                 if (defineRule.Enum != null)
                 {
-                    var newEnum = new CsEnum
-                    {
-                        Name = defineRule.Enum,
-                        UnderlyingType = !string.IsNullOrWhiteSpace(defineRule.UnderlyingType)
-                            ? (CsFundamentalType)typeRegistry.ImportType(defineRule.UnderlyingType)
-                            : null
-                    };
-                    defineType = newEnum;
+                    var underlyingType = string.IsNullOrWhiteSpace(defineRule.UnderlyingType)
+                                                ? null
+                                                : TypeRegistry.ImportPrimitiveType(defineRule.UnderlyingType);
 
-                    if (defineRule.SizeOf.HasValue && newEnum.UnderlyingType == null)
+                    if (defineRule.SizeOf is {} size && underlyingType == null)
                     {
-                        var size = defineRule.SizeOf.Value;
-
-                        switch (size)
+                        underlyingType = size switch
                         {
-                            case 1:
-                                newEnum.UnderlyingType = typeRegistry.ImportType(typeof(byte));
-                                break;
-                            case 2:
-                                newEnum.UnderlyingType = typeRegistry.ImportType(typeof(short));
-                                break;
-                            case 4:
-                                newEnum.UnderlyingType = typeRegistry.ImportType(typeof(int));
-                                break;
-                            default:
-                                break;
-                        }
+                            1 => TypeRegistry.UInt8,
+                            2 => TypeRegistry.Int16,
+                            4 => TypeRegistry.Int32,
+                            _ => null
+                        };
                     }
+
+                    var newEnum = new CsEnum(null, defineRule.Enum, underlyingType);
+
+                    defineType = newEnum;
                 }
                 else if (defineRule.Struct != null)
                 {
-                    var newStruct = new CsStruct { Name = defineRule.Struct };
+                    var newStruct = new CsStruct(null, defineRule.Struct);
                     defineType = newStruct;
-                    if (defineRule.HasCustomMarshal.HasValue)
-                        newStruct.HasMarshalType = defineRule.HasCustomMarshal.Value;
+                    if (defineRule.HasCustomMarshal is { } hasCustomMarshal)
+                        newStruct.HasMarshalType = hasCustomMarshal;
 
-                    if (defineRule.IsStaticMarshal.HasValue)
-                        newStruct.IsStaticMarshal = defineRule.IsStaticMarshal.Value;
+                    if (defineRule.IsStaticMarshal is { } isStaticMarshal)
+                        newStruct.IsStaticMarshal = isStaticMarshal;
 
-                    if (defineRule.HasCustomNew.HasValue)
-                        newStruct.HasCustomNew = defineRule.HasCustomNew.Value;
+                    if (defineRule.HasCustomNew is { } hasCustomNew)
+                        newStruct.HasCustomNew = hasCustomNew;
 
-                    if (defineRule.SizeOf.HasValue)
-                        newStruct.SetSize(defineRule.SizeOf.Value);
+                    if (defineRule.SizeOf is { } size)
+                        newStruct.StructSize = size;
 
-                    if (defineRule.Align.HasValue)
-                        newStruct.Align = defineRule.Align.Value;
+                    if (defineRule.Align is { } align)
+                        newStruct.Align = align;
 
-                    if (defineRule.IsNativePrimitive.HasValue)
-                        newStruct.IsNativePrimitive = defineRule.IsNativePrimitive.Value;
+                    if (defineRule.IsNativePrimitive is { } isNativePrimitive)
+                        newStruct.IsNativePrimitive = isNativePrimitive;
                 }
                 else if (defineRule.Interface != null)
                 {
-                    var iface =  new CsInterface
-                    {
-                        Name = defineRule.Interface,
-                        ShadowName = defineRule.ShadowName,
-                        VtblName = defineRule.VtblName
-                    };
+                    var iface = new CsInterface(null, defineRule.Interface);
+
+                    if (defineRule.ShadowName is {} shadowName)
+                        iface.ShadowName = shadowName;
+                    if (defineRule.VtblName is {} vtblName)
+                        iface.VtblName = vtblName;
+
                     if (defineRule.NativeImplementation != null)
                     {
-                        iface.NativeImplementation = new CsInterface { Name = defineRule.NativeImplementation, IsDualCallback = true };
+                        iface.NativeImplementation = new CsInterface(null, defineRule.NativeImplementation)
+                        {
+                            IsDualCallback = true
+                        };
                         iface.IsCallback = true;
                         iface.IsDualCallback = true;
                         typeRegistry.DefineType(iface.NativeImplementation);
                     }
+
                     defineType = iface;
                 }
                 else
@@ -356,65 +338,79 @@ namespace SharpGen.Transform
             foreach (var configRule in file.Mappings)
             {
                 var ruleUsed = false;
-                if (configRule is MappingRule mappingRule)
+                switch (configRule)
                 {
-                    if (mappingRule.Enum != null)
+                    case MappingRule {Enum: { }} mappingRule:
                         ruleUsed = elementFinder.ExecuteRule<CppEnum>(mappingRule.Enum, mappingRule);
-                    else if (mappingRule.EnumItem != null)
+                        break;
+                    case MappingRule {EnumItem: { }} mappingRule:
                         ruleUsed = elementFinder.ExecuteRule<CppEnumItem>(mappingRule.EnumItem, mappingRule);
-                    else if (mappingRule.Struct != null)
+                        break;
+                    case MappingRule {Struct: { }} mappingRule:
                         ruleUsed = elementFinder.ExecuteRule<CppStruct>(mappingRule.Struct, mappingRule);
-                    else if (mappingRule.Field != null)
+                        break;
+                    case MappingRule {Field: { }} mappingRule:
                         ruleUsed = elementFinder.ExecuteRule<CppField>(mappingRule.Field, mappingRule);
-                    else if (mappingRule.Interface != null)
+                        break;
+                    case MappingRule {Interface: { }} mappingRule:
                         ruleUsed = elementFinder.ExecuteRule<CppInterface>(mappingRule.Interface, mappingRule);
-                    else if (mappingRule.Function != null)
+                        break;
+                    case MappingRule {Function: { }} mappingRule:
                         ruleUsed = elementFinder.ExecuteRule<CppFunction>(mappingRule.Function, mappingRule);
-                    else if (mappingRule.Method != null)
+                        break;
+                    case MappingRule {Method: { }} mappingRule:
                         ruleUsed = elementFinder.ExecuteRule<CppMethod>(mappingRule.Method, mappingRule);
-                    else if (mappingRule.Parameter != null)
+                        break;
+                    case MappingRule {Parameter: { }} mappingRule:
                         ruleUsed = elementFinder.ExecuteRule<CppParameter>(mappingRule.Parameter, mappingRule);
-                    else if (mappingRule.Element != null)
+                        break;
+                    case MappingRule {Element: { }} mappingRule:
                         ruleUsed = elementFinder.ExecuteRule<CppElement>(mappingRule.Element, mappingRule);
-                    else if (mappingRule.DocItem != null)
-                    {
+                        break;
+                    case MappingRule {DocItem: { }} mappingRule:
                         docLinker.AddOrUpdateDocLink(mappingRule.DocItem, mappingRule.MappingNameFinal);
                         ruleUsed = true;
-                    }
-                }
-                else if (configRule is ContextRule contextRule)
-                {
-                    HandleContextRule(elementFinder, file, contextRule);
-                    ruleUsed = true;
-                }
-                else if (configRule is RemoveRule removeRule)
-                {
-                    if (removeRule.Enum != null)
+                        break;
+                    case RemoveRule {Enum: { }} removeRule:
                         ruleUsed = RemoveElements<CppEnum>(elementFinder, removeRule.Enum);
-                    else if (removeRule.EnumItem != null)
+                        break;
+                    case RemoveRule {EnumItem: { }} removeRule:
                         ruleUsed = RemoveElements<CppEnumItem>(elementFinder, removeRule.EnumItem);
-                    else if (removeRule.Struct != null)
+                        break;
+                    case RemoveRule {Struct: { }} removeRule:
                         ruleUsed = RemoveElements<CppStruct>(elementFinder, removeRule.Struct);
-                    else if (removeRule.Field != null)
+                        break;
+                    case RemoveRule {Field: { }} removeRule:
                         ruleUsed = RemoveElements<CppField>(elementFinder, removeRule.Field);
-                    else if (removeRule.Interface != null)
+                        break;
+                    case RemoveRule {Interface: { }} removeRule:
                         ruleUsed = RemoveElements<CppInterface>(elementFinder, removeRule.Interface);
-                    else if (removeRule.Function != null)
+                        break;
+                    case RemoveRule {Function: { }} removeRule:
                         ruleUsed = RemoveElements<CppFunction>(elementFinder, removeRule.Function);
-                    else if (removeRule.Method != null)
+                        break;
+                    case RemoveRule {Method: { }} removeRule:
                         ruleUsed = RemoveElements<CppMethod>(elementFinder, removeRule.Method);
-                    else if (removeRule.Parameter != null)
+                        break;
+                    case RemoveRule {Parameter: { }} removeRule:
                         ruleUsed = RemoveElements<CppParameter>(elementFinder, removeRule.Parameter);
-                    else if (removeRule.Element != null)
+                        break;
+                    case RemoveRule {Element: { }} removeRule:
                         ruleUsed = RemoveElements<CppElement>(elementFinder, removeRule.Element);
-                }
-                else if (configRule is MoveRule moveRule)
-                {
-                    ruleUsed = true;
-                    if (moveRule.Struct != null)
-                        StructTransform.MoveStructToInner(moveRule.Struct, moveRule.To);
-                    else if (moveRule.Method != null)
-                        InterfaceTransform.MoveMethodsToInnerInterface(moveRule.Method, moveRule.To, moveRule.Property, moveRule.Base);
+                        break;
+                    case ContextRule contextRule:
+                        HandleContextRule(elementFinder, file, contextRule);
+                        ruleUsed = true;
+                        break;
+                    case MoveRule moveRule:
+                    {
+                        if (moveRule.Struct != null)
+                            StructTransform.MoveStructToInner(moveRule.Struct, moveRule.To);
+                        else if (moveRule.Method != null)
+                            InterfaceTransform.MoveMethodsToInnerInterface(moveRule.Method, moveRule.To, moveRule.Property, moveRule.Base);
+                        ruleUsed = true;
+                        break;
+                    }
                 }
 
                 if (!ruleUsed)
@@ -431,7 +427,7 @@ namespace SharpGen.Transform
             foreach (var item in finder.Find<T>(regex).ToList())
             {
                 matchedAny = true;
-                item.Parent.Remove(item);
+                item.RemoveFromParent();
             }
 
             return matchedAny;
@@ -613,7 +609,7 @@ namespace SharpGen.Transform
             }
 
 
-            var group = new CsGroup {Name = className};
+            CsGroup group = new(className);
             csNameSpace.Add(group);
 
             groupRegistry.RegisterGroup(namespaceName + "." + className, group);
@@ -653,11 +649,12 @@ namespace SharpGen.Transform
                 switch (CSharpType)
                 {
                     case CsEnum csEnum:
+                        CsFundamentalType tempQualifier = csEnum.UnderlyingType;
                         yield return new DefineExtensionRule
                         {
                             Enum = csEnum.QualifiedName,
                             SizeOf = csEnum.Size,
-                            UnderlyingType = csEnum.UnderlyingType?.BuiltinTypeName
+                            UnderlyingType = (tempQualifier != null ? tempQualifier.Name : null)
                         };
                         break;
                     case CsStruct csStruct:

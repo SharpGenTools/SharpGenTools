@@ -17,206 +17,65 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using SharpGen.Config;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.Serialization;
-using System.Text.RegularExpressions;
-using System.Xml.Serialization;
 
 namespace SharpGen.CppModel
 {
     /// <summary>
     ///   Base class for all C++ element.
     /// </summary>
-    public class CppElement
+    public abstract class CppElement
     {
-        /// <summary>
-        /// Gets or sets the name.
-        /// </summary>
-        /// <value>The name.</value>
-        [XmlAttribute("name")]
-        public string Name { get; set; }
+        private MappingRule rule;
 
-        /// <summary>
-        /// Gets or sets the id.
-        /// </summary>
-        /// <value>
-        /// The id.
-        /// </value>
-        [XmlElement("id")]
-        public string Id { get; set; }
+        protected CppElement(string name)
+        {
+            Name = name;
+        }
 
-        /// <summary>
-        /// Gets or sets the description.
-        /// </summary>
-        /// <value>The description.</value>
-        [XmlElement("description")]
-        public string Description { get; set; }
+        public string Name { get; }
 
-        /// <summary>
-        /// Gets or sets the remarks.
-        /// </summary>
-        /// <value>The remarks.</value>
-        [XmlElement("remarks")]
-        public string Remarks { get; set; }
+#nullable enable
+        public CppContainer? Parent { get; internal set; }
 
-        /// <summary>
-        /// Gets or sets the parent.
-        /// </summary>
-        /// <value>The parent.</value>
-        [XmlIgnore]
-        public CppElement Parent { get; set; }
+        public MappingRule Rule => rule ??= new MappingRule();
 
-        /// <summary>
-        /// Gets or sets the tag.
-        /// </summary>
-        /// <value>The tag.</value>
-        [XmlIgnore]
-        public MappingRule Rule { get; set; }
-
-        /// <summary>
-        /// Gets the parent include.
-        /// </summary>
-        /// <value>The parent include.</value>
-        [XmlIgnore]
-        public CppInclude ParentInclude
+        public CppInclude? ParentInclude
         {
             get
             {
                 var cppInclude = Parent;
-                while (cppInclude != null && !(cppInclude is CppInclude))
+                while (cppInclude is { } and not CppInclude)
                     cppInclude = cppInclude.Parent;
                 return cppInclude as CppInclude;
             }
         }
 
-        /// <summary>
-        /// Gets the path.
-        /// </summary>
-        /// <value>The path.</value>
-        [XmlIgnore]
-        public virtual string Path
+        public void RemoveFromParent()
         {
-            get
-            {
-                if (Parent != null)
-                    return Parent.FullName;
-                return "";
-            }
-        }
+            var parent = Parent;
+            if (parent == null)
+                return;
 
-        /// <summary>
-        /// Gets the full name.
-        /// </summary>
-        /// <value>The full name.</value>
-        [XmlIgnore]
+            parent.RemoveChild(this);
+
+            Parent = null;
+        }
+#nullable restore
+
+        private protected virtual string Path => Parent != null ? Parent.FullName : string.Empty;
+
         public virtual string FullName
         {
             get
             {
-                string path = Path;
-                string name = Name ?? "";
-                return String.IsNullOrEmpty(path) ? name : path + "::" + name;
-            }
-        }
-
-        /// <summary>
-        /// Return all items inside this C++ element.
-        /// </summary>
-        [XmlArray("items")]
-        [XmlArrayItem(typeof (CppConstant))]
-        [XmlArrayItem(typeof (CppDefine))]
-        [XmlArrayItem(typeof (CppEnum))]
-        [XmlArrayItem(typeof (CppEnumItem))]
-        [XmlArrayItem(typeof (CppField))]
-        [XmlArrayItem(typeof (CppFunction))]
-        [XmlArrayItem(typeof (CppGuid))]
-        [XmlArrayItem(typeof (CppInclude))]
-        [XmlArrayItem(typeof (CppInterface))]
-        [XmlArrayItem(typeof (CppMethod))]
-        [XmlArrayItem(typeof (CppParameter))]
-        [XmlArrayItem(typeof (CppStruct))]
-        [XmlArrayItem(typeof(CppReturnValue))]
-        [XmlArrayItem(typeof(CppMarshallable))]
-        public List<CppElement> Items { get; set; }
-
-        protected internal virtual IEnumerable<CppElement> AllItems
-        {
-            get { return Iterate<CppElement>(); }
-        }
-
-        [XmlIgnore]
-        public bool IsEmpty
-        {
-            get { return Items == null || Items.Count == 0; }
-        }
-
-        public MappingRule GetMappingRule()
-        {
-            return Rule ?? (Rule = new MappingRule());
-        }
-
-        /// <summary>
-        ///   Add an inner element to this CppElement
-        /// </summary>
-        /// <param name = "element"></param>
-        public void Add(CppElement element)
-        {
-            if (element.Parent != null)
-                element.Parent.Remove(element);
-            element.Parent = this;
-            if (Items == null)
-            {
-                Items = new List<CppElement>();
-            }
-
-            Items.Add(element);
-        }
-
-        /// <summary>
-        ///   Remove an inner element to this CppElement
-        /// </summary>
-        /// <param name = "element"></param>
-        public void Remove(CppElement element)
-        {
-            element.Parent = null;
-            if (Items != null)
-            {
-                Items.Remove(element);
-            }
-        }
-
-        /// <summary>
-        ///   Iterates on items on this instance.
-        /// </summary>
-        /// <typeparam name = "T">Type of the item to iterate</typeparam>
-        /// <returns>An enumeration on items</returns>
-        public IEnumerable<T> Iterate<T>() where T : CppElement
-        {
-            return Items == null ? Enumerable.Empty<T>() : Items.OfType<T>();
-        }
-
-        protected void ResetParents()
-        {
-            foreach (var innerElement in Items)
-            {
-                innerElement.Parent = this;
-                innerElement.ResetParents();
+                var path = Path;
+                return string.IsNullOrEmpty(path) ? Name : path + "::" + Name;
             }
         }
 
         [ExcludeFromCodeCoverage]
-        public override string ToString()
-        {
-            return GetType().Name + " [" + Name + "]";
-        }
-        
-        public virtual string ToShortString()
-        {
-            return Name;
-        }
+        public override string ToString() => GetType().Name + " [" + Name + "]";
     }
 }

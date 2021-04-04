@@ -17,42 +17,20 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System.Collections.Generic;
-using System.Xml.Serialization;
 
 namespace SharpGen.CppModel
 {
-    /// <summary>
-    /// A C++ struct.
-    /// </summary>
-    [XmlType("struct")]
-    public class CppStruct : CppElement
+    public sealed class CppStruct : CppContainer
     {
-        /// <summary>
-        /// Gets or sets the align.
-        /// </summary>
-        /// <value>The align.</value>
-        [XmlAttribute("align")]
-        public int Align { get; set; }
-
-        /// <summary>
-        /// Gets or sets the name of the parent.
-        /// </summary>
-        /// <value>The name of the parent.</value>
-        [XmlAttribute("base")]
         public string Base { get; set; }
-
-        /// <summary>
-        /// Gets the fields.
-        /// </summary>
-        /// <value>The fields.</value>
-        [XmlIgnore]
-        public IEnumerable<CppField> Fields
-        {
-            get { return Iterate<CppField>(); }
-        }
-
-        [XmlAttribute("union")]
         public bool IsUnion { get; set; }
+
+        public IEnumerable<CppField> Fields => Iterate<CppField>();
+
+        public CppStruct(string name) : base(name)
+        {
+        }
     }
 }

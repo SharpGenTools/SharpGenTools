@@ -17,40 +17,26 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
-using System.Xml.Serialization;
+using SharpGen.Config;
 
 namespace SharpGen.Model
 {
-    [DataContract(Name = "Group")]
-    public class CsGroup : CsBase
+    public sealed class CsGroup : CsBase
     {
-        public CsGroup()
+        public CsGroup(string name) : base(null, name)
         {
-            Visibility = Config.Visibility.SharpGenGroup | Config.Visibility.Static;
+            Visibility = Visibility.SharpGenGroup | Visibility.Static;
             Description = "Functions";
         }
 
-        public IEnumerable<CsFunction> Functions
-        {
-            get { return Items.OfType<CsFunction>(); }
-        }
+        public IEnumerable<CsFunction> Functions => Items.OfType<CsFunction>();
 
-        /// <summary>
-        /// Gets the variables stored in this container.
-        /// </summary>
-        /// <value>The variables.</value>
-        public IEnumerable<CsVariable> Variables
-        {
-            get { return Items.OfType<CsVariable>(); }
-        }
+        public IEnumerable<CsVariable> Variables => Items.OfType<CsVariable>();
 
         [ExcludeFromCodeCoverage]
-        public override string ToString()
-        {
-            return Name;
-        }
+        public override string ToString() => Name;
     }
 }

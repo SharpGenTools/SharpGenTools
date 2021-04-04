@@ -43,23 +43,16 @@ namespace SharpGen.UnitTests.Mapping
                 }
             };
 
-            var cppStruct = new CppStruct
-            {
-                Name = "Test"
-            };
+            var cppStruct = new CppStruct("Test");
 
-            cppStruct.Add(new CppField
+            cppStruct.Add(new CppField("field")
             {
-                Name = "field",
                 TypeName = "int"
             });
 
-            var include = new CppInclude
-            {
-                Name = "simpleStruct"
-            };
+            var include = new CppInclude("simpleStruct");
             include.Add(cppStruct);
-            var module = new CppModule();
+            var module = new CppModule("SharpGenTestModule");
             module.Add(include);
 
             var (solution, _) = MapModel(module, config);
@@ -97,23 +90,16 @@ namespace SharpGen.UnitTests.Mapping
                 }
             };
 
-            var cppStruct = new CppStruct
-            {
-                Name = "Test"
-            };
+            var cppStruct = new CppStruct("Test");
 
-            cppStruct.Add(new CppField
+            cppStruct.Add(new CppField("field")
             {
-                Name = "field",
                 TypeName = "int"
             });
 
-            var include = new CppInclude
-            {
-                Name = "simpleStruct"
-            };
+            var include = new CppInclude("simpleStruct");
             include.Add(cppStruct);
-            var module = new CppModule();
+            var module = new CppModule("SharpGenTestModule");
             module.Add(include);
 
             var (solution, _) = MapModel(module, config);
@@ -146,17 +132,11 @@ namespace SharpGen.UnitTests.Mapping
             };
 
 
-            var cppStruct = new CppStruct
-            {
-                Name = "TEST_DESC"
-            };
+            var cppStruct = new CppStruct("TEST_DESC");
 
-            var include = new CppInclude
-            {
-                Name = "simpleStruct"
-            };
+            var include = new CppInclude("simpleStruct");
             include.Add(cppStruct);
-            var module = new CppModule();
+            var module = new CppModule("SharpGenTestModule");
             module.Add(include);
 
             var (solution, _) = MapModel(module, config);

@@ -9,7 +9,7 @@ namespace SharpGen.Transform
     {
         public class SignatureInteropTypeOverride
         {
-            public SignatureInteropTypeOverride(InteropType newType, InteropMethodSignatureFlags? setFlags = null)
+            public SignatureInteropTypeOverride(CsFundamentalType newType, InteropMethodSignatureFlags? setFlags = null)
             {
                 NewType = newType ?? throw new ArgumentNullException(nameof(newType));
 
@@ -20,8 +20,7 @@ namespace SharpGen.Transform
             public InteropType NewType { get; }
             public InteropMethodSignatureFlags SetFlags { get; } = InteropMethodSignatureFlags.None;
 
-            public static implicit operator SignatureInteropTypeOverride(Type input) =>
-                new SignatureInteropTypeOverride(input);
+            public static implicit operator SignatureInteropTypeOverride(CsFundamentalType input) => new(input);
         }
 
         private readonly GlobalNamespaceProvider provider;
@@ -37,19 +36,28 @@ namespace SharpGen.Transform
 
             returnTypeOverrides = new Dictionary<string, SignatureInteropTypeOverride>
             {
-                {provider.GetTypeName(WellKnownName.Result), typeof(int)},
-                {provider.GetTypeName(WellKnownName.PointerSize), typeof(void*)}
+                {
+                    provider.GetTypeName(WellKnownName.Result),
+                    TypeRegistry.Int32
+                },
+                {
+                    provider.GetTypeName(WellKnownName.PointerSize),
+                    TypeRegistry.VoidPtr
+                }
             };
+
+            const InteropMethodSignatureFlags castToNativeLong = InteropMethodSignatureFlags.CastToNativeLong;
+            const InteropMethodSignatureFlags castToNativeULong = InteropMethodSignatureFlags.CastToNativeULong;
 
             windowsOnlyReturnTypeOverrides = new Dictionary<string, SignatureInteropTypeOverride>
             {
                 {
                     provider.GetTypeName(WellKnownName.NativeLong),
-                    new SignatureInteropTypeOverride(typeof(int), InteropMethodSignatureFlags.CastToNativeLong)
+                    new SignatureInteropTypeOverride(TypeRegistry.Int32, castToNativeLong)
                 },
                 {
                     provider.GetTypeName(WellKnownName.NativeULong),
-                    new SignatureInteropTypeOverride(typeof(uint), InteropMethodSignatureFlags.CastToNativeULong)
+                    new SignatureInteropTypeOverride(TypeRegistry.UInt32, castToNativeULong)
                 }
             };
 
@@ -57,11 +65,11 @@ namespace SharpGen.Transform
             {
                 {
                     provider.GetTypeName(WellKnownName.NativeLong),
-                    new SignatureInteropTypeOverride(typeof(IntPtr), InteropMethodSignatureFlags.CastToNativeLong)
+                    new SignatureInteropTypeOverride(TypeRegistry.IntPtr, castToNativeLong)
                 },
                 {
                     provider.GetTypeName(WellKnownName.NativeULong),
-                    new SignatureInteropTypeOverride(typeof(UIntPtr), InteropMethodSignatureFlags.CastToNativeULong)
+                    new SignatureInteropTypeOverride(TypeRegistry.UIntPtr, castToNativeULong)
                 }
             };
         }
@@ -114,10 +122,10 @@ namespace SharpGen.Transform
             var cSharpInteropCalliSignature = new InteropMethodSignature
             {
                 IsFunction = isFunction,
-                CallingConvention = callable.CallingConvention,
+                CallingConvention = callable.CppCallingConvention,
                 ForcedReturnBufferSig = true,
-                ReturnType = typeof(void*),
-                ParameterTypes = {new InteropMethodSignatureParameter(typeof(void*), callable.ReturnValue, "returnSlot")}
+                ReturnType = TypeRegistry.VoidPtr,
+                ParameterTypes = {new InteropMethodSignatureParameter(TypeRegistry.VoidPtr, callable.ReturnValue, "returnSlot")}
             };
 
             InitCalliSignatureParameters(callable, cSharpInteropCalliSignature);
@@ -132,7 +140,7 @@ namespace SharpGen.Transform
             var cSharpInteropCalliSignature = new InteropMethodSignature
             {
                 IsFunction = isFunction,
-                CallingConvention = callable.CallingConvention
+                CallingConvention = callable.CppCallingConvention
             };
 
             InitSignatureWithReturnType(callable, cSharpInteropCalliSignature, platform);
@@ -216,10 +224,10 @@ namespace SharpGen.Transform
             }
 
             if (returnValue.MarshalType is CsFundamentalType fundamentalReturn)
-                return fundamentalReturn.Type;
+                return fundamentalReturn;
 
             if (returnValue.HasPointer)
-                return returnValue.IsInterface ? typeof(IntPtr) : typeof(void*);
+                return returnValue.IsInterface ? TypeRegistry.IntPtr : TypeRegistry.VoidPtr;
 
             return null;
         }
@@ -227,24 +235,25 @@ namespace SharpGen.Transform
         private static InteropType GetInteropTypeForParameter(GlobalNamespaceProvider nsProvider, CsParameter param)
         {
             if (param.HasPointer)
-                return typeof(void*);
+                return TypeRegistry.VoidPtr;
 
-            if (param.PublicType.QualifiedName == nsProvider.GetTypeName(WellKnownName.PointerSize))
-                return typeof(void*);
-
-            static Type IntPtrToVoidPtr(Type type) => type == typeof(IntPtr) || type == typeof(UIntPtr)
-                                                          ? typeof(void*)
-                                                          : type;
+            if (param.PublicType.IsWellKnownType(nsProvider, WellKnownName.PointerSize))
+                return TypeRegistry.VoidPtr;
 
             if (param.MarshalType is CsFundamentalType marshalFundamental)
-                return IntPtrToVoidPtr(marshalFundamental.Type);
+                return marshalFundamental switch
+                {
+                    {IsIntPtr: true} => TypeRegistry.VoidPtr,
+                    _ => marshalFundamental
+                };
 
             return param.PublicType switch
             {
-                CsFundamentalType publicFundamental => IntPtrToVoidPtr(publicFundamental.Type),
+                CsFundamentalType {IsIntPtr: true} => TypeRegistry.VoidPtr,
+                CsFundamentalType publicFundamental => publicFundamental,
                 CsStruct {HasMarshalType: true} csStruct => $"{csStruct.QualifiedName}.__Native",
                 CsStruct csStruct => csStruct.QualifiedName,
-                CsEnum csEnum => csEnum.UnderlyingType.Type,
+                CsEnum csEnum => csEnum.UnderlyingType,
                 _ => null
             };
         }

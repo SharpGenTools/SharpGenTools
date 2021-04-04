@@ -17,34 +17,20 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System.Xml.Serialization;
+
 using SharpGen.Config;
 
 namespace SharpGen.CppModel
 {
-    /// <summary>
-    /// A C++ parameter.
-    /// </summary>
-    [XmlType("param")]
-    public class CppParameter : CppMarshallable
+    public sealed class CppParameter : CppMarshallable
     {
-        /// <summary>
-        /// Gets or sets the attribute.
-        /// </summary>
-        /// <value>The attribute.</value>
-        [XmlAttribute("attributes")]
         public ParamAttribute Attribute { get; set; }
 
-        /// <summary>
-        /// Returns a <see cref="System.String"/> that represents this instance.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="System.String"/> that represents this instance.
-        /// </returns>
         [ExcludeFromCodeCoverage]
-        public override string ToString()
+        public override string ToString() => "[" + Attribute + "] " + base.ToString();
+
+        public CppParameter(string name) : base(name)
         {
-            return "[" + Attribute + "] " + base.ToString();
         }
     }
 }

@@ -20,7 +20,7 @@ namespace SharpGen.Generator
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsEnum csElement)
         {
             var enumDecl = EnumDeclaration(csElement.Name);
-            var underlyingType = ParseTypeName(csElement.UnderlyingType?.Type.FullName ?? "int");
+            var underlyingType = ParseTypeName(csElement.UnderlyingType.Name);
             enumDecl = enumDecl.WithModifiers(csElement.VisibilityTokenList)
                 .WithBaseList(
                     BaseList().

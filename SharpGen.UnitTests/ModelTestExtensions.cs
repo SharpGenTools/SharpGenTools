@@ -5,26 +5,24 @@ using SharpGen.Model;
 
 namespace SharpGen.UnitTests
 {
-    static class ModelTestExtensions
+    internal static class ModelTestExtensions
     {
-        public static T FindFirst<T>(this CppElement element, string path)
-            where T : CppElement => element.Find<T>(path).FirstOrDefault();
+        public static T FindFirst<T>(this CppElement element, string path) where T : CppElement =>
+            element.Find<T>(path).FirstOrDefault();
 
-        public static IEnumerable<T> Find<T>(this CppElement element, string path)
-            where T : CppElement
-        {
-            var mapper = new CppElementFinder(element);
+        public static IEnumerable<T> Find<T>(this CppElement element, string path) where T : CppElement =>
+            new CppElementFinder(element).Find<T>(path);
 
-            return mapper.Find<T>(path);
-        }
-
-        public static IEnumerable<CsBase> EnumerateDescendants(this CsBase element)
+        public static IEnumerable<CsBase> EnumerateDescendants(this CsBase element, bool withAdditionalItems = true)
         {
             yield return element;
-            foreach (var descendant in element.Items.SelectMany(EnumerateDescendants))
-            {
+
+            IEnumerable<CsBase> items = element.Items;
+            if (withAdditionalItems)
+                items = items.Concat(element.AdditionalItems);
+
+            foreach (var descendant in items.SelectMany(x => EnumerateDescendants(x, withAdditionalItems)))
                 yield return descendant;
-            }
         }
     }
 }

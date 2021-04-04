@@ -17,9 +17,10 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -32,24 +33,41 @@ namespace SharpGen.Transform
     /// This class handles renaming according to conventions. Pascal case (NamingRulesManager) for global types,  
     /// Camel case (namingRulesManager) for parameters.
     /// </summary>
-    public class NamingRulesManager
+    public sealed partial class NamingRulesManager
     {
-        private readonly List<ShortNameMapper> _expandShortName = new List<ShortNameMapper>();
-
         /// <summary>
-        /// The recorded names, a list of previous name and new name.
+        /// Renames a C++ element from <see cref="originalName"/>.
         /// </summary>
-        public List<(string originalName, string finalName)> RecordedRenames { get; } = new List<(string, string)>();
-
-        /// <summary>
-        /// Adds the short name rule.
-        /// </summary>
-        /// <param name="regexShortName">Short name of the regex.</param>
-        /// <param name="expandedName">Name of the expanded.</param>
-        public void AddShortNameRule(string regexShortName, string expandedName)
+        /// <param name="rootName">Name of the root to strip away.</param>
+        /// <returns>The new C# name</returns>
+        private static string RenameCore(string originalName, MappingRule tag, string rootName, out bool isFinal)
         {
-            _expandShortName.Add(new ShortNameMapper(regexShortName, expandedName));
-            _expandShortName.Sort();
+            var name = originalName;
+
+            // Handle Tag
+            var nameModifiedByTag = false;
+
+            if (!string.IsNullOrEmpty(tag.MappingName))
+            {
+                nameModifiedByTag = true;
+                name = tag.MappingName;
+
+                // Rename is tagged as final, then return the string
+                if (tag.IsFinalMappingName == true)
+                {
+                    isFinal = true;
+                    return name;
+                }
+            }
+
+            isFinal = false;
+
+            // Remove Prefix (for enums). Don't modify names that are modified by tag
+            if (!nameModifiedByTag && rootName != null && originalName.StartsWith(rootName))
+                name = originalName.Substring(rootName.Length, originalName.Length - rootName.Length);
+
+            // Remove leading '_'
+            return name.TrimStart('_');
         }
 
         /// <summary>
@@ -60,44 +78,31 @@ namespace SharpGen.Transform
         /// <returns>The new name</returns>
         private string RenameCore(CppElement cppElement, string rootName = null)
         {
-            string originalName = cppElement.Name;
-            string name = cppElement.Name;
+            Debug.Assert(cppElement is not CppField and not CppParameter);
 
-            var namingFlags = NamingFlags.Default;
-            bool nameModifiedByTag = false;
+            var originalName = cppElement.Name;
+            var tag = cppElement.Rule;
+            var name = RenameCore(originalName, tag, rootName, out var isFinal);
 
-            // Handle Tag
-            var tag = cppElement.GetMappingRule();
-            if (tag != null)
-            {
-                if (!string.IsNullOrEmpty(tag.MappingName))
-                {
-                    nameModifiedByTag = true;
-                    name = tag.MappingName;
-                    // If Final Mapping name then don't proceed further
-                    if (tag.IsFinalMappingName.HasValue && tag.IsFinalMappingName.Value)
-                        return name;
-                }
-
-                if (tag.NamingFlags.HasValue)
-                    namingFlags = tag.NamingFlags.Value;
-            }
-
-            // Rename is tagged as final, then return the string
-            // If the string still contains some "_" then continue while processing
-            if (!name.Contains("_") && name.ToUpper() != name && char.IsUpper(name[0]))
+            if (isFinal)
                 return name;
 
-            // Remove Prefix (for enums). Don't modify names that are modified by tag
-            if (!nameModifiedByTag && rootName != null && originalName.StartsWith(rootName))
-                name = originalName.Substring(rootName.Length, originalName.Length - rootName.Length);
+            var namingFlags = tag.NamingFlags is { } flags ? flags : NamingFlags.Default;
 
-            // Remove leading '_'
-            name = name.TrimStart('_');
+            if (cppElement is CppMarshallable marshallable &&
+                (namingFlags & NamingFlags.NoHungarianNotationHandler) == 0)
+            {
+                var originalNameLower = originalName.ToLowerInvariant();
+                foreach (var prefix in _hungarianNotation)
+                    if (prefix.Apply(marshallable, name, originalName, originalNameLower, out var variants))
+                    {
+                        name = variants[0];
+                        break;
+                    }
+            }
 
             // Convert rest of the string in CamelCase
-            name = ConvertToPascalCase(name, namingFlags);
-            return name;
+            return ConvertToPascalCase(name, namingFlags);
         }
 
         /// <summary>
@@ -105,10 +110,7 @@ namespace SharpGen.Transform
         /// </summary>
         /// <param name="cppElement">The C++ element.</param>
         /// <returns>The C# name</returns>
-        public string Rename(CppElement cppElement)
-        {
-            return RecordRename(cppElement, UnKeyword(RenameCore(cppElement)));
-        }
+        public string Rename(CppElement cppElement) => UnKeyword(RenameCore(cppElement));
 
         /// <summary>
         /// Renames the specified C++ enum item.
@@ -116,294 +118,7 @@ namespace SharpGen.Transform
         /// <param name="cppEnumItem">The C++ enum item.</param>
         /// <param name="rootEnumName">Name of the root C++ enum.</param>
         /// <returns>The C# name of this enum item</returns>
-        public string Rename(CppEnumItem cppEnumItem, string rootEnumName)
-        {
-            return RecordRename(cppEnumItem, UnKeyword(RenameCore(cppEnumItem, rootEnumName)));
-        }
-
-        /// <summary>
-        /// Renames the specified C++ parameter.
-        /// </summary>
-        /// <param name="cppParameter">The C++ parameter.</param>
-        /// <returns>The C# name of this parameter.</returns>
-        public string Rename(CppParameter cppParameter)
-        {
-            string oldName = cppParameter.Name;
-            string name = RenameCore(cppParameter, null);
-
-            bool hasPointer = !string.IsNullOrEmpty(cppParameter.Pointer) &&
-                              (cppParameter.Pointer.Contains("*") || cppParameter.Pointer.Contains("&"));
-            if (hasPointer)
-            {
-                if (oldName.StartsWith("pp"))
-                    name = name.Substring(2) + "Out";
-                else if (oldName.StartsWith("p"))
-                    name = name.Substring(1) + "Ref";
-            }
-            if (char.IsDigit(name[0]))
-                name = "arg" + name;
-
-
-            name = new string(name[0], 1).ToLower() + name.Substring(1);
-
-            return RecordRename(cppParameter, UnKeyword(name));
-        }
-
-        /// <summary>
-        /// Record the name source and the modified name.
-        /// </summary>
-        /// <param name="fromElement">The element to rename</param>
-        /// <param name="toName">The new name</param>
-        /// <returns>The new name</returns>
-        private string RecordRename(CppElement fromElement, string toName)
-        {
-            RecordedRenames.Add((fromElement.FullName, toName));
-            return toName;
-        }
-
-        /// <summary>
-        /// Protect the name from all C# reserved words.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <returns></returns>
-        private static string UnKeyword(string name)
-        {
-            if (IsKeyword(name))
-            {
-                if (name == "string")
-                    return "text";
-                name = "@" + name;
-            }
-            return name;            
-        }
-
-        /// <summary>
-        /// Determines whether the specified string is a valid Pascal case.
-        /// </summary>
-        /// <param name="str">The string to validate.</param>
-        /// <param name="lowerCount">The lower count.</param>
-        /// <returns>
-        /// 	<c>true</c> if the specified string is a valid Pascal case; otherwise, <c>false</c>.
-        /// </returns>
-        private static bool IsPascalCase(string str, out int lowerCount)
-        {
-            // Count the number of char in lower case
-            lowerCount = str.Count(charInStr => char.IsLower(charInStr));
-
-            if (str.Length == 0)
-                return false;
-
-            // First char must be a letter
-            if (!char.IsLetter(str[0]))
-                return false;
-
-            // First letter must be upper
-            if (!char.IsUpper(str[0]))
-                return false;
-
-            // Second letter must be lower
-            if (str.Length > 1 && char.IsUpper(str[1]))
-                return false;
-            
-            return str.All(charInStr => char.IsLetterOrDigit(charInStr));
-        }
-
-        /// <summary>
-        /// Converts a string to PascalCase..
-        /// </summary>
-        /// <param name="text">The text to convert.</param>
-        /// <param name="namingFlags">The naming options to apply to the given string to convert.</param>
-        /// <returns>The given string in PascalCase.</returns>
-        public string ConvertToPascalCase(string text, NamingFlags namingFlags)
-        {
-            string[] splittedPhrase = text.Split('_');
-            var sb = new StringBuilder();
-
-            for (int i = 0; i < splittedPhrase.Length; i++)
-            {
-                string subPart = splittedPhrase[i];
-
-                // Don't perform expansion when asked
-                if ((namingFlags & NamingFlags.NoShortNameExpand) == 0)
-                {
-                    while (subPart.Length > 0)
-                    {
-                        bool continueReplace = false;
-                        foreach (var regExp in _expandShortName)
-                        {
-                            var regex = regExp.Regex;
-                            var newText = regExp.Replace;
-
-                            if (regex.Match(subPart).Success)
-                            {
-                                if (regExp.HasRegexReplace)
-                                {
-                                    subPart = regex.Replace(subPart, regExp.Replace);
-                                    sb.Append(subPart);
-                                    subPart = string.Empty;
-                                }
-                                else
-                                {
-                                    subPart = regex.Replace(subPart, string.Empty);
-                                    sb.Append(newText);
-                                    continueReplace = true;
-                                }
-                                break;
-                            }
-                        }
-
-                        if (!continueReplace)
-                        {
-                            break;
-                        }
-                    }
-                }
-
-                // Else, perform a standard conversion
-                if (subPart.Length > 0)
-                {
-                    // If string is not Pascal Case, then Pascal Case it
-                    if (IsPascalCase(subPart, out int numberOfCharLowercase))
-                    {
-                        sb.Append(subPart);
-                    }
-                    else
-                    {
-                        char[] splittedPhraseChars = (numberOfCharLowercase > 0)
-                                                         ? subPart.ToCharArray()
-                                                         : subPart.ToLower().ToCharArray();
-
-                        if (splittedPhraseChars.Length > 0)
-                            splittedPhraseChars[0] = char.ToUpper(splittedPhraseChars[0]);
-                        sb.Append(new String(splittedPhraseChars));
-                    }
-                }
-
-                if ( (namingFlags & NamingFlags.KeepUnderscore) != 0 && (i + 1) < splittedPhrase.Length)
-                    sb.Append("_");
-            }
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// Checks if a given string is a C# keyword. 
-        /// </summary>
-        /// <param name="name">The name to check.</param>
-        /// <returns>true if the name is a C# keyword; false otherwise.</returns>
-        private static bool IsKeyword(string name)
-        {
-            return CSharpKeywords.Contains(name);
-        }
-
-        private class ShortNameMapper : IComparable<ShortNameMapper>, IComparable
-        {
-            public ShortNameMapper(string regex, string replace)
-            {
-                Regex = new Regex("^" + regex);
-                Replace = replace;
-                HasRegexReplace = replace.Contains("$");
-            }
-
-            public Regex Regex;
-
-            public string Replace;
-
-            public bool HasRegexReplace;
-
-            public int CompareTo(ShortNameMapper other)
-            {
-                return -Regex.ToString().Length.CompareTo(other.Regex.ToString().Length);
-            }
-
-            public int CompareTo(object obj)
-            {
-                return obj is ShortNameMapper mapper ? CompareTo(mapper) : throw new InvalidOperationException();
-            }
-        }
-
-        /// <summary>
-        /// Reserved C# keywords.
-        /// </summary>
-        private static readonly string[] CSharpKeywords =
-            new[]
-            {
-                "abstract",
-                "as",
-                "base",
-                "bool",
-                "break",
-                "byte",
-                "case",
-                "catch",
-                "char",
-                "checked",
-                "class",
-                "const",
-                "continue",
-                "decimal",
-                "default",
-                "delegate",
-                "do",
-                "double",
-                "else",
-                "enum",
-                "event",
-                "explicit",
-                "extern",
-                "false",
-                "finally",
-                "fixed",
-                "float",
-                "for",
-                "foreach",
-                "goto",
-                "if",
-                "implicit",
-                "in",
-                "int",
-                "interface",
-                "internal",
-                "is",
-                "lock",
-                "long",
-                "namespace",
-                "new",
-                "null",
-                "object",
-                "operator",
-                "out",
-                "override",
-                "params",
-                "private",
-                "protected",
-                "public",
-                "readonly",
-                "ref",
-                "return",
-                "sbyte",
-                "sealed",
-                "short",
-                "sizeof",
-                "stackalloc",
-                "static",
-                "string",
-                "struct",
-                "switch",
-                "this",
-                "throw",
-                "true",
-                "try",
-                "typeof",
-                "uint",
-                "ulong",
-                "unchecked",
-                "unsafe",
-                "ushort",
-                "using",
-                "virtual",
-                "volatile",
-                "void",
-                "while",
-            };
+        public string Rename(CppEnumItem cppEnumItem, string rootEnumName) =>
+            UnKeyword(RenameCore(cppEnumItem, rootEnumName));
     }
 }

@@ -11,15 +11,14 @@ namespace SharpGen.Config
     {
         public static CppModule CreateSkeletonModule(this ConfigFile config)
         {
-            var module = new CppModule();
+            var module = new CppModule(config.Id);
             foreach (var includeRule in config.ConfigFilesLoaded.SelectMany(cfg => cfg.Includes))
             {
                 var cppInclude = module.FindInclude(includeRule.Id);
-                if (cppInclude == null)
-                {
-                    cppInclude = new CppInclude { Name = includeRule.Id };
-                    module.Add(cppInclude);
-                }
+                if (cppInclude != null)
+                    continue;
+
+                module.Add(new CppInclude(includeRule.Id));
             }
 
             return module;
@@ -66,20 +65,6 @@ namespace SharpGen.Config
             }
         }
 
-        [Obsolete("Use " + nameof(GetFilesWithIncludesAndExtensionHeaders) + " overload with out parameters")]
-        public static (HashSet<string> filesWithIncludes, HashSet<string> filesWithExtensionHeaders)
-            GetFilesWithIncludesAndExtensionHeaders(this ConfigFile configRoot)
-        {
-            GetFilesWithIncludesAndExtensionHeaders(
-                configRoot, out var configsWithIncludes, out var configsWithExtensionHeaders
-            );
-
-            static string IdSelector(ConfigFile x) => x.Id;
-
-            return (new HashSet<string>(configsWithIncludes.Select(IdSelector)),
-                    new HashSet<string>(configsWithExtensionHeaders.Select(IdSelector)));
-        }
-
         /// <summary>
         /// Checks if this rule is creating headers extension.
         /// </summary>
@@ -87,8 +72,8 @@ namespace SharpGen.Config
         /// <returns>true if the rule is creating an header extension.</returns>
         public static bool GeneratesExtensionHeader(this ExtensionBaseRule rule)
         {
-            return (rule is CreateCppExtensionRule createCpp && !string.IsNullOrEmpty(createCpp.Macro))
-                || (rule is ConstantRule constant && !string.IsNullOrEmpty(constant.Macro));
+            return rule is CreateCppExtensionRule createCpp && !string.IsNullOrEmpty(createCpp.Macro)
+                || rule is ConstantRule constant && !string.IsNullOrEmpty(constant.Macro);
         }
     }
 }

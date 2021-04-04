@@ -19,10 +19,11 @@
 // THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using SharpGen.Config;
 using SharpGen.CppModel;
-using System.Collections.Generic;
 
 namespace SharpGen.Model
 {
@@ -83,22 +84,6 @@ namespace SharpGen.Model
             return matchedAny;
         }
 
-        public static string GetTypeNameWithMapping(this CppElement cppType)
-        {
-            var rule = cppType.GetMappingRule();
-            if (rule is {MappingType: { }})
-                return rule.MappingType;
-            return cppType switch
-            {
-                CppEnum cppEnum => cppEnum.UnderlyingType,
-                CppMarshallable type => type.TypeName,
-                _ => throw new ArgumentException(
-                         string.Format(System.Globalization.CultureInfo.InvariantCulture,
-                                       "Cannot get type name from type {0}", cppType)
-                     )
-            };
-        }
-
         private static string RegexRename(Regex regex, string fromName, string replaceName)
         {
             return replaceName.Contains("$") ? regex.Replace(fromName, replaceName) : replaceName;
@@ -112,10 +97,6 @@ namespace SharpGen.Model
         private static void ProcessRule(CppElement element, MappingRule newRule, Regex patchRegex)
         {
             var tag = element.Rule;
-            if (tag == null)
-            {
-                element.Rule = tag = new MappingRule();
-            }
 
             if (newRule.Assembly != null) tag.Assembly = newRule.Assembly;
             if (newRule.Namespace != null) tag.Namespace = newRule.Namespace;

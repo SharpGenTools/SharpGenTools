@@ -17,19 +17,21 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using SharpGen.Logging;
 using SharpGen.Config;
 using SharpGen.CppModel;
+using SharpGen.Logging;
+using SharpGen.Parser;
 
-namespace SharpGen.Parser
+namespace SharpGen.Platform
 {
     internal static class Extension
     {
@@ -48,19 +50,16 @@ namespace SharpGen.Parser
     public sealed class CppParser
     {
         private CppModule _group;
-        private readonly HashSet<string> _includeToProcess = new HashSet<string>();
-        private readonly Dictionary<string, bool> _includeIsAttached = new Dictionary<string, bool>();
-        private readonly Dictionary<string, HashSet<string>> _includeAttachedTypes = new Dictionary<string, HashSet<string>>();
-        private readonly HashSet<string> _boundTypes = new HashSet<string>();
+        private readonly HashSet<string> _includeToProcess = new();
+        private readonly Dictionary<string, bool> _includeIsAttached = new();
+        private readonly Dictionary<string, HashSet<string>> _includeAttachedTypes = new();
+        private readonly HashSet<string> _boundTypes = new();
         private readonly ConfigFile _configRoot;
         private CppInclude _currentCppInclude;
-        private readonly Dictionary<string, XElement> _mapIdToXElement = new Dictionary<string, XElement>();
-        private readonly Dictionary<string, List<XElement>> _mapFileToXElement = new Dictionary<string, List<XElement>>();
-        private readonly Dictionary<string, int> _mapIncludeToAnonymousEnumCount = new Dictionary<string, int>();
+        private readonly Dictionary<string, XElement> _mapIdToXElement = new();
+        private readonly Dictionary<string, List<XElement>> _mapFileToXElement = new();
+        private readonly Dictionary<string, int> _mapIncludeToAnonymousEnumCount = new();
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CppParser"/> class.
-        /// </summary>
         public CppParser(Logger logger, ConfigFile configRoot)
         {
             Logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -149,6 +148,8 @@ namespace SharpGen.Parser
         /// <value>The GccXml doc.</value>
         private XDocument GccXmlDoc { get; set; }
 
+        public Dictionary<string, int> IncludeMacroCounts { get; } = new();
+
         /// <summary>
         /// Runs this instance.
         /// </summary>
@@ -198,8 +199,6 @@ namespace SharpGen.Parser
 
             return _group;
         }
-        
-        public Dictionary<string, int> IncludeMacroCounts { get; } = new Dictionary<string, int>();
 
 
         /// <summary>
@@ -277,7 +276,10 @@ namespace SharpGen.Parser
         /// <returns>A C++ function parsed</returns>
         private CppFunction ParseFunction(XElement xElement)
         {
-            return ParseCallable<CppFunction>(xElement);
+            CppFunction cppMethod = new(xElement.AttributeValue("name"));
+            ParseCallable(cppMethod, xElement);
+
+            return cppMethod;
         }
 
         /// <summary>
@@ -285,7 +287,7 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="xElement">The gccxml <see cref="XElement"/> that describes a C++ parameter.</param>
         /// <param name="methodOrFunction">The method or function to populate.</param>
-        private void ParseParameters(XElement xElement, CppElement methodOrFunction)
+        private void ParseParameters(XElement xElement, CppContainer methodOrFunction)
         {
             var paramCount = 0;
             foreach (var parameter in xElement.Elements())
@@ -293,9 +295,11 @@ namespace SharpGen.Parser
                 if (parameter.Name.LocalName != "Argument")
                     continue;
 
-                var cppParameter = new CppParameter { Name = parameter.AttributeValue("name") };
-                if (string.IsNullOrEmpty(cppParameter.Name))
-                    cppParameter.Name = "arg" + paramCount;
+                var name = parameter.AttributeValue("name");
+                if (string.IsNullOrEmpty(name))
+                    name = "arg" + paramCount;
+
+                CppParameter cppParameter = new(name);
 
                 ParseAnnotations(parameter, cppParameter);
 
@@ -453,13 +457,10 @@ namespace SharpGen.Parser
         /// <summary>
         /// Parses a C++ method or function.
         /// </summary>
-        /// <typeparam name="T">The resulting C++ parsed element. Must be a subclass of <see cref="CppMethod"/>.</typeparam>
         /// <param name="xElement">The gccxml <see cref="XElement"/> that describes a C++ method/function declaration.</param>
         /// <returns>The C++ parsed T.</returns>
-        private T ParseCallable<T>(XElement xElement) where T : CppCallable, new()
+        private void ParseCallable(CppCallable cppCallable, XElement xElement)
         {
-            var cppCallable = new T { Name = xElement.AttributeValue("name") };
-
             Logger.PushContext("Callable:[{0}]", cppCallable.Name);
 
             // Parse annotations
@@ -472,8 +473,6 @@ namespace SharpGen.Parser
             ResolveAndFillType(xElement.AttributeValue("returns"), cppCallable.ReturnValue);
 
             Logger.PopContext();
-
-            return cppCallable;
         }
 
         /// <summary>
@@ -489,7 +488,7 @@ namespace SharpGen.Parser
                 return cppInterface;
 
             // Else, create a new CppInterface
-            cppInterface = new CppInterface { Name = xElement.AttributeValue("name") };
+            cppInterface = new CppInterface(xElement.AttributeValue("name"));
             xElement.AddAnnotation(cppInterface);
 
             // Enter Interface description
@@ -499,14 +498,13 @@ namespace SharpGen.Parser
             var offsetMethod = 0;
 
             var basesValue = xElement.AttributeValue("bases");
-            var bases = basesValue != null ? basesValue.Split(' ') : Enumerable.Empty<string>();
+            var bases = basesValue?.Split(' ') ?? Enumerable.Empty<string>();
             foreach (var xElementBaseId in bases)
             {
                 if (string.IsNullOrEmpty(xElementBaseId))
                     continue;
 
                 var xElementBase = _mapIdToXElement[xElementBaseId];
-                var baseTypeName = xElementBase.AttributeValue("name");
 
                 CppInterface cppInterfaceBase = null;
                 Logger.RunInContext("Base", () => { cppInterfaceBase = ParseInterface(xElementBase); });
@@ -531,7 +529,8 @@ namespace SharpGen.Parser
                 if (method.Name.LocalName == "Method" && !string.IsNullOrWhiteSpace(method.AttributeValue("pure_virtual"))
                     && string.IsNullOrWhiteSpace(method.AttributeValue("overrides")))
                 {
-                    var cppMethod = ParseCallable<CppMethod>(method);
+                    CppMethod cppMethod = new(method.AttributeValue("name"));
+                    ParseCallable(cppMethod, method);
                     methods.Add(cppMethod);
                     cppMethod.Offset = offsetMethod++;
                 }
@@ -597,9 +596,8 @@ namespace SharpGen.Parser
         private CppField ParseField(XElement xElement, int fieldOffset)
         {
             var fieldName = xElement.AttributeValue("name");
-            var cppField = new CppField
+            var cppField = new CppField(string.IsNullOrEmpty(fieldName) ? $"field{fieldOffset}" : fieldName)
             {
-                Name = string.IsNullOrEmpty(fieldName) ? $"field{fieldOffset}" : fieldName,
                 Offset = fieldOffset
             };
 
@@ -638,20 +636,10 @@ namespace SharpGen.Parser
             var structName = GetStructName(xElement, cppParent, innerAnonymousIndex);
 
             // Create struct
-            cppStruct = new CppStruct { Name = structName };
+            cppStruct = new CppStruct(structName);
             xElement.AddAnnotation(cppStruct);
             var isUnion = (xElement.Name.LocalName == CastXml.TagUnion);
             cppStruct.IsUnion = isUnion;
-
-            // Get align from structure
-            cppStruct.Align = int.Parse(xElement.AttributeValue("align")) / 8;
-
-            // By default, packing is platform x86/x64 dependent (4 or 8)
-            // but because gccxml is running in x86, it outputs 4
-            // So by default, we are reversing all align by 4 to 0
-            // IF the packing is a true 4, than it will be reverse back by a later mapping rules
-            if (cppStruct.Align == 4)
-                cppStruct.Align = 0;
 
             // Enter struct/union description
             Logger.PushContext("{0}:[{1}]", xElement.Name.LocalName, cppStruct.Name);
@@ -773,20 +761,22 @@ namespace SharpGen.Parser
         /// <returns>A C++ parsed enum</returns>
         private CppEnum ParseEnum(XElement xElement)
         {
-            var cppEnum = new CppEnum { Name = xElement.AttributeValue("name") };
+            var name = xElement.AttributeValue("name");
 
             // Doh! Anonymous Enum, need to handle them!
-            if (cppEnum.Name.StartsWith("$") || string.IsNullOrEmpty(cppEnum.Name))
+            if (string.IsNullOrEmpty(name) || name.StartsWith("$"))
             {
                 var includeFrom = GetIncludeIdFromFileId(xElement.AttributeValue("file"));
 
                 if (!_mapIncludeToAnonymousEnumCount.TryGetValue(includeFrom, out int enumOffset))
                     _mapIncludeToAnonymousEnumCount.Add(includeFrom, enumOffset);
 
-                cppEnum.Name = includeFrom.ToUpper() + "_ENUM_" + enumOffset;
+                name = includeFrom.ToUpper() + "_ENUM_" + enumOffset;
 
                 _mapIncludeToAnonymousEnumCount[includeFrom]++;
             }
+
+            CppEnum cppEnum = new(name);
 
             foreach (var xEnumItems in xElement.Elements())
             {
@@ -811,30 +801,26 @@ namespace SharpGen.Parser
             if (name.EndsWith(CppExtensionHeaderGenerator.EndTagCustomVariable))
                 name = name.Substring(0, name.Length - CppExtensionHeaderGenerator.EndTagCustomVariable.Length);
 
-            var cppMarshallable = new CppMarshallable();
-            ResolveAndFillType(xElement.AttributeValue("type"), cppMarshallable);
-
+            var typeName = ResolveType(xElement.AttributeValue("type"));
 
             var value = xElement.AttributeValue("init") ?? string.Empty;
-            if (cppMarshallable.TypeName == "GUID")
+            if (typeName == "GUID")
             {
                 var guid = ParseGuid(value);
-                if (!guid.HasValue)
-                    return null;
-                return new CppGuid { Name = name, Guid = guid.Value };
+                return guid.HasValue ? new CppGuid(name, guid.Value) : null;
             }
 
             // CastXML outputs initialization expressions. Cast to proper type.
             var match = Regex.Match(value, @"\((?:\(.+\))?(.+)\)");
             if (match.Success)
             {
-                value = $"unchecked(({cppMarshallable.TypeName}){match.Groups[1].Value})";
+                value = $"unchecked(({typeName}){match.Groups[1].Value})";
             }
 
             // Handle C++ floating point literals
             value = value.Replace(".F", ".0F");
 
-            return new CppConstant { Name = name, Value = value };
+            return new CppConstant(name, value);
         }
 
         /// <summary>
@@ -898,7 +884,7 @@ namespace SharpGen.Parser
                 _currentCppInclude = _group.FindInclude(includeId);
                 if (_currentCppInclude == null)
                 {
-                    _currentCppInclude = new CppInclude { Name = includeId };
+                    _currentCppInclude = new CppInclude(includeId);
                     _group.Add(_currentCppInclude);
                 }
 
@@ -999,8 +985,6 @@ namespace SharpGen.Parser
         /// <param name="type">The C++ type to fill.</param>
         private void ResolveAndFillType(string typeId, CppMarshallable type)
         {
-            var typeResolutionPath = new List<string>();
-
             var xType = _mapIdToXElement[typeId];
 
             var isTypeResolved = false;
@@ -1008,8 +992,6 @@ namespace SharpGen.Parser
             while (!isTypeResolved)
             {
                 var name = xType.AttributeValue("name");
-                if (name != null)
-                    typeResolutionPath.Add(name);
                 var nextType = xType.AttributeValue("type");
                 switch (xType.Name.LocalName)
                 {
@@ -1060,7 +1042,46 @@ namespace SharpGen.Parser
                         isTypeResolved = true;
                         break;
                     default:
-                        throw new InvalidOperationException(string.Format(System.Globalization.CultureInfo.InvariantCulture, "Unexpected tag type [{0}]", xType.Name.LocalName));
+                        throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Unexpected tag type [{0}]", xType.Name.LocalName));
+                }
+            }
+        }
+
+        private string ResolveType(string typeId)
+        {
+            var xType = _mapIdToXElement[typeId];
+
+            while (true)
+            {
+                var name = xType.AttributeValue("name");
+                var nextType = xType.AttributeValue("type");
+                switch (xType.Name.LocalName)
+                {
+                    case CastXml.TagFundamentalType:
+                        return ConvertFundamentalType(name);
+                    case CastXml.TagClass:
+                    case CastXml.TagEnumeration:
+                    case CastXml.TagStruct:
+                    case CastXml.TagUnion:
+                        return name;
+                    case CastXml.TagTypedef:
+                        if (_boundTypes.Contains(name))
+                        {
+                            return name;
+                        }
+                        xType = _mapIdToXElement[nextType];
+                        break;
+                    case CastXml.TagPointerType:
+                    case CastXml.TagArrayType:
+                    case CastXml.TagReferenceType:
+                    case CastXml.TagCvQualifiedType:
+                        xType = _mapIdToXElement[nextType];
+                        break;
+                    case CastXml.TagFunctionType:
+                        // TODO, handle different calling convention
+                        return "__function__stdcall";
+                    default:
+                        throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Unexpected tag type [{0}]", xType.Name.LocalName));
                 }
             }
         }

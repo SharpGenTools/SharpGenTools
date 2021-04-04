@@ -17,39 +17,15 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System.Xml.Serialization;
 
 namespace SharpGen.CppModel
 {
-    /// <summary>
-    /// The C++ calling convention.
-    /// </summary>
     public enum CppCallingConvention
     {
-        /// <summary>
-        /// Unknown calling convention.
-        /// </summary>
-        [XmlEnum("unknown")]
         Unknown = 0,
-        /// <summary>
-        /// Stdcall calling convention.
-        /// </summary>
-        [XmlEnum("stdcall")]
         StdCall = 1,
-        /// <summary>
-        /// Fastcall calling convention.
-        /// </summary>
-        [XmlEnum("fastcall")]
         FastCall = 2,
-        /// <summary>
-        /// Thiscall calling convention.
-        /// </summary>
-        [XmlEnum("thiscall")]
         ThisCall = 3,
-        /// <summary>
-        /// Cdecl calling convention.
-        /// </summary>
-        [XmlEnum("cdecl")]
         CDecl = 4,
     }
 }

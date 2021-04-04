@@ -53,7 +53,7 @@ namespace SharpGen.Generator
                                                     IdentifierName("Runtime")),
                                                 IdentifierName("InteropServices")),
                                             IdentifierName("CallingConvention")),
-                                        IdentifierName(sig.CallingConvention)))))))
+                                        IdentifierName(sig.CallingConvention.ToManagedCallingConventionName())))))))
             .WithParameterList(
                 ParameterList(
                     (csElement is CsMethod ?
@@ -227,7 +227,7 @@ namespace SharpGen.Generator
 
             var returnValueNeedsMarshalling = returnValueMarshaller.GeneratesMarshalVariable(csElement.ReturnValue);
 
-            if (!csElement.HasReturnStatement)
+            if (!csElement.HasReturnStatement(globalNamespace))
             {
                 statements.Add(ExpressionStatement(invocation));
             }
@@ -273,14 +273,14 @@ namespace SharpGen.Generator
                                            ? MarshallerBase.GetMarshalStorageLocation(csElement.ReturnValue)
                                            : IdentifierName(csElement.ReturnValue.Name);
 
-            var doReturnResult = csElement.ReturnValue.PublicType.QualifiedName == globalNamespace.GetTypeName(WellKnownName.Result);
+            var doReturnResult = csElement.IsReturnTypeResult(globalNamespace);
 
-            if (doReturnResult && csElement.HasReturnTypeValue && sig.ReturnType.TypeName == "int" && csElement.ReturnValue.UsedAsReturn && !csElement.HasReturnTypeParameter)
+            if (doReturnResult && csElement.HasReturnTypeValue(globalNamespace) && sig.ReturnType.TypeName == "int" && !csElement.HasReturnTypeParameter)
             {
                 nativeReturnLocation = CastExpression(interopReturnType, ParenthesizedExpression(nativeReturnLocation));
             }
 
-            if (csElement.HasReturnTypeValue)
+            if (csElement.HasReturnTypeValue(globalNamespace))
             {
                 statements.Add(
                     ReturnStatement(isForcedReturnBufferSig ?
@@ -309,7 +309,7 @@ namespace SharpGen.Generator
                                                     IdentifierName(exceptionVariableIdentifier))))),
                                     IdentifierName("Code"))));
                 
-                if (csElement.HideReturnType && !csElement.ForceReturnType)
+                if (csElement.IsReturnTypeHidden(globalNamespace) && !csElement.ForceReturnType)
                 {
                     statements.Add(ReturnStatement(
                             MemberAccessExpression(

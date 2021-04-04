@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Polly.Contrib.WaitAndRetry;
 using SharpGen.CppModel;
 using SharpGen.Doc;
+using SharpGen.Model;
 using SharpGen.Platform.Documentation;
 
 namespace SharpGenTools.Sdk.Documentation
@@ -18,15 +19,15 @@ namespace SharpGenTools.Sdk.Documentation
     {
         private static readonly TimeSpan TenthOfSecond = TimeSpan.FromMilliseconds(100);
 
-        public static async Task ApplyDocumentation(IDocProvider? docProvider, DocItemCache cache, CppModule module,
+        public static async Task ApplyDocumentation(IDocProvider? docProvider, DocItemCache cache, CsAssembly module,
                                                     DocumentationContext context)
         {
             var documentationTasks = new List<Task>();
 
-            Task DocumentSelector(CppElement cppElement) =>
+            Task DocumentSelector(CsBase cppElement) =>
                 DocumentElement(docProvider, cache, cppElement, context, true, null);
 
-            foreach (var cppInclude in module.Includes)
+            foreach (var cppInclude in module.Namespaces)
             {
                 documentationTasks.AddRange(cppInclude.Enums.Select(DocumentSelector));
                 documentationTasks.AddRange(cppInclude.Structs.Select(DocumentSelector));
@@ -35,8 +36,8 @@ namespace SharpGenTools.Sdk.Documentation
                               .Select(cppInterface => DocumentInterface(docProvider, cache, cppInterface, context))
                 );
                 documentationTasks.AddRange(
-                    cppInclude.Functions
-                              .Select(cppFunction => DocumentCallable(docProvider, cache, cppFunction, context))
+                    cppInclude.Classes
+                              .Select(cppFunction => DocumentGroup(docProvider, cache, cppFunction, context))
                 );
             }
 
@@ -45,7 +46,7 @@ namespace SharpGenTools.Sdk.Documentation
 
         private static async Task<IDocItem?> DocumentElement(IDocProvider? docProvider,
                                                              DocItemCache cache,
-                                                             CppElement element,
+                                                             CsBase element,
                                                              DocumentationContext context,
                                                              bool documentInnerElements,
                                                              string? name)
@@ -66,7 +67,7 @@ namespace SharpGenTools.Sdk.Documentation
             if (docItem == null)
                 return null;
 
-            element.Id = docItem.ShortId;
+            element.DocId = docItem.ShortId;
             element.Description = docItem.Summary;
             element.Remarks = docItem.Remarks;
             docItem.Names.Add(docName);
@@ -74,7 +75,7 @@ namespace SharpGenTools.Sdk.Documentation
             if (cacheEntry == null)
                 cache.Add(docItem);
 
-            if (element.IsEmpty)
+            if (element.Items.Count == 0)
                 return docItem;
 
             if (documentInnerElements)
@@ -228,7 +229,7 @@ namespace SharpGenTools.Sdk.Documentation
             (Backoff.DecorrelatedJitterBackoffV2(offset + TenthOfSecond, 5).ToArray(), 0, null);
 
         private static async Task DocumentCallable(IDocProvider? docProvider, DocItemCache cache,
-                                                   CppCallable callable, DocumentationContext context,
+                                                   CsCallable callable, DocumentationContext context,
                                                    string? name = null)
         {
             var docItem = await DocumentElement(docProvider, cache, callable, context, true, name);
@@ -240,25 +241,45 @@ namespace SharpGenTools.Sdk.Documentation
         }
 
         private static async Task DocumentInterface(IDocProvider? docProvider, DocItemCache cache,
-                                                    CppInterface cppInterface, DocumentationContext context)
+                                                    CsInterface cppInterface, DocumentationContext context)
         {
-            Task DocumentSelector(CppMethod func) =>
+            Task CallableSelector(CsCallable func) =>
                 DocumentCallable(docProvider, cache, func, context, cppInterface.Name + "::" + func.Name);
 
+            Task VariableSelector(CsBase cppElement) =>
+                DocumentElement(docProvider, cache, cppElement, context, true, null);
+
+            // TODO: fix properties docs (they extract doc data from methods on attach to interface)
             await Task.WhenAll(
-                cppInterface.Methods
-                            .Select(DocumentSelector)
+                cppInterface.Methods.Select(CallableSelector)
+                            .Concat(cppInterface.Variables.Select(VariableSelector))
                             .Append(DocumentElement(docProvider, cache, cppInterface, context, false, null))
             );
         }
 
-        private static void DocumentInnerElements(IReadOnlyCollection<CppElement> elements, IDocItem docItem)
+        private static async Task DocumentGroup(IDocProvider? docProvider, DocItemCache cache,
+                                                CsGroup cppInterface, DocumentationContext context)
+        {
+            Task CallableSelector(CsCallable func) =>
+                DocumentCallable(docProvider, cache, func, context, cppInterface.Name + "::" + func.Name);
+
+            Task VariableSelector(CsBase cppElement) =>
+                DocumentElement(docProvider, cache, cppElement, context, true, null);
+
+            await Task.WhenAll(
+                cppInterface.Functions.Select(CallableSelector)
+                            .Concat(cppInterface.Variables.Select(VariableSelector))
+                            .Append(DocumentElement(docProvider, cache, cppInterface, context, false, null))
+            );
+        }
+
+        private static void DocumentInnerElements(IReadOnlyCollection<CsBase> elements, IDocItem docItem)
         {
             var count = Math.Min(elements.Count, docItem.Items.Count);
             var i = 0;
             foreach (var element in elements)
             {
-                element.Id = docItem.ShortId;
+                element.DocId = docItem.ShortId;
 
                 // Try to find the matching item
                 var foundMatch = false;

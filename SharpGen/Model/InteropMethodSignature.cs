@@ -21,6 +21,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using SharpGen.CppModel;
 
 namespace SharpGen.Model
 {
@@ -92,7 +93,7 @@ namespace SharpGen.Model
             }
         }
 
-        public string CallingConvention { get; set; }
+        public CppCallingConvention CallingConvention { get; set; }
         public InteropMethodSignatureFlags Flags { get; set; }
 
         private InteropMethodSignatureFlags FlagsForName => Flags & ~FlagsToIgnoreForName;
@@ -104,7 +105,7 @@ namespace SharpGen.Model
                 var returnTypeName = ReturnType.TypeName;
                 returnTypeName = returnTypeName.Replace("*", "Ptr");
                 returnTypeName = returnTypeName.Replace(".", string.Empty);
-                return $"Calli{CallingConvention}{(IsFunction ? "Func" : "")}{returnTypeName}_{FlagsForName}";
+                return $"Call{CallingConvention}{(IsFunction ? "Func" : "")}{returnTypeName}_{FlagsForName}";
             }
         }
 
@@ -113,7 +114,7 @@ namespace SharpGen.Model
         {
             StringBuilder builder = new();
             builder.Append(ReturnType.TypeName);
-            builder.Append(" Calli");
+            builder.Append(" Call");
             builder.Append(ReturnType.TypeName);
             builder.Append('(');
             for (int i = 0; i < ParameterTypes.Count; i++)
@@ -154,8 +155,8 @@ namespace SharpGen.Model
         {
             unchecked
             {
-                var hashCode = (ReturnType != null ? ReturnType.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (CallingConvention != null ? CallingConvention.GetHashCode() : 0);
+                var hashCode = ReturnType != null ? ReturnType.GetHashCode() : 0;
+                hashCode = (hashCode * 397) ^ CallingConvention.GetHashCode();
                 hashCode = (hashCode * 397) ^ (int) Flags;
                 hashCode = (hashCode * 397) ^ ParameterTypes.Count;
 

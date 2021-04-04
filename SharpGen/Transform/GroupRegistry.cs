@@ -1,13 +1,11 @@
-﻿using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
+using SharpGen.Model;
 
 namespace SharpGen.Transform
 {
     public class GroupRegistry
     {
-        private readonly Dictionary<string, CsGroup> _mapRegisteredFunctionGroup = new Dictionary<string, CsGroup>();
+        private readonly Dictionary<string, CsGroup> _mapRegisteredFunctionGroup = new();
 
         public void RegisterGroup(string className, CsGroup group)
         {
@@ -21,9 +19,8 @@ namespace SharpGen.Transform
         /// <returns></returns>
         public CsGroup FindGroup(string className)
         {
-            _mapRegisteredFunctionGroup.TryGetValue(className, out CsGroup csClass);
+            _mapRegisteredFunctionGroup.TryGetValue(className, out var csClass);
             return csClass;
         }
-
     }
 }

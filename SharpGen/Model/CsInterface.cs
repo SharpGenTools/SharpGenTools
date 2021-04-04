@@ -17,154 +17,147 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
-using System.Runtime.Serialization;
-using System.Xml.Serialization;
 using SharpGen.Config;
 using SharpGen.CppModel;
 
 namespace SharpGen.Model
 {
-    [DataContract(Name = "Interface")]
     public class CsInterface : CsTypeBase
     {
-        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
-        public CsInterface() : this(null)
+        private CsBaseItemListCache<CsMethod> methods;
+        private string shadowName;
+        private string vtblName;
+
+        public CsInterface(CppInterface cppInterface, string name) : base(cppInterface, name)
         {
+            var tag = cppInterface?.Rule;
+            IsCallback = tag?.IsCallbackInterface ?? IsCallback;
+            IsDualCallback = tag?.IsDualCallbackInterface ?? IsDualCallback;
+            AutoGenerateShadow = tag?.AutoGenerateShadow ?? AutoGenerateShadow;
+            AutoGenerateVtbl = tag?.AutoGenerateVtbl ?? AutoGenerateVtbl;
+            StaticShadowVtbl = tag?.StaticShadowVtbl ?? StaticShadowVtbl;
+            ShadowVisibility = tag?.ShadowVisibility ?? ShadowVisibility;
+            VtblVisibility = tag?.VtblVisibility ?? VtblVisibility;
+
+            if (tag?.ShadowName != null)
+                ShadowName = tag.ShadowName;
+            if (tag?.VtblName != null)
+                VtblName = tag.VtblName;
+
+            if (cppInterface is null)
+                return;
+
+            Guid = FindGuid(cppInterface);
         }
 
-        public CsInterface(CppInterface cppInterface)
+        private static string FindGuid(CppInterface cppInterface)
         {
-            CppElement = cppInterface;
-            if (cppInterface != null)
-                Guid = cppInterface.Guid;
+            if (!string.IsNullOrEmpty(cppInterface.Guid))
+                return cppInterface.Guid;
+
+            // If Guid is null we try to recover it from a declared GUID
+
+            var finder = new CppElementFinder(cppInterface.ParentInclude);
+
+            var cppGuid = finder.Find<CppGuid>("IID_" + cppInterface.Name).FirstOrDefault();
+
+            return cppGuid != null
+                       ? cppGuid.Guid.ToString()
+                       : cppInterface.Guid;
         }
 
-        public IEnumerable<CsMethod> Methods
-        {
-            get { return Items.OfType<CsMethod>(); }
-        }
+        public IEnumerable<CsMethod> Methods => methods.Enumerate(this);
+        public IReadOnlyList<CsMethod> MethodList => methods.GetList(this);
 
-        public IEnumerable<CsProperty> Properties
-        {
-            get { return Items.OfType<CsProperty>(); }
-        }
+        public IEnumerable<CsProperty> Properties => Items.OfType<CsProperty>();
 
-        /// <summary>
-        /// Gets the variables stored in this container.
-        /// </summary>
-        /// <value>The variables.</value>
-        public IEnumerable<CsVariable> Variables
-        {
-            get { return Items.OfType<CsVariable>(); }
-        }
+        public IEnumerable<CsVariable> Variables => Items.OfType<CsVariable>();
 
         /// <summary>
         /// Gets or sets the <see cref="Visibility"/> of the Shadow of this interface.
         /// Default is empty, if no <c>partial</c> part is present it will be <c>internal</c> (top-level type).
         /// </summary>
-        public Visibility? ShadowVisibility { get; set; }
+        public Visibility? ShadowVisibility { get; }
 
         /// <summary>
         /// Gets or sets the <see cref="Visibility"/> of the Vtbl of this interface.
         /// Default is <c>protected internal</c>.
         /// </summary>
-        public Visibility? VtblVisibility { get; set; }
-
-        protected override void UpdateFromMappingRule(MappingRule tag)
-        {
-            base.UpdateFromMappingRule(tag);
-            IsCallback = tag.IsCallbackInterface ?? false;
-            IsDualCallback = tag.IsDualCallbackInterface ?? false;
-            AutoGenerateShadow = tag.AutoGenerateShadow ?? false;
-            AutoGenerateVtbl = tag.AutoGenerateVtbl ?? true;
-            StaticShadowVtbl = tag.StaticShadowVtbl ?? true;
-            ShadowName = tag.ShadowName;
-            VtblName = tag.VtblName;
-            if (tag.ShadowVisibility.HasValue)
-                ShadowVisibility = tag.ShadowVisibility.Value;
-            if (tag.VtblVisibility.HasValue)
-                VtblVisibility = tag.VtblVisibility.Value;
-        }
+        public Visibility? VtblVisibility { get; }
 
         /// <summary>
         /// Class Parent inheritance
         /// </summary>
-        [DataMember]
         public CsInterface Base { get; set; }
 
         /// <summary>
         /// Interface Parent inheritance
         /// </summary>
-        [DataMember]
         public CsInterface IBase { get; set; }
 
-        [DataMember]
         public CsInterface NativeImplementation { get; set; }
 
-        [DataMember]
-        public string Guid { get; set; }
+        public string Guid { get; }
 
         /// <summary>
         ///   Only valid for inner interface. Specify the name of the property in the outer interface to access to the inner interface
         /// </summary>
-        [DataMember]
         public string PropertyAccessName { get; set; }
 
         /// <summary>
         ///   True if this interface is used as a callback to a C# object
         /// </summary>
-        [DataMember]
         public bool IsCallback { get; set; }
 
         /// <summary>
         ///   True if this interface is used as a dual-callback to a C# object
         /// </summary>
-        [DataMember]
         public bool IsDualCallback { get; set; }
 
-        private string shadowName;
-
-        [DataMember]
         public string ShadowName
         {
-            get => shadowName ?? $"{QualifiedName}Shadow";
+            get => shadowName ?? DefaultShadowFullName;
             set => shadowName = value;
         }
 
-        private string vtblName;
-
-        [DataMember]
         public string VtblName
         {
             get => vtblName ?? DefaultVtblFullName;
             set => vtblName = value;
         }
 
+        private string DefaultShadowFullName => $"{QualifiedName}Shadow";
         private string DefaultVtblFullName => $"{ShadowName}.{Name}Vtbl";
 
-        [DataMember] public bool AutoGenerateShadow { get; set; }
-        [DataMember] public bool AutoGenerateVtbl { get; set; }
-        [DataMember] public bool StaticShadowVtbl { get; set; }
+        public bool AutoGenerateShadow { get; }
+        public bool AutoGenerateVtbl { get; } = true;
+        public bool StaticShadowVtbl { get; } = true;
 
-        /// <summary>
-        ///   List of declared inner structs
-        /// </summary>
-        public bool HasInnerInterfaces => Items.OfType<CsInterface>().Any();
+        public bool HasInnerInterfaces => InnerInterfaces.Any();
 
         [ExcludeFromCodeCoverage]
         public override string ToString()
         {
-            return string.Format(System.Globalization.CultureInfo.InvariantCulture, "csinterface {0} => {1}", CppElementName, QualifiedName);
+            return string.Format(
+                CultureInfo.InvariantCulture, "csinterface {0} => {1}",
+                CppElementName, QualifiedName
+            );
         }
 
-        /// <summary>
-        ///   List of declared inner structs
-        /// </summary>
-        public IEnumerable<CsInterface> InnerInterfaces
+        public IEnumerable<CsInterface> InnerInterfaces => Items.OfType<CsInterface>();
+
+        public bool IsFullyMapped { get; set; } = true;
+
+        private protected override IEnumerable<IExpiring> ExpiringOnItemsChange
         {
-            get { return Items.OfType<CsInterface>(); }
+            get
+            {
+                yield return methods.Expiring;
+            }
         }
     }
 }

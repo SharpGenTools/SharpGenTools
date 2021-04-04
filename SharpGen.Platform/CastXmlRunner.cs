@@ -122,7 +122,7 @@ namespace SharpGen.Platform
         private void RunCastXml(string headerFile, DataReceivedEventHandler outputDataCallback, string additionalArguments)
         {
             var arguments = GetCastXmlArgs().Append(additionalArguments)
-                                            .Concat(directoryResolver.IncludePaths);
+                                            .Concat(directoryResolver.IncludeArguments);
             var argumentsString = string.Join(" ", arguments);
 
             Logger.Message("CastXML {0}", argumentsString);

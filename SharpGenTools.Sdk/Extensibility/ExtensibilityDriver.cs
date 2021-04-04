@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using SharpGen.CppModel;
 using SharpGen.Doc;
 using SharpGen.Logging;
+using SharpGen.Model;
 using SharpGen.Platform.Documentation;
 using SharpGenTools.Sdk.Documentation;
 using SharpGenTools.Sdk.Internal;
@@ -86,7 +87,7 @@ namespace SharpGenTools.Sdk.Extensibility
             docProviders = docProviderBuilder.ToImmutable();
         }
 
-        public async Task DocumentModule(LoggerBase logger, DocItemCache cache, CppModule module, Lazy<DocumentationContext> context)
+        public async Task DocumentModule(LoggerBase logger, DocItemCache cache, CsAssembly module, Lazy<DocumentationContext> context)
         {
             ResolveExtensibilityPoints(logger, out var documentationProviders);
 

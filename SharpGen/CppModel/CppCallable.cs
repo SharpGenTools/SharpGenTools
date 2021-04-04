@@ -1,70 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Xml.Serialization;
 
 namespace SharpGen.CppModel
 {
-    [XmlType("callable")]
-    public class CppCallable : CppElement
+    public abstract class CppCallable : CppContainer
     {
         protected virtual CppCallingConvention DefaultCallingConvention => CppCallingConvention.CDecl;
 
-        /// <summary>
-        /// Gets or sets the type of the return.
-        /// </summary>
-        /// <value>The type of the return.</value>
-        [XmlElement("return")]
         public CppReturnValue ReturnValue { get; set; }
 
         private CppCallingConvention callingConvention;
-        /// <summary>
-        /// Gets or sets the calling convention.
-        /// </summary>
-        /// <value>The calling convention.</value>
-        [XmlAttribute("call-conv")]
+
         public CppCallingConvention CallingConvention
         {
-            get
-            {
-                return (callingConvention == CppCallingConvention.Unknown)
-                    ? (callingConvention = DefaultCallingConvention)
-                    : callingConvention;
-            }
-            set
-            {
-                callingConvention = value;
-            }
+            get => callingConvention == CppCallingConvention.Unknown
+                       ? callingConvention = DefaultCallingConvention
+                       : callingConvention;
+            set => callingConvention = value;
         }
 
-        /// <summary>
-        /// Gets the parameters.
-        /// </summary>
-        /// <value>The parameters.</value>
-        [XmlIgnore]
-        public IEnumerable<CppParameter> Parameters
-        {
-            get { return Iterate<CppParameter>(); }
-        }
+        public IEnumerable<CppParameter> Parameters => Iterate<CppParameter>();
 
-        protected internal override IEnumerable<CppElement> AllItems
-        {
-            get
-            {
-                var allElements = new List<CppElement>(Iterate<CppElement>());
-                allElements.Add(ReturnValue);
-                return allElements;
-            }
-        }
+        protected internal override IEnumerable<CppElement> AllItems => Iterate<CppElement>().Append(ReturnValue);
 
-        /// <summary>
-        /// Returns a <see cref="System.String"/> that represents this instance.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="System.String"/> that represents this instance.
-        /// </returns>
-        [ExcludeFromCodeCoverage]
         public override string ToString()
         {
             var builder = new StringBuilder();
@@ -75,6 +34,7 @@ namespace SharpGen.CppModel
                 builder.Append(Parent.Name);
                 builder.Append("::");
             }
+
             builder.Append(Name);
             builder.Append("(");
 
@@ -94,7 +54,7 @@ namespace SharpGen.CppModel
             return builder.ToString();
         }
 
-        public override string ToShortString()
+        public string ToShortString()
         {
             var builder = new StringBuilder();
             if (Parent is CppInterface)
@@ -102,8 +62,13 @@ namespace SharpGen.CppModel
                 builder.Append(Parent.Name);
                 builder.Append("::");
             }
+
             builder.Append(Name);
             return builder.ToString();
+        }
+
+        protected CppCallable(string name) : base(name)
+        {
         }
     }
 }

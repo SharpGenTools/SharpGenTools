@@ -50,7 +50,7 @@ namespace SharpGen.Transform
             factory.RequestStructProcessing += Process;
         }
 
-        private readonly Dictionary<Regex, string> _mapMoveStructToInner = new Dictionary<Regex, string>();
+        private readonly Dictionary<Regex, string> _mapMoveStructToInner = new();
 
         /// <summary>
         /// Moves a C++ struct to an inner C# struct.
@@ -71,12 +71,11 @@ namespace SharpGen.Transform
         {
             // Create a new C# struct
             var nameSpace = namespaceRegistry.ResolveNamespace(cppStruct);
-            var csStruct = new CsStruct(cppStruct)
-                                   {
-                                       Name = NamingRules.Rename(cppStruct),
-                                       // IsFullyMapped to false => The structure is being mapped
-                                       IsFullyMapped = false
-                                   };
+            var csStruct = new CsStruct(cppStruct, NamingRules.Rename(cppStruct))
+            {
+                // IsFullyMapped to false => The structure is being mapped
+                IsFullyMapped = false
+            };
 
             // Add the C# struct to its namespace
             nameSpace.Add(csStruct);
@@ -149,24 +148,24 @@ namespace SharpGen.Transform
             {
                 currentStruct = inheritedStructs.Pop();
 
-                int fieldCount = currentStruct.IsEmpty ? 0 : currentStruct.Items.Count;
+                var fields = currentStruct.Fields.ToArray();
+                int fieldCount = fields.Length;
+                var fieldNames = NamingRules.Rename(fields);
 
                 // -------------------------------------------------------------------------------
                 // Iterate on all fields and perform mapping
                 // -------------------------------------------------------------------------------
                 for (int fieldIndex = 0; fieldIndex < fieldCount; fieldIndex++)
                 {
-                    var cppField = (CppField)currentStruct.Items[fieldIndex];
+                    var cppField = fields[fieldIndex];
+                    var fieldName = fieldNames[fieldIndex];
                     Logger.RunInContext(cppField.ToString(), () =>
                     {
-                        var csField = factory.Create(cppField);
+                        var csField = factory.Create(cppField, fieldName);
                         csStruct.Add(csField);
 
-                        // Get name
-                        csField.Name = NamingRules.Rename(cppField);
-
                         var fieldHasMarshalType = csField.PublicType != csField.MarshalType
-                            || csField.PublicType is CsStruct {HasMarshalType: true}
+                            || csField.HasNativeValueType
                             || csField.IsArray;
 
                         // BoolToInt doesn't generate native Marshaling although they have a different marshaller
@@ -213,8 +212,8 @@ namespace SharpGen.Transform
                         }
 
                         var nextFieldIndex = fieldIndex + 1;
-                        if ((previousFieldOffsetIndex == cppField.Offset)
-                            || (nextFieldIndex < fieldCount && ((CppField)currentStruct.Items[nextFieldIndex]).Offset == cppField.Offset))
+                        if (previousFieldOffsetIndex == cppField.Offset
+                         || (nextFieldIndex < fieldCount && fields[nextFieldIndex].Offset == cppField.Offset))
                         {
                             if (previousFieldOffsetIndex != cppField.Offset)
                             {
@@ -260,7 +259,7 @@ namespace SharpGen.Transform
                 }
             }
 
-            csStruct.SetSize(currentFieldAbsoluteOffset + previousFieldSize);
+            csStruct.StructSize = currentFieldAbsoluteOffset + previousFieldSize;
             csStruct.HasMarshalType = hasMarshalType;
         }
     }

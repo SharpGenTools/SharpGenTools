@@ -31,20 +31,22 @@ namespace SharpGen.Generator
             var documentationTrivia = GenerateDocumentationTrivia(csElement);
 
             // method signature
-            var methodDeclaration = MethodDeclaration(ParseTypeName(csElement.PublicReturnTypeQualifiedName), csElement.Name)
-                .WithModifiers(csElement.VisibilityTokenList.Add(Token(SyntaxKind.UnsafeKeyword)))
-                .WithParameterList(
-                    ParameterList(
-                        SeparatedList(
-                            csElement.PublicParameters.Select(param =>
-                                Generators.Marshalling.GetMarshaller(param).GenerateManagedParameter(param)
-                                    .WithDefault(param.DefaultValue == null ? default
-                                        : EqualsValueClause(ParseExpression(param.DefaultValue)))
-                                )
-                            )
-                        )
-                )
-                .WithLeadingTrivia(Trivia(documentationTrivia));
+            var parameters = csElement.PublicParameters.Select(
+                param => Generators.Marshalling.GetMarshaller(param)
+                                   .GenerateManagedParameter(param)
+                                   .WithDefault(param.DefaultValue == null
+                                                    ? default
+                                                    : EqualsValueClause(ParseExpression(param.DefaultValue))
+                                    )
+            );
+
+            var methodDeclaration = MethodDeclaration(
+                                        ParseTypeName(csElement.GetPublicReturnTypeQualifiedName(globalNamespace)),
+                                        csElement.Name
+                                    )
+                                   .WithModifiers(csElement.VisibilityTokenList.Add(Token(SyntaxKind.UnsafeKeyword)))
+                                   .WithParameterList(ParameterList(SeparatedList(parameters)))
+                                   .WithLeadingTrivia(Trivia(documentationTrivia));
 
             if (csElement.SignatureOnly)
             {
@@ -179,7 +181,7 @@ namespace SharpGen.Generator
                 .Where(param => param != null));
 
 
-            if ((csElement.ReturnValue.PublicType.Name == globalNamespace.GetTypeName(WellKnownName.Result)) && csElement.CheckReturnType)
+            if (csElement.IsReturnTypeResult(globalNamespace) && csElement.CheckReturnType)
             {
                 statements.Add(ExpressionStatement(
                     InvocationExpression(
@@ -189,7 +191,7 @@ namespace SharpGen.Generator
             }
 
             // Return
-            if (csElement.HasReturnStatement)
+            if (csElement.HasReturnStatement(globalNamespace))
             {
                 statements.Add(ReturnStatement(IdentifierName(csElement.ReturnName)));
             }

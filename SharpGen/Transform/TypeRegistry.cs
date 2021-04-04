@@ -6,13 +6,13 @@ using System.Linq;
 
 namespace SharpGen.Transform
 {
-    public class TypeRegistry
+    public partial class TypeRegistry
     {
         private readonly Dictionary<string, (CsTypeBase CSharpType, CsTypeBase MarshalType)> _mapCppNameToCSharpType = new();
         private readonly Dictionary<string, CsTypeBase> _mapDefinedCSharpType = new();
 
         private Logger Logger { get; }
-        public IDocumentationLinker DocLinker { get; }
+        private IDocumentationLinker DocLinker { get; }
 
         public TypeRegistry(Logger logger, IDocumentationLinker docLinker)
         {
@@ -24,11 +24,12 @@ namespace SharpGen.Transform
         /// Defines and register a C# type.
         /// </summary>
         /// <param name = "type">The C# type.</param>
-        public void DefineType(CsTypeBase type)
+        public void DefineType(CsTypeBase type) => DefineTypeImpl(type, type.QualifiedName);
+
+        private void DefineTypeImpl(CsTypeBase type, string typeName)
         {
-            var qualifiedName = type.QualifiedName;
-            if (!_mapDefinedCSharpType.ContainsKey(qualifiedName))
-                _mapDefinedCSharpType.Add(qualifiedName, type);
+            if (!_mapDefinedCSharpType.ContainsKey(typeName))
+                _mapDefinedCSharpType.Add(typeName, type);
         }
 
         /// <summary>
@@ -38,49 +39,138 @@ namespace SharpGen.Transform
         /// <returns>The C# type base</returns>
         public CsTypeBase ImportType(string typeName)
         {
-            if (!_mapDefinedCSharpType.TryGetValue(typeName, out CsTypeBase cSharpType))
+            var primitiveType = ImportPrimitiveType(typeName);
+            if (primitiveType != null)
+                return primitiveType;
+
+            if (_mapDefinedCSharpType.TryGetValue(typeName, out var cSharpType))
+                return cSharpType;
+
+            var type = Type.GetType(typeName);
+
+            if (type == null)
             {
-                if (typeName == "void")
-                    return ImportType(typeof(void));
-                if (typeName == "void*")
-                    return ImportType(typeof(void*));
-
-                var type = Type.GetType(typeName);
-
-                if (type == null)
-                {
-                    Logger.Warning(LoggingCodes.TypeNotDefined, "Type [{0}] is not defined", typeName);
-                    cSharpType = new CsUndefinedType { Name = typeName };
-                    DefineType(cSharpType);
-                    return cSharpType;
-                }
-
-                return ImportType(type);
+                Logger.Warning(LoggingCodes.TypeNotDefined, "Type [{0}] is not defined", typeName);
+                cSharpType = new CsUndefinedType(typeName);
+                DefineTypeImpl(cSharpType, typeName);
+                return cSharpType;
             }
+
+            var transformedTypeName = type.FullName;
+
+            if (transformedTypeName == null)
+            {
+                Logger.Warning(LoggingCodes.TypeNotDefined, "Type [{0}] has null {1}", typeName, nameof(type.FullName));
+                cSharpType = new CsUndefinedType(typeName);
+                DefineTypeImpl(cSharpType, typeName);
+                return cSharpType;
+            }
+
+            if (_mapDefinedCSharpType.TryGetValue(transformedTypeName, out cSharpType))
+                return cSharpType;
+
+            cSharpType = new CsFundamentalType(type, transformedTypeName);
+            DefineTypeImpl(cSharpType, transformedTypeName);
             return cSharpType;
         }
 
-        public CsFundamentalType ImportType(Type type)
+        public static CsFundamentalType ImportPrimitiveType(string typeName)
         {
-            var typeName = type.FullName;
+            if (typeName == null)
+                return null;
 
-            if (type == typeof(void)) // Cannot use System.Void in C# generated code.
+            typeName = typeName.Trim();
+
+            if (typeName.Length == 0)
+                return null;
+
+            if (PrimitiveTypeEntriesByName.TryGetValue(typeName, out var entry))
+                return entry;
+
+            var typeNameParts = typeName.Split(new[] {'*'}, 2, StringSplitOptions.RemoveEmptyEntries);
+
+            var baseTypeName = typeNameParts[0].Trim();
+
+            var pointerCountInt = typeName.Count(x => x == '*');
+            var pointerCount = checked((byte) pointerCountInt);
+
+            CsFundamentalType FindOrCreate(PrimitiveTypeCode typeCode)
             {
-                typeName = "void";
-            }
-            else if (type == typeof(void*))
-            {
-                typeName = "void*";
+                PrimitiveTypeIdentity identity = new(typeCode, pointerCount);
+                return FindPrimitiveTypeImpl(identity, baseTypeName, typeName);
             }
 
-            if (_mapDefinedCSharpType.TryGetValue(typeName, out CsTypeBase preDefined))
+            switch (pointerCount)
             {
-                return (CsFundamentalType)preDefined;
+                case 0:
+                    break;
+                case 1 when typeName == "void*":
+                    throw new Exception(
+                        $"void* is supposed to have been found in {nameof(PrimitiveTypeEntriesByName)}"
+                    );
+                default:
+                    if (PrimitiveTypeEntriesByName.TryGetValue(baseTypeName, out var baseEntry))
+                    {
+                        // ReSharper disable once PossibleInvalidOperationException
+                        entry = FindOrCreate(baseEntry.PrimitiveTypeIdentity.Value.Type);
+                    }
+
+                    break;
             }
 
-            var cSharpType = new CsFundamentalType(type) { Name = typeName };
-            DefineType(cSharpType);
-            return cSharpType;
+            if (entry == null)
+            {
+                var type = Type.GetType(baseTypeName);
+
+                var baseEntry = PrimitiveRuntimeTypesByCode.Where(x => x.Value == type).Take(1).ToArray();
+
+                if (baseEntry.Length == 1)
+                    entry = FindOrCreate(baseEntry[0].Key);
+            }
+
+            return entry;
+        }
+
+        public static CsFundamentalType ImportPrimitiveType(PrimitiveTypeCode code, byte pointerCount = 0)
+        {
+            if (pointerCount == 1 && code == PrimitiveTypeCode.Void)
+                return VoidPtr;
+
+            PrimitiveTypeIdentity baseIdentity = new(code);
+            var baseEntry = PrimitiveTypeEntriesByIdentity[baseIdentity];
+
+            if (pointerCount == 0)
+                return baseEntry;
+
+            PrimitiveTypeIdentity identity = new(code, pointerCount);
+
+            return FindPrimitiveTypeImpl(identity, baseEntry.QualifiedName, null);
+        }
+
+        private static CsFundamentalType FindPrimitiveTypeImpl(PrimitiveTypeIdentity identity,
+                                                               string baseTypeName,
+                                                               string requestFullName)
+        {
+            var pointerCount = identity.PointerCount;
+            var processedTypeName = baseTypeName + new string('*', pointerCount);
+
+            if (!PrimitiveTypeEntriesByIdentity.TryGetValue(identity, out var entry))
+            {
+                var runtimeType = PrimitiveRuntimeTypesByCode[identity.Type];
+                for (byte i = 0; i < pointerCount; i++)
+                    runtimeType = runtimeType.MakePointerType();
+
+                entry = new CsFundamentalType(runtimeType, identity, processedTypeName);
+
+                PrimitiveTypeEntriesByIdentity.Add(identity, entry);
+                PrimitiveTypeEntriesByName.Add(processedTypeName, entry);
+            }
+
+            if (!string.IsNullOrEmpty(requestFullName) && requestFullName != processedTypeName)
+                // Add alias, like System.Boolean for bool
+                PrimitiveTypeEntriesByName.Add(requestFullName, entry);
+
+            return entry;
         }
 
         /// <summary>
@@ -91,12 +181,14 @@ namespace SharpGen.Transform
         /// <param name = "marshalType">The C# marshal type</param>
         public void BindType(string cppName, CsTypeBase type, CsTypeBase marshalType = null)
         {
-
-            if (_mapCppNameToCSharpType.ContainsKey(cppName))
+            if (_mapCppNameToCSharpType.TryGetValue(cppName, out var old))
             {
-                var old = _mapCppNameToCSharpType[cppName];
-                Logger.Warning(LoggingCodes.DuplicateBinding, "Mapping C++ element [{0}] to CSharp type [{1}/{2}] is already mapped to [{3}/{4}]", cppName, type.CppElementName,
-                             type.QualifiedName, old.CSharpType.CppElementName, old.CSharpType.QualifiedName);
+                Logger.Warning(
+                    LoggingCodes.DuplicateBinding,
+                    "Mapping C++ element [{0}] to CSharp type [{1}/{2}] is already mapped to [{3}/{4}]",
+                    cppName, type.CppElementName, type.QualifiedName, old.CSharpType.CppElementName,
+                    old.CSharpType.QualifiedName
+                );
             }
             else
             {

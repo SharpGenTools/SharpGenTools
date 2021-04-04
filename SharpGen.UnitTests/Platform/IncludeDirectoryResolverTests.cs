@@ -22,7 +22,7 @@ namespace SharpGen.UnitTests.Platform
             var resolver = new IncludeDirectoryResolver(Logger);
             resolver.AddDirectories(new IncludeDirRule(@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10"));
 
-            Assert.Equal($@"-isystem""C:\Program Files (x86)\Windows Kits\10""", resolver.IncludePaths.First());
+            Assert.Equal($@"-isystem""C:\Program Files (x86)\Windows Kits\10""", resolver.IncludeArguments.First());
         }
 
         [SkippableFact]
@@ -33,7 +33,7 @@ namespace SharpGen.UnitTests.Platform
             var resolver = new IncludeDirectoryResolver(Logger);
             resolver.AddDirectories(new IncludeDirRule(@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;SubFolder"));
 
-            Assert.Equal($@"-isystem""C:\Program Files (x86)\Windows Kits\10\SubFolder""", resolver.IncludePaths.First());
+            Assert.Equal($@"-isystem""C:\Program Files (x86)\Windows Kits\10\SubFolder""", resolver.IncludeArguments.First());
         }
 
         [SkippableFact]
@@ -48,7 +48,7 @@ namespace SharpGen.UnitTests.Platform
             using (LoggerMessageCountEnvironment(0, ~LogLevel.Error))
             using (LoggerCodeRequiredEnvironment(LoggingCodes.RegistryKeyNotFound))
             {
-                resolver.IncludePaths.ToArray();
+                resolver.IncludeArguments.ToArray();
             }
         }
     }

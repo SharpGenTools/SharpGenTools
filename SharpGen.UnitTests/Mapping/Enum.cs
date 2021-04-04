@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
+using SharpGen.Transform;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -32,17 +34,11 @@ namespace SharpGen.UnitTests.Mapping
                 }
             };
 
-            var cppModel = new CppModule();
+            var cppModel = new CppModule("SharpGenTestModule");
 
-            var cppInclude = new CppInclude
-            {
-                Name = "cppEnum"
-            };
+            var cppInclude = new CppInclude("cppEnum");
 
-            var cppEnum = new CppEnum
-            {
-                Name = "TestEnum"
-            };
+            var cppEnum = new CppEnum("TestEnum");
 
             cppEnum.AddEnumItem("Element1", "0");
             cppEnum.AddEnumItem("Element2", "1");
@@ -59,7 +55,7 @@ namespace SharpGen.UnitTests.Mapping
 
             Assert.Single(csEnum.EnumItems.Where(item => item.Name == "Element1" && item.Value == "0"));
             Assert.Single(csEnum.EnumItems.Where(item => item.Name == "Element2" && item.Value == "1"));
-            Assert.Equal(typeof(int), csEnum.UnderlyingType.Type);
+            Assert.Equal(TypeRegistry.Int32, csEnum.UnderlyingType);
         }
 
         [Fact]
@@ -80,17 +76,11 @@ namespace SharpGen.UnitTests.Mapping
                 }
             };
 
-            var cppModel = new CppModule();
+            var cppModel = new CppModule("SharpGenTestModule");
 
-            var cppInclude = new CppInclude
-            {
-                Name = "cppEnum"
-            };
+            var cppInclude = new CppInclude("cppEnum");
 
-            var cppEnum = new CppEnum
-            {
-                Name = "TestEnum"
-            };
+            var cppEnum = new CppEnum("TestEnum");
 
             cppEnum.AddEnumItem("Element1", "10");
             cppEnum.AddEnumItem("Element2", "15");
@@ -109,15 +99,16 @@ namespace SharpGen.UnitTests.Mapping
             Assert.Single(csEnum.EnumItems.Where(item => item.Name == "Element1" && item.Value == "10"));
             Assert.Single(csEnum.EnumItems.Where(item => item.Name == "Element2" && item.Value == "15"));
             Assert.Single(csEnum.EnumItems.Where(item => item.Name == "Element3" && item.Value == "10"));
-            Assert.Equal(typeof(int), csEnum.UnderlyingType.Type);
+            Assert.Equal(TypeRegistry.Int32, csEnum.UnderlyingType);
         }
 
         [Theory]
-        [InlineData(typeof(short), "short")]
-        [InlineData(typeof(int), "int")]
-        [InlineData(typeof(ushort), "ushort")]
-        [InlineData(typeof(uint), "uint")]
-        public void ExplicitUnderlyingType(Type underlyingType, string underlyingTypeShortName)
+        [InlineData("byte")]
+        [InlineData("short")]
+        [InlineData("int")]
+        [InlineData("ushort")]
+        [InlineData("uint")]
+        public void ExplicitUnderlyingType(string underlyingType)
         {
             var config = new ConfigFile
             {
@@ -134,17 +125,13 @@ namespace SharpGen.UnitTests.Mapping
                 }
             };
 
-            var cppModel = new CppModule();
+            var cppModel = new CppModule("SharpGenTestModule");
 
-            var cppInclude = new CppInclude
-            {
-                Name = "cppEnum"
-            };
+            var cppInclude = new CppInclude("cppEnum");
 
-            var cppEnum = new CppEnum
+            var cppEnum = new CppEnum("TestEnum")
             {
-                Name = "TestEnum",
-                UnderlyingType = underlyingTypeShortName
+                UnderlyingType = underlyingType
             };
 
             cppInclude.Add(cppEnum);
@@ -152,12 +139,10 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(cppModel, config);
 
-            var members = solution.EnumerateDescendants();
+            Assert.Single(solution.EnumerateDescendants().OfType<CsEnum>());
 
-            Assert.Single(members.OfType<CsEnum>());
-
-            var csEnum = members.OfType<CsEnum>().First();
-            Assert.Equal(underlyingType, csEnum.UnderlyingType.Type);
+            var csEnum = solution.EnumerateDescendants().OfType<CsEnum>().First();
+            Assert.Equal(TypeRegistry.ImportPrimitiveType(underlyingType), csEnum.UnderlyingType);
         }
     }
 }

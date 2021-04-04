@@ -19,34 +19,37 @@ namespace SharpGen.UnitTests
         [Fact]
         public void PointerToTypeWithMarshallingMarshalsAsUnderlyingType()
         {
-            var cppMarshallable = new CppMarshallable
+            var cppMarshallable = new CppParameter("param")
             {
                 TypeName = "bool",
                 Pointer = "*"
             };
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("bool", typeRegistry.ImportType(typeof(bool)), typeRegistry.ImportType(typeof(int)));
+            typeRegistry.BindType("bool", TypeRegistry.Boolean, TypeRegistry.Int32);
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
-            var csMarshallable = marshalledElementFactory.Create(cppMarshallable);
-            Assert.Equal(typeRegistry.ImportType(typeof(int)), csMarshallable.MarshalType);
+            var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
+            Assert.Equal(TypeRegistry.Int32, csMarshallable.MarshalType);
+            Assert.Equal(0, csMarshallable.ArrayDimensionValue);
+            Assert.False(csMarshallable.IsArray);
+            Assert.True(csMarshallable.HasPointer);
         }
 
         [Fact]
         public void ParamWithNoTypeMappingShouldHaveMarshalTypeEqualToPublic()
         {
-            var marshallable = new CppMarshallable
+            var marshallable = new CppParameter("param")
             {
                 TypeName = "int"
             };
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("int", typeRegistry.ImportType(typeof(int)));
+            typeRegistry.BindType("int", TypeRegistry.Int32);
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
-            var csMarshallable = marshalledElementFactory.Create(marshallable);
+            var csMarshallable = marshalledElementFactory.Create(marshallable, marshallable.Name);
 
             Assert.Equal(csMarshallable.PublicType, csMarshallable.MarshalType);
         }
@@ -54,18 +57,18 @@ namespace SharpGen.UnitTests
         [Fact]
         public void DoublePointerParameterMappedAsOut()
         {
-            var cppParameter = new CppParameter
+            var cppParameter = new CppParameter("param")
             {
                 TypeName = "Interface",
                 Pointer = "**"
             };
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("Interface", new CsInterface { Name = "Interface" });
+            typeRegistry.BindType("Interface", new CsInterface(null, "Interface"));
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
-            var csParameter = marshalledElementFactory.Create(cppParameter);
+            var csParameter = marshalledElementFactory.Create(cppParameter, cppParameter.Name);
 
             Assert.Equal(CsParameterAttribute.Out, csParameter.Attribute);
         }
@@ -73,7 +76,7 @@ namespace SharpGen.UnitTests
         [Fact]
         public void CharArrayMappedToStringMarshalledWithByte()
         {
-            var cppMarshallable = new CppMarshallable
+            var cppMarshallable = new CppParameter("param")
             {
                 TypeName = "char",
                 IsArray = true,
@@ -84,18 +87,20 @@ namespace SharpGen.UnitTests
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
-            var csMarshallable = marshalledElementFactory.Create(cppMarshallable);
+            var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
 
-            Assert.Equal(typeRegistry.ImportType(typeof(string)), csMarshallable.PublicType);
-            Assert.Equal(typeRegistry.ImportType(typeof(byte)), csMarshallable.MarshalType);
+            Assert.Equal(TypeRegistry.String, csMarshallable.PublicType);
+            Assert.Equal(TypeRegistry.UInt8, csMarshallable.MarshalType);
             Assert.Equal(10, csMarshallable.ArrayDimensionValue);
-            Assert.True(csMarshallable.IsArray);
+            Assert.False(csMarshallable.IsArray);
+            Assert.True(csMarshallable.IsString);
+            Assert.False(csMarshallable.IsWideChar);
         }
 
         [Fact]
         public void WCharArrayMappedToStringMarshalledWithByte()
         {
-            var cppMarshallable = new CppMarshallable
+            var cppMarshallable = new CppParameter("param")
             {
                 TypeName = "wchar_t",
                 IsArray = true,
@@ -106,21 +111,21 @@ namespace SharpGen.UnitTests
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
-            var csMarshallable = marshalledElementFactory.Create(cppMarshallable);
+            var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
 
-            Assert.Equal(typeRegistry.ImportType(typeof(string)), csMarshallable.PublicType);
-            Assert.Equal(typeRegistry.ImportType(typeof(char)), csMarshallable.MarshalType);
+            Assert.Equal(TypeRegistry.String, csMarshallable.PublicType);
+            Assert.Equal(TypeRegistry.Char, csMarshallable.MarshalType);
             Assert.Equal(10, csMarshallable.ArrayDimensionValue);
-            Assert.True(csMarshallable.IsArray);
+            Assert.False(csMarshallable.IsArray);
+            Assert.True(csMarshallable.HasPointer);
+            Assert.True(csMarshallable.IsString);
             Assert.True(csMarshallable.IsWideChar);
         }
-
-
 
         [Fact]
         public void CharPointerMappedToStringMarshalledWithIntPtr()
         {
-            var cppMarshallable = new CppMarshallable
+            var cppMarshallable = new CppParameter("param")
             {
                 TypeName = "char",
                 Pointer = "*"
@@ -130,17 +135,19 @@ namespace SharpGen.UnitTests
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
-            var csMarshallable = marshalledElementFactory.Create(cppMarshallable);
+            var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
 
-            Assert.Equal(typeRegistry.ImportType(typeof(string)), csMarshallable.PublicType);
-            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csMarshallable.MarshalType);
+            Assert.Equal(TypeRegistry.String, csMarshallable.PublicType);
+            Assert.Equal(TypeRegistry.IntPtr, csMarshallable.MarshalType);
             Assert.True(csMarshallable.HasPointer);
+            Assert.False(csMarshallable.IsArray);
+            Assert.Equal(0, csMarshallable.ArrayDimensionValue);
         }
 
         [Fact]
         public void WCharPointerMappedToStringMarshalledWithIntPtr()
         {
-            var cppMarshallable = new CppMarshallable
+            var cppMarshallable = new CppParameter("param")
             {
                 TypeName = "wchar_t",
                 Pointer = "*"
@@ -150,18 +157,21 @@ namespace SharpGen.UnitTests
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
-            var csMarshallable = marshalledElementFactory.Create(cppMarshallable);
+            var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
 
-            Assert.Equal(typeRegistry.ImportType(typeof(string)), csMarshallable.PublicType);
-            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csMarshallable.MarshalType);
+            Assert.Equal(TypeRegistry.String, csMarshallable.PublicType);
+            Assert.Equal(TypeRegistry.IntPtr, csMarshallable.MarshalType);
+            Assert.False(csMarshallable.IsArray);
             Assert.True(csMarshallable.HasPointer);
+            Assert.True(csMarshallable.IsString);
             Assert.True(csMarshallable.IsWideChar);
+            Assert.Equal(0, csMarshallable.ArrayDimensionValue);
         }
 
         [Fact]
         public void ZeroDimensionArrayMappedAsSingleElement()
         {
-            var cppMarshallable = new CppMarshallable
+            var cppMarshallable = new CppParameter("param")
             {
                 TypeName = "int",
                 ArrayDimension = "0",
@@ -169,248 +179,245 @@ namespace SharpGen.UnitTests
             };
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("int", typeRegistry.ImportType(typeof(int)));
+            typeRegistry.BindType("int", TypeRegistry.Int32);
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
-            var csMarshallable = marshalledElementFactory.Create(cppMarshallable);
-
+            var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
+            Assert.Equal(TypeRegistry.Int32, csMarshallable.PublicType);
+            Assert.Equal(TypeRegistry.Int32, csMarshallable.MarshalType);
             Assert.False(csMarshallable.IsArray);
+            Assert.False(csMarshallable.HasPointer);
+            Assert.Equal(0, csMarshallable.ArrayDimensionValue);
         }
 
         [Fact]
         public void MappedTypeOverridesPublicTypeNotMarshalType()
         {
-            var cppMarshallable = new CppMarshallable
+            var cppMarshallable = new CppParameter("param")
             {
                 TypeName = "int",
                 ArrayDimension = "0",
                 IsArray = true,
-                Rule = new MappingRule
+                Rule =
                 {
                     MappingType = "bool"
                 }
             };
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("bool", typeRegistry.ImportType(typeof(bool)));
-            typeRegistry.BindType("int", typeRegistry.ImportType(typeof(int)));
+            typeRegistry.BindType("bool", TypeRegistry.Boolean);
+            typeRegistry.BindType("int", TypeRegistry.Int32);
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
-            var csMarshallable = marshalledElementFactory.Create(cppMarshallable);
+            var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
 
-            Assert.Equal(typeRegistry.ImportType(typeof(bool)), csMarshallable.PublicType);
-            Assert.Equal(typeRegistry.ImportType(typeof(int)), csMarshallable.MarshalType);
+            Assert.Equal(TypeRegistry.Boolean, csMarshallable.PublicType);
+            Assert.Equal(TypeRegistry.Int32, csMarshallable.MarshalType);
+            Assert.False(csMarshallable.HasPointer);
+            Assert.False(csMarshallable.IsArray);
+            Assert.Equal(0, csMarshallable.ArrayDimensionValue);
         }
 
         [Fact]
         public void NativeTypeTakesPrecedenceOverMarshalTypeForMappedType()
         {
-            var cppMarshallable = new CppMarshallable
+            var cppMarshallable = new CppParameter("param")
             {
                 TypeName = "short",
                 ArrayDimension = "0",
                 IsArray = true,
-                Rule = new MappingRule
+                Rule =
                 {
                     MappingType = "bool"
                 }
             };
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("bool", typeRegistry.ImportType(typeof(bool)), typeRegistry.ImportType(typeof(int)));
-            typeRegistry.BindType("short", typeRegistry.ImportType(typeof(short)));
+            typeRegistry.BindType("bool", TypeRegistry.Boolean, TypeRegistry.Int32);
+            typeRegistry.BindType("short", TypeRegistry.Int16);
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
-            var csMarshallable = marshalledElementFactory.Create(cppMarshallable);
+            var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
 
-            Assert.Equal(typeRegistry.ImportType(typeof(bool)), csMarshallable.PublicType);
-            Assert.Equal(typeRegistry.ImportType(typeof(short)), csMarshallable.MarshalType);
+            Assert.Equal(TypeRegistry.Boolean, csMarshallable.PublicType);
+            Assert.Equal(TypeRegistry.Int16, csMarshallable.MarshalType);
+            Assert.False(csMarshallable.HasPointer);
+            Assert.False(csMarshallable.IsArray);
+            Assert.Equal(0, csMarshallable.ArrayDimensionValue);
         }
 
-        [InlineData(typeof(byte))]
-        [InlineData(typeof(sbyte))]
-        [InlineData(typeof(short))]
-        [InlineData(typeof(ushort))]
-        [InlineData(typeof(int))]
-        [InlineData(typeof(uint))]
-        [InlineData(typeof(long))]
-        [InlineData(typeof(ulong))]
+        [InlineData(PrimitiveTypeCode.UInt8)]
+        [InlineData(PrimitiveTypeCode.Int8)]
+        [InlineData(PrimitiveTypeCode.UInt16)]
+        [InlineData(PrimitiveTypeCode.Int16)]
+        [InlineData(PrimitiveTypeCode.UInt32)]
+        [InlineData(PrimitiveTypeCode.Int32)]
+        [InlineData(PrimitiveTypeCode.UInt64)]
+        [InlineData(PrimitiveTypeCode.Int64)]
         [Theory]
-        public void BoolToIntSetForAllIntegerTypes(Type integerType)
+        public void BoolToIntSetForAllIntegerTypes(PrimitiveTypeCode integerType)
         {
-            var cppMarshallable = new CppMarshallable
+            var cppMarshallable = new CppParameter("param")
             {
                 TypeName = "Integer",
                 ArrayDimension = "0",
                 IsArray = true,
-                Rule = new MappingRule
+                Rule =
                 {
                     MappingType = "bool"
                 }
             };
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("bool", typeRegistry.ImportType(typeof(bool)));
-            typeRegistry.BindType("Integer", typeRegistry.ImportType(integerType));
+            typeRegistry.BindType("bool", TypeRegistry.Boolean);
+            typeRegistry.BindType("Integer", TypeRegistry.ImportPrimitiveType(integerType));
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
-            var csMarshallable = marshalledElementFactory.Create(cppMarshallable);
+            var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
 
-            Assert.Equal(typeRegistry.ImportType(typeof(bool)), csMarshallable.PublicType);
-            Assert.Equal(typeRegistry.ImportType(integerType), csMarshallable.MarshalType);
+            Assert.Equal(TypeRegistry.Boolean, csMarshallable.PublicType);
+            Assert.Equal(TypeRegistry.ImportPrimitiveType(integerType), csMarshallable.MarshalType);
             Assert.True(csMarshallable.IsBoolToInt);
+            Assert.False(csMarshallable.HasPointer);
+            Assert.False(csMarshallable.IsArray);
+            Assert.Equal(0, csMarshallable.ArrayDimensionValue);
         }
 
         [Fact]
         public void FieldWithPointerTypeMarshalledAsIntPtr()
         {
-            var cppField = new CppField
+            var cppField = new CppField("field")
             {
                 TypeName = "int",
                 Pointer = "*"
             };
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("int", typeRegistry.ImportType(typeof(IntPtr)));
+            typeRegistry.BindType("int", TypeRegistry.IntPtr);
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
-            var csField = marshalledElementFactory.Create(cppField);
+            var csField = marshalledElementFactory.Create(cppField, cppField.Name);
 
-            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csField.PublicType);
+            Assert.Equal(TypeRegistry.IntPtr, csField.PublicType);
             Assert.Equal(csField.PublicType, csField.MarshalType);
         }
 
         [Fact]
         public void FieldWithPointerToInterfaceTypeHasPublicTypeOfInterface()
         {
-            var cppField = new CppField
+            var cppField = new CppField("field")
             {
                 TypeName = "Interface",
                 Pointer = "*"
             };
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("Interface", new CsInterface { Name = "Interface" });
+            typeRegistry.BindType("Interface", new CsInterface(null, "Interface"));
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
-            var csField = marshalledElementFactory.Create(cppField);
+            var csField = marshalledElementFactory.Create(cppField, cppField.Name);
 
             Assert.Equal(typeRegistry.FindBoundType("Interface"), csField.PublicType);
-            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csField.MarshalType);
+            Assert.Equal(TypeRegistry.IntPtr, csField.MarshalType);
             Assert.True(csField.IsInterface);
         }
 
         [Fact]
         public void PointerParameterMarkedAsHasPointer()
         {
-            var cppParameter = new CppParameter
+            var cppParameter = new CppParameter("param")
             {
                 TypeName = "int",
                 Pointer = "*"
             };
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("int", typeRegistry.ImportType(typeof(int)));
+            typeRegistry.BindType("int", TypeRegistry.Int32);
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
-            var csParameter = marshalledElementFactory.Create(cppParameter);
+            var csParameter = marshalledElementFactory.Create(cppParameter, cppParameter.Name);
 
+            Assert.False(csParameter.IsArray);
+            Assert.False(csParameter.IsString);
             Assert.True(csParameter.HasPointer);
+            Assert.Equal(0, csParameter.ArrayDimensionValue);
         }
 
         [Fact]
-        public void BoolToIntArrayPublicTypeIsBoolArray()
+        public void BoolToIntArray()
         {
-            var cppParameter = new CppParameter
+            var cppParameter = new CppParameter("param")
             {
-                TypeName = "bool",
-                Pointer = "*"
+                TypeName = "bool", Pointer = "*",
+                Attribute = ParamAttribute.In | ParamAttribute.Buffer
             };
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("bool", typeRegistry.ImportType(typeof(bool)), typeRegistry.ImportType(typeof(byte)));
+            typeRegistry.BindType("bool", TypeRegistry.Boolean, TypeRegistry.UInt8);
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
-            cppParameter.Attribute = ParamAttribute.In | ParamAttribute.Buffer;
+            var csParameter = marshalledElementFactory.Create(cppParameter, cppParameter.Name);
 
-            var csParameter = marshalledElementFactory.Create(cppParameter);
-
-            Assert.Equal(typeRegistry.ImportType(typeof(bool)), csParameter.PublicType);
+            Assert.Equal(TypeRegistry.Boolean, csParameter.PublicType);
+            Assert.Equal(TypeRegistry.UInt8, csParameter.MarshalType);
             Assert.True(csParameter.IsArray);
             Assert.True(csParameter.IsBoolToInt);
-        }
-
-        [Fact]
-        public void BoolToIntArrayMarshalTypeIsIntegerArray()
-        {
-            var cppParameter = new CppParameter
-            {
-                TypeName = "bool",
-                Pointer = "*"
-            };
-
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("bool", typeRegistry.ImportType(typeof(bool)), typeRegistry.ImportType(typeof(byte)));
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
-
-            cppParameter.Attribute = ParamAttribute.In | ParamAttribute.Buffer;
-
-            var csParameter = marshalledElementFactory.Create(cppParameter);
-
-            Assert.Equal(typeRegistry.ImportType(typeof(byte)), csParameter.MarshalType);
-            Assert.True(csParameter.IsArray);
-            Assert.True(csParameter.IsBoolToInt);
+            Assert.Equal(0, csParameter.ArrayDimensionValue);
         }
 
         [Fact]
         public void ParameterWithStructSizeRelationLogsError()
         {
-            var cppParameter = new CppParameter
+            var cppParameter = new CppParameter("param")
             {
-                TypeName = "int"
+                TypeName = "int",
+                Rule =
+                {
+                    Relation = "struct-size()"
+                }
             };
 
-            cppParameter.GetMappingRule().Relation = "struct-size()";
-
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("int", typeRegistry.ImportType(typeof(int)));
+            typeRegistry.BindType("int", TypeRegistry.Int32);
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
             using (LoggerMessageCountEnvironment(1, LogLevel.Error))
             using (LoggerMessageCountEnvironment(0, ~LogLevel.Error))
             using (LoggerCodeRequiredEnvironment(LoggingCodes.InvalidRelation))
             {
-                marshalledElementFactory.Create(cppParameter);
+                marshalledElementFactory.Create(cppParameter, cppParameter.Name);
             }
         }
 
         [Fact]
         public void DoublePointerNonInterfaceParameterMappedAsIntPtr()
         {
-            var cppParameter = new CppParameter
+            var cppParameter = new CppParameter("param")
             {
                 TypeName = "int",
                 Pointer = "**"
             };
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("int", typeRegistry.ImportType(typeof(int)));
+            typeRegistry.BindType("int", TypeRegistry.Int32);
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
-            var csParameter = marshalledElementFactory.Create(cppParameter);
+            var csParameter = marshalledElementFactory.Create(cppParameter, cppParameter.Name);
 
-            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csParameter.PublicType);
-            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csParameter.MarshalType);
+            Assert.Equal(TypeRegistry.IntPtr, csParameter.PublicType);
+            Assert.Equal(TypeRegistry.IntPtr, csParameter.MarshalType);
             Assert.True(csParameter.HasPointer);
+            Assert.False(csParameter.IsArray);
+            Assert.Equal(0, csParameter.ArrayDimensionValue);
         }
 
         [Fact]
         public void DoubleVoidPointerParameterPreserved()
         {
-            var cppParameter = new CppParameter
+            var cppParameter = new CppParameter("param")
             {
                 TypeName = "void",
                 Pointer = "**",
@@ -418,14 +425,16 @@ namespace SharpGen.UnitTests
             };
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("void", typeRegistry.ImportType(typeof(void)));
+            typeRegistry.BindType("void", TypeRegistry.Void);
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
-            var csParameter = marshalledElementFactory.Create(cppParameter);
+            var csParameter = marshalledElementFactory.Create(cppParameter, cppParameter.Name);
 
-            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csParameter.PublicType);
-            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csParameter.MarshalType);
+            Assert.Equal(TypeRegistry.IntPtr, csParameter.PublicType);
+            Assert.Equal(TypeRegistry.IntPtr, csParameter.MarshalType);
             Assert.True(csParameter.HasPointer);
+            Assert.False(csParameter.IsArray);
             Assert.True(csParameter.IsOut);
+            Assert.Equal(0, csParameter.ArrayDimensionValue);
         }
 
         [Fact]
@@ -438,36 +447,68 @@ namespace SharpGen.UnitTests
             };
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("int", typeRegistry.ImportType(typeof(int)));
+            typeRegistry.BindType("int", TypeRegistry.Int32);
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
             var csReturnValue = marshalledElementFactory.Create(cppReturnValue);
 
-            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csReturnValue.PublicType);
-            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csReturnValue.MarshalType);
+            Assert.Equal(TypeRegistry.IntPtr, csReturnValue.PublicType);
+            Assert.Equal(TypeRegistry.IntPtr, csReturnValue.MarshalType);
             Assert.True(csReturnValue.HasPointer);
+            Assert.False(csReturnValue.IsArray);
+            Assert.Equal(0, csReturnValue.ArrayDimensionValue);
         }
 
 
         [Fact]
         public void TriplePointerInterfaceParameterMappedAsIntPtr()
         {
-            var cppParameter = new CppParameter
+            var cppParameter = new CppParameter("param")
             {
                 TypeName = "Interface",
                 Pointer = "***"
             };
 
             var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("Interface", new CsInterface { Name = "Interface" });
+            typeRegistry.BindType("Interface", new CsInterface(null, "Interface"));
 
             var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
-            var csParameter = marshalledElementFactory.Create(cppParameter);
+            var csParameter = marshalledElementFactory.Create(cppParameter, cppParameter.Name);
 
-            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csParameter.PublicType);
-            Assert.Equal(typeRegistry.ImportType(typeof(IntPtr)), csParameter.MarshalType);
+            Assert.Equal(TypeRegistry.IntPtr, csParameter.PublicType);
+            Assert.Equal(TypeRegistry.IntPtr, csParameter.MarshalType);
             Assert.True(csParameter.HasPointer);
+            Assert.False(csParameter.IsArray);
+            Assert.Equal(0, csParameter.ArrayDimensionValue);
         }
 
+        [InlineData("TCHAR")]
+        [InlineData("char")]
+        [InlineData("wchar_t")]
+        [Theory]
+        public void BoundTypeForArrayType(string elementType)
+        {
+            var cppMarshallable = new CppParameter("param")
+            {
+                TypeName = elementType,
+                IsArray = true,
+                ArrayDimension = "ANYSIZE_ARRAY"
+            };
+
+            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
+            CsInterface dynamicStringType = new(null, "DynamicString");
+            typeRegistry.BindType(elementType + "[ANYSIZE_ARRAY]", dynamicStringType);
+
+            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+
+            var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
+
+            Assert.Equal(dynamicStringType, csMarshallable.PublicType);
+            Assert.Equal(dynamicStringType, csMarshallable.MarshalType);
+            Assert.Equal(0, csMarshallable.ArrayDimensionValue);
+            Assert.False(csMarshallable.IsArray);
+            Assert.False(csMarshallable.IsString);
+            Assert.False(csMarshallable.IsWideChar);
+        }
     }
 }

@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using System.Text;
-
-namespace SharpGen.Model
+﻿namespace SharpGen.Model
 {
-    [DataContract(Name = "Undefined-Type")]
     public class CsUndefinedType : CsTypeBase
     {
+        public CsUndefinedType(string name) : base(null, name)
+        {
+        }
     }
 }

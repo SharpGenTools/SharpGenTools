@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
@@ -18,7 +19,7 @@ namespace SharpGen.Generator.Marshallers
         {
         }
 
-        private static TypeSyntax StringType { get; } = ParseTypeName("System.String");
+        private static TypeSyntax StringType { get; } = PredefinedType(Token(SyntaxKind.StringKeyword));
 
         public bool CanMarshal(CsMarshalBase csElement) => csElement.IsString;
 

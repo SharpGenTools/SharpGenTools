@@ -13,7 +13,7 @@ namespace SharpGen.Platform
     public sealed class IncludeDirectoryResolver : IIncludeDirectoryResolver
     {
         private readonly Logger logger;
-        private readonly List<IncludeDirRule> includeDirectoryList = new List<IncludeDirRule>();
+        private readonly List<IncludeDirRule> includeDirectoryList = new();
 
         public IncludeDirectoryResolver(Logger logger)
         {
@@ -35,11 +35,37 @@ namespace SharpGen.Platform
             AddDirectories((IEnumerable<IncludeDirRule>) directories);
         }
 
-        public IEnumerable<string> IncludePaths
+        public IEnumerable<string> IncludeArguments
         {
             get
             {
-                var paths = new List<string>();
+                var items = IncludePaths;
+                List<string> args = new(items.Count);
+
+                foreach (var item in items)
+                {
+                    var path = item.Path;
+                    args.Add(
+                        item.Rule.IsOverride
+                            ? $"-I\"{path}\""
+                            : $"-isystem\"{path}\""
+                    );
+                }
+
+                foreach (var path in args)
+                {
+                    logger.Message("Path used for castxml [{0}]", path);
+                }
+
+                return args;
+            }
+        }
+
+        public IReadOnlyList<Item> IncludePaths
+        {
+            get
+            {
+                var paths = new List<Item>();
 
                 foreach (var directory in includeDirectoryList)
                 {
@@ -64,31 +90,32 @@ namespace SharpGen.Platform
                             if (!success)
                                 continue;
 
-                            path = Path.Combine(registryPathPortion, subPath); 
+                            path = Path.Combine(registryPathPortion, subPath);
                         }
                         else
                         {
-                            logger.Error(LoggingCodes.RegistryKeyNotFound, "Unable to resolve registry paths when not on Windows.");
+                            logger.Error(LoggingCodes.RegistryKeyNotFound,
+                                         "Unable to resolve registry paths when not on Windows.");
                         }
                     }
 
-                    if (directory.IsOverride)
-                    {
-                        paths.Add("-I\"" + path.TrimEnd('\\') + "\"");
-                    }
-                    else
-                    {
-                        paths.Add("-isystem\"" + path.TrimEnd('\\') + "\"");
-                    }
-                }
-
-                foreach (var path in paths)
-                {
-                    logger.Message("Path used for castxml [{0}]", path);
+                    paths.Add(new Item(path.TrimEnd('\\'), directory));
                 }
 
                 return paths;
             }
+        }
+
+        public sealed class Item
+        {
+            public Item(string path, IncludeDirRule rule)
+            {
+                Path = path;
+                Rule = rule;
+            }
+
+            public string Path { get; }
+            public IncludeDirRule Rule { get; }
         }
 
         private (string path, bool success) ResolveRegistryDirectory(string registryPath)
@@ -118,25 +145,27 @@ namespace SharpGen.Platform
                         hive = RegistryHive.CurrentConfig;
                         break;
                 }
+
                 using (var rootKey = RegistryKey.OpenBaseKey(hive, RegistryView.Registry32))
                 using (var subKey = rootKey.OpenSubKey(registryPath))
                 {
                     if (subKey == null)
                     {
-                        logger.Error(LoggingCodes.RegistryKeyNotFound, "Unable to locate key [{0}] in registry", registryPath);
+                        logger.Error(LoggingCodes.RegistryKeyNotFound, "Unable to locate key [{0}] in registry",
+                                     registryPath);
                         success = false;
-
                     }
+
                     path = subKey.GetValue(subKeyStr).ToString();
                     logger.Message($"Resolved registry path {registryPath} to {path}");
                 }
-
             }
             catch (Exception)
             {
                 logger.Error(LoggingCodes.RegistryKeyNotFound, "Unable to locate key [{0}] in registry", registryPath);
                 success = false;
             }
+
             return (path, success);
         }
     }

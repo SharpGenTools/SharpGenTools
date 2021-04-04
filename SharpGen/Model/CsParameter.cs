@@ -18,39 +18,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-using System.Text;
 using SharpGen.Config;
 using SharpGen.CppModel;
-using System.Reflection;
-using System.Xml.Serialization;
-using System.Runtime.Serialization;
 
 namespace SharpGen.Model
 {
-    [DataContract(Name = "Parameter")]
-    public class CsParameter : CsMarshalCallableBase
+    public sealed class CsParameter : CsMarshalCallableBase
     {
         private const int SizeOfLimit = 16;
-        [DataMember]
+
         public CsParameterAttribute Attribute { get; set; }
 
-        [DataMember]
-        public string DefaultValue { get; set; }
+        public string DefaultValue { get; }
 
-        [DataMember]
-        public bool ForcePassByValue { get; set; }
+        private bool ForcePassByValue { get; }
 
-        [DataMember]
-        public bool HasParams { get; set; }
+        public bool HasParams { get; }
 
-        [DataMember]
-        public bool IsFast { get; set; }
+        private bool IsFast { get; }
 
-        public override bool IsFastOut
-        {
-            get { return IsFast && IsOut; }
-        }
+        public override bool IsFastOut => IsFast && IsOut;
 
         public override bool IsFixed
         {
@@ -66,10 +53,7 @@ namespace SharpGen.Model
             }
         }
 
-        public override bool IsIn
-        {
-            get { return Attribute == CsParameterAttribute.In; }
-        }
+        public bool IsIn => Attribute == CsParameterAttribute.In;
 
         public bool IsInInterfaceArrayLike => IsArray && PublicType is CsInterface {IsCallback: false} && !IsOut;
 
@@ -78,77 +62,60 @@ namespace SharpGen.Model
         /// <summary>
         /// Parameter is an Out parameter and passed by pointer.
         /// </summary>
-        public override bool IsOut
-        {
-            get { return Attribute == CsParameterAttribute.Out; }
-        }
+        public override bool IsOut => Attribute == CsParameterAttribute.Out;
 
         /// <summary>
         /// Parameter is an In/Out parameter and passed by pointer.
         /// </summary>
-        public override bool IsRef
-        {
-            get { return Attribute == CsParameterAttribute.Ref; }
-        }
+        public override bool IsRef => Attribute == CsParameterAttribute.Ref;
 
         /// <summary>
         /// Parameter is an In parameter and passed by pointer.
         /// </summary>
-        public override bool IsRefIn
-        {
-            get { return Attribute == CsParameterAttribute.RefIn; }
-        }
+        public override bool IsRefIn => Attribute == CsParameterAttribute.RefIn;
 
-        public override bool RefInPassedByValue
-        {
-            get
-            {
-                return IsRefIn && IsValueType && !IsArray
-                       && ((PublicType.Size <= SizeOfLimit && !HasNativeValueType) || ForcePassByValue);
-            }
-        }
+        private bool RefInPassedByValue => IsRefIn && IsValueType && !IsArray
+                                        && (PublicType.Size <= SizeOfLimit && !HasNativeValueType || ForcePassByValue);
 
-        public bool PassedByManagedReference
-            => (IsRef || IsRefIn)
-                && (!(PassedByNullableInstance || RefInPassedByValue)
-                && !IsStructClass);
+        public bool PassedByManagedReference => (IsRef || IsRefIn)
+                                             && !(PassedByNullableInstance || RefInPassedByValue) && !IsStructClass;
 
         public override bool PassedByNativeReference => IsRefIn || IsRef || IsOut;
 
-        [DataMember]
-        public bool IsUsedAsReturnType { get; set; }
+        public bool IsUsedAsReturnType { get; }
 
         public override bool UsedAsReturn => IsUsedAsReturnType;
 
-        [DataMember]
         public bool OptionalParameter { get; set; }
 
-        public virtual CsParameter Clone()
+        public CsParameter Clone()
         {
             var parameter = (CsParameter) MemberwiseClone();
-            parameter.Parent = null;
+            parameter.ResetParentAfterClone();
             return parameter;
         }
 
-        protected override void UpdateFromMappingRule(MappingRule tag)
+        public CsParameter(CppParameter cppParameter, string name) : base(cppParameter, name)
         {
-            base.UpdateFromMappingRule(tag);
-            if (tag.ParameterUsedAsReturnType.HasValue)
-                IsUsedAsReturnType = tag.ParameterUsedAsReturnType.Value;
-            if (tag.ParameterAttribute.HasValue)
+            if (cppParameter != null)
+                HasParams = (cppParameter.Attribute & ParamAttribute.Params) == ParamAttribute.Params;
+
+            var paramRule = cppParameter?.Rule;
+
+            IsUsedAsReturnType = paramRule?.ParameterUsedAsReturnType ?? IsUsedAsReturnType;
+            DefaultValue = paramRule?.DefaultValue ?? DefaultValue;
+
+            if (paramRule?.ParameterAttribute is { } attribute)
             {
-                if ((tag.ParameterAttribute.Value & ParamAttribute.Fast) != 0)
-                {
+                if ((attribute & ParamAttribute.Fast) != 0)
                     IsFast = true;
-                }
 
-                if ((tag.ParameterAttribute.Value & ParamAttribute.Value) != 0)
-                {
+                if ((attribute & ParamAttribute.Value) != 0)
                     ForcePassByValue = true;
-                }
-            }
 
-            DefaultValue = tag.DefaultValue;
+                if ((attribute & ParamAttribute.Params) == ParamAttribute.Params)
+                    HasParams = true;
+            }
         }
     }
 }

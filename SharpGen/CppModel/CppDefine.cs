@@ -17,40 +17,16 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System.Xml.Serialization;
 
 namespace SharpGen.CppModel
 {
     /// <summary>
     /// A C++ define macro Name=Value.
     /// </summary>
-    [XmlType("macro")]
-    public class CppDefine : CppElement
+    public sealed class CppDefine : CppElement
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CppDefine"/> class.
-        /// </summary>
-        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
-        public CppDefine()
-        {
-        }
+        public CppDefine(string name, string value) : base(name) => Value = value;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CppDefine"/> class.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <param name="value">The value.</param>
-        public CppDefine(string name, string value)
-        {
-            Name = name;
-            Value = value;
-        }
-
-        /// <summary>
-        /// Gets or sets the value.
-        /// </summary>
-        /// <value>The value.</value>
-        [XmlAttribute("value")]
-        public string Value { get; set; }
+        public string Value { get; }
     }
 }

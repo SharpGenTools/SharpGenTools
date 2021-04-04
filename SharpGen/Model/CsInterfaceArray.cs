@@ -18,39 +18,21 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using SharpGen.CppModel;
-using System.Runtime.Serialization;
-using System.Xml.Serialization;
-
 namespace SharpGen.Model
 {
-    [DataContract(Name = "InterfaceArray")]
-    public class CsInterfaceArray : CsTypeBase
+    public sealed class CsInterfaceArray : CsTypeBase
     {
-        [ExcludeFromCodeCoverage(Reason = "Required for XML serialization.")]
-        public CsInterfaceArray()
-        {
-        }
-
-        public CsInterfaceArray(CsInterface element, string interfaceArrayTypeName)
+        public CsInterfaceArray(CsInterface element, string interfaceArrayTypeName) : base(null, null)
         {
             BaseElement = element;
             InterfaceArrayTypeName = interfaceArrayTypeName;
         }
 
-        public override string QualifiedName
-        {
-            get
-            {
-                return $"{InterfaceArrayTypeName}<{BaseElement.QualifiedName}>";
-            }
-        }
+        public override string QualifiedName => $"{InterfaceArrayTypeName}<{BaseElement.QualifiedName}>";
 
-        [DataMember]
-        public CsInterface BaseElement { get;set; }
+        private CsInterface BaseElement { get; }
 
-        [DataMember]
-        public string InterfaceArrayTypeName { get; set; }
+        private string InterfaceArrayTypeName { get; }
     }
 }
 

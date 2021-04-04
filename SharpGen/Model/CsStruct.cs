@@ -18,12 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Runtime.Serialization;
-using System.Xml.Serialization;
 using SharpGen.Config;
 using SharpGen.CppModel;
 
@@ -32,28 +28,18 @@ namespace SharpGen.Model
     /// <summary>
     ///   A structElement that maps to a native struct
     /// </summary>
-    [DataContract(Name = "Struct")]
-    public class CsStruct : CsTypeBase
+    public sealed class CsStruct : CsTypeBase
     {
-        public CsStruct()
-            : this(null)
+        public CsStruct(CppStruct cppStruct, string name, MappingRule tag = null) : base(cppStruct, name)
         {
-        }
+            tag ??= cppStruct?.Rule;
 
-        public CsStruct(CppStruct cppStruct) 
-        {
-            CppElement = cppStruct;
-        }
-
-        protected override void UpdateFromMappingRule(MappingRule tag)
-        {
-            base.UpdateFromMappingRule(tag);
-            Align = tag.StructPack ?? 0;
-            HasMarshalType = tag.StructHasNativeValueType ?? false;
-            GenerateAsClass = tag.StructToClass ?? false;
-            HasCustomMarshal = tag.StructCustomMarshal ?? false;
-            IsStaticMarshal = tag.IsStaticMarshal ?? false;
-            HasCustomNew = tag.StructCustomNew ?? false;
+            Align = tag?.StructPack ?? Align;
+            HasMarshalType = tag?.StructHasNativeValueType ?? HasMarshalType;
+            GenerateAsClass = tag?.StructToClass ?? GenerateAsClass;
+            HasCustomMarshal = tag?.StructCustomMarshal ?? HasCustomMarshal;
+            IsStaticMarshal = tag?.IsStaticMarshal ?? IsStaticMarshal;
+            HasCustomNew = tag?.StructCustomNew ?? HasCustomNew;
 
             if (HasCustomMarshal || IsStaticMarshal || HasCustomNew || GenerateAsClass)
             {
@@ -61,73 +47,50 @@ namespace SharpGen.Model
             }
         }
 
-        public override int Size => _Size_;
+        public override int Size => StructSize;
 
-        [DataMember(Name = "Size")]
-        public int _Size_ { get; set; }
-        
+        public int StructSize { private get; set; }
+
         /// <summary>
         ///   Packing alignment for this type (Default is 0 => Platform default)
         /// </summary>
-        [DataMember]
         public int Align { get; set; }
 
-        public void SetSize(int size)
-        {
-            _Size_ = size;
-        }
-
-        public IEnumerable<CsField> Fields
-        {
-            get { return Items.OfType<CsField>(); }
-        }
+        public IEnumerable<CsField> Fields => Items.OfType<CsField>();
 
         /// <summary>
         /// Gets the variables stored in this container.
         /// </summary>
         /// <value>The variables.</value>
-        public IEnumerable<CsVariable> Variables
-        {
-            get { return Items.OfType<CsVariable>(); }
-        }
+        public IEnumerable<CsVariable> Variables => Items.OfType<CsVariable>();
 
         /// <summary>
         ///   True if this structure is using an explicit layout else it's a sequential structure
         /// </summary>
-        [DataMember]
         public bool ExplicitLayout { get; set; }
-        
+
         /// <summary>
         ///   True if this struct needs an internal marshal type
         /// </summary>
-        [DataMember]
         public bool HasMarshalType { get; set; }
 
-        [DataMember]
-        public bool HasCustomMarshal { get; set; }
+        public bool HasCustomMarshal { get; }
 
-        [DataMember]
         public bool IsStaticMarshal { get; set; }
 
-        [DataMember]
-        public bool GenerateAsClass { get; set; }
+        public bool GenerateAsClass { get; }
 
-        [DataMember]
         public bool HasCustomNew { get; set; }
 
         /// <summary>
         /// True if the native type this structure represents is a native primitive type
         /// </summary>
-        [DataMember]
         public bool IsNativePrimitive { get; set; }
 
         /// <summary>
         ///   List of declared inner structs
         /// </summary>
-        public IEnumerable<CsStruct> InnerStructs
-        {
-            get { return Items.OfType<CsStruct>(); }
-        }
+        public IEnumerable<CsStruct> InnerStructs => Items.OfType<CsStruct>();
 
         public override int CalculateAlignment()
         {
@@ -148,5 +111,7 @@ namespace SharpGen.Model
 
             return structAlignment;
         }
+
+        public bool IsFullyMapped { get; set; } = true;
     }
 }
