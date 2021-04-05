@@ -1,3 +1,7 @@
 <Project>
   <Import Project="$(MSBuildThisFileDirectory)SdkPackage.targets" Condition="'$(SharpGenSdkPackage)' == 'true'" />
+
+  <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.csproj'">
+    <DefineConstants Condition="'$(SignAssembly)' == 'true'">$(DefineConstants);SIGNED_BUILD</DefineConstants>
+  </PropertyGroup>
 </Project>

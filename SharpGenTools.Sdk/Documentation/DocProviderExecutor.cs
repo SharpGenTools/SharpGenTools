@@ -51,7 +51,7 @@ namespace SharpGenTools.Sdk.Documentation
                                                              bool documentInnerElements,
                                                              string? name)
         {
-            var docName = name ?? element.Name;
+            var docName = name ?? element.CppElementName;
 
             if (string.IsNullOrEmpty(docName))
                 return null;
@@ -244,7 +244,7 @@ namespace SharpGenTools.Sdk.Documentation
                                                     CsInterface cppInterface, DocumentationContext context)
         {
             Task CallableSelector(CsCallable func) =>
-                DocumentCallable(docProvider, cache, func, context, cppInterface.Name + "::" + func.Name);
+                DocumentCallable(docProvider, cache, func, context, cppInterface.CppElementName + "::" + func.Name);
 
             Task VariableSelector(CsBase cppElement) =>
                 DocumentElement(docProvider, cache, cppElement, context, true, null);
@@ -261,7 +261,7 @@ namespace SharpGenTools.Sdk.Documentation
                                                 CsGroup cppInterface, DocumentationContext context)
         {
             Task CallableSelector(CsCallable func) =>
-                DocumentCallable(docProvider, cache, func, context, cppInterface.Name + "::" + func.Name);
+                DocumentCallable(docProvider, cache, func, context);
 
             Task VariableSelector(CsBase cppElement) =>
                 DocumentElement(docProvider, cache, cppElement, context, true, null);

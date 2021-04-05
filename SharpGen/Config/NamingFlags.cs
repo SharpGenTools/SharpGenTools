@@ -32,6 +32,7 @@ namespace SharpGen.Config
         [XmlEnum("default")] Default = 0x0,
         [XmlEnum("noexpand")] NoShortNameExpand = 0x01,
         [XmlEnum("underscore")] KeepUnderscore = 0x02,
-        [XmlEnum("nohungarian")] NoHungarianNotationHandler = 0x04
+        [XmlEnum("nohungarian")] NoHungarianNotationHandler = 0x04,
+        [XmlEnum("no-premature-break")] NoPrematureBreak = 0x08,
     }
 }

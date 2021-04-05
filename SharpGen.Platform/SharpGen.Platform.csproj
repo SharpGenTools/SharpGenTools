@@ -16,10 +16,10 @@
 
     <ItemGroup>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-            <_Parameter1>SharpGen.UnitTests</_Parameter1>
+            <_Parameter1>SharpGen.UnitTests, PublicKey=$(SharpGenPublicKey)</_Parameter1>
         </AssemblyAttribute>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-            <_Parameter1>SharpGenTools.Sdk</_Parameter1>
+            <_Parameter1>SharpGenTools.Sdk, PublicKey=$(SharpGenPublicKey)</_Parameter1>
         </AssemblyAttribute>
     </ItemGroup>
 

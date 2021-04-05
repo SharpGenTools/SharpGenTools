@@ -1,9 +1,8 @@
-﻿using SharpGen.Model;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using SharpGen.Model;
 
 namespace SharpGen.Transform
 {
@@ -47,7 +46,7 @@ namespace SharpGen.Transform
             }
             else
             {
-                docItems.Add($"<include file='{externalCommentsPath}' path=\"{ExternalDocCommentsReader.GetCodeCommentsXPath(element)}/*\"");
+                docItems.Add($"<include file='{externalCommentsPath}' path=\"{ExternalDocCommentsReader.GetCodeCommentsXPath(element)}/*\" />");
             }
 
             if (element.CppElementName != null)

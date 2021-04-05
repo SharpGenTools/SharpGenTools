@@ -40,7 +40,8 @@ namespace SharpGen.Transform
         /// </summary>
         /// <param name="rootName">Name of the root to strip away.</param>
         /// <returns>The new C# name</returns>
-        private static string RenameCore(string originalName, MappingRule tag, string rootName, out bool isFinal)
+        private static string RenameCore(string originalName, MappingRule tag, string rootName, out bool isFinal,
+                                         out bool isPrematureBreak)
         {
             var name = originalName;
 
@@ -56,11 +57,20 @@ namespace SharpGen.Transform
                 if (tag.IsFinalMappingName == true)
                 {
                     isFinal = true;
+                    isPrematureBreak = false;
                     return name;
                 }
             }
 
             isFinal = false;
+
+            if (!name.Contains("_") && name.Any(char.IsLower) && char.IsUpper(name[0]))
+            {
+                isPrematureBreak = true;
+                return name;
+            }
+
+            isPrematureBreak = false;
 
             // Remove Prefix (for enums). Don't modify names that are modified by tag
             if (!nameModifiedByTag && rootName != null && originalName.StartsWith(rootName))
@@ -82,24 +92,15 @@ namespace SharpGen.Transform
 
             var originalName = cppElement.Name;
             var tag = cppElement.Rule;
-            var name = RenameCore(originalName, tag, rootName, out var isFinal);
+            var name = RenameCore(originalName, tag, rootName, out var isFinal, out var isPreempted);
 
             if (isFinal)
                 return name;
 
             var namingFlags = tag.NamingFlags is { } flags ? flags : NamingFlags.Default;
 
-            if (cppElement is CppMarshallable marshallable &&
-                (namingFlags & NamingFlags.NoHungarianNotationHandler) == 0)
-            {
-                var originalNameLower = originalName.ToLowerInvariant();
-                foreach (var prefix in _hungarianNotation)
-                    if (prefix.Apply(marshallable, name, originalName, originalNameLower, out var variants))
-                    {
-                        name = variants[0];
-                        break;
-                    }
-            }
+            if (isPreempted && (namingFlags & NamingFlags.NoPrematureBreak) == 0)
+                return name;
 
             // Convert rest of the string in CamelCase
             return ConvertToPascalCase(name, namingFlags);
