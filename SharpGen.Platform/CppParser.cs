@@ -179,15 +179,21 @@ namespace SharpGen.Platform
             }
             finally
             {
-                // Write back GCCXML document on the disk
-                using (var stream = File.OpenWrite(GccXmlFileName))
+                Logger.Message("Parsing headers is finished.");
+
+                // Write back GCC-XML document on the disk
+                try
                 {
+                    using var stream = File.Open(GccXmlFileName, FileMode.Create, FileAccess.Write);
                     GccXmlDoc?.Save(stream);
                 }
-
-                Logger.Message("Parsing headers is finished.");
+                catch (Exception e)
+                {
+                    Logger.LogRawMessage(
+                        LogLevel.Warning, null, "Writing GCC-XML file [{0}] failed", e, GccXmlFileName
+                    );
+                }
             }
-
 
             // Track number of included macros for statistics
             foreach (var cppInclude in _group.Includes)

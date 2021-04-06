@@ -67,9 +67,7 @@ namespace SharpGen.Parser
 
                 updatedConfigs.Add(configFile);
 
-                using var file = File.OpenWrite(fileName);
-                using var fileWriter = new StreamWriter(file, Encoding.ASCII);
-                fileWriter.Write(outputConfigStr);
+                File.WriteAllText(fileName, outputConfigStr, Encoding.UTF8);
             }
 
             return new Result(updatedConfigs, prologue);
