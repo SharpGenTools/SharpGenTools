@@ -19,16 +19,18 @@
 // THE SOFTWARE.
 
 using System.Collections.Generic;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SharpGen.CppModel
 {
     public sealed class CppEnum : CppContainer
     {
-        public CppEnum(string name) : base(name)
+        public CppEnum(string name, EnumDeclarationSyntax roslyn) : base(name)
         {
+            Roslyn = roslyn;
         }
 
-        public void AddEnumItem(string name, string value)
+        public void AddEnumItem(string name, EnumMemberDeclarationSyntax value)
         {
             Add(new CppEnumItem(name, value));
         }
@@ -36,5 +38,6 @@ namespace SharpGen.CppModel
         public IEnumerable<CppEnumItem> EnumItems => Iterate<CppEnumItem>();
 
         public string UnderlyingType { get; set; } = "int";
+        public EnumDeclarationSyntax Roslyn { get; }
     }
 }

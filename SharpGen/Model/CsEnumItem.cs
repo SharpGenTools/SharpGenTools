@@ -18,17 +18,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.CppModel;
 
 namespace SharpGen.Model
 {
     public class CsEnumItem : CsBase
     {
-        public CsEnumItem(CppEnumItem cppElement, string name, string value) : base(cppElement, name)
+        public CsEnumItem(CppEnumItem cppElement, string name, EnumMemberDeclarationSyntax member) : base(cppElement, name)
         {
-            Value = value;
+            RoslynMember = member;
         }
 
-        public string Value { get; }
+        public EnumMemberDeclarationSyntax RoslynMember { get; }
     }
 }

@@ -35,11 +35,6 @@ namespace SharpGen.CppModel
         /// </summary>
         public bool IsBitField { get; set; }
 
-        /// <summary>
-        /// Used only for structure with bits
-        /// </summary>
-        public int BitOffset { get; set; }
-
         public CppField(string name) : base(name)
         {
         }

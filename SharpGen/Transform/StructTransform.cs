@@ -134,8 +134,6 @@ namespace SharpGen.Transform
 
             bool isNonSequential = false;
 
-            int cumulatedBitOffset = 0;
-
             var inheritedStructs = new Stack<CppStruct>();
             var currentStruct = cppStruct;
             while (currentStruct != null && currentStruct.Base != currentStruct.Name)
@@ -197,19 +195,6 @@ namespace SharpGen.Transform
 
                         // Get correct offset (for handling union)
                         csField.Offset = currentFieldAbsoluteOffset;
-
-                        // Handle bit fields : calculate BitOffset and BitMask for this field
-                        if (previousFieldOffsetIndex != cppField.Offset)
-                        {
-                            cumulatedBitOffset = 0;
-                        }
-                        if (cppField.IsBitField)
-                        {
-                            int lastCumulatedBitOffset = cumulatedBitOffset;
-                            cumulatedBitOffset += cppField.BitOffset;
-                            csField.BitMask = ((1 << cppField.BitOffset) - 1);
-                            csField.BitOffset = lastCumulatedBitOffset;
-                        }
 
                         var nextFieldIndex = fieldIndex + 1;
                         if (previousFieldOffsetIndex == cppField.Offset

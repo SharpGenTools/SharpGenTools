@@ -17,11 +17,13 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System.Linq;
+using Microsoft.CodeAnalysis.CSharp;
 using SharpGen.Logging;
-using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Transform
 {
@@ -114,7 +116,7 @@ namespace SharpGen.Transform
             foreach (var cppEnumItem in cppEnum.EnumItems)
             {
                 string enumName = NamingRules.Rename(cppEnumItem, rootName);
-                string enumValue = cppEnumItem.Value;
+                var enumValue = cppEnumItem.Value;
 
                 var csharpEnumItem = new CsEnumItem(cppEnumItem, enumName, enumValue);
 
@@ -124,20 +126,23 @@ namespace SharpGen.Transform
             var rule = cppEnum.Rule;
 
             // Add None if necessary
+            const string noneElementName = "None";
+
             bool tryToAddNone;
             if (rule.EnumHasNone is { } addNone)
                 tryToAddNone = addNone;
             else if (newEnum.IsFlag)
-                tryToAddNone = newEnum.EnumItems.All(item => item.Name != "None");
+                tryToAddNone = newEnum.EnumItems.All(item => item.Name != noneElementName);
             else
                 tryToAddNone = false;
 
             if (tryToAddNone)
             {
-                var csharpEnumItem = new CsEnumItem(null, "None", "0")
+                var noneMember = EnumMemberDeclaration(noneElementName).WithEqualsValue(EqualsValueClause(LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))));
+                var csharpEnumItem = new CsEnumItem(null, noneElementName, noneMember)
                 {
-                    CppElementName = "None",
-                    Description = "None"
+                    CppElementName = noneElementName,
+                    Description = noneElementName
                 };
                 newEnum.Add(csharpEnumItem);
             }

@@ -27,9 +27,7 @@ namespace SharpGen.Model
     /// </summary>
     public class CsField : CsMarshalBase
     {
-        public int BitMask { get; set; }
-
-        public int BitOffset { get; set; }
+        public bool IsBoolBitField { get; set; }
 
         public bool IsBitField { get; }
 

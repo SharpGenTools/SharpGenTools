@@ -455,6 +455,8 @@ namespace SharpGen.Platform.Clang.CSharp
                     Write(info.Layout.Pack);
                 }
 
+                Write(", CharSet = System.Runtime.InteropServices.CharSet.Unicode");
+
                 WriteLine(")]");
             }
 

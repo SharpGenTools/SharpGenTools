@@ -33,6 +33,7 @@ using SharpGen.Parser;
 
 namespace SharpGen.Platform
 {
+#if false
     internal static class Extension
     {
         /// <summary>
@@ -1187,4 +1188,5 @@ namespace SharpGen.Platform
             return Path.GetFileNameWithoutExtension(filePath);
         }
     }
+#endif
 }

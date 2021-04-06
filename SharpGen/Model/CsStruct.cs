@@ -20,6 +20,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Config;
 using SharpGen.CppModel;
 
@@ -113,5 +114,7 @@ namespace SharpGen.Model
         }
 
         public bool IsFullyMapped { get; set; } = true;
+
+        public StructDeclarationSyntax RoslynNative { get; set; }
     }
 }

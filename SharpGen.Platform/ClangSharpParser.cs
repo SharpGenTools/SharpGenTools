@@ -306,7 +306,7 @@ namespace SharpGen.Platform
             {
                 foreach (var configFile in streamProvider.Streams)
                 {
-                    Parse(configFile.IsTestOutput, configFile.Stream);
+                    ParseRoslyn(configFile.IsTestOutput, configFile.Stream);
                 }
 
                 if (Logger.HasErrors)
@@ -340,9 +340,13 @@ namespace SharpGen.Platform
             try
             {
                 foreach (var typeDeclaration in types)
-                {
-                    Parse(typeDeclaration);
-                }
+                    ParseDoTypeDefinitionPass(typeDeclaration);
+                foreach (var enumDeclaration in enums)
+                    ParseDoTypeDefinitionPass(enumDeclaration);
+                foreach (var cppStruct in _group.Includes.SelectMany(x => x.Items.OfType<CppStruct>()))
+                    ParseDoItemDefinitionPass(cppStruct);
+                foreach (var cppEnum in _group.Includes.SelectMany(x => x.Items.OfType<CppEnum>()))
+                    ParseDoItemDefinitionPass(cppEnum);
             }
             catch (Exception ex)
             {
@@ -409,7 +413,7 @@ namespace SharpGen.Platform
             return attachedType.Contains(qualifiedName) || attachedType.Contains(name);
         }
 
-        private void Parse(bool isTestOutput, Stream reader)
+        private void ParseRoslyn(bool isTestOutput, Stream reader)
         {
             var sourceText = SourceText.From(reader);
             var syntaxTree = CSharpSyntaxTree.ParseText(
@@ -440,18 +444,61 @@ namespace SharpGen.Platform
             }
         }
 
-        private void Parse(TypeDeclarationSyntax typeDeclarationSyntax)
+        private void ParseDoTypeDefinitionPass(TypeDeclarationSyntax typeSyntax)
         {
-            var include = GetInclude(typeDeclarationSyntax);
+            var include = GetInclude(typeSyntax);
 
             if (include == null)
                 return;
 
-            CppStruct node = new(typeDeclarationSyntax.Identifier.ValueText)
+            CppStruct node = new(typeSyntax.Identifier.ValueText, (StructDeclarationSyntax) typeSyntax)
             {
+                Base = GetNativeInheritanceFromSyntax(typeSyntax),
+                IsUnion = GetNativeTypeNameFromSyntax(typeSyntax)?.StartsWith("union ") ?? false
             };
 
             include.Add(node);
+        }
+
+        private void ParseDoTypeDefinitionPass(EnumDeclarationSyntax enumSyntax)
+        {
+            var include = GetInclude(enumSyntax);
+
+            if (include == null)
+                return;
+
+            CppEnum node = new(enumSyntax.Identifier.ValueText, enumSyntax)
+            {
+                UnderlyingType = enumSyntax.BaseList?.Types.SingleOrDefault()?.Type.ToString() ?? "int"
+            };
+
+            include.Add(node);
+        }
+
+        private void ParseDoItemDefinitionPass(CppEnum cppEnum)
+        {
+            foreach (var member in cppEnum.Roslyn.Members)
+            {
+                cppEnum.AddEnumItem(member.Identifier.ValueText, member);
+            }
+        }
+
+        private void ParseDoItemDefinitionPass(CppStruct cppStruct)
+        {
+            foreach (var member in cppStruct.Roslyn.Members)
+            {
+                switch (member)
+                {
+                    case FieldDeclarationSyntax fieldSyntax:
+                        CppField field = new(fieldSyntax.Declaration.Variables.Single().Identifier.ValueText) {
+                        
+                        };
+                        cppStruct.Add(field);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(member));
+                }
+            }
         }
 
         private CppInclude GetInclude(MemberDeclarationSyntax syntax)
@@ -460,7 +507,16 @@ namespace SharpGen.Platform
             return includeFile == null ? null : GetInclude(includeFile);
         }
 
-        private static string GetIncludeFileFromSyntax(MemberDeclarationSyntax syntax)
+        private static string GetIncludeFileFromSyntax(MemberDeclarationSyntax syntax) =>
+            GetAttributeValueFromSyntax(syntax, "SourceLocation", 3, 0);
+
+        private static string GetNativeInheritanceFromSyntax(MemberDeclarationSyntax syntax) =>
+            GetAttributeValueFromSyntax(syntax, "NativeInheritance", 1, 0);
+
+        private static string GetNativeTypeNameFromSyntax(MemberDeclarationSyntax syntax) =>
+            GetAttributeValueFromSyntax(syntax, "NativeTypeName", 1, 0);
+
+        private static string GetAttributeValueFromSyntax(MemberDeclarationSyntax syntax, string attributeName, int expectedAttributeArgumentCount, int targetAttributeArgumentIndex)
         {
             foreach (var attributeSyntax in syntax.AttributeLists.SelectMany(x => x.Attributes))
             {
@@ -470,20 +526,21 @@ namespace SharpGen.Platform
                     _ => null
                 };
 
-                if (name != "SourceLocation")
+                if (name != attributeName)
                     continue;
 
                 var argumentList = attributeSyntax.ArgumentList?.Arguments;
-                if (argumentList is not {Count: 3} arguments)
+                if (argumentList is not {Count: > 0} arguments)
                     continue;
 
-                var sourceFile = arguments[0].Expression switch
+                if (arguments.Count != expectedAttributeArgumentCount)
+                    continue;
+
+                return arguments[targetAttributeArgumentIndex].Expression switch
                 {
                     LiteralExpressionSyntax literalExpressionSyntax => literalExpressionSyntax.Token.ValueText,
                     _ => null
                 };
-
-                return sourceFile;
             }
 
             return null;

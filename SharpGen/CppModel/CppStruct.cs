@@ -19,6 +19,7 @@
 // THE SOFTWARE.
 
 using System.Collections.Generic;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SharpGen.CppModel
 {
@@ -26,11 +27,13 @@ namespace SharpGen.CppModel
     {
         public string Base { get; set; }
         public bool IsUnion { get; set; }
+        public StructDeclarationSyntax Roslyn { get; }
 
         public IEnumerable<CppField> Fields => Iterate<CppField>();
 
-        public CppStruct(string name) : base(name)
+        public CppStruct(string name, StructDeclarationSyntax roslyn) : base(name)
         {
+            Roslyn = roslyn;
         }
     }
 }

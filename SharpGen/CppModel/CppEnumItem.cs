@@ -18,6 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 namespace SharpGen.CppModel
 {
     /// <summary>
@@ -25,12 +27,12 @@ namespace SharpGen.CppModel
     /// </summary>
     public sealed class CppEnumItem : CppElement
     {
-        public CppEnumItem(string name, string value) : base(name) => Value = value;
+        public CppEnumItem(string name, EnumMemberDeclarationSyntax value) : base(name) => Value = value;
 
         // Return empty string as enum items are global in C++.
         private protected override string Path => string.Empty;
 
-        public string Value { get; }
+        public EnumMemberDeclarationSyntax Value { get; }
 
         public override string ToString() => "EnumItem [" + Name + "]";
     }

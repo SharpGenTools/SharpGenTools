@@ -20,20 +20,11 @@ namespace SharpGen.Generator.Marshallers
             var field = (CsField) csElement;
             return ExpressionStatement(
                 AssignmentExpression(
-                    SyntaxKind.OrAssignmentExpression,
+                    SyntaxKind.SimpleAssignmentExpression,
                     GetMarshalStorageLocation(csElement),
                     CastExpression(
                         ParseTypeName(csElement.MarshalType.QualifiedName),
-                        ParenthesizedExpression(
-                            BinaryExpression(
-                                SyntaxKind.BitwiseAndExpression,
-                                IdentifierName(csElement.IntermediateMarshalName),
-                                LiteralExpression(
-                                    SyntaxKind.NumericLiteralExpression,
-                                    Literal(field.BitMask << field.BitOffset)
-                                )
-                            )
-                        )
+                        IdentifierName(csElement.IntermediateMarshalName)
                     )
                 )
             );
