@@ -490,9 +490,8 @@ namespace SharpGen.Platform
                 switch (member)
                 {
                     case FieldDeclarationSyntax fieldSyntax:
-                        CppField field = new(fieldSyntax.Declaration.Variables.Single().Identifier.ValueText) {
-                        
-                        };
+                        CppField field = new(fieldSyntax.Declaration.Variables.Single().Identifier.ValueText);
+                        ResolveAndFillType(fieldSyntax.Declaration.Type, field);
                         cppStruct.Add(field);
                         break;
                     default:
@@ -501,20 +500,35 @@ namespace SharpGen.Platform
             }
         }
 
-        private CppInclude GetInclude(MemberDeclarationSyntax syntax)
+        private CppInclude GetInclude(SyntaxNode syntax)
         {
             var includeFile = GetIncludeFileFromSyntax(syntax);
             return includeFile == null ? null : GetInclude(includeFile);
         }
 
-        private static string GetIncludeFileFromSyntax(MemberDeclarationSyntax syntax) =>
-            GetAttributeValueFromSyntax(syntax, "SourceLocation", 3, 0);
+        private static string GetIncludeFileFromSyntax(SyntaxNode syntax) =>
+            FindAttributeValueFromNode(syntax, "SourceLocation", 3, 0);
 
         private static string GetNativeInheritanceFromSyntax(MemberDeclarationSyntax syntax) =>
             GetAttributeValueFromSyntax(syntax, "NativeInheritance", 1, 0);
 
         private static string GetNativeTypeNameFromSyntax(MemberDeclarationSyntax syntax) =>
             GetAttributeValueFromSyntax(syntax, "NativeTypeName", 1, 0);
+
+        private static string FindAttributeValueFromNode(SyntaxNode syntax, string attributeName,
+                                                         int expectedAttributeArgumentCount,
+                                                         int targetAttributeArgumentIndex)
+        {
+            var ancestor = syntax.FirstAncestorOrSelf<MemberDeclarationSyntax>(FindPredicate);
+            return ancestor is { } ancestorSyntax
+                ? GetAttributeValueFromSyntax(ancestorSyntax, attributeName, expectedAttributeArgumentCount,
+                                              targetAttributeArgumentIndex)
+                : null;
+
+            bool FindPredicate(MemberDeclarationSyntax arg) =>
+                GetAttributeValueFromSyntax(arg, attributeName, expectedAttributeArgumentCount,
+                                            targetAttributeArgumentIndex) != null;
+        }
 
         private static string GetAttributeValueFromSyntax(MemberDeclarationSyntax syntax, string attributeName, int expectedAttributeArgumentCount, int targetAttributeArgumentIndex)
         {
@@ -544,6 +558,39 @@ namespace SharpGen.Platform
             }
 
             return null;
+        }
+
+        private void ResolveAndFillType(TypeSyntax typeSyntax, CppMarshallable type)
+        {
+            var isTypeResolved = false;
+
+            while (!isTypeResolved)
+            {
+                switch (typeSyntax)
+                {
+                    case ArrayTypeSyntax arrayTypeSyntax:
+                        type.IsArray = true;
+                        typeSyntax = arrayTypeSyntax.ElementType;
+                        type.ArrayDimension = string.Join(
+                            ",",
+                            arrayTypeSyntax.RankSpecifiers.SelectMany(x => x.Sizes.Select(y => y.ToString()))
+                        );
+                        break;
+                    case NameSyntax simpleNameSyntax:
+                        type.TypeName = simpleNameSyntax.ToString();
+                        isTypeResolved = true;
+                        break;
+                    case PointerTypeSyntax pointerTypeSyntax:
+                        type.Pointer = (type.Pointer ?? string.Empty) + "*";
+                        break;
+                    case PredefinedTypeSyntax predefinedTypeSyntax:
+                        type.TypeName = predefinedTypeSyntax.Keyword.ValueText;
+                        isTypeResolved = true;
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(typeSyntax));
+                }
+            }
         }
 
         private CppInclude GetInclude(string includeFile)
