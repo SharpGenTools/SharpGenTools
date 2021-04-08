@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
@@ -21,6 +22,7 @@ namespace SharpGen.Platform
 {
     public sealed class ClangSharpParser : IClangSharpHost
     {
+        private static readonly Regex ArrayTypeRegex = new(@"\[(.+?)\]", RegexOptions.Compiled | RegexOptions.Singleline); 
         private CppModule _group;
         private readonly HashSet<string> _includeToProcess = new();
         private readonly Dictionary<string, bool> _includeIsAttached = new();
@@ -46,7 +48,7 @@ namespace SharpGen.Platform
                         Parse(syntax);
                         break;
          */
-        private readonly List<TypeDeclarationSyntax> types = new(), typesTest = new();
+        private readonly List<TypeDeclarationSyntax> types = new(), typesTest = new(), typesStatic = new();
         private readonly List<EnumDeclarationSyntax> enums = new(), enumsTest = new();
 
         private static readonly PInvokeGeneratorConfiguration GeneratorConfiguration = new(
@@ -426,17 +428,20 @@ namespace SharpGen.Platform
             {
                 switch (node)
                 {
-                    case EnumDeclarationSyntax enumDeclarationSyntax when isTestOutput:
-                        enumsTest.Add(enumDeclarationSyntax);
+                    case EnumDeclarationSyntax enumSyntax when isTestOutput:
+                        enumsTest.Add(enumSyntax);
                         break;
-                    case EnumDeclarationSyntax enumDeclarationSyntax:
-                        enums.Add(enumDeclarationSyntax);
+                    case EnumDeclarationSyntax enumSyntax:
+                        enums.Add(enumSyntax);
                         break;
-                    case TypeDeclarationSyntax typeDeclarationSyntax when isTestOutput:
-                        typesTest.Add(typeDeclarationSyntax);
+                    case TypeDeclarationSyntax typeSyntax when isTestOutput:
+                        typesTest.Add(typeSyntax);
                         break;
-                    case TypeDeclarationSyntax typeDeclarationSyntax:
-                        types.Add(typeDeclarationSyntax);
+                    case TypeDeclarationSyntax typeSyntax when typeSyntax.Modifiers.Any(SyntaxKind.StaticKeyword):
+                        typesStatic.Add(typeSyntax);
+                        break;
+                    case TypeDeclarationSyntax typeSyntax:
+                        types.Add(typeSyntax);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(node));
@@ -458,6 +463,52 @@ namespace SharpGen.Platform
             };
 
             include.Add(node);
+        }
+
+        private void ParseDoTypeDefinitionPassForStaticType(TypeDeclarationSyntax typeSyntax)
+        {
+            var include = GetInclude(typeSyntax);
+
+            if (include == null)
+                return;
+
+            foreach (var member in typeSyntax.Members)
+            {
+                switch (member)
+                {
+                    case MethodDeclarationSyntax methodSyntax when GetDllImportFromSyntax(methodSyntax) is {} dllImport:
+                        var entryPoint = GetDllImportEntryPointFromSyntax(methodSyntax, dllImport);
+                        CppFunction function = new(entryPoint);
+                        if (GetDllImportCallingConventionFromSyntax(methodSyntax, dllImport) is
+                                {Length: > 0} callConvName)
+                            function.CallingConvention = callConvName.ToLowerInvariant() switch
+                            {
+                                "winapi" => CallingConvention.Winapi,
+                                "cdecl" => CallingConvention.Cdecl,
+                                "stdcall" => CallingConvention.StdCall,
+                                "thiscall" => CallingConvention.ThisCall,
+                                "fastcall" => CallingConvention.FastCall,
+                            };
+                        if (!methodSyntax.ReturnType.IsKind(SyntaxKind.VoidKeyword))
+                        {
+                            CppReturnValue returnValue = new();
+
+                            var nativeTypeNameAttribute = GetNativeTypeNameAttributeFromSyntax(methodSyntax);
+                            ResolveAndFillType(
+                                methodSyntax.ReturnType, nativeTypeNameAttribute, returnValue
+                            );
+
+                            function.ReturnValue = returnValue;
+                        }
+
+
+                        include.Add(function);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(member));
+                }
+            }
+
         }
 
         private void ParseDoTypeDefinitionPass(EnumDeclarationSyntax enumSyntax)
@@ -489,11 +540,45 @@ namespace SharpGen.Platform
             {
                 switch (member)
                 {
+                    case MethodDeclarationSyntax methodSyntax when GetDllImportFromSyntax(methodSyntax) is null:
+                        #if false
+                        var entryPoint = GetDllImportEntryPointFromSyntax(methodSyntax, dllImport);
+                        CppFunction function = new(entryPoint);
+                        if (GetDllImportCallingConventionFromSyntax(methodSyntax, dllImport) is
+                                {Length: > 0} callConvName)
+                            function.CallingConvention = callConvName.ToLowerInvariant() switch
+                            {
+                                "winapi" => CallingConvention.Winapi,
+                                "cdecl" => CallingConvention.Cdecl,
+                                "stdcall" => CallingConvention.StdCall,
+                                "thiscall" => CallingConvention.ThisCall,
+                                "fastcall" => CallingConvention.FastCall,
+                            };
+                        if (!methodSyntax.ReturnType.IsKind(SyntaxKind.VoidKeyword))
+                        {
+                            CppReturnValue returnValue = new();
+
+                            var nativeTypeNameAttribute = GetNativeTypeNameAttributeFromSyntax(methodSyntax);
+                            ResolveAndFillType(
+                                methodSyntax.ReturnType, nativeTypeNameAttribute, returnValue
+                            );
+
+                            function.ReturnValue = returnValue;
+                        }
+                        cppStruct.Add(function);
+                        #endif
+
+                        break;
+                    case BasePropertyDeclarationSyntax propertySyntax:
+                        break;
                     case FieldDeclarationSyntax fieldSyntax:
+                    {
                         CppField field = new(fieldSyntax.Declaration.Variables.Single().Identifier.ValueText);
-                        ResolveAndFillType(fieldSyntax.Declaration.Type, field);
+                        var nativeTypeNameAttribute = GetNativeTypeNameAttributeFromSyntax(fieldSyntax);
+                        ResolveAndFillType(fieldSyntax.Declaration.Type, nativeTypeNameAttribute, field);
                         cppStruct.Add(field);
                         break;
+                    }
                     default:
                         throw new ArgumentOutOfRangeException(nameof(member));
                 }
@@ -515,6 +600,42 @@ namespace SharpGen.Platform
         private static string GetNativeTypeNameFromSyntax(MemberDeclarationSyntax syntax) =>
             GetAttributeValueFromSyntax(syntax, "NativeTypeName", 1, 0);
 
+        private static SeparatedSyntaxList<AttributeArgumentSyntax>?
+            GetNativeTypeNameAttributeFromSyntax(MemberDeclarationSyntax syntax) =>
+            GetAttributeFromSyntax(syntax, "NativeTypeName");
+
+        private static SeparatedSyntaxList<AttributeArgumentSyntax>?
+            GetDllImportFromSyntax(MemberDeclarationSyntax syntax) => GetAttributeFromSyntax(syntax, "DllImport");
+
+        private static string GetDllImportEntryPointFromSyntax(MethodDeclarationSyntax syntax,
+                                                               SeparatedSyntaxList<AttributeArgumentSyntax> dllImport)
+        {
+            var entryPoint = GetAttributeValueByName(dllImport, nameof(DllImportAttribute.EntryPoint));
+            return entryPoint switch
+            {
+                LiteralExpressionSyntax literalExpressionSyntax => literalExpressionSyntax.Token.ValueText,
+                { } => throw new ArgumentOutOfRangeException(nameof(entryPoint)),
+                _ => syntax.Identifier.ValueText
+            };
+        }
+
+        private static string GetDllImportCallingConventionFromSyntax(MethodDeclarationSyntax syntax,
+                                                               SeparatedSyntaxList<AttributeArgumentSyntax> dllImport)
+        {
+            var entryPoint = GetAttributeValueByName(dllImport, nameof(DllImportAttribute.CallingConvention));
+            return entryPoint switch
+            {
+                { } => throw new ArgumentOutOfRangeException(nameof(entryPoint)),
+                _ => syntax.Identifier.ValueText
+            };
+        }
+
+        private static ExpressionSyntax GetAttributeValueByName(
+            SeparatedSyntaxList<AttributeArgumentSyntax> dllImport, string attributeName) =>
+            dllImport
+               .FirstOrDefault(x => x.NameEquals?.Name.Identifier.ValueText == attributeName)
+              ?.Expression;
+
         private static string FindAttributeValueFromNode(SyntaxNode syntax, string attributeName,
                                                          int expectedAttributeArgumentCount,
                                                          int targetAttributeArgumentIndex)
@@ -530,7 +651,26 @@ namespace SharpGen.Platform
                                             targetAttributeArgumentIndex) != null;
         }
 
-        private static string GetAttributeValueFromSyntax(MemberDeclarationSyntax syntax, string attributeName, int expectedAttributeArgumentCount, int targetAttributeArgumentIndex)
+        private static string GetAttributeValueFromSyntax(MemberDeclarationSyntax syntax, string attributeName,
+                                                          int expectedAttributeArgumentCount,
+                                                          int targetAttributeArgumentIndex)
+        {
+            if (GetAttributeFromSyntax(syntax, attributeName) is not { } arguments)
+                return null;
+
+            if (arguments.Count != expectedAttributeArgumentCount)
+                return null;
+
+            return GetAttributeValueStringLiteral(arguments[targetAttributeArgumentIndex]);
+        }
+
+        private static string GetAttributeValueStringLiteral(AttributeArgumentSyntax value) => value.Expression switch
+        {
+            LiteralExpressionSyntax literalExpressionSyntax => literalExpressionSyntax.Token.ValueText,
+            _ => null
+        };
+
+        private static SeparatedSyntaxList<AttributeArgumentSyntax>? GetAttributeFromSyntax(MemberDeclarationSyntax syntax, string attributeName)
         {
             foreach (var attributeSyntax in syntax.AttributeLists.SelectMany(x => x.Attributes))
             {
@@ -547,17 +687,31 @@ namespace SharpGen.Platform
                 if (argumentList is not {Count: > 0} arguments)
                     continue;
 
-                if (arguments.Count != expectedAttributeArgumentCount)
-                    continue;
-
-                return arguments[targetAttributeArgumentIndex].Expression switch
-                {
-                    LiteralExpressionSyntax literalExpressionSyntax => literalExpressionSyntax.Token.ValueText,
-                    _ => null
-                };
+                return arguments;
             }
 
             return null;
+        }
+
+        private void ResolveAndFillType(TypeSyntax typeSyntax, SeparatedSyntaxList<AttributeArgumentSyntax>? nativeTypeNameAttribute, CppMarshallable type)
+        {
+            if (nativeTypeNameAttribute is {Count: 1} attribute)
+            {
+                var nativeTypeName = GetAttributeValueStringLiteral(attribute[0]);
+                type.Pointer = new string('*', nativeTypeName.Count(x => x == '*'));
+                type.Const = nativeTypeName.StartsWith("const ");
+                type.TypeName = nativeTypeName;
+                var arrayMatches = ArrayTypeRegex.Matches(nativeTypeName);
+                type.IsArray = arrayMatches.Count != 0;
+                if (type.IsArray)
+                    type.ArrayDimension = string.Join(
+                        ",",
+                        arrayMatches.OfType<Match>().Select(x => x.Groups[1])
+                    );
+                return;
+            }
+
+            ResolveAndFillType(typeSyntax, type);
         }
 
         private void ResolveAndFillType(TypeSyntax typeSyntax, CppMarshallable type)
@@ -582,6 +736,7 @@ namespace SharpGen.Platform
                         break;
                     case PointerTypeSyntax pointerTypeSyntax:
                         type.Pointer = (type.Pointer ?? string.Empty) + "*";
+                        typeSyntax = pointerTypeSyntax.ElementType;
                         break;
                     case PredefinedTypeSyntax predefinedTypeSyntax:
                         type.TypeName = predefinedTypeSyntax.Keyword.ValueText;

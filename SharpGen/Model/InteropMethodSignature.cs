@@ -20,6 +20,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 using SharpGen.CppModel;
 
@@ -93,7 +94,7 @@ namespace SharpGen.Model
             }
         }
 
-        public CppCallingConvention CallingConvention { get; set; }
+        public CallingConvention CallingConvention { get; set; }
         public InteropMethodSignatureFlags Flags { get; set; }
 
         private InteropMethodSignatureFlags FlagsForName => Flags & ~FlagsToIgnoreForName;

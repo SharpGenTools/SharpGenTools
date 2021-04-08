@@ -1263,10 +1263,12 @@ namespace SharpGen.Platform.Clang
                 WithType(enumDeclName, ref name, ref nativeTypeName);
             }
 
+            #if false
             if (nativeTypeName.Equals(name))
             {
                 nativeTypeName = string.Empty;
             }
+            #endif
             return name;
 
             bool IsForceDwordOrForceUInt(string enumDeclName, EnumConstantDecl enumConstantDecl)
@@ -1548,10 +1550,12 @@ namespace SharpGen.Platform.Clang
             Debug.Assert(!string.IsNullOrWhiteSpace(name));
             Debug.Assert(!string.IsNullOrWhiteSpace(nativeTypeName));
 
+#if false
             if (nativeTypeName.Equals(name))
             {
                 nativeTypeName = string.Empty;
             }
+#endif
             return name;
         }
 
@@ -3743,10 +3747,12 @@ namespace SharpGen.Platform.Clang
 
                 integerTypeName = type;
 
+#if false
                 if (nativeTypeName.Equals(type))
                 {
                     nativeTypeName = string.Empty;
                 }
+#endif
             }
         }
 

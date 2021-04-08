@@ -1,24 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace SharpGen.CppModel
 {
     public abstract class CppCallable : CppContainer
     {
-        protected virtual CppCallingConvention DefaultCallingConvention => CppCallingConvention.CDecl;
-
         public CppReturnValue ReturnValue { get; set; }
 
-        private CppCallingConvention callingConvention;
-
-        public CppCallingConvention CallingConvention
-        {
-            get => callingConvention == CppCallingConvention.Unknown
-                       ? callingConvention = DefaultCallingConvention
-                       : callingConvention;
-            set => callingConvention = value;
-        }
+        public CallingConvention CallingConvention { get; set; } = CallingConvention.Cdecl;
 
         public IEnumerable<CppParameter> Parameters => Iterate<CppParameter>();
 

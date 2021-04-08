@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using SharpGen.CppModel;
 using SharpGen.Transform;
 
@@ -29,7 +30,7 @@ namespace SharpGen.Model
             CppCallingConvention = callable.CallingConvention;
         }
 
-        public CppCallingConvention CppCallingConvention { get; } = CppCallingConvention.Unknown;
+        public CallingConvention CppCallingConvention { get; } = CallingConvention.Winapi;
         public bool RequestRawPtr { get; }
         private string CppSignature { get; }
         private string ShortName { get; }

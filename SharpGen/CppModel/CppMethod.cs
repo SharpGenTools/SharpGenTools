@@ -25,8 +25,6 @@ namespace SharpGen.CppModel
         public int Offset { get; set; }
         public int WindowsOffset { get; set; }
 
-        protected override CppCallingConvention DefaultCallingConvention => CppCallingConvention.ThisCall;
-
         public CppMethod(string name) : base(name)
         {
         }

@@ -83,22 +83,23 @@ namespace SharpGen.Model
             return list;
         }
 
-        public static string ToManagedCallingConventionName(this CppCallingConvention callConv) =>
+        public static string ToManagedCallingConventionName(this CallingConvention callConv) =>
             callConv switch
             {
-                CppCallingConvention.StdCall => nameof(CallingConvention.StdCall),
-                CppCallingConvention.CDecl => nameof(CallingConvention.Cdecl),
-                CppCallingConvention.ThisCall => nameof(CallingConvention.ThisCall),
-                CppCallingConvention.FastCall => nameof(CallingConvention.FastCall),
-                _ => nameof(CallingConvention.Winapi)
+                CallingConvention.Winapi => nameof(CallingConvention.Winapi),
+                CallingConvention.Cdecl => nameof(CallingConvention.Cdecl),
+                CallingConvention.StdCall => nameof(CallingConvention.StdCall),
+                CallingConvention.ThisCall => nameof(CallingConvention.ThisCall),
+                CallingConvention.FastCall => nameof(CallingConvention.FastCall),
+                _ => throw new ArgumentOutOfRangeException(nameof(callConv), callConv, null)
             };
 
-        public static string ToCallConvShortName(this CppCallingConvention callConv) => callConv switch
+        public static string ToCallConvShortName(this CallingConvention callConv) => callConv switch
         {
-            CppCallingConvention.StdCall => "Stdcall",
-            CppCallingConvention.CDecl => "Cdecl",
-            CppCallingConvention.ThisCall => "Thiscall",
-            CppCallingConvention.FastCall => "Fastcall",
+            CallingConvention.StdCall => "Stdcall",
+            CallingConvention.Cdecl => "Cdecl",
+            CallingConvention.ThisCall => "Thiscall",
+            CallingConvention.FastCall => "Fastcall",
             _ => throw new ArgumentOutOfRangeException(nameof(callConv))
         };
     }
