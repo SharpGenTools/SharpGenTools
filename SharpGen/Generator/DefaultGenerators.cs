@@ -20,8 +20,7 @@ namespace SharpGen.Generator
             Constant = new ConstantCodeGenerator();
             Property = new PropertyCodeGenerator(this, documentation, docReader);
             Enum = new EnumCodeGenerator(documentation, docReader);
-            ExplicitOffsetField = new FieldCodeGenerator(documentation, docReader, true);
-            AutoLayoutField = new FieldCodeGenerator(documentation, docReader, false);
+            Field = new FieldCodeGenerator(documentation, docReader);
             Struct = new StructCodeGenerator(this, documentation, docReader);
             NativeStruct = new NativeStructCodeGenerator(this, globalNamespace);
             NativeInvocation = new NativeInvocationCodeGenerator(this, globalNamespace);
@@ -42,8 +41,7 @@ namespace SharpGen.Generator
         public IMultiCodeGenerator<CsProperty, MemberDeclarationSyntax> Property { get; }
         public IMultiCodeGenerator<CsEnum, MemberDeclarationSyntax> Enum { get; }
         public IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax> NativeStruct { get; }
-        public IMultiCodeGenerator<CsField, MemberDeclarationSyntax> ExplicitOffsetField { get; }
-        public IMultiCodeGenerator<CsField, MemberDeclarationSyntax> AutoLayoutField { get; }
+        public IMultiCodeGenerator<CsField, MemberDeclarationSyntax> Field { get; }
         public IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax> Struct { get; }
         public INativeCallCodeGenerator NativeInvocation { get; }
         public IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> Callable { get; }

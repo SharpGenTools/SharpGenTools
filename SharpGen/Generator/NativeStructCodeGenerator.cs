@@ -88,7 +88,7 @@ namespace SharpGen.Generator
             return MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), name)
                   .WithParameterList(MarshalParameterListSyntax)
                   .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)))
-                  .WithBody(Block(body));
+                  .WithBody(body);
         }
 
         private MethodDeclarationSyntax GenerateMarshalFrom(CsStruct csStruct) => GenerateMarshalMethod(

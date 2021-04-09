@@ -23,13 +23,12 @@ namespace SharpGen.Generator
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsStruct csElement)
         {
             var documentationTrivia = GenerateDocumentationTrivia(csElement);
-            var layoutKind = csElement.ExplicitLayout ? "Explicit" : "Sequential";
             var structLayoutAttribute = Attribute(ParseName("System.Runtime.InteropServices.StructLayoutAttribute"))
                     .WithArgumentList(
                         AttributeArgumentList(SeparatedList(
                             new []
                             {
-                                AttributeArgument(ParseName($"System.Runtime.InteropServices.LayoutKind.{layoutKind}")),
+                                AttributeArgument(ParseName($"System.Runtime.InteropServices.LayoutKind.Sequential")),
                                 AttributeArgument(
                                     LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.Align)))
                                     .WithNameEquals(NameEquals(IdentifierName("Pack"))),
@@ -45,12 +44,7 @@ namespace SharpGen.Generator
 
             var constants = csElement.Variables.SelectMany(var => Generators.Constant.GenerateCode(var));
 
-            var fields = csElement.Fields.Where(field => (field.Relations?.Count ?? 0) == 0).SelectMany(field =>
-            {
-                var explicitLayout = !csElement.HasMarshalType && csElement.ExplicitLayout;
-                var generator = explicitLayout ? Generators.ExplicitOffsetField : Generators.AutoLayoutField;
-                return generator.GenerateCode(field);
-            });
+            var fields = csElement.Fields.Where(field => (field.Relations?.Count ?? 0) == 0).SelectMany(field => Generators.Field.GenerateCode(field));
 
             var marshallingStructAndConversions = Enumerable.Empty<MemberDeclarationSyntax>();
 

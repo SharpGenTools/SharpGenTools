@@ -10,14 +10,11 @@ using SharpGen.Transform;
 
 namespace SharpGen.Generator
 {
-    class FieldCodeGenerator : MemberCodeGeneratorBase<CsField>
+    internal sealed class FieldCodeGenerator : MemberCodeGeneratorBase<CsField>
     {
-        private readonly bool explicitLayout;
-
-        public FieldCodeGenerator(IDocumentationLinker documentation, ExternalDocCommentsReader docReader, bool explicitLayout)
+        public FieldCodeGenerator(IDocumentationLinker documentation, ExternalDocCommentsReader docReader)
             :base(documentation, docReader)
         {
-            this.explicitLayout = explicitLayout;
         }
 
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsField csElement)
@@ -48,7 +45,7 @@ namespace SharpGen.Generator
                             })))
                     .WithModifiers(csElement.VisibilityTokenList)
                     .WithLeadingTrivia(docComments);
-                yield return GenerateBackingField(csElement, csElement.MarshalType, explicitLayout ? csElement.Offset : null);
+                yield return GenerateBackingField(csElement, csElement.MarshalType);
             }
             else if (csElement.IsArray && !csElement.IsString)
             {
@@ -82,7 +79,7 @@ namespace SharpGen.Generator
                             .WithModifiers(csElement.VisibilityTokenList)
                             .WithLeadingTrivia(docComments);
 
-                yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : null, isArray: true);
+                yield return GenerateBackingField(csElement, csElement.PublicType, true);
             }
             else if (csElement.IsBitField)
             {
@@ -117,11 +114,11 @@ namespace SharpGen.Generator
                     .WithModifiers(csElement.VisibilityTokenList)
                     .WithLeadingTrivia(docComments);
                 }
-                yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : null);
+                yield return GenerateBackingField(csElement, csElement.PublicType);
             }
             else
             {
-                yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : null, docTrivia: docComments, propertyBacking: false);
+                yield return GenerateBackingField(csElement, csElement.PublicType, docTrivia: docComments, propertyBacking: false);
             }
         }
 
@@ -178,30 +175,29 @@ namespace SharpGen.Generator
                 LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))
             );
 
-        private static MemberDeclarationSyntax GenerateBackingField(CsField field, CsTypeBase backingType, int? offset, bool isArray = false, bool propertyBacking = true, SyntaxTrivia? docTrivia = null)
+        private static MemberDeclarationSyntax GenerateBackingField(CsField field, CsTypeBase backingType,
+                                                                    bool isArray = false, bool propertyBacking = true,
+                                                                    SyntaxTrivia? docTrivia = null)
         {
+            var elementType = ParseTypeName(backingType.QualifiedName);
+
             var fieldDecl = FieldDeclaration(
-               VariableDeclaration(isArray ?
-                   ArrayType(ParseTypeName(backingType.QualifiedName), SingletonList(ArrayRankSpecifier()))
-                   : ParseTypeName(backingType.QualifiedName),
-                   SingletonSeparatedList(
-                       VariableDeclarator(propertyBacking ? field.IntermediateMarshalName : field.Name)
-                   )))
-               .WithModifiers(propertyBacking ? TokenList(Token(SyntaxKind.InternalKeyword)) : field.VisibilityTokenList);
+                    VariableDeclaration(
+                        isArray
+                            ? ArrayType(elementType, SingletonList(ArrayRankSpecifier()))
+                            : elementType,
+                        SingletonSeparatedList(
+                            VariableDeclarator(propertyBacking ? field.IntermediateMarshalName : field.Name)
+                        )
+                    )
+                )
+               .WithModifiers(
+                    propertyBacking
+                        ? TokenList(Token(SyntaxKind.InternalKeyword))
+                        : field.VisibilityTokenList
+                );
 
-            if (offset.HasValue)
-            {
-                fieldDecl = fieldDecl.WithAttributeLists(SingletonList(
-                    AttributeList(
-                        SingletonSeparatedList(Attribute(
-                            ParseName("System.Runtime.InteropServices.FieldOffset"),
-                            AttributeArgumentList(
-                                SingletonSeparatedList(AttributeArgument(
-                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(offset.Value))))))))
-                ));
-            }
-
-            return docTrivia is {} trivia ? fieldDecl.WithLeadingTrivia(trivia) : fieldDecl;
+            return docTrivia is { } trivia ? fieldDecl.WithLeadingTrivia(trivia) : fieldDecl;
         }
     }
 }

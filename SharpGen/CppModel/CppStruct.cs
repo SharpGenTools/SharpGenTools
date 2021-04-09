@@ -26,8 +26,12 @@ namespace SharpGen.CppModel
     public sealed class CppStruct : CppContainer
     {
         public string Base { get; set; }
-        public bool IsUnion { get; set; }
         public StructDeclarationSyntax Roslyn { get; }
+        public long Alignment32 { get; set; }
+        public long Alignment64 { get; set; }
+        public long Size32 { get; set; }
+        public long Size64 { get; set; }
+        public long Pack { get; set; }
 
         public IEnumerable<CppField> Fields => Iterate<CppField>();
 

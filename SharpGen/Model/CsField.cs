@@ -31,8 +31,6 @@ namespace SharpGen.Model
 
         public bool IsBitField { get; }
 
-        public int Offset { get; set; }
-
         public CsField(CppField cppElement, string name) : base(cppElement, name)
         {
             if (cppElement == null)

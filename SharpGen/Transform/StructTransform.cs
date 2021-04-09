@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -120,20 +121,6 @@ namespace SharpGen.Transform
                 }
             }
 
-            // Current offset of a field
-            int currentFieldAbsoluteOffset = 0;
-
-            // Last field offset
-            int previousFieldOffsetIndex = -1;
-
-            // Size of the last field
-            int previousFieldSize = 0;
-
-            // 
-            int maxSizeOfField = 0;
-
-            bool isNonSequential = false;
-
             var inheritedStructs = new Stack<CppStruct>();
             var currentStruct = cppStruct;
             while (currentStruct != null && currentStruct.Base != currentStruct.Name)
@@ -157,67 +144,29 @@ namespace SharpGen.Transform
                 {
                     var cppField = fields[fieldIndex];
                     var fieldName = fieldNames[fieldIndex];
-                    Logger.RunInContext(cppField.ToString(), () =>
-                    {
-                        var csField = factory.Create(cppField, fieldName);
-                        csStruct.Add(csField);
-
-                        var fieldHasMarshalType = csField.PublicType != csField.MarshalType
-                            || csField.HasNativeValueType
-                            || csField.IsArray;
-
-                        // BoolToInt doesn't generate native Marshaling although they have a different marshaller
-                        if (((!csField.IsBoolToInt || csField.IsArray) && fieldHasMarshalType) || (csField.Relations?.Count ?? 0) != 0)
-                            hasMarshalType = true;
-
-                        // If last field has same offset, then it's a union
-                        // CurrentOffset is not moved
-                        if (isNonSequential && previousFieldOffsetIndex != cppField.Offset)
+                    Logger.RunInContext(
+                        cppField.ToString(),
+                        () =>
                         {
-                            previousFieldSize = maxSizeOfField;
-                            maxSizeOfField = 0;
-                            isNonSequential = false;
-                        }
+                            var csField = factory.Create(cppField, fieldName);
+                            csStruct.Add(csField);
 
-                        currentFieldAbsoluteOffset += previousFieldSize;
-                        var fieldAlignment = (csField.MarshalType ?? csField.PublicType).CalculateAlignment();
+                            var fieldHasMarshalType = csField.PublicType != csField.MarshalType
+                                                   || csField.HasNativeValueType
+                                                   || csField.IsArray;
 
-                        // If field alignment is < 0, then we have a pointer somewhere so we can't align
-                        if (fieldAlignment > 0)
-                        {
-                            // otherwise, align the field on the alignment requirement of the field
-                            int delta = (currentFieldAbsoluteOffset % fieldAlignment);
-                            if (delta != 0)
-                            {
-                                currentFieldAbsoluteOffset += fieldAlignment - delta;
-                            }
-                        }
+                            if ((csField.Relations?.Count ?? 0) != 0)
+                                hasMarshalType = true;
 
-                        // Get correct offset (for handling union)
-                        csField.Offset = currentFieldAbsoluteOffset;
-
-                        var nextFieldIndex = fieldIndex + 1;
-                        if (previousFieldOffsetIndex == cppField.Offset
-                         || (nextFieldIndex < fieldCount && fields[nextFieldIndex].Offset == cppField.Offset))
-                        {
-                            if (previousFieldOffsetIndex != cppField.Offset)
-                            {
-                                maxSizeOfField = 0;
-                            }
-                            maxSizeOfField = csField.Size > maxSizeOfField ? csField.Size : maxSizeOfField;
-                            isNonSequential = true;
-                            csStruct.ExplicitLayout = true;
-                            previousFieldSize = 0;
+                            // BoolToInt doesn't generate native Marshaling although they have a different marshaller
+                            if (fieldHasMarshalType && (!csField.IsBoolToInt || csField.IsArray))
+                                hasMarshalType = true;
                         }
-                        else
-                        {
-                            previousFieldSize = csField.Size;
-                        }
-                        previousFieldOffsetIndex = cppField.Offset;
-                    });
+                    );
                 }
             }
 
+#if false
             // In case of explicit layout, check that we can safely generate it on both x86 and x64 (in case of an union
             // using pointers, we can't)
             if (!csStruct.HasCustomMarshal && csStruct.ExplicitLayout && !cppStruct.IsUnion)
@@ -243,8 +192,9 @@ namespace SharpGen.Transform
                     }
                 }
             }
+#endif
 
-            csStruct.StructSize = currentFieldAbsoluteOffset + previousFieldSize;
+            csStruct.StructSize = checked((int) Math.Max(cppStruct.Size32, cppStruct.Size64));
             csStruct.HasMarshalType = hasMarshalType;
         }
     }

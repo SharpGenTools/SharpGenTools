@@ -270,15 +270,15 @@ namespace SharpGen.Platform.Clang.XML
                 _sb.Append(" unsafe=\"true\"");
             }
 
-            if (info.Layout is not null)
+            if (info.Layout.LayoutAttribute is {} attribute)
             {
                 _sb.Append(" layout=\"");
-                _sb.Append(info.Layout.Value);
+                _sb.Append(attribute.Value);
                 _sb.Append('"');
                 if (info.Layout.Pack != default)
                 {
                     _sb.Append(" pack=\"");
-                    _sb.Append(info.Layout.Pack);
+                    _sb.Append(attribute.Pack);
                     _sb.Append('"');
                 }
             }

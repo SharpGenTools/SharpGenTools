@@ -11,21 +11,21 @@
 
   <bindings>
     <!-- Primitive bindings -->
-    <bind from="void" to="System.Void" />
-    <bind from="int" to="System.Int32" />
-    <bind from="unsigned int" to="System.UInt32" />
-    <bind from="short" to="System.Int16" />
-    <bind from="unsigned short" to="System.UInt16" />
-    <bind from="unsigned char" to="System.Byte" />
+    <bind from="void" to="void" />
+    <bind from="int" to="int" />
+    <bind from="unsigned int" to="uint" />
+    <bind from="short" to="short" />
+    <bind from="unsigned short" to="ushort" />
+    <bind from="unsigned char" to="byte" />
     <bind from="long" to="SharpGen.Runtime.NativeLong" />
     <bind from="unsigned long" to="SharpGen.Runtime.NativeULong" />
-    <bind from="longlong" to="System.Int64" />
-    <bind from="unsigned longlong" to="System.UInt64" />
-    <bind from="float" to="System.Single" />
-    <bind from="double" to="System.Double" />
+    <bind from="long long" to="long" />
+    <bind from="unsigned long long" to="ulong" />
+    <bind from="float" to="float" />
+    <bind from="double" to="double" />
     <bind from="size_t" to="SharpGen.Runtime.PointerSize" />
     <bind from="ptrdiff_t" to="SharpGen.Runtime.PointerSize" />
-    <bind from="bool" to="System.Boolean" marshal="System.Byte" />
+    <bind from="bool" to="bool" marshal="byte" />
     <bind from="__function__stdcall" to="SharpGen.Runtime.FunctionCallback" />
     <bind from="GUID" to="System.Guid" />
   </bindings>

@@ -1,13 +1,20 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Xml;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using SharpGen;
 using SharpGen.Config;
+using SharpGen.Generator;
 using SharpGen.Logging;
+using SharpGen.Model;
 using SharpGen.Parser;
 using SharpGen.Platform;
+using SharpGen.Transform;
 using ILogger = SharpGen.Logging.ILogger;
 using Logger = SharpGen.Logging.Logger;
 using SdkResolver = SharpGen.Parser.SdkResolver;
@@ -73,13 +80,13 @@ namespace SharpGenTools.Sdk.Test
             var ConfigFiles = new ITaskItem[]
             {
                 new TaskItem(@"D:\dev\SharpGenTools\SdkTests\Struct\Mapping.xml"),
-                new TaskItem(
-                    @"D:\dev\SharpGenTools\SdkTests\RestoredPackages\sharpgen.runtime\2.0.0-local\build\../build/Mapping.xml"
-                )
+                new TaskItem(@"D:\dev\SharpGenTools\SharpGen.Runtime\Mapping.xml")
             };
-            var OutputPath = @"D:\dev\SharpGenTools\SdkTests\Struct\obj\x64\Debug\net5.0\SharpGen\";
-            var GeneratedCodeFolder =
-                @"D:\dev\SharpGenTools\SdkTests\Struct\obj\x64\Debug\net5.0\SharpGen\Generated\";
+            var OutputPath = @"D:\dev\SharpGenTools\NextGen\Struct\x64\Debug\net5.0\";
+            var GeneratedCodeFolder = OutputPath;
+
+            if (!Directory.Exists(OutputPath))
+                Directory.CreateDirectory(OutputPath);
 
             var config = new ConfigFile
             {
@@ -128,7 +135,68 @@ namespace SharpGenTools.Sdk.Test
                 return;
 
             // Run the C++ parser
-            parser.Run(module);
+            var group = parser.Run(module);
+
+            if (SharpGenLogger.HasErrors)
+                return;
+
+            config.ExpandDynamicVariables(SharpGenLogger, group);
+
+            var docLinker = new DocumentationLinker();
+            var typeRegistry = new TypeRegistry(SharpGenLogger, docLinker);
+            var namingRules = new NamingRulesManager();
+
+            var globalNamespace = new GlobalNamespaceProvider();
+
+            // Run the main mapping process
+            var transformer = new TransformManager(
+                globalNamespace,
+                namingRules,
+                SharpGenLogger,
+                typeRegistry,
+                docLinker,
+                new ConstantManager(namingRules, docLinker)
+            );
+
+            var (solution, defines) = transformer.Transform(group, config);
+
+            var consumerConfig = new ConfigFile
+            {
+                Id = "SharpGen-Consumer-BindMapping",
+                IncludeProlog = {cppHeaderGenerationResult.Prologue},
+                Extension = new List<ExtensionBaseRule>(defines)
+            };
+
+            var (bindings, generatedDefines) = transformer.GenerateTypeBindingsForConsumers();
+
+            consumerConfig.Bindings.AddRange(bindings);
+            consumerConfig.Extension.AddRange(generatedDefines);
+
+            consumerConfig.Mappings.AddRange(
+                docLinker.GetAllDocLinks().Select(
+                    link => new MappingRule
+                    {
+                        DocItem = link.cppName,
+                        MappingNameFinal = link.cSharpName
+                    }
+                )
+            );
+
+            if (SharpGenLogger.HasErrors)
+                return;
+
+            var generator = new RoslynGenerator(
+                SharpGenLogger,
+                globalNamespace,
+                docLinker,
+                new ExternalDocCommentsReader(new Dictionary<string, XmlDocument>()),
+                new GeneratorConfig
+                {
+                    Platforms = PlatformDetectionType.Any
+                }
+            );
+
+            generator.Run(solution, GeneratedCodeFolder);
         }
     }
 

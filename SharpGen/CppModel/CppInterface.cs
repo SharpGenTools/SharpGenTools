@@ -19,6 +19,7 @@
 // THE SOFTWARE.
 
 using System.Collections.Generic;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SharpGen.CppModel
 {
@@ -27,11 +28,13 @@ namespace SharpGen.CppModel
         public string Guid { get; set; }
         public string Base { get; set; }
         public int TotalMethodCount { get; set; }
+        public StructDeclarationSyntax Roslyn { get; }
 
         public IEnumerable<CppMethod> Methods => Iterate<CppMethod>();
 
-        public CppInterface(string name) : base(name)
+        public CppInterface(string name, StructDeclarationSyntax roslyn) : base(name)
         {
+            Roslyn = roslyn;
         }
     }
 }

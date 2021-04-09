@@ -33,6 +33,7 @@ namespace SharpGen.Model
     {
         public CsStruct(CppStruct cppStruct, string name, MappingRule tag = null) : base(cppStruct, name)
         {
+            RoslynNative = cppStruct?.Roslyn;
             tag ??= cppStruct?.Rule;
 
             Align = tag?.StructPack ?? Align;
@@ -64,11 +65,6 @@ namespace SharpGen.Model
         /// </summary>
         /// <value>The variables.</value>
         public IEnumerable<CsVariable> Variables => Items.OfType<CsVariable>();
-
-        /// <summary>
-        ///   True if this structure is using an explicit layout else it's a sequential structure
-        /// </summary>
-        public bool ExplicitLayout { get; set; }
 
         /// <summary>
         ///   True if this struct needs an internal marshal type

@@ -12,7 +12,7 @@ namespace SharpGen.Platform.Clang.Abstractions
         public string EscapedName { get; set; }
         public string NativeType { get; set; }
         public string NativeInheritance { get; set; }
-        public StructLayoutAttribute Layout { get; set; }
+        public LayoutDesc Layout { get; set; }
         public Guid? Uuid { get; set; }
         public StructFlags Flags { get; set; }
         public CXSourceLocation? Location { get; set; }
@@ -29,7 +29,25 @@ namespace SharpGen.Platform.Clang.Abstractions
             set => Flags = value ? Flags | StructFlags.HasVtbl : Flags & ~StructFlags.HasVtbl;
         }
 
+        public bool IsUnion
+        {
+            get => (Flags & StructFlags.IsUnion) != 0;
+            set => Flags = value ? Flags | StructFlags.IsUnion : Flags & ~StructFlags.IsUnion;
+        }
+
         public Action<TCustomAttrGeneratorData> WriteCustomAttrs { get; set; }
         public TCustomAttrGeneratorData CustomAttrGeneratorData { get; set; }
+
+        public struct LayoutDesc
+        {
+            public long Alignment32 { get; set; }
+            public long Alignment64 { get; set; }
+            public long Size32 { get; set; }
+            public long Size64 { get; set; }
+            public long Pack { get; set; }
+            public long MaxFieldAlignment { get; set; }
+            public StructLayoutAttribute LayoutAttribute { get; set; }
+            public LayoutKind Kind { get; set; }
+        }
     }
 }

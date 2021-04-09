@@ -1071,10 +1071,12 @@ namespace SharpGen.Platform.Clang
                     _testOutputBuilder.WriteBlockStart();
                 }
 
+                LayoutKind layoutKind = LayoutKind.Sequential;
                 StructLayoutAttribute layout = null;
                 if (recordDecl.IsUnion)
                 {
                     layout = new(LayoutKind.Explicit);
+                    layoutKind = LayoutKind.Explicit;
                     if (alignment < maxAlignm)
                     {
                         layout.Pack = (int)alignment;
@@ -1086,7 +1088,7 @@ namespace SharpGen.Platform.Clang
                 }
 
                 Guid? nullableUuid = null;
-                if (TryGetUuid(recordDecl, out Guid uuid))
+                if (TryGetUuid(recordDecl, out var uuid))
                 {
                     nullableUuid = uuid;
                     var iidName = GetRemappedName($"IID_{nativeName}", recordDecl, tryRemapOperatorName: false);
@@ -1141,6 +1143,15 @@ namespace SharpGen.Platform.Clang
                     }
                 }
 
+                long alignment32 = -1;
+                long alignment64 = -1;
+
+                GetTypeSize(recordDecl, recordDecl.TypeForDecl, ref alignment32, ref alignment64, out var size32,
+                            out var size64);
+
+                if ((size32 == 0 || size64 == 0) && !TryGetUuid(recordDecl, out _))
+                    AddDiagnostic(DiagnosticLevel.Info, $"{escapedName} has a size of 0");
+
                 string nativeNameWithExtras = null, nativeInheritance = null;
                 if ((cxxRecordDecl != null) && cxxRecordDecl.Bases.Any())
                 {
@@ -1170,7 +1181,18 @@ namespace SharpGen.Platform.Clang
                     EscapedName = escapedName,
                     IsUnsafe = IsUnsafe(recordDecl),
                     HasVtbl = hasVtbl,
-                    Layout = layout,
+                    IsUnion = recordDecl.IsUnion,
+                    Layout = new()
+                    {
+                        Alignment32 = alignment32,
+                        Alignment64 = alignment64,
+                        Size32 = size32,
+                        Size64 = size64,
+                        Pack = alignment,
+                        MaxFieldAlignment = maxAlignm,
+                        Kind = layoutKind,
+                        LayoutAttribute = layout
+                    },
                     Uuid = nullableUuid,
                     CustomAttrGeneratorData = (name, this),
                     WriteCustomAttrs = static _ => { },
@@ -1275,17 +1297,6 @@ namespace SharpGen.Platform.Clang
 
                     _testOutputBuilder.WriteBlockEnd();
                     _testOutputBuilder.NeedsNewline = true;
-
-                    long alignment32 = -1;
-                    long alignment64 = -1;
-
-                    GetTypeSize(recordDecl, recordDecl.TypeForDecl, ref alignment32, ref alignment64, out var size32,
-                        out var size64);
-
-                    if (((size32 == 0) || (size64 == 0)) && !TryGetUuid(recordDecl, out _))
-                    {
-                        AddDiagnostic(DiagnosticLevel.Info, $"{escapedName} has a size of 0");
-                    }
 
                     _testOutputBuilder.WriteIndented("/// <summary>Validates that the <see cref=\"");
                     _testOutputBuilder.Write(escapedName);
@@ -2195,19 +2206,6 @@ namespace SharpGen.Platform.Clang
                 var name = GetArtificialFixedSizedBufferName(constantArray);
                 var escapedName = EscapeName(name);
 
-                var desc = new StructDesc<(string Name, PInvokeGenerator This)>
-                {
-                    AccessSpecifier = accessSpecifier,
-                    CustomAttrGeneratorData = (name, this),
-                    EscapedName = escapedName,
-                    IsUnsafe = isUnsafeElementType,
-                    Layout = layout,
-                    WriteCustomAttrs = static _ => {},
-                    Location = constantArray.Location
-                };
-
-                _outputBuilder.BeginStruct(in desc);
-
                 var totalSize = Math.Max(type.Size, 1);
                 var sizePerDimension = new List<(long index, long size)>() {(0, type.Size)};
 
@@ -2219,6 +2217,40 @@ namespace SharpGen.Platform.Clang
                     sizePerDimension.Add((0, Math.Max(subConstantArrayType.Size, 1)));
                     elementType = subConstantArrayType.ElementType;
                 }
+
+                long alignment32 = -1;
+                long alignment64 = -1;
+
+                GetTypeSize(constantArray, constantArray.Type, ref alignment32, ref alignment64, out var size32,
+                            out var size64);
+
+                if (size32 == 0 || size64 == 0)
+                    AddDiagnostic(DiagnosticLevel.Info, $"{escapedName} (constant array field) has a size of 0");
+
+                var desc = new StructDesc<(string Name, PInvokeGenerator This)>
+                {
+                    AccessSpecifier = accessSpecifier,
+                    CustomAttrGeneratorData = (name, this),
+                    EscapedName = escapedName,
+                    IsUnsafe = isUnsafeElementType,
+                    HasVtbl = false,
+                    IsUnion = false,
+                    Layout = new()
+                    {
+                        Alignment32 = alignment32,
+                        Alignment64 = alignment64,
+                        Size32 = size32,
+                        Size64 = size64,
+                        Pack = alignment,
+                        MaxFieldAlignment = maxAlignm,
+                        Kind = LayoutKind.Sequential,
+                        LayoutAttribute = layout
+                    },
+                    WriteCustomAttrs = static _ => {},
+                    Location = constantArray.Location
+                };
+
+                _outputBuilder.BeginStruct(in desc);
 
                 var firstFieldName = "";
 

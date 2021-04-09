@@ -12,8 +12,7 @@ namespace SharpGen.Generator
         IMultiCodeGenerator<CsProperty, MemberDeclarationSyntax> Property { get; }
         IMultiCodeGenerator<CsEnum, MemberDeclarationSyntax> Enum { get; }
         IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax> NativeStruct { get; }
-        IMultiCodeGenerator<CsField, MemberDeclarationSyntax> ExplicitOffsetField { get; }
-        IMultiCodeGenerator<CsField, MemberDeclarationSyntax> AutoLayoutField { get; }
+        IMultiCodeGenerator<CsField, MemberDeclarationSyntax> Field { get; }
         IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax> Struct { get; }
         INativeCallCodeGenerator NativeInvocation { get; }
         IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> Callable { get; }

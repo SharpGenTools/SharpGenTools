@@ -26,11 +26,6 @@ namespace SharpGen.CppModel
     public sealed class CppField : CppMarshallable
     {
         /// <summary>
-        /// Index of the field mostly used to handle unions.
-        /// </summary>
-        public int Offset { get; set; }
-
-        /// <summary>
         /// Used only for structure with bits
         /// </summary>
         public bool IsBitField { get; set; }

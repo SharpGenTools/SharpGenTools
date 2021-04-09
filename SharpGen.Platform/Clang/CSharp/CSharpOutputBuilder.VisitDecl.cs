@@ -444,15 +444,16 @@ namespace SharpGen.Platform.Clang.CSharp
 
         public void BeginStruct<TCustomAttrGeneratorData>(in StructDesc<TCustomAttrGeneratorData> info)
         {
-            if (info.Layout is not null)
+            var layoutDesc = info.Layout;
+            if (layoutDesc.LayoutAttribute is {} attribute)
             {
                 AddUsingDirective("System.Runtime.InteropServices");
                 WriteIndented("[StructLayout(LayoutKind.");
-                Write(info.Layout.Value);
-                if (info.Layout.Pack != default)
+                Write(attribute.Value);
+                if (attribute.Pack != default)
                 {
                     Write(", Pack = ");
-                    Write(info.Layout.Pack);
+                    Write(attribute.Pack);
                 }
 
                 Write(", CharSet = System.Runtime.InteropServices.CharSet.Unicode");
@@ -481,6 +482,20 @@ namespace SharpGen.Platform.Clang.CSharp
 
             if (info.Location is {} location)
                 WriteSourceLocation(location, false);
+
+            if (info.HasVtbl)
+                WriteIndentedLine("[HasVtbl]");
+
+            if (info.IsUnion)
+                WriteIndentedLine("[NativeTypeUnion]");
+
+            WriteIndented("[NativeTypeLayout(");
+            Write($"{nameof(layoutDesc.Alignment32)} = {layoutDesc.Alignment32}, ");
+            Write($"{nameof(layoutDesc.Alignment64)} = {layoutDesc.Alignment64}, ");
+            Write($"{nameof(layoutDesc.Size32)} = {layoutDesc.Size32}, ");
+            Write($"{nameof(layoutDesc.Size64)} = {layoutDesc.Size64}, ");
+            Write($"{nameof(layoutDesc.Pack)} = {layoutDesc.Pack}");
+            WriteLine(")]");
 
             WriteIndented(info.AccessSpecifier.AsString());
             Write(' ');
