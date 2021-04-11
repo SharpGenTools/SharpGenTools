@@ -74,9 +74,9 @@ namespace SharpGen.Transform
             };
         }
 
-        public IDictionary<PlatformDetectionType, InteropMethodSignature> GetInteropSignatures(CsCallable callable)
+        public IDictionary<PlatformAbi, InteropMethodSignature> GetInteropSignatures(CsCallable callable)
         {
-            var interopSignatures = new Dictionary<PlatformDetectionType, InteropMethodSignature>();
+            var interopSignatures = new Dictionary<PlatformAbi, InteropMethodSignature>();
             var isFunction = callable is CsFunction;
 
             // On Windows x86 and x64, if we have a native member function signature with a struct return type, we need to do a by-ref return.
@@ -85,12 +85,12 @@ namespace SharpGen.Transform
             if (callable.IsReturnStructLarge && !isFunction)
             {
                 interopSignatures.Add(
-                    PlatformDetectionType.IsWindows,
+                    PlatformAbi.Windows,
                     GetNativeInteropSignatureWithForcedReturnBuffer(callable, false)
                 );
                 interopSignatures.Add(
-                    PlatformDetectionType.IsItaniumSystemV,
-                    GetNativeInteropSignature(callable, false, PlatformDetectionType.IsItaniumSystemV)
+                    PlatformAbi.ItaniumSystemV,
+                    GetNativeInteropSignature(callable, false, PlatformAbi.ItaniumSystemV)
                 );
             }
             else
@@ -100,16 +100,16 @@ namespace SharpGen.Transform
                 systemvOnlyReturnTypeOverrides.TryGetValue(returnType, out var systemvOverride);
 
                 if (windowsOverride == systemvOverride)
-                    interopSignatures.Add(PlatformDetectionType.Any,
-                                          GetNativeInteropSignature(callable, isFunction, PlatformDetectionType.Any));
+                    interopSignatures.Add(PlatformAbi.Any,
+                                          GetNativeInteropSignature(callable, isFunction, PlatformAbi.Any));
                 else
                 {
-                    interopSignatures.Add(PlatformDetectionType.IsWindows,
+                    interopSignatures.Add(PlatformAbi.Windows,
                                           GetNativeInteropSignature(callable, isFunction,
-                                                                    PlatformDetectionType.IsWindows));
-                    interopSignatures.Add(PlatformDetectionType.IsItaniumSystemV,
+                                                                    PlatformAbi.Windows));
+                    interopSignatures.Add(PlatformAbi.ItaniumSystemV,
                                           GetNativeInteropSignature(callable, isFunction,
-                                                                    PlatformDetectionType.IsItaniumSystemV));
+                                                                    PlatformAbi.ItaniumSystemV));
                 }
             }
 
@@ -134,7 +134,7 @@ namespace SharpGen.Transform
         }
 
         private InteropMethodSignature GetNativeInteropSignature(CsCallable callable, bool isFunction,
-                                                                 PlatformDetectionType platform)
+                                                                 PlatformAbi platform)
         {
             // Tag if the method is a function
             var cSharpInteropCalliSignature = new InteropMethodSignature
@@ -173,7 +173,7 @@ namespace SharpGen.Transform
 
         private void InitSignatureWithReturnType(CsCallable callable,
                                                  InteropMethodSignature cSharpInteropCalliSignature,
-                                                 PlatformDetectionType platform)
+                                                 PlatformAbi platform)
         {
             InteropMethodSignatureFlags flags = default;
 
@@ -193,10 +193,10 @@ namespace SharpGen.Transform
         }
 
         private InteropType GetInteropTypeForReturnValue(CsReturnValue returnValue,
-                                                         PlatformDetectionType platform,
+                                                         PlatformAbi platform,
                                                          ref InteropMethodSignatureFlags flags)
         {
-            var platformSpecificReturnTypeOverrides = (platform & PlatformDetectionType.IsWindows) != 0
+            var platformSpecificReturnTypeOverrides = (platform & PlatformAbi.Windows) != 0
                                                           ? windowsOnlyReturnTypeOverrides
                                                           : systemvOnlyReturnTypeOverrides;
 

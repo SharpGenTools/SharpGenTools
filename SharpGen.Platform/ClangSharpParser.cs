@@ -369,8 +369,8 @@ namespace SharpGen.Platform
                     ParseDoTypeDefinitionPassForStaticType(typeDeclaration);
                 foreach (var cppStruct in _group.Includes.SelectMany(x => x.Items.OfType<CppStruct>()))
                     ParseDoItemDefinitionPass(cppStruct);
-                foreach (var cppStruct in _group.Includes.SelectMany(x => x.Items.OfType<CppInterface>()))
-                    ParseDoItemDefinitionPass(cppStruct);
+                foreach (var cppInterface in _group.Includes.SelectMany(x => x.Items.OfType<CppInterface>()))
+                    ParseDoItemDefinitionPass(cppInterface);
                 foreach (var cppEnum in _group.Includes.SelectMany(x => x.Items.OfType<CppEnum>()))
                     ParseDoItemDefinitionPass(cppEnum);
             }
@@ -636,6 +636,33 @@ namespace SharpGen.Platform
                 switch (member)
                 {
                     case MethodDeclarationSyntax methodSyntax when !DllImport.IsInAttributeList(methodSyntax):
+                        CppMethod function = new(methodSyntax.Identifier.ValueText);
+
+                        // TODO: CallingConvention
+
+                        if (!methodSyntax.ReturnType.IsKind(SyntaxKind.VoidKeyword))
+                        {
+                            CppReturnValue returnValue = new();
+
+                            ResolveAndFillType(
+                                methodSyntax.ReturnType, GetNativeTypeNameFromSyntax(methodSyntax), returnValue
+                            );
+
+                            function.ReturnValue = returnValue;
+                        }
+
+                        foreach (var parameterSyntax in methodSyntax.ParameterList.Parameters)
+                        {
+                            CppParameter parameter = new(parameterSyntax.Identifier.ValueText);
+
+                            ResolveAndFillType(
+                                parameterSyntax.Type, GetNativeTypeNameFromSyntax(parameterSyntax), parameter
+                            );
+
+                            function.Add(parameter);
+                        }
+
+                        cppInterface.Add(function);
                         break;
                     case FieldDeclarationSyntax fieldSyntax when fieldSyntax.Declaration.Type is PointerTypeSyntax
                                                                  {

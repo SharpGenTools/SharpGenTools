@@ -5,7 +5,7 @@ namespace SharpGen.Generator
 {
     public interface INativeCallCodeGenerator
     {
-        ExpressionSyntax GenerateCall(CsCallable callable, PlatformDetectionType platform,
+        ExpressionSyntax GenerateCall(CsCallable callable, PlatformAbi platform,
                                       InteropMethodSignature interopSig);
     }
 }

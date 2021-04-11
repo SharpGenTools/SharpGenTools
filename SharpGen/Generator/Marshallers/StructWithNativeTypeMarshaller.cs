@@ -49,24 +49,28 @@ namespace SharpGen.Generator.Marshallers
 
         public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
         {
-            var nativeType = ParseTypeName($"{csElement.PublicType.QualifiedName}.__Native");
+            var defaultSyntax = LiteralExpression(SyntaxKind.DefaultLiteralExpression, Token(SyntaxKind.DefaultKeyword));
+
             yield return LocalDeclarationStatement(
                 VariableDeclaration(
-                    nativeType,
+                    GetMarshalTypeSyntax(csElement),
                     SingletonSeparatedList(
                         VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement))
                            .WithInitializer(
-                                EqualsValueClause(DefaultExpression(nativeType)))
+                                EqualsValueClause(defaultSyntax))
                     )
                 )
             );
+
             if (csElement.IsOut)
             {
                 yield return ExpressionStatement(
-                    AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                    AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression,
                         IdentifierName(csElement.Name),
-                        DefaultExpression(ParseTypeName(csElement.PublicType.QualifiedName))
-                ));
+                        defaultSyntax
+                    )
+                );
             }
         }
 

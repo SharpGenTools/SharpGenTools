@@ -11,8 +11,8 @@ namespace SharpGen.Generator
 {
     internal static class GeneratorHelpers
     {
-        private static readonly PlatformDetectionType[] Platforms = (PlatformDetectionType[])Enum.GetValues(typeof(PlatformDetectionType));
-        private static readonly PlatformDetectionType[] PlatformsNoAny = Platforms.Where(x => x != PlatformDetectionType.Any).ToArray();
+        private static readonly PlatformAbi[] Platforms = (PlatformAbi[])Enum.GetValues(typeof(PlatformAbi));
+        private static readonly PlatformAbi[] PlatformsNoAny = Platforms.Where(x => x != PlatformAbi.Any).ToArray();
         private static readonly int PlatformsNoAnyStringLength = PlatformsNoAny.Select(x => x.ToString().Length).Max() + 2;
 
         private static readonly ThrowStatementSyntax ThrowPlatformNotSupportedStatement = ThrowStatement(
@@ -21,9 +21,9 @@ namespace SharpGen.Generator
             ).WithArgumentList(ArgumentList())
         );
 
-        public static string GetPlatformSpecificSuffix(PlatformDetectionType platform)
+        public static string GetPlatformSpecificSuffix(PlatformAbi platform)
         {
-            if (platform == PlatformDetectionType.Any)
+            if (platform == PlatformAbi.Any)
                 return "_";
 
             StringBuilder str = new("_", PlatformsNoAnyStringLength);
@@ -41,8 +41,8 @@ namespace SharpGen.Generator
 
         public static StatementSyntax GetPlatformSpecificStatements(GlobalNamespaceProvider globalNamespace,
                                                                     GeneratorConfig config,
-                                                                    IEnumerable<PlatformDetectionType> types,
-                                                                    Func<PlatformDetectionType, StatementSyntax> syntaxBuilder)
+                                                                    IEnumerable<PlatformAbi> types,
+                                                                    Func<PlatformAbi, StatementSyntax> syntaxBuilder)
         {
             List<IfStatementSyntax> ifStatements = new();
 

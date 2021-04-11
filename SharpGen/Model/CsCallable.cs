@@ -10,7 +10,7 @@ namespace SharpGen.Model
     public abstract class CsCallable : CsBase, IExpiring
     {
         private CsBaseItemListCache<CsParameter> _parameters;
-        private Dictionary<PlatformDetectionType, InteropMethodSignature> interopSignatures;
+        private Dictionary<PlatformAbi, InteropMethodSignature> interopSignatures;
 
         protected abstract int MaxSizeReturnParameter { get; }
 
@@ -72,7 +72,7 @@ namespace SharpGen.Model
             }
         }
 
-        public Dictionary<PlatformDetectionType, InteropMethodSignature> InteropSignatures
+        public Dictionary<PlatformAbi, InteropMethodSignature> InteropSignatures
         {
             get => interopSignatures ?? throw new InvalidOperationException($"Accessing non-initialized {nameof(InteropSignatures)}");
             set

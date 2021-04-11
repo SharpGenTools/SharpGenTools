@@ -29,7 +29,7 @@ namespace SharpGen.Generator
 
             StatementSyntax VtblMethodSelector(CsMethod method)
             {
-                StatementSyntax MethodBuilder(PlatformDetectionType platform)
+                StatementSyntax MethodBuilder(PlatformAbi platform)
                 {
                     var arguments = new[]
                     {
@@ -50,7 +50,7 @@ namespace SharpGen.Generator
                         Argument(
                             LiteralExpression(
                                 SyntaxKind.NumericLiteralExpression,
-                                Literal((platform & PlatformDetectionType.IsWindows) != 0
+                                Literal((platform & PlatformAbi.Windows) != 0
                                             ? method.WindowsOffset
                                             : method.Offset)
                             )
@@ -128,7 +128,7 @@ namespace SharpGen.Generator
                   .WithMembers(List(members));
         }
 
-        internal static string GetMethodDelegateName(CsCallable csElement, PlatformDetectionType platform) =>
+        internal static string GetMethodDelegateName(CsCallable csElement, PlatformAbi platform) =>
             csElement.Name + "Delegate" + GeneratorHelpers.GetPlatformSpecificSuffix(platform);
     }
 }

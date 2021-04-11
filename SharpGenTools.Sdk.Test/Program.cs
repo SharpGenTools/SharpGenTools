@@ -52,7 +52,7 @@ namespace SharpGenTools.Sdk.Test
         {
             SharpGenLogger = new Logger(new ConsoleSharpGenLogger());
 
-            WaitForDebuggerAttach();
+            // WaitForDebuggerAttach();
         }
 
         private void WaitForDebuggerAttach()
@@ -192,7 +192,7 @@ namespace SharpGenTools.Sdk.Test
                 new ExternalDocCommentsReader(new Dictionary<string, XmlDocument>()),
                 new GeneratorConfig
                 {
-                    Platforms = PlatformDetectionType.Any
+                    Platforms = PlatformAbi.Any
                 }
             );
 

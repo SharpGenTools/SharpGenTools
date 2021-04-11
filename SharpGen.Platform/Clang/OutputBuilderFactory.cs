@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using SharpGen.Platform.Clang.Abstractions;
 using SharpGen.Platform.Clang.CSharp;
-using SharpGen.Platform.Clang.XML;
 
 namespace SharpGen.Platform.Clang
 {
@@ -33,12 +32,7 @@ namespace SharpGen.Platform.Clang
                 throw new ArgumentNullException(nameof(name));
             }
 
-            var outputBuilder = _mode switch
-            {
-                PInvokeGeneratorOutputMode.CSharp => (IOutputBuilder) new CSharpOutputBuilder(name),
-                PInvokeGeneratorOutputMode.Xml => new XmlOutputBuilder(name),
-                _ => throw new ArgumentOutOfRangeException()
-            };
+            var outputBuilder = new SharpGenOutputBuilder(new CSharpOutputBuilder(name));
 
             _outputBuilders.Add(name, outputBuilder);
             return outputBuilder;

@@ -12,7 +12,7 @@ namespace SharpGen.Platform
 
         public Stream GetOutputStream(bool isTestOutput, string name, string extension)
         {
-            const int capacity = 32 * 1024 * 1024;
+            const int capacity = 32 * 1024;
             var stream = new MemoryStream(capacity);
             streams.Add(new Item(stream, isTestOutput, name));
             return stream;

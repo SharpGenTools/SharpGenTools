@@ -38,11 +38,6 @@ namespace SharpGen.Model
 
     public sealed class InteropMethodSignature : IEquatable<InteropMethodSignature>
     {
-        private const InteropMethodSignatureFlags FlagsToIgnoreForName =
-            InteropMethodSignatureFlags.CastToNativeLong |
-            InteropMethodSignatureFlags.CastToNativeULong |
-            InteropMethodSignatureFlags.IsFunction;
-
         public InteropType ReturnType { get; set; }
         public List<InteropMethodSignatureParameter> ParameterTypes { get; } = new();
 
@@ -96,38 +91,6 @@ namespace SharpGen.Model
 
         public CallingConvention CallingConvention { get; set; }
         public InteropMethodSignatureFlags Flags { get; set; }
-
-        private InteropMethodSignatureFlags FlagsForName => Flags & ~FlagsToIgnoreForName;
-
-        public string Name
-        {
-            get
-            {
-                var returnTypeName = ReturnType.TypeName;
-                returnTypeName = returnTypeName.Replace("*", "Ptr");
-                returnTypeName = returnTypeName.Replace(".", string.Empty);
-                return $"Call{CallingConvention}{(IsFunction ? "Func" : "")}{returnTypeName}_{FlagsForName}";
-            }
-        }
-
-        [ExcludeFromCodeCoverage]
-        public override string ToString()
-        {
-            StringBuilder builder = new();
-            builder.Append(ReturnType.TypeName);
-            builder.Append(" Call");
-            builder.Append(ReturnType.TypeName);
-            builder.Append('(');
-            for (int i = 0; i < ParameterTypes.Count; i++)
-            {
-                builder.Append(ParameterTypes[i].InteropType.TypeName);
-                if ((i + 1) < ParameterTypes.Count)
-                    builder.Append(',');
-            }
-
-            builder.Append(')');
-            return builder.ToString();
-        }
 
         public bool Equals(InteropMethodSignature other)
         {

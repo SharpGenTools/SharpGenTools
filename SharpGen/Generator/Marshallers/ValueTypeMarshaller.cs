@@ -33,7 +33,7 @@ namespace SharpGen.Generator.Marshallers
                     AssignmentExpression(
                         SyntaxKind.SimpleAssignmentExpression,
                         IdentifierName(csElement.Name),
-                        DefaultExpression(ParseTypeName(csElement.PublicType.QualifiedName))
+                        LiteralExpression(SyntaxKind.DefaultLiteralExpression, Token(SyntaxKind.DefaultKeyword))
                     )
                 );
             }

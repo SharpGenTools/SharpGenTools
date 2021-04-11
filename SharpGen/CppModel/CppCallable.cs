@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SharpGen.CppModel
 {
@@ -10,6 +11,8 @@ namespace SharpGen.CppModel
         public CppReturnValue ReturnValue { get; set; }
 
         public CallingConvention CallingConvention { get; set; } = CallingConvention.Cdecl;
+
+        public MethodDeclarationSyntax Roslyn { get; set; }
 
         public IEnumerable<CppParameter> Parameters => Iterate<CppParameter>();
 

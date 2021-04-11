@@ -714,6 +714,8 @@ namespace SharpGen.Platform.Clang
                 : null;
             var isDllImport = body is null && !isVirtual;
 
+            var needsReturnFixup = isVirtual && NeedsReturnFixup(cxxMethodDecl);
+
             var desc = new FunctionOrDelegateDesc<(string Name, PInvokeGenerator This)>
             {
                 AccessSpecifier = accessSppecifier,
@@ -741,17 +743,13 @@ namespace SharpGen.Platform.Clang
                     x.This.WithUsings(x.Name);
                 },
                 CustomAttrGeneratorData = (name, this),
+                NeedsReturnFixup = needsReturnFixup,
+                ReturnType = needsReturnFixup ? $"{returnTypeName}*" : returnTypeName,
+                IsCxxConstructor = functionDecl is CXXConstructorDecl,
                 Location = functionDecl.Location
             };
 
             _outputBuilder.BeginFunctionOrDelegate(in desc, ref _isMethodClassUnsafe);
-
-            var needsReturnFixup = isVirtual && NeedsReturnFixup(cxxMethodDecl);
-
-            if ((functionDecl is not CXXConstructorDecl) || (_config.OutputMode == PInvokeGeneratorOutputMode.Xml))
-            {
-                _outputBuilder.WriteReturnType(needsReturnFixup ? $"{returnTypeName}*" : returnTypeName);
-            }
 
             _outputBuilder.BeginFunctionInnerPrototype(escapedName);
 
@@ -1584,6 +1582,12 @@ namespace SharpGen.Platform.Clang
 
                 var remappedName = FixupNameForMultipleHits(cxxMethodDecl);
                 var name = GetRemappedCursorName(cxxMethodDecl);
+                var needsReturnFixup = false;
+
+                if (returnType.Kind != CXTypeKind.CXType_Void)
+                {
+                    needsReturnFixup = NeedsReturnFixup(cxxMethodDecl);
+                }
 
                 var desc = new FunctionOrDelegateDesc<(string Name, PInvokeGenerator This)>
                 {
@@ -1599,12 +1603,13 @@ namespace SharpGen.Platform.Clang
                     IsCtxCxxRecord = true,
                     IsCxxRecordCtxUnsafe = IsUnsafe(cxxRecordDecl),
                     IsUnsafe = true,
+                    NeedsReturnFixup = needsReturnFixup,
+                    ReturnType = returnTypeName,
                     VtblIndex = _config.GenerateVtblIndexAttribute ? cxxMethodDecl.VtblIndex : -1,
                     Location = cxxMethodDecl.Location
                 };
 
                 _outputBuilder.BeginFunctionOrDelegate(in desc, ref _isMethodClassUnsafe);
-                _outputBuilder.WriteReturnType(returnTypeName);
                 _outputBuilder.BeginFunctionInnerPrototype(desc.EscapedName);
 
                 Visit(cxxMethodDecl.Parameters);
@@ -1612,7 +1617,6 @@ namespace SharpGen.Platform.Clang
                 _outputBuilder.EndFunctionInnerPrototype();
                 _outputBuilder.BeginBody();
 
-                var needsReturnFixup = false;
                 var cxxRecordDeclName = GetRemappedCursorName(cxxRecordDecl);
                 var escapedCXXRecordDeclName = EscapeName(cxxRecordDeclName);
 
@@ -1628,21 +1632,19 @@ namespace SharpGen.Platform.Clang
                     body.WriteIndentation();
                 }
 
+                if (needsReturnFixup)
+                {
+                    body.BeginMarker("fixup", new KeyValuePair<string, object>("type", "*result"));
+                    body.Write(returnTypeName);
+                    body.EndMarker("fixup");
+                    body.Write(" result");
+                    body.WriteSemicolon();
+                    body.WriteNewline();
+                    body.WriteIndentation();
+                }
+
                 if (returnType.Kind != CXTypeKind.CXType_Void)
                 {
-                    needsReturnFixup = NeedsReturnFixup(cxxMethodDecl);
-
-                    if (needsReturnFixup)
-                    {
-                        body.BeginMarker("fixup", new KeyValuePair<string, object>("type", "*result"));
-                        body.Write(returnTypeName);
-                        body.EndMarker("fixup");
-                        body.Write(" result");
-                        body.WriteSemicolon();
-                        body.WriteNewline();
-                        body.WriteIndentation();
-                    }
-
                     body.Write("return ");
                 }
 
@@ -2390,11 +2392,11 @@ namespace SharpGen.Platform.Clang
                         WriteCustomAttrs = static _ => {},
                         IsStatic = false,
                         IsMemberFunction = true,
+                        ReturnType = $"Span<{typeName}>",
                         Location = constantArray.Location
                     };
 
                     _outputBuilder.BeginFunctionOrDelegate(in function, ref _isMethodClassUnsafe);
-                    _outputBuilder.WriteReturnType($"Span<{typeName}>");
                     _outputBuilder.BeginFunctionInnerPrototype("AsSpan");
 
                     if (type.Size == 1)
@@ -2480,11 +2482,11 @@ namespace SharpGen.Platform.Clang
                         IsUnsafe = IsUnsafe(typedefDecl, functionProtoType),
                         NativeTypeName = nativeTypeName,
                         WriteCustomAttrs = static _ => {},
+                        ReturnType = returnTypeName,
                         Location = typedefDecl.Location
                     };
 
                     _outputBuilder.BeginFunctionOrDelegate(in desc, ref _isMethodClassUnsafe);
-                    _outputBuilder.WriteReturnType(returnTypeName);
                     _outputBuilder.BeginFunctionInnerPrototype(escapedName);
 
                     Visit(typedefDecl.CursorChildren.OfType<ParmVarDecl>());

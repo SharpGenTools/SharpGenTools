@@ -610,7 +610,7 @@ namespace SharpGen.UnitTests.Mapping
 
             var interopParams = method.InteropSignatures.ToArray();
             Assert.Single(interopParams);
-            Assert.Equal(PlatformDetectionType.Any, interopParams[0].Key);
+            Assert.Equal(PlatformAbi.Any, interopParams[0].Key);
 
             var interopParam = interopParams[0].Value;
             Assert.Equal("int", interopParam.ReturnType);

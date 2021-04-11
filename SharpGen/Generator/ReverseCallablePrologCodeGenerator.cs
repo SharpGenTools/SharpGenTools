@@ -23,7 +23,6 @@ namespace SharpGen.Generator
         public IEnumerable<StatementSyntax> GenerateCode((CsCallable, InteropMethodSignature) callableSig)
         {
             var (csElement, interopSig) = callableSig;
-            var interopParameters = interopSig.ParameterTypes;
 
             if (!interopSig.ForcedReturnBufferSig && csElement.HasReturnTypeValue(globalNamespace))
             {
@@ -33,7 +32,7 @@ namespace SharpGen.Generator
                 }
             }
 
-            foreach (var signatureParameter in interopParameters)
+            foreach (var signatureParameter in interopSig.ParameterTypes)
             {
                 var publicParameter = signatureParameter.Item;
                 var nativeParameter = IdentifierName(signatureParameter.Name);
@@ -57,22 +56,27 @@ namespace SharpGen.Generator
             {
                 publicType = ArrayType(publicType, SingletonList(ArrayRankSpecifier()));
             }
-            
+
+            var defaultLiteral = LiteralExpression(SyntaxKind.DefaultLiteralExpression, Token(SyntaxKind.DefaultKeyword));
+
+            ExpressionSyntax publicTypeVariableValue = nativeParameter != null
+                ? CastExpression(publicType, nativeParameter)
+                : defaultLiteral;
+
             yield return LocalDeclarationStatement(
                 VariableDeclaration(publicType)
                 .AddVariables(
                     VariableDeclarator(Identifier(publicElement.Name))
                         .WithInitializer(
-                            EqualsValueClause(
-                                DefaultExpression(publicType)))));
+                            EqualsValueClause(publicTypeVariableValue))));
 
             if (marshaller.GeneratesMarshalVariable(publicElement))
             {
                 var marshalTypeSyntax = marshaller.GetMarshalTypeSyntax(publicElement);
 
-                var initializerExpression = nativeParameter != null
-                    ? (ExpressionSyntax) CastExpression(marshalTypeSyntax, nativeParameter)
-                    : DefaultExpression(marshalTypeSyntax);
+                ExpressionSyntax initializerExpression = nativeParameter != null
+                    ? CastExpression(marshalTypeSyntax, nativeParameter)
+                    : defaultLiteral;
 
                 yield return LocalDeclarationStatement(
                     VariableDeclaration(
@@ -86,19 +90,6 @@ namespace SharpGen.Generator
                         )
                     )
                 );
-            }
-            else
-            {
-                if (nativeParameter != null)
-                {
-                    yield return ExpressionStatement(
-                       AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                           IdentifierName(publicElement.Name),
-                           CastExpression(
-                                ParseTypeName(publicElement.PublicType.QualifiedName),
-                                nativeParameter)
-                   )); 
-                }
             }
         }
 

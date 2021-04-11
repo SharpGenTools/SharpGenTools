@@ -4,6 +4,6 @@ namespace SharpGen.Generator
 {
     public class GeneratorConfig
     {
-        public PlatformDetectionType Platforms { get; set; } = PlatformDetectionType.Any;
+        public PlatformAbi Platforms { get; set; } = PlatformAbi.Any;
     }
 }

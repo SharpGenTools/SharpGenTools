@@ -149,7 +149,7 @@ namespace SharpGen.Transform
 
         internal static void CreateNativeInteropSignatures(IInteropSignatureTransform sigTransform, CsCallable callable)
         {
-            callable.InteropSignatures = new Dictionary<PlatformDetectionType, InteropMethodSignature>();
+            callable.InteropSignatures = new Dictionary<PlatformAbi, InteropMethodSignature>();
             foreach (var sig in sigTransform.GetInteropSignatures(callable))
                 callable.InteropSignatures.Add(sig.Key, sig.Value);
         }

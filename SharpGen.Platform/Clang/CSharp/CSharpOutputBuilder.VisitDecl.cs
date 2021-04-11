@@ -284,6 +284,12 @@ namespace SharpGen.Platform.Clang.CSharp
                     }
                 }
             }
+
+            if (!desc.IsCxxConstructor)
+            {
+                Write(desc.ReturnType);
+                Write(' ');
+            }
         }
 
         private void WriteSourceLocation(CXSourceLocation location, bool inline)
@@ -304,12 +310,6 @@ namespace SharpGen.Platform.Clang.CSharp
 
             if (!inline)
                 WriteNewline();
-        }
-
-        public void WriteReturnType(string typeString)
-        {
-            Write(typeString);
-            Write(' ');
         }
 
         public void BeginFunctionInnerPrototype(string escapedName)
@@ -444,8 +444,7 @@ namespace SharpGen.Platform.Clang.CSharp
 
         public void BeginStruct<TCustomAttrGeneratorData>(in StructDesc<TCustomAttrGeneratorData> info)
         {
-            var layoutDesc = info.Layout;
-            if (layoutDesc.LayoutAttribute is {} attribute)
+            if (info.Layout.LayoutAttribute is {} attribute)
             {
                 AddUsingDirective("System.Runtime.InteropServices");
                 WriteIndented("[StructLayout(LayoutKind.");
@@ -482,20 +481,6 @@ namespace SharpGen.Platform.Clang.CSharp
 
             if (info.Location is {} location)
                 WriteSourceLocation(location, false);
-
-            if (info.HasVtbl)
-                WriteIndentedLine("[HasVtbl]");
-
-            if (info.IsUnion)
-                WriteIndentedLine("[NativeTypeUnion]");
-
-            WriteIndented("[NativeTypeLayout(");
-            Write($"{nameof(layoutDesc.Alignment32)} = {layoutDesc.Alignment32}, ");
-            Write($"{nameof(layoutDesc.Alignment64)} = {layoutDesc.Alignment64}, ");
-            Write($"{nameof(layoutDesc.Size32)} = {layoutDesc.Size32}, ");
-            Write($"{nameof(layoutDesc.Size64)} = {layoutDesc.Size64}, ");
-            Write($"{nameof(layoutDesc.Pack)} = {layoutDesc.Pack}");
-            WriteLine(")]");
 
             WriteIndented(info.AccessSpecifier.AsString());
             Write(' ');

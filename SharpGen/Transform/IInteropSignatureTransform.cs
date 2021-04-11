@@ -7,6 +7,6 @@ namespace SharpGen.Transform
 {
     public interface IInteropSignatureTransform
     {
-        IDictionary<PlatformDetectionType, InteropMethodSignature> GetInteropSignatures(CsCallable callable);
+        IDictionary<PlatformAbi, InteropMethodSignature> GetInteropSignatures(CsCallable callable);
     }
 }

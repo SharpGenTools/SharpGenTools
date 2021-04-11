@@ -282,18 +282,18 @@ namespace SharpGenTools.Sdk.Tasks
                 documentationFiles.Add(file.ItemSpec, xml);
             }
 
-            PlatformDetectionType platformMask = 0;
+            PlatformAbi platformMask = 0;
 
             foreach (var platform in Platforms)
             {
-                if (!Enum.TryParse<PlatformDetectionType>("Is" + platform.ItemSpec, out var parsedPlatform))
+                if (!Enum.TryParse<PlatformAbi>(platform.ItemSpec, out var parsedPlatform))
                 {
                     SharpGenLogger.Warning(
                         LoggingCodes.InvalidPlatformDetectionType,
                         "The platform type {0} is an unknown platform to SharpGenTools. Falling back to Any platform detection.",
                         platform
                     );
-                    platformMask = PlatformDetectionType.Any;
+                    platformMask = PlatformAbi.Any;
                 }
                 else
                 {
@@ -302,7 +302,7 @@ namespace SharpGenTools.Sdk.Tasks
             }
 
             if (platformMask == 0)
-                platformMask = PlatformDetectionType.Any;
+                platformMask = PlatformAbi.Any;
 
             if (SharpGenLogger.HasErrors)
                 return false;

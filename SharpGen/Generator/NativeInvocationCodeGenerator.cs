@@ -47,7 +47,7 @@ namespace SharpGen.Generator
                 yield return ParameterSelector(parameter);
         }
 
-        public ExpressionSyntax GenerateCall(CsCallable callable, PlatformDetectionType platform,
+        public ExpressionSyntax GenerateCall(CsCallable callable, PlatformAbi platform,
                                              InteropMethodSignature interopSig)
         {
             var arguments = IterateNativeArguments(callable, interopSig).ToArray();
@@ -62,18 +62,18 @@ namespace SharpGen.Generator
                     LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(method.Offset));
 
                 ExpressionSyntax vtableOffsetExpression;
-                if ((platform & PlatformDetectionType.Any) == PlatformDetectionType.Any &&
+                if ((platform & PlatformAbi.Any) == PlatformAbi.Any &&
                     method.Offset != method.WindowsOffset)
                 {
                     vtableOffsetExpression = ConditionalExpression(
                         MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
                             globalNamespace.GetTypeNameSyntax(WellKnownName.PlatformDetection),
-                            IdentifierName(PlatformDetectionType.IsWindows.ToString())),
+                            IdentifierName(PlatformAbi.Windows.ToString())),
                         windowsOffsetExpression,
                         nonWindowsOffsetExpression);
                 }
-                else if ((platform & PlatformDetectionType.IsWindows) != 0)
+                else if ((platform & PlatformAbi.Windows) != 0)
                 {
                     vtableOffsetExpression = windowsOffsetExpression;
                 }

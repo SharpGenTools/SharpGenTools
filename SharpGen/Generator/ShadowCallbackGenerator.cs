@@ -31,7 +31,7 @@ namespace SharpGen.Generator
             }
         }
 
-        private DelegateDeclarationSyntax GenerateDelegateDeclaration(CsCallable csElement, PlatformDetectionType platform, InteropMethodSignature sig)
+        private DelegateDeclarationSyntax GenerateDelegateDeclaration(CsCallable csElement, PlatformAbi platform, InteropMethodSignature sig)
         {
             return DelegateDeclaration(ParseTypeName(sig.ReturnType.TypeName), VtblGenerator.GetMethodDelegateName(csElement, platform))
                 .AddAttributeLists(
@@ -124,7 +124,7 @@ namespace SharpGen.Generator
                     .WithIdentifier(exceptionVariableIdentifier))
                 .WithBlock(Block(statementList.ToArray()));
         }        
-        private MethodDeclarationSyntax GenerateShadowCallback(CsCallable csElement, PlatformDetectionType platform, InteropMethodSignature sig)
+        private MethodDeclarationSyntax GenerateShadowCallback(CsCallable csElement, PlatformAbi platform, InteropMethodSignature sig)
         {
             var interopReturnType = ParseTypeName(sig.ReturnType.TypeName);
 
@@ -326,7 +326,7 @@ namespace SharpGen.Generator
                 var returnStatement = ReturnStatement(
                     isForcedReturnBufferSig
                         ? IdentifierName("returnSlot")
-                        : DefaultExpression(returnValueMarshaller.GetMarshalTypeSyntax(csElement.ReturnValue))
+                        : LiteralExpression(SyntaxKind.DefaultLiteralExpression, Token(SyntaxKind.DefaultKeyword))
                 );
 
                 catchClause = GenerateCatchClause(catchClause, csElement, exceptionVariableIdentifier, returnStatement);
