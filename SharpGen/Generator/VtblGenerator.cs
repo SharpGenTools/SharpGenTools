@@ -50,7 +50,7 @@ namespace SharpGen.Generator
                         Argument(
                             LiteralExpression(
                                 SyntaxKind.NumericLiteralExpression,
-                                Literal((platform & PlatformDetectionType.IsWindows) != 0
+                                Literal((platform & PlatformDetectionType.Windows) != 0
                                             ? method.WindowsOffset
                                             : method.Offset)
                             )

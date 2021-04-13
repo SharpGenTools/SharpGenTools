@@ -75,7 +75,7 @@ namespace SharpGen.Transform
             nameSpace.Add(newEnum);
 
             // Bind C++ enum to C# enum
-            typeRegistry.BindType(cppEnum.Name, newEnum);
+            typeRegistry.BindType(cppEnum.Name, newEnum, source: cppEnum.ParentInclude?.Name);
 
             return newEnum;
         }
@@ -113,8 +113,8 @@ namespace SharpGen.Transform
             // Create enum items for enum
             foreach (var cppEnumItem in cppEnum.EnumItems)
             {
-                string enumName = NamingRules.Rename(cppEnumItem, rootName);
-                string enumValue = cppEnumItem.Value;
+                var enumName = NamingRules.Rename(cppEnumItem, rootName);
+                var enumValue = cppEnumItem.Value;
 
                 var csharpEnumItem = new CsEnumItem(cppEnumItem, enumName, enumValue);
 
@@ -124,20 +124,22 @@ namespace SharpGen.Transform
             var rule = cppEnum.Rule;
 
             // Add None if necessary
+            const string noneElementName = "None";
+
             bool tryToAddNone;
             if (rule.EnumHasNone is { } addNone)
                 tryToAddNone = addNone;
             else if (newEnum.IsFlag)
-                tryToAddNone = newEnum.EnumItems.All(item => item.Name != "None");
+                tryToAddNone = newEnum.EnumItems.All(item => item.Name != noneElementName);
             else
                 tryToAddNone = false;
 
             if (tryToAddNone)
             {
-                var csharpEnumItem = new CsEnumItem(null, "None", "0")
+                var csharpEnumItem = new CsEnumItem(null, noneElementName, "0")
                 {
-                    CppElementName = "None",
-                    Description = "None"
+                    CppElementName = noneElementName,
+                    Description = noneElementName
                 };
                 newEnum.Add(csharpEnumItem);
             }

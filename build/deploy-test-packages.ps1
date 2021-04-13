@@ -8,17 +8,17 @@ $restorePackagesFolder = "SdkTests/RestoredPackages"
 $sdkPackages = "SharpGenTools.Sdk", "SharpGen.Runtime"
 
 if (!(Test-Path -Path $localPackagesFolder)) {
-    mkdir $localPackagesFolder
+    mkdir $localPackagesFolder -ErrorAction Stop
 }
 
-Remove-Item SdkTests/LocalPackages/*.nupkg
+Remove-Item $localPackagesFolder/*.nupkg -ErrorAction Stop
 
 foreach ($sdkPackage in $sdkPackages) {
-    Copy-Item $sdkPackage/bin/$PackedConfiguration/*.nupkg $localPackagesFolder
+    Copy-Item $sdkPackage/bin/$PackedConfiguration/*.nupkg $localPackagesFolder -ErrorAction Stop
 }
 
 if (!(Test-Path -Path $restorePackagesFolder)) {
-    mkdir $restorePackagesFolder
+    mkdir $restorePackagesFolder -ErrorAction Stop
 }
 
 try {
@@ -29,8 +29,7 @@ try {
             Remove-Item -Recurse -Force $restorePath -ErrorAction Stop
         }
     }
-}
-catch {
+} catch {
     Write-Error $_.Exception.Message
     return $false
 }

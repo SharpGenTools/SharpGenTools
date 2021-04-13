@@ -69,11 +69,11 @@ namespace SharpGen.Generator
                         MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
                             globalNamespace.GetTypeNameSyntax(WellKnownName.PlatformDetection),
-                            IdentifierName(PlatformDetectionType.IsWindows.ToString())),
+                            IdentifierName("Is" + nameof(PlatformDetectionType.Windows))),
                         windowsOffsetExpression,
                         nonWindowsOffsetExpression);
                 }
-                else if ((platform & PlatformDetectionType.IsWindows) != 0)
+                else if ((platform & PlatformDetectionType.Windows) != 0)
                 {
                     vtableOffsetExpression = windowsOffsetExpression;
                 }

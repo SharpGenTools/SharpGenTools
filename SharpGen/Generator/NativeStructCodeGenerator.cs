@@ -11,12 +11,10 @@ namespace SharpGen.Generator
     internal sealed class NativeStructCodeGenerator : IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax>
     {
         private readonly IGeneratorRegistry generators;
-        private readonly GlobalNamespaceProvider globalNamespace;
 
         public NativeStructCodeGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
         {
             this.generators = generators ?? throw new ArgumentNullException(nameof(generators));
-            this.globalNamespace = globalNamespace ?? throw new ArgumentNullException(nameof(globalNamespace));
         }
 
         public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsStruct csElement)
@@ -130,23 +128,15 @@ namespace SharpGen.Generator
         private StatementSyntax GenerateMarshalFreeForField(CsMarshalBase field) =>
             generators.Marshalling.GetMarshaller(field)?.GenerateNativeCleanup(field, false);
 
-        private MethodDeclarationSyntax GenerateMarshalFree(CsStruct csStruct) =>
-            MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "__MarshalFree")
-               .WithParameterList(
-                    ParameterList(SingletonSeparatedList(
-                                      Parameter(Identifier("@ref")).WithType(RefType(ParseTypeName("__Native")))))
-                )
-               .WithBody(
-                    Block(
-                        List(
-                            csStruct.Fields
-                                    .Where(field => !field.IsArray)
-                                    .Select(GenerateMarshalFreeForField)
-                                    .Where(statement => statement != null)
-                        )
-                    )
-                )
-               .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)));
+        private MethodDeclarationSyntax GenerateMarshalFree(CsStruct csStruct) => GenerateMarshalMethod(
+            "__MarshalFree",
+            Block(
+                csStruct.Fields
+                        .Where(field => !field.IsArray)
+                        .Select(GenerateMarshalFreeForField)
+                        .Where(statement => statement != null)
+            )
+        );
 
         private MethodDeclarationSyntax GenerateMarshalTo(CsStruct csStruct)
         {
@@ -174,32 +164,37 @@ namespace SharpGen.Generator
                 }
             }
 
-            return MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "__MarshalTo")
-                .WithParameterList(ParameterList(SingletonSeparatedList(
-                    Parameter(Identifier("@ref")).WithType(RefType(ParseTypeName("__Native"))))))
-                .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)))
-                .WithBody(
-                    Block(
-                        csStruct.Fields.SelectMany(FieldMarshallers).Where(statement => statement != null)
-                    )
-                );
+            return GenerateMarshalMethod(
+                "__MarshalTo",
+                Block(
+                    csStruct.Fields.SelectMany(FieldMarshallers)
+                            .Where(statement => statement != null)
+                )
+            );
         }
 
-        private MethodDeclarationSyntax GenerateMarshalFrom(CsStruct csStruct)
+        private static ParameterListSyntax MarshalParameterListSyntax => ParameterList(
+            SingletonSeparatedList(Parameter(Identifier("@ref")).WithType(RefType(ParseTypeName("__Native"))))
+        );
+
+        private static MethodDeclarationSyntax GenerateMarshalMethod(string name, BlockSyntax body)
         {
-            return MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "__MarshalFrom")
-                .WithParameterList(ParameterList(SingletonSeparatedList(
-                    Parameter(Identifier("@ref")).WithType(RefType(ParseTypeName("__Native"))))))
-                .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)))
-                .WithBody(
-                    Block(
-                        csStruct.Fields
-                            .Where(field => (field.Relations?.Count ?? 0) == 0)
-                            .Select(field =>
-                                generators.Marshalling.GetMarshaller(field).GenerateNativeToManaged(field, false))
-                            .Where(statement => statement != null)
-                    )
-                );
+            return MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), name)
+                  .WithParameterList(MarshalParameterListSyntax)
+                  .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)))
+                  .WithBody(body);
         }
+
+        private MethodDeclarationSyntax GenerateMarshalFrom(CsStruct csStruct) => GenerateMarshalMethod(
+            "__MarshalFrom",
+            Block(
+                csStruct.Fields
+                        .Where(field => (field.Relations?.Count ?? 0) == 0)
+                        .Select(field =>
+                                    generators.Marshalling.GetMarshaller(field)
+                                              .GenerateNativeToManaged(field, false))
+                        .Where(statement => statement != null)
+            )
+        );
     }
 }

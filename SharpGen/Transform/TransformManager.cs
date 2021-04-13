@@ -187,10 +187,14 @@ namespace SharpGen.Transform
         {
             foreach (var bindingRule in file.Bindings)
             {
-                typeRegistry.BindType(bindingRule.From, typeRegistry.ImportType(bindingRule.To),
-                         string.IsNullOrEmpty(bindingRule.Marshal) ?
-                         null
-                         : typeRegistry.ImportType(bindingRule.Marshal));
+                typeRegistry.BindType(
+                    bindingRule.From,
+                    typeRegistry.ImportType(bindingRule.To),
+                    string.IsNullOrEmpty(bindingRule.Marshal)
+                        ? null
+                        : typeRegistry.ImportType(bindingRule.Marshal),
+                    file.Id
+                );
             }
         }
 

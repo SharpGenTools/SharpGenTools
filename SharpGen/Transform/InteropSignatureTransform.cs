@@ -85,12 +85,12 @@ namespace SharpGen.Transform
             if (callable.IsReturnStructLarge && !isFunction)
             {
                 interopSignatures.Add(
-                    PlatformDetectionType.IsWindows,
+                    PlatformDetectionType.Windows,
                     GetNativeInteropSignatureWithForcedReturnBuffer(callable, false)
                 );
                 interopSignatures.Add(
-                    PlatformDetectionType.IsItaniumSystemV,
-                    GetNativeInteropSignature(callable, false, PlatformDetectionType.IsItaniumSystemV)
+                    PlatformDetectionType.ItaniumSystemV,
+                    GetNativeInteropSignature(callable, false, PlatformDetectionType.ItaniumSystemV)
                 );
             }
             else
@@ -104,12 +104,12 @@ namespace SharpGen.Transform
                                           GetNativeInteropSignature(callable, isFunction, PlatformDetectionType.Any));
                 else
                 {
-                    interopSignatures.Add(PlatformDetectionType.IsWindows,
+                    interopSignatures.Add(PlatformDetectionType.Windows,
                                           GetNativeInteropSignature(callable, isFunction,
-                                                                    PlatformDetectionType.IsWindows));
-                    interopSignatures.Add(PlatformDetectionType.IsItaniumSystemV,
+                                                                    PlatformDetectionType.Windows));
+                    interopSignatures.Add(PlatformDetectionType.ItaniumSystemV,
                                           GetNativeInteropSignature(callable, isFunction,
-                                                                    PlatformDetectionType.IsItaniumSystemV));
+                                                                    PlatformDetectionType.ItaniumSystemV));
                 }
             }
 
@@ -196,7 +196,7 @@ namespace SharpGen.Transform
                                                          PlatformDetectionType platform,
                                                          ref InteropMethodSignatureFlags flags)
         {
-            var platformSpecificReturnTypeOverrides = (platform & PlatformDetectionType.IsWindows) != 0
+            var platformSpecificReturnTypeOverrides = (platform & PlatformDetectionType.Windows) != 0
                                                           ? windowsOnlyReturnTypeOverrides
                                                           : systemvOnlyReturnTypeOverrides;
 

@@ -74,16 +74,7 @@ namespace SharpGen.Platform
         private void Initialize()
         {
             foreach (var bindRule in _configRoot.ConfigFilesLoaded.SelectMany(cfg => cfg.Bindings))
-            {
-                if (_boundTypes.Contains(bindRule.From))
-                {
-                    Logger.Warning(LoggingCodes.DuplicateBinding, $"Duplicate type bind for [{bindRule.From}] specified. First binding takes priority.");
-                }
-                else
-                {
-                    _boundTypes.Add(bindRule.From);
-                }
-            }
+                _boundTypes.Add(bindRule.From);
 
             foreach (var configFile in _configRoot.ConfigFilesLoaded)
             {
@@ -1095,7 +1086,7 @@ namespace SharpGen.Platform
         /// <summary>
         /// Converts a gccxml FundamentalType to a shorter form:
         ///	signed char          => char
-        ///	long long int        => longlong
+        ///	long long int        => long long
         ///	short unsigned int   => unsigned short
         ///	char                 => char
         ///	long unsigned int    => unsigned int
@@ -1106,7 +1097,7 @@ namespace SharpGen.Platform
         ///	unsigned char        => unsigned char
         ///	unsigned int         => unsigned int
         ///	wchar_t              => wchar_t
-        ///	long long unsigned int => unsigned longlong
+        ///	long long unsigned int => unsigned long long
         ///	double               => double
         ///	void                 => void
         ///	long double          => long double
@@ -1158,7 +1149,7 @@ namespace SharpGen.Platform
             if (longCount == 1 && outputType == "double")
                 outputType = "long double";     // 96 bytes, unhandled
             if (longCount == 2)
-                outputType = "longlong";
+                outputType = "long long";
             if (shortCount == 1)
                 outputType = "short";
             if (isUnsigned)

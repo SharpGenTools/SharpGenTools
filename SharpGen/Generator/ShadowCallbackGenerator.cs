@@ -326,7 +326,7 @@ namespace SharpGen.Generator
                 var returnStatement = ReturnStatement(
                     isForcedReturnBufferSig
                         ? IdentifierName("returnSlot")
-                        : DefaultExpression(returnValueMarshaller.GetMarshalTypeSyntax(csElement.ReturnValue))
+                        : LiteralExpression(SyntaxKind.DefaultLiteralExpression, Token(SyntaxKind.DefaultKeyword))
                 );
 
                 catchClause = GenerateCatchClause(catchClause, csElement, exceptionVariableIdentifier, returnStatement);

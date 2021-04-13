@@ -8,7 +8,7 @@ namespace SharpGen.Transform
 {
     public partial class TypeRegistry
     {
-        private readonly Dictionary<string, (CsTypeBase CSharpType, CsTypeBase MarshalType)> _mapCppNameToCSharpType = new();
+        private readonly Dictionary<string, BoundType> _mapCppNameToCSharpType = new();
         private readonly Dictionary<string, CsTypeBase> _mapDefinedCSharpType = new();
 
         private Logger Logger { get; }
@@ -179,20 +179,31 @@ namespace SharpGen.Transform
         /// <param name = "cppName">Name of the CPP.</param>
         /// <param name = "type">The C# type.</param>
         /// <param name = "marshalType">The C# marshal type</param>
-        public void BindType(string cppName, CsTypeBase type, CsTypeBase marshalType = null)
+        public void BindType(string cppName, CsTypeBase type, CsTypeBase marshalType = null, string source = null)
         {
+            if (string.IsNullOrWhiteSpace(source))
+                source = null;
+
             if (_mapCppNameToCSharpType.TryGetValue(cppName, out var old))
             {
-                Logger.Warning(
+                var logLevel = type == old.CSharpType && marshalType == old.MarshalType
+                                   ? LogLevel.Info
+                                   : LogLevel.Warning;
+
+                Logger.LogRawMessage(
+                    logLevel,
                     LoggingCodes.DuplicateBinding,
-                    "Mapping C++ element [{0}] to CSharp type [{1}/{2}] is already mapped to [{3}/{4}]",
+                    "Mapping C++ element [{0}]{5} to C# type [{1}/{2}] when already mapped to [{3}/{4}]{6}. First binding takes priority.",
+                    null,
                     cppName, type.CppElementName, type.QualifiedName, old.CSharpType.CppElementName,
-                    old.CSharpType.QualifiedName
+                    old.CSharpType.QualifiedName, AtLocation(source), AtLocation(old.Source)
                 );
+
+                static string AtLocation(string location) => location != null ? $" at [{location}]" : string.Empty;
             }
             else
             {
-                _mapCppNameToCSharpType.Add(cppName, (type, marshalType));
+                _mapCppNameToCSharpType.Add(cppName, new BoundType(type, marshalType, source));
                 DocLinker.AddOrUpdateDocLink(cppName, type.QualifiedName);
             }
         }
@@ -206,8 +217,10 @@ namespace SharpGen.Transform
         {
             if (cppName == null)
                 return null;
-            _mapCppNameToCSharpType.TryGetValue(cppName, out var typeMap);
-            return typeMap.CSharpType;
+
+            return _mapCppNameToCSharpType.TryGetValue(cppName, out var typeMap)
+                       ? typeMap.CSharpType
+                       : null;
         }
 
         /// <summary>
@@ -219,14 +232,30 @@ namespace SharpGen.Transform
         {
             if (cppName == null)
                 return null;
-            _mapCppNameToCSharpType.TryGetValue(cppName, out var typeMap);
-            return typeMap.MarshalType;
+
+            return _mapCppNameToCSharpType.TryGetValue(cppName, out var typeMap)
+                       ? typeMap.MarshalType
+                       : null;
         }
 
         public IEnumerable<(string CppType, CsTypeBase CSharpType, CsTypeBase MarshalType)> GetTypeBindings()
         {
             return from record in _mapCppNameToCSharpType
                    select (record.Key, record.Value.CSharpType, record.Value.MarshalType);
+        }
+
+        private sealed class BoundType
+        {
+            public BoundType(CsTypeBase csType, CsTypeBase marshalType, string source)
+            {
+                CSharpType = csType ?? throw new ArgumentNullException(nameof(csType));
+                MarshalType = marshalType;
+                Source = source;
+            }
+
+            public CsTypeBase CSharpType { get; }
+            public CsTypeBase MarshalType { get; }
+            public string Source { get; }
         }
     }
 }

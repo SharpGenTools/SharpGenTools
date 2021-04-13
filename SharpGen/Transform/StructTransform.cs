@@ -81,7 +81,7 @@ namespace SharpGen.Transform
             nameSpace.Add(csStruct);
 
             // Map the C++ name to the C# struct
-            typeRegistry.BindType(cppStruct.Name, csStruct);
+            typeRegistry.BindType(cppStruct.Name, csStruct, source: cppStruct.ParentInclude?.Name);
             return csStruct;
         }
 
@@ -159,77 +159,84 @@ namespace SharpGen.Transform
                 {
                     var cppField = fields[fieldIndex];
                     var fieldName = fieldNames[fieldIndex];
-                    Logger.RunInContext(cppField.ToString(), () =>
-                    {
-                        var csField = factory.Create(cppField, fieldName);
-                        csStruct.Add(csField);
-
-                        var fieldHasMarshalType = csField.PublicType != csField.MarshalType
-                            || csField.HasNativeValueType
-                            || csField.IsArray;
-
-                        // BoolToInt doesn't generate native Marshaling although they have a different marshaller
-                        if (((!csField.IsBoolToInt || csField.IsArray) && fieldHasMarshalType) || (csField.Relations?.Count ?? 0) != 0)
-                            hasMarshalType = true;
-
-                        // If last field has same offset, then it's a union
-                        // CurrentOffset is not moved
-                        if (isNonSequential && previousFieldOffsetIndex != cppField.Offset)
+                    Logger.RunInContext(
+                        cppField.ToString(),
+                        () =>
                         {
-                            previousFieldSize = maxSizeOfField;
-                            maxSizeOfField = 0;
-                            isNonSequential = false;
-                        }
+                            var csField = factory.Create(cppField, fieldName);
+                            csStruct.Add(csField);
 
-                        currentFieldAbsoluteOffset += previousFieldSize;
-                        var fieldAlignment = (csField.MarshalType ?? csField.PublicType).CalculateAlignment();
+                            var fieldHasMarshalType = csField.PublicType != csField.MarshalType
+                                || csField.HasNativeValueType
+                                || csField.IsArray;
 
-                        // If field alignment is < 0, then we have a pointer somewhere so we can't align
-                        if (fieldAlignment > 0)
-                        {
-                            // otherwise, align the field on the alignment requirement of the field
-                            int delta = (currentFieldAbsoluteOffset % fieldAlignment);
-                            if (delta != 0)
+                            if ((csField.Relations?.Count ?? 0) != 0)
+                                hasMarshalType = true;
+
+                            // BoolToInt doesn't generate native Marshaling although they have a different marshaller
+                            if (fieldHasMarshalType && (!csField.IsBoolToInt || csField.IsArray))
+                                hasMarshalType = true;
+
+                            // If last field has same offset, then it's a union
+                            // CurrentOffset is not moved
+                            if (isNonSequential && previousFieldOffsetIndex != cppField.Offset)
                             {
-                                currentFieldAbsoluteOffset += fieldAlignment - delta;
+                                previousFieldSize = maxSizeOfField;
+                                maxSizeOfField = 0;
+                                isNonSequential = false;
                             }
-                        }
 
-                        // Get correct offset (for handling union)
-                        csField.Offset = currentFieldAbsoluteOffset;
+                            currentFieldAbsoluteOffset += previousFieldSize;
+                            var fieldAlignment = (csField.MarshalType ?? csField.PublicType).CalculateAlignment();
 
-                        // Handle bit fields : calculate BitOffset and BitMask for this field
-                        if (previousFieldOffsetIndex != cppField.Offset)
-                        {
-                            cumulatedBitOffset = 0;
-                        }
-                        if (cppField.IsBitField)
-                        {
-                            int lastCumulatedBitOffset = cumulatedBitOffset;
-                            cumulatedBitOffset += cppField.BitOffset;
-                            csField.BitMask = ((1 << cppField.BitOffset) - 1);
-                            csField.BitOffset = lastCumulatedBitOffset;
-                        }
+                            // If field alignment is < 0, then we have a pointer somewhere so we can't align
+                            if (fieldAlignment > 0)
+                            {
+                                // otherwise, align the field on the alignment requirement of the field
+                                var delta = currentFieldAbsoluteOffset % fieldAlignment;
+                                if (delta != 0)
+                                {
+                                    currentFieldAbsoluteOffset += fieldAlignment - delta;
+                                }
+                            }
 
-                        var nextFieldIndex = fieldIndex + 1;
-                        if (previousFieldOffsetIndex == cppField.Offset
-                         || (nextFieldIndex < fieldCount && fields[nextFieldIndex].Offset == cppField.Offset))
-                        {
+                            // Get correct offset (for handling union)
+                            csField.Offset = currentFieldAbsoluteOffset;
+
+                            // Handle bit fields : calculate BitOffset and BitMask for this field
                             if (previousFieldOffsetIndex != cppField.Offset)
                             {
-                                maxSizeOfField = 0;
+                                cumulatedBitOffset = 0;
                             }
-                            maxSizeOfField = csField.Size > maxSizeOfField ? csField.Size : maxSizeOfField;
-                            isNonSequential = true;
-                            csStruct.ExplicitLayout = true;
-                            previousFieldSize = 0;
+                            if (cppField.IsBitField)
+                            {
+                                int lastCumulatedBitOffset = cumulatedBitOffset;
+                                cumulatedBitOffset += cppField.BitOffset;
+                                csField.BitMask = ((1 << cppField.BitOffset) - 1);
+                                csField.BitOffset = lastCumulatedBitOffset;
+                            }
+
+                            var nextFieldIndex = fieldIndex + 1;
+                            if (previousFieldOffsetIndex == cppField.Offset
+                             || (nextFieldIndex < fieldCount && fields[nextFieldIndex].Offset == cppField.Offset))
+                            {
+                                if (previousFieldOffsetIndex != cppField.Offset)
+                                {
+                                    maxSizeOfField = 0;
+                                }
+                                maxSizeOfField = csField.Size > maxSizeOfField ? csField.Size : maxSizeOfField;
+                                isNonSequential = true;
+                                csStruct.ExplicitLayout = true;
+                                previousFieldSize = 0;
+                            }
+                            else
+                            {
+                                previousFieldSize = csField.Size;
+                            }
+
+                            previousFieldOffsetIndex = cppField.Offset;
                         }
-                        else
-                        {
-                            previousFieldSize = csField.Size;
-                        }
-                        previousFieldOffsetIndex = cppField.Offset;
-                    });
+                    );
                 }
             }
 

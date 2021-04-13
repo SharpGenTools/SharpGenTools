@@ -37,11 +37,6 @@ namespace SharpGen.Model
 
     public sealed class InteropMethodSignature : IEquatable<InteropMethodSignature>
     {
-        private const InteropMethodSignatureFlags FlagsToIgnoreForName =
-            InteropMethodSignatureFlags.CastToNativeLong |
-            InteropMethodSignatureFlags.CastToNativeULong |
-            InteropMethodSignatureFlags.IsFunction;
-
         public InteropType ReturnType { get; set; }
         public List<InteropMethodSignatureParameter> ParameterTypes { get; } = new();
 
@@ -95,19 +90,6 @@ namespace SharpGen.Model
 
         public CppCallingConvention CallingConvention { get; set; }
         public InteropMethodSignatureFlags Flags { get; set; }
-
-        private InteropMethodSignatureFlags FlagsForName => Flags & ~FlagsToIgnoreForName;
-
-        public string Name
-        {
-            get
-            {
-                var returnTypeName = ReturnType.TypeName;
-                returnTypeName = returnTypeName.Replace("*", "Ptr");
-                returnTypeName = returnTypeName.Replace(".", string.Empty);
-                return $"Call{CallingConvention}{(IsFunction ? "Func" : "")}{returnTypeName}_{FlagsForName}";
-            }
-        }
 
         [ExcludeFromCodeCoverage]
         public override string ToString()

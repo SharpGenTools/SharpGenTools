@@ -286,7 +286,7 @@ namespace SharpGenTools.Sdk.Tasks
 
             foreach (var platform in Platforms)
             {
-                if (!Enum.TryParse<PlatformDetectionType>("Is" + platform.ItemSpec, out var parsedPlatform))
+                if (!Enum.TryParse<PlatformDetectionType>(platform.ItemSpec, out var parsedPlatform))
                 {
                     SharpGenLogger.Warning(
                         LoggingCodes.InvalidPlatformDetectionType,

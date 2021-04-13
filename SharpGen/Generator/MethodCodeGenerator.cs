@@ -21,7 +21,7 @@ namespace SharpGen.Generator
             {
                 var defaultOffset = csElement.Offset;
 
-                if ((Generators.Config.Platforms & PlatformDetectionType.IsWindows) != 0)
+                if ((Generators.Config.Platforms & PlatformDetectionType.Windows) != 0)
                 {
                     // Use the Windows offset for the default offset in the custom vtable when the Windows platform is requested for compat reasons.
                     defaultOffset = csElement.WindowsOffset;

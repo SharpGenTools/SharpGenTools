@@ -109,7 +109,7 @@ namespace SharpGen.Transform
             var nameSpace = namespaceRegistry.ResolveNamespace(cppInterface);
             nameSpace.Add(cSharpInterface);
 
-            typeRegistry.BindType(cppInterface.Name, cSharpInterface);
+            typeRegistry.BindType(cppInterface.Name, cSharpInterface, source: cppInterface.ParentInclude?.Name);
 
             foreach (var cppMethod in cppInterface.Methods)
             {

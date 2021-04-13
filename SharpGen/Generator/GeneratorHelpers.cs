@@ -65,7 +65,7 @@ namespace SharpGen.Generator
                     var newCondition = MemberAccessExpression(
                         SyntaxKind.SimpleMemberAccessExpression,
                         globalNamespace.GetTypeNameSyntax(WellKnownName.PlatformDetection),
-                        IdentifierName(flag.ToString())
+                        IdentifierName("Is" + flag)
                     );
 
                     condition = condition is null

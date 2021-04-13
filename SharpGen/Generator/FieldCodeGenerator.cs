@@ -10,7 +10,7 @@ using SharpGen.Transform;
 
 namespace SharpGen.Generator
 {
-    class FieldCodeGenerator : MemberCodeGeneratorBase<CsField>
+    internal sealed class FieldCodeGenerator : MemberCodeGeneratorBase<CsField>
     {
         private readonly bool explicitLayout;
 
@@ -22,7 +22,7 @@ namespace SharpGen.Generator
 
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsField csElement)
         {
-            var docComments = GenerateDocumentationTrivia(csElement);
+            var docComments = Trivia(GenerateDocumentationTrivia(csElement));
             if (csElement.IsBoolToInt && !csElement.IsArray)
             {
                 yield return PropertyDeclaration(PredefinedType(Token(SyntaxKind.BoolKeyword)), csElement.Name)
@@ -47,12 +47,13 @@ namespace SharpGen.Generator
                                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
                             })))
                     .WithModifiers(csElement.VisibilityTokenList)
-                    .WithLeadingTrivia(Trivia(docComments));
+                    .WithLeadingTrivia(docComments);
                 yield return GenerateBackingField(csElement, csElement.MarshalType, explicitLayout ? csElement.Offset : null);
             }
             else if (csElement.IsArray && !csElement.IsString)
             {
-                yield return PropertyDeclaration(ArrayType(ParseTypeName(csElement.PublicType.QualifiedName), SingletonList(ArrayRankSpecifier())), csElement.Name)
+                var elementType = ParseTypeName(csElement.PublicType.QualifiedName);
+                yield return PropertyDeclaration(ArrayType(elementType, SingletonList(ArrayRankSpecifier())), csElement.Name)
                     .WithAccessorList(
                         AccessorList(
                             List(
@@ -60,18 +61,15 @@ namespace SharpGen.Generator
                                 {
                                     AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
                                         .WithExpressionBody(ArrowExpressionClause(
-                                            BinaryExpression(SyntaxKind.CoalesceExpression,
+                                            AssignmentExpression(SyntaxKind.CoalesceAssignmentExpression,
                                                 ParseName(csElement.IntermediateMarshalName),
-                                                ParenthesizedExpression(
-                                                    AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                                                        ParseName(csElement.IntermediateMarshalName),
-                                                        ObjectCreationExpression(
-                                                            ArrayType(ParseTypeName(csElement.PublicType.QualifiedName),
-                                                            SingletonList(
-                                                                ArrayRankSpecifier(
-                                                                    SingletonSeparatedList<ExpressionSyntax>(
-                                                                        LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.ArrayDimensionValue))))
-                                                    ))))))))
+                                                ObjectCreationExpression(
+                                                    ArrayType(elementType,
+                                                    SingletonList(
+                                                        ArrayRankSpecifier(
+                                                            SingletonSeparatedList<ExpressionSyntax>(
+                                                                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.ArrayDimensionValue))))
+                                            ))))))
                                         .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
                                     AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
                                         .WithExpressionBody(ArrowExpressionClause(
@@ -82,9 +80,9 @@ namespace SharpGen.Generator
                                         .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)))
                                 })))
                     .WithModifiers(csElement.VisibilityTokenList)
-                    .WithLeadingTrivia(Trivia(docComments));
+                    .WithLeadingTrivia(docComments);
 
-                yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : (int?)null, isArray: true);
+                yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : null, isArray: true);
             }
             else if (csElement.IsBitField)
             {
@@ -101,7 +99,7 @@ namespace SharpGen.Generator
                                     }
                                     )))
                     .WithModifiers(csElement.VisibilityTokenList)
-                    .WithLeadingTrivia(Trivia(docComments));
+                    .WithLeadingTrivia(docComments);
                 }
                 else
                 {
@@ -117,22 +115,22 @@ namespace SharpGen.Generator
                                     }
                                     )))
                     .WithModifiers(csElement.VisibilityTokenList)
-                    .WithLeadingTrivia(Trivia(docComments));
+                    .WithLeadingTrivia(docComments);
                 }
-                yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : (int?)null);
+                yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : null);
             }
             else
             {
-                yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : (int?)null, docTrivia: docComments, propertyBacking: false);
+                yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : null, docTrivia: docComments, propertyBacking: false);
             }
         }
 
-        private static BinaryExpressionSyntax GenerateIntToBoolConversion(ExpressionSyntax valueExpression)
-        {
-            return BinaryExpression(SyntaxKind.NotEqualsExpression,
+        private static BinaryExpressionSyntax GenerateIntToBoolConversion(ExpressionSyntax valueExpression) =>
+            BinaryExpression(
+                SyntaxKind.NotEqualsExpression,
                 LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)),
-                valueExpression);
-        }
+                valueExpression
+            );
 
         private static AccessorDeclarationSyntax GenerateBitFieldGetter(CsField csElement, Func<ExpressionSyntax, ExpressionSyntax> valueTransformation = null)
         {
@@ -204,28 +202,32 @@ namespace SharpGen.Generator
                 .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
         }
 
-        private static ExpressionSyntax GenerateBoolToIntConversion(ExpressionSyntax valueExpression)
-        {
-            return ConditionalExpression(
+        private static ExpressionSyntax GenerateBoolToIntConversion(ExpressionSyntax valueExpression) =>
+            ConditionalExpression(
                 valueExpression,
-                LiteralExpression(
-                    SyntaxKind.NumericLiteralExpression,
-                    Literal(1)),
-                LiteralExpression(
-                    SyntaxKind.NumericLiteralExpression,
-                    Literal(0)));
-        }
+                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(1)),
+                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))
+            );
 
-        private static MemberDeclarationSyntax GenerateBackingField(CsField field, CsTypeBase backingType, int? offset, bool isArray = false, bool propertyBacking = true, DocumentationCommentTriviaSyntax docTrivia = null)
+        private static MemberDeclarationSyntax GenerateBackingField(CsField field, CsTypeBase backingType, int? offset, bool isArray = false, bool propertyBacking = true, SyntaxTrivia? docTrivia = null)
         {
+            var elementType = ParseTypeName(backingType.QualifiedName);
+
             var fieldDecl = FieldDeclaration(
-               VariableDeclaration(isArray ?
-                   ArrayType(ParseTypeName(backingType.QualifiedName), SingletonList(ArrayRankSpecifier()))
-                   : ParseTypeName(backingType.QualifiedName),
-                   SingletonSeparatedList(
-                       VariableDeclarator(propertyBacking ? field.IntermediateMarshalName : field.Name)
-                   )))
-               .WithModifiers(propertyBacking ? TokenList(Token(SyntaxKind.InternalKeyword)) : field.VisibilityTokenList);
+                    VariableDeclaration(
+                        isArray
+                            ? ArrayType(elementType, SingletonList(ArrayRankSpecifier()))
+                            : elementType,
+                        SingletonSeparatedList(
+                            VariableDeclarator(propertyBacking ? field.IntermediateMarshalName : field.Name)
+                        )
+                    )
+                )
+               .WithModifiers(
+                    propertyBacking
+                        ? TokenList(Token(SyntaxKind.InternalKeyword))
+                        : field.VisibilityTokenList
+                );
 
             if (offset.HasValue)
             {
@@ -238,8 +240,8 @@ namespace SharpGen.Generator
                                     LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(offset.Value))))))))
                 ));
             }
-            return docTrivia != null ? fieldDecl.WithLeadingTrivia(Trivia(docTrivia)) : fieldDecl;
-        }
 
+            return docTrivia is { } trivia ? fieldDecl.WithLeadingTrivia(trivia) : fieldDecl;
+        }
     }
 }
