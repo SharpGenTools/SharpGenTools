@@ -273,21 +273,20 @@ namespace SharpGen.Generator.Marshallers
                             marshalElement));
             }
 
-            return IfStatement(
-                    BinaryExpression(SyntaxKind.NotEqualsExpression, marshalElement, IntPtrZero),
-                    ExpressionStatement(
-                        AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                        publicElement,
-                        ObjectCreationExpression(ParseTypeName(interfaceType.GetNativeImplementationOrThis().QualifiedName))
-                        .WithArgumentList(
-                            ArgumentList(SingletonSeparatedList(
-                                Argument(marshalElement)))))),
-                    ElseClause(
-                        ExpressionStatement(
-                        AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                            publicElement,
-                            LiteralExpression(SyntaxKind.NullLiteralExpression,
-                                Token(SyntaxKind.NullKeyword))))));
+            return ExpressionStatement(
+                AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    publicElement,
+                    ConditionalExpression(
+                        BinaryExpression(SyntaxKind.NotEqualsExpression, marshalElement, IntPtrZero),
+                        ObjectCreationExpression(
+                                ParseTypeName(interfaceType.GetNativeImplementationOrThis().QualifiedName)
+                            )
+                           .WithArgumentList(ArgumentList(SingletonSeparatedList(Argument(marshalElement)))),
+                        LiteralExpression(SyntaxKind.NullLiteralExpression, Token(SyntaxKind.NullKeyword))
+                    )
+                )
+            );
         }
 
         protected ExpressionStatementSyntax MarshalInterfaceInstanceToNative(CsMarshalBase csElement,

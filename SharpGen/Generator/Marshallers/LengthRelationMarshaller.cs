@@ -14,11 +14,19 @@ namespace SharpGen.Generator.Marshallers
         public StatementSyntax GenerateManagedToNative(CsMarshalBase publicElement, CsMarshalBase relatedElement)
         {
             return ExpressionStatement(
-                AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                IdentifierName(relatedElement.Name),
-                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                    IdentifierName(publicElement.Name),
-                    IdentifierName("Length"))));
+                AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    IdentifierName(relatedElement.Name),
+                    GenerateNullCheckIfNeeded(
+                        publicElement,
+                        MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            IdentifierName(publicElement.Name), IdentifierName("Length")
+                        ),
+                        LiteralExpression(SyntaxKind.DefaultLiteralExpression, Token(SyntaxKind.DefaultKeyword))
+                    )
+                )
+            );
         }
 
         public StatementSyntax GenerateNativeToManaged(CsMarshalBase publicElement, CsMarshalBase relatedElement)
