@@ -299,7 +299,7 @@ namespace SharpGen.Generator.Marshallers
                     InvocationExpression(
                         MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
-                            GlobalNamespace.GetTypeNameSyntax(WellKnownName.CppObject),
+                            GlobalNamespace.GetTypeNameSyntax(WellKnownName.MarshallingHelpers),
                             GenericName(
                                     Identifier("ToCallbackPtr"))
                                .WithTypeArgumentList(

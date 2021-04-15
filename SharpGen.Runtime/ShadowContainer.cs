@@ -32,9 +32,9 @@ namespace SharpGen.Runtime
     /// </summary>
     public class ShadowContainer : DisposeBase
     {
-        private readonly Dictionary<Guid, CppObjectShadow> guidToShadow = new Dictionary<Guid, CppObjectShadow>();
+        private readonly Dictionary<Guid, CppObjectShadow> guidToShadow = new();
 
-        private static readonly Dictionary<Type, List<Type>> typeToShadowTypes = new Dictionary<Type, List<Type>>();
+        private static readonly Dictionary<Type, List<Type>> typeToShadowTypes = new();
 
         private IntPtr guidPtr;
         public IntPtr[] Guids { get; }
@@ -157,28 +157,28 @@ namespace SharpGen.Runtime
         public IntPtr Find(Guid guidType)
         {
             var shadow = FindShadow(guidType);
-            return (shadow == null) ? IntPtr.Zero : shadow.NativePointer;
+            return shadow?.NativePointer ?? IntPtr.Zero;
         }
 
         public CppObjectShadow FindShadow(Guid guidType)
         {
-            guidToShadow.TryGetValue(guidType, out CppObjectShadow shadow);
+            guidToShadow.TryGetValue(guidType, out var shadow);
             return shadow;
         }
         
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                foreach (var comObjectCallbackNative in guidToShadow.Values)
-                    comObjectCallbackNative.Dispose();
-                guidToShadow.Clear();
+            if (!disposing)
+                return;
 
-                if (guidPtr != IntPtr.Zero)
-                {
-                    Marshal.FreeHGlobal(guidPtr);
-                    guidPtr = IntPtr.Zero;
-                }
+            foreach (var comObjectCallbackNative in guidToShadow.Values)
+                comObjectCallbackNative.Dispose();
+            guidToShadow.Clear();
+
+            if (guidPtr != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(guidPtr);
+                guidPtr = IntPtr.Zero;
             }
         }
     }

@@ -72,58 +72,70 @@ namespace SharpGen.Generator
 
         private static CatchClauseSyntax GenerateCatchClause(CatchClauseSyntax catchClause, CsCallable csElement, SyntaxToken exceptionVariableIdentifier, params StatementSyntax[] statements)
         {
-            var toShadowStatement = LocalDeclarationStatement(
-                    VariableDeclaration(
-                        IdentifierName(csElement.Parent.Name))
-                    .WithVariables(
-                        SingletonSeparatedList(
-                            VariableDeclarator(
-                                Identifier("@this"))
-                            .WithInitializer(
-                                EqualsValueClause(
-                                    CastExpression(
-                                        IdentifierName(csElement.Parent.Name),
-                                        MemberAccessExpression(
-                                            SyntaxKind.SimpleMemberAccessExpression,
-                                            InvocationExpression(
-                                                GenericName(
-                                                    Identifier("ToShadow"))
-                                                .WithTypeArgumentList(
-                                                    TypeArgumentList(
-                                                        SingletonSeparatedList<TypeSyntax>(
-                                                            IdentifierName(csElement.GetParent<CsInterface>().ShadowName)))))
-                                            .WithArgumentList(
-                                                ArgumentList(
-                                                    SingletonSeparatedList(
-                                                        Argument(
-                                                            IdentifierName("thisObject"))))),
-                                            IdentifierName("Callback"))))))));
+            List<StatementSyntax> statementList = new()
+            {
+                GenerateShadowCallbackStatement(csElement),
+                ExpressionStatement(
+                    ConditionalAccessExpression(
+                        ParenthesizedExpression(
+                            BinaryExpression(
+                                SyntaxKind.AsExpression,
+                                IdentifierName(@"@this"),
+                                IdentifierName("SharpGen.Runtime.IExceptionCallback")
+                            )
+                        ),
+                        InvocationExpression(
+                            MemberBindingExpression(IdentifierName("RaiseException")),
+                            ArgumentList(
+                                SingletonSeparatedList(
+                                    Argument(IdentifierName(exceptionVariableIdentifier))
+                                )
+                            )
+                        )
+                    )
+                )
+            };
 
-            var exceptionCallbackStatement = ExpressionStatement(
-                                ConditionalAccessExpression(
-                                    ParenthesizedExpression(
-                                        BinaryExpression(
-                                            SyntaxKind.AsExpression,
-                                            (IdentifierName(@"@this")),
-                                            IdentifierName("SharpGen.Runtime.IExceptionCallback"))),
-                                    InvocationExpression(
-                                        MemberBindingExpression(
-                                            IdentifierName("RaiseException")))
-                                    .WithArgumentList(
-                                        ArgumentList(
-                                            SingletonSeparatedList(
-                                                Argument(
-                                                    IdentifierName(exceptionVariableIdentifier)))))));
-
-            var statementList = new List<StatementSyntax> { toShadowStatement, exceptionCallbackStatement };
             statementList.AddRange(statements);
 
             return catchClause
                 .WithDeclaration(
                     CatchDeclaration(ParseTypeName("System.Exception"))
                     .WithIdentifier(exceptionVariableIdentifier))
-                .WithBlock(Block(statementList.ToArray()));
-        }        
+                .WithBlock(Block(statementList));
+        }
+
+        private static LocalDeclarationStatementSyntax GenerateShadowCallbackStatement(CsCallable csElement)
+        {
+            var parentName = IdentifierName(csElement.Parent.Name);
+
+            var callbackValue = MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                InvocationExpression(
+                    GenericName(Identifier("ToShadow"))
+                       .WithTypeArgumentList(
+                            TypeArgumentList(
+                                SingletonSeparatedList<TypeSyntax>(
+                                    IdentifierName(csElement.GetParent<CsInterface>().ShadowName)
+                                )
+                            )
+                        ),
+                    ArgumentList(SingletonSeparatedList(Argument(IdentifierName("thisObject"))))
+                ),
+                IdentifierName("Callback")
+            );
+
+            return LocalDeclarationStatement(
+                VariableDeclaration(
+                    parentName,
+                    SingletonSeparatedList(
+                        VariableDeclarator(Identifier("@this"))
+                           .WithInitializer(EqualsValueClause(CastExpression(parentName, callbackValue)))
+                    )
+                )
+            );
+        }
+
         private MethodDeclarationSyntax GenerateShadowCallback(CsCallable csElement, PlatformDetectionType platform, InteropMethodSignature sig)
         {
             var interopReturnType = ParseTypeName(sig.ReturnType.TypeName);
@@ -170,32 +182,7 @@ namespace SharpGen.Generator
 
             if (csElement is CsMethod)
             {
-                statements.Add(LocalDeclarationStatement(
-                    VariableDeclaration(
-                        IdentifierName(csElement.Parent.Name))
-                    .WithVariables(
-                        SingletonSeparatedList(
-                            VariableDeclarator(
-                                Identifier("@this"))
-                            .WithInitializer(
-                                EqualsValueClause(
-                                    CastExpression(
-                                        IdentifierName(csElement.Parent.Name),
-                                        MemberAccessExpression(
-                                            SyntaxKind.SimpleMemberAccessExpression,
-                                            InvocationExpression(
-                                                GenericName(
-                                                    Identifier("ToShadow"))
-                                                .WithTypeArgumentList(
-                                                    TypeArgumentList(
-                                                        SingletonSeparatedList<TypeSyntax>(
-                                                            IdentifierName(csElement.GetParent<CsInterface>().ShadowName)))))
-                                            .WithArgumentList(
-                                                ArgumentList(
-                                                    SingletonSeparatedList(
-                                                        Argument(
-                                                            IdentifierName("thisObject"))))),
-                                            IdentifierName("Callback")))))))));
+                statements.Add(GenerateShadowCallbackStatement(csElement));
             }
 
             foreach (var param in csElement.Parameters)

@@ -1,4 +1,5 @@
-﻿using SharpGen.Config;
+﻿using System;
+using SharpGen.Config;
 using SharpGen.Logging;
 using SharpGen.VisualStudioSetup;
 using System.Collections.Generic;
@@ -10,6 +11,8 @@ namespace SharpGen.Parser
 {
     public sealed class SdkResolver
     {
+        private static readonly string[] WindowsSdkIncludes = {"shared", "um", "ucrt", "winrt"}; 
+
         public SdkResolver(Logger logger)
         {
             Logger = logger;
@@ -54,28 +57,41 @@ namespace SharpGen.Parser
         
         private string GetVSInstallPath()
         {
-            var query = new SetupConfiguration();
-            var enumInstances = query.EnumInstances();
+            var vsPathOverride = Environment.GetEnvironmentVariable("SHARPGEN_VS_OVERRIDE");
+            if (!string.IsNullOrEmpty(vsPathOverride))
+                return vsPathOverride;
 
-            int fetched;
-            var instances = new ISetupInstance[1];
-            do
+            try
             {
-                enumInstances.Next(1, instances, out fetched);
-                if (fetched > 0)
+                var query = new SetupConfiguration();
+                var enumInstances = query.EnumInstances();
+
+                int fetched;
+                var instances = new ISetupInstance[1];
+                do
                 {
-                    var instance2 = (ISetupInstance2)instances[0];
+                    enumInstances.Next(1, instances, out fetched);
+                    if (fetched <= 0)
+                        continue;
+
+                    var instance2 = (ISetupInstance2) instances[0];
                     var state = instance2.GetState();
-                    if ((state & InstanceState.Registered) == InstanceState.Registered)
-                    {
-                        if (instance2.GetPackages().Any(pkg => pkg.GetId() == "Microsoft.VisualStudio.Component.VC.Tools.x86.x64"))
-                        {
-                            return instance2.GetInstallationPath();
-                        }
-                    }
-                }
+                    if ((state & InstanceState.Registered) != InstanceState.Registered)
+                        continue;
+
+                    if (instance2.GetPackages().Any(Predicate))
+                        return instance2.GetInstallationPath();
+
+                } while (fetched > 0);
+
+                static bool Predicate(ISetupPackageReference pkg) => pkg.GetId() == "Microsoft.VisualStudio.Component.VC.Tools.x86.x64";
             }
-            while (fetched > 0);
+            catch (Exception e)
+            {
+                Logger.LogRawMessage(
+                    LogLevel.Warning, null, "Visual Studio installation discovery has thrown an exception", e
+                );
+            }
 
             Logger.Fatal("Unable to find a Visual Studio installation that has the Visual C++ Toolchain installed.");
 
@@ -84,10 +100,20 @@ namespace SharpGen.Parser
 
         private IEnumerable<IncludeDirRule> ResolveWindowsSdk(string version)
         {
-            yield return new IncludeDirRule($@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\{version}\shared");
-            yield return new IncludeDirRule($@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\{version}\um");
-            yield return new IncludeDirRule($@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\{version}\ucrt");
-            yield return new IncludeDirRule($@"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\{version}\winrt");
+            var sdkPathOverride = Environment.GetEnvironmentVariable("SHARPGEN_SDK_OVERRIDE");
+
+            if (!string.IsNullOrEmpty(sdkPathOverride))
+            {
+                foreach (var include in WindowsSdkIncludes)
+                    yield return new IncludeDirRule(Path.Combine(sdkPathOverride, "Include", version, include));
+
+                yield break;
+            }
+
+            const string prefix = @"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\";
+
+            foreach (var include in WindowsSdkIncludes)
+                yield return new IncludeDirRule(prefix + version + '\\' + include);
         }
     }
 }

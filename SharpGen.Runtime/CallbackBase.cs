@@ -49,7 +49,7 @@ namespace SharpGen.Runtime
         public uint Release()
         {
             var newRefCount = Interlocked.Decrement(ref refCount);
-            if (newRefCount == 1)
+            if (newRefCount == 0)
             {
                 // Dispose native resources
                 var callback = ((ICallbackable)this);

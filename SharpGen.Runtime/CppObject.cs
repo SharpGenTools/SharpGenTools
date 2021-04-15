@@ -19,6 +19,7 @@
 // THE SOFTWARE.
 using SharpGen.Runtime.Diagnostics;
 using System;
+using System.ComponentModel;
 
 namespace SharpGen.Runtime
 {
@@ -31,7 +32,7 @@ namespace SharpGen.Runtime
         /// Logs a warning of a possible memory leak when <see cref="Configuration.EnableObjectTracking" /> is enabled.
         /// Default uses <see cref="System.Diagnostics.Debug"/>.
         /// </summary>
-        public static Action<string> LogMemoryLeakWarning = (warning) => System.Diagnostics.Debug.WriteLine(warning);
+        public static Action<string> LogMemoryLeakWarning = warning => System.Diagnostics.Debug.WriteLine(warning);
 
         /// <summary>
         /// The native pointer
@@ -88,17 +89,7 @@ namespace SharpGen.Runtime
             }
         }
 
-        /// <summary>
-        /// Performs an explicit conversion from <see cref="SharpDX.CppObject"/> to <see cref="System.IntPtr"/>.
-        /// </summary>
-        /// <param name="cppObject">The CPP object.</param>
-        /// <returns>
-        /// The result of the conversion.
-        /// </returns>
-        public static explicit operator IntPtr(CppObject cppObject)
-        {
-            return cppObject == null ? IntPtr.Zero : cppObject.NativePointer;
-        }
+        public static explicit operator IntPtr(CppObject cppObject) => cppObject?.NativePointer ?? IntPtr.Zero;
 
         /// <summary>
         /// Method called when <see cref="NativePointer"/> is going to be update.
@@ -120,80 +111,47 @@ namespace SharpGen.Runtime
 
         protected override void Dispose(bool disposing)
         {
-            if (NativePointer != IntPtr.Zero)
+            if (NativePointer == IntPtr.Zero)
+                return;
+
+            // If object is disposed by the finalizer, emits a warning
+            if (!disposing && Configuration.EnableTrackingReleaseOnFinalizer)
             {
-                // If object is disposed by the finalizer, emits a warning
-                if(!disposing && Configuration.EnableTrackingReleaseOnFinalizer)
+                if (!Configuration.EnableReleaseOnFinalizer)
                 {
-                    if(!Configuration.EnableReleaseOnFinalizer)
-                    {
-                        var objectReference = ObjectTracker.Find(this);
-                        LogMemoryLeakWarning?.Invoke(string.Format("Warning: Live CppObject released on finalizer [0x{0:X}], potential memory leak: {1}", NativePointer.ToInt64(), objectReference));
-                    }
+                    var objectReference = ObjectTracker.Find(this);
+                    LogMemoryLeakWarning?.Invoke(
+                        $"Warning: Live CppObject released on finalizer [0x{NativePointer.ToInt64():X}], potential memory leak: {objectReference}"
+                    );
                 }
+            }
 
-                if (Configuration.EnableObjectTracking)
-                {
-                    ObjectTracker.UnTrack(this);
-                }
+            if (Configuration.EnableObjectTracking)
+            {
+                ObjectTracker.UnTrack(this);
+            }
 
-                unsafe
-                {
-                    // Set pointer to null (using protected members in order to avoid callbacks.
-                    _nativePointer = (void*)0;
-                }
+            unsafe
+            {
+                // Set pointer to null (using protected members in order to avoid callbacks).
+                _nativePointer = (void*) 0;
             }
         }
 
-        /// <summary>
-        /// Instantiate a CppObject from a native pointer.
-        /// </summary>
-        /// <typeparam name="T">The CppObject class that will be returned</typeparam>
-        /// <param name="cppObjectPtr">The native pointer to a com object.</param>
-        /// <returns>An instance of T binded to the native pointer</returns>
-        public static T FromPointer<T>(IntPtr comObjectPtr) where T : CppObject
-        {
-            return (comObjectPtr == IntPtr.Zero) ? null : (T) Activator.CreateInstance(typeof (T), comObjectPtr);
-        }
+        [Obsolete("Use " + nameof(MarshallingHelpers) + "." + nameof(MarshallingHelpers.FromPointer) + " instead")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public static T FromPointer<T>(IntPtr cppObjectPtr) where T : CppObject =>
+            MarshallingHelpers.FromPointer<T>(cppObjectPtr);
 
-        /// <summary>
-        /// Return the unmanaged C++ pointer from a <see cref="ICallbackable"/> instance.
-        /// </summary>
-        /// <typeparam name="TCallback">The type of the callback.</typeparam>
-        /// <param name="callback">The callback.</param>
-        /// <returns>A pointer to the unmanaged C++ object of the callback</returns>
-        public static IntPtr ToCallbackPtr<TCallback>(ICallbackable callback)
-            where TCallback : ICallbackable
-        {
-            // If callback is null, then return a null pointer
-            if (callback == null)
-                return IntPtr.Zero;
+        [Obsolete("Use " + nameof(MarshallingHelpers) + "." + nameof(MarshallingHelpers.ToCallbackPtr) + " instead")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public static IntPtr ToCallbackPtr<TCallback>(ICallbackable callback) where TCallback : ICallbackable =>
+            MarshallingHelpers.ToCallbackPtr<TCallback>(callback);
 
-            // If callback is CppObject
-            if (callback is CppObject cpp)
-                return cpp.NativePointer;
-
-            // Setup the shadow container in order to support multiple inheritance
-            var shadowContainer = callback.Shadow;
-            if (shadowContainer == null)
-            {
-                callback.Shadow = new ShadowContainer(callback);
-                shadowContainer = callback.Shadow;
-            }
-
-            return shadowContainer.Find(typeof(TCallback));
-        }
-
-        /// <summary>
-        /// Return the unmanaged C++ pointer from a <see cref="CppObject"/> instance.
-        /// </summary>
-        /// <typeparam name="TCallback">The type of the callback.</typeparam>
-        /// <param name="obj">The object.</param>
-        /// <returns>A pointer to the unmanaged C++ object of the callback</returns>
-        /// <remarks>This method is meant as a fast-path for codegen to use to reduce the number of casts.</remarks>
-        public static IntPtr ToCallbackPtr<TCallback>(CppObject obj)
-            where TCallback : ICallbackable
-            => obj?.NativePointer ?? IntPtr.Zero;
+        [Obsolete("Use " + nameof(MarshallingHelpers) + "." + nameof(MarshallingHelpers.ToCallbackPtr) + " instead")]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public static IntPtr ToCallbackPtr<TCallback>(CppObject obj) where TCallback : ICallbackable =>
+            MarshallingHelpers.ToCallbackPtr<TCallback>(obj);
 
         /// <summary>
         /// Implements <see cref="ICallbackable"/> but it cannot not be set. 
@@ -201,8 +159,8 @@ namespace SharpGen.Runtime
         /// </summary>
         ShadowContainer ICallbackable.Shadow
         {
-            get { throw new InvalidOperationException("Invalid access to Callback. This is used internally."); }
-            set { throw new InvalidOperationException("Invalid access to Callback. This is used internally."); }
+            get => throw new InvalidOperationException("Invalid access to Callback. This is used internally.");
+            set => throw new InvalidOperationException("Invalid access to Callback. This is used internally.");
         }
     }
 }

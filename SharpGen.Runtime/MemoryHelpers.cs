@@ -46,12 +46,9 @@ namespace SharpGen.Runtime
         /// <param name="dest">The destination memory location.</param>
         /// <param name="src">The source memory location.</param>
         /// <param name="sizeInBytesToCopy">The byte count.</param>
-        public static void CopyMemory(IntPtr dest, IntPtr src, int sizeInBytesToCopy)
+        public static unsafe void CopyMemory(IntPtr dest, IntPtr src, int sizeInBytesToCopy)
         {
-            unsafe
-            {
-                Unsafe.CopyBlockUnaligned((void*)dest, (void*)src, (uint)sizeInBytesToCopy);
-            }
+            Unsafe.CopyBlockUnaligned((void*) dest, (void*) src, (uint) sizeInBytesToCopy);
         }
 
         /// <summary>
@@ -59,14 +56,9 @@ namespace SharpGen.Runtime
         /// </summary>
         /// <param name="dest">The destination memory location.</param>
         /// <param name="src">The source memory location.</param>
-        /// <param name="sizeInBytesToCopy">The byte count.</param>
-        public static void CopyMemory<T>(IntPtr dest, ReadOnlySpan<T> src)
-            where T : struct
+        public static unsafe void CopyMemory<T>(IntPtr dest, ReadOnlySpan<T> src) where T : struct
         {
-            unsafe
-            {
-                src.CopyTo(new Span<T>((void*)dest, src.Length));
-            }
+            src.CopyTo(new Span<T>((void*) dest, src.Length));
         }
 
         /// <summary>
@@ -94,10 +86,7 @@ namespace SharpGen.Runtime
         /// <returns>source pointer + sizeof(T) * count.</returns>
         public static IntPtr Read<T>(IntPtr source, T[] data, int offset, int count) where T : unmanaged
         {
-            unsafe
-            {
-                return Read(source, new ReadOnlySpan<T>(data).Slice(offset), count);
-            }
+            return Read(source, new ReadOnlySpan<T>(data).Slice(offset), count);
         }
 
         /// <summary>
@@ -126,8 +115,7 @@ namespace SharpGen.Runtime
         /// </summary>
         /// <typeparam name="T">Type of a data to write.</typeparam>
         /// <param name="destination">Memory location to write to.</param>
-        /// <param name="data">The array of T data to write.</param>
-        /// <param name="offset">The offset in the array to read from.</param>
+        /// <param name="data">The span of T data to write.</param>
         /// <param name="count">The number of T element to write to the memory location.</param>
         /// <returns>destination pointer + sizeof(T) * count.</returns>
         public static IntPtr Write<T>(IntPtr destination, Span<T> data, int count) where T : unmanaged
@@ -143,6 +131,26 @@ namespace SharpGen.Runtime
         }
 
         /// <summary>
+        /// Reads the specified array data from a memory location.
+        /// </summary>
+        /// <typeparam name="T">Type of a data to read.</typeparam>
+        /// <param name="source">Memory location to read from.</param>
+        /// <param name="data">The T to read to.</param>
+        /// <returns>source pointer + sizeof(T).</returns>
+        public static unsafe IntPtr Read<T>(IntPtr source, ref T data) where T : unmanaged =>
+            Read(source, new ReadOnlySpan<T>(Unsafe.AsPointer(ref data), 1), 1);
+
+        /// <summary>
+        /// Writes the specified array T data to a memory location.
+        /// </summary>
+        /// <typeparam name="T">Type of a data to write.</typeparam>
+        /// <param name="destination">Memory location to write to.</param>
+        /// <param name="data">The data structure to write.</param>
+        /// <returns>destination pointer + sizeof(T).</returns>
+        public static unsafe IntPtr Write<T>(IntPtr destination, ref T data) where T : unmanaged =>
+            Write(destination, new Span<T>(Unsafe.AsPointer(ref data), 1), 1);
+
+        /// <summary>
         /// Allocate an aligned memory buffer.
         /// </summary>
         /// <param name="sizeInBytes">Size of the buffer to allocate.</param>
@@ -151,7 +159,7 @@ namespace SharpGen.Runtime
         /// <remarks>
         /// To free this buffer, call <see cref="FreeMemory"/>.
         /// </remarks>
-        public unsafe static IntPtr AllocateMemory(int sizeInBytes, int align = 16)
+        public static unsafe IntPtr AllocateMemory(int sizeInBytes, int align = 16)
         {
             int mask = align - 1;
             var memPtr = Marshal.AllocHGlobal(sizeInBytes + mask + IntPtr.Size);
@@ -166,10 +174,8 @@ namespace SharpGen.Runtime
         /// <param name="memoryPtr">The memory pointer.</param>
         /// <param name="align">The align.</param>
         /// <returns><c>true</c> if the specified memory pointer is aligned in memory; otherwise, <c>false</c>.</returns>
-        public static bool IsMemoryAligned(IntPtr memoryPtr, int align = 16)
-        {
-            return ((memoryPtr.ToInt64() & (align-1)) == 0);
-        }
+        public static bool IsMemoryAligned(IntPtr memoryPtr, int align = 16) =>
+            (memoryPtr.ToInt64() & (align - 1)) == 0;
 
         /// <summary>
         /// Free an aligned memory buffer.
@@ -178,7 +184,7 @@ namespace SharpGen.Runtime
         /// <remarks>
         /// The buffer must have been allocated with <see cref="AllocateMemory"/>.
         /// </remarks>
-        public unsafe static void FreeMemory(IntPtr alignedBuffer)
+        public static unsafe void FreeMemory(IntPtr alignedBuffer)
         {
             if (alignedBuffer == IntPtr.Zero) return;
             Marshal.FreeHGlobal(((IntPtr*) alignedBuffer)[-1]);

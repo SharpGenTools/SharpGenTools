@@ -11,7 +11,7 @@ namespace SharpGen.UnitTests.Runtime
         {
             using var callback = new CallbackImpl();
 
-            Assert.NotEqual(IntPtr.Zero, CppObject.ToCallbackPtr<ICallback>(callback));
+            Assert.NotEqual(IntPtr.Zero, MarshallingHelpers.ToCallbackPtr<ICallback>(callback));
         }
 
         [Fact]
@@ -19,8 +19,8 @@ namespace SharpGen.UnitTests.Runtime
         {
             using var callback = new Callback2Impl();
 
-            Assert.NotEqual(IntPtr.Zero, CppObject.ToCallbackPtr<ICallback>(callback));
-            Assert.NotEqual(IntPtr.Zero, CppObject.ToCallbackPtr<ICallback2>(callback));
+            Assert.NotEqual(IntPtr.Zero, MarshallingHelpers.ToCallbackPtr<ICallback>(callback));
+            Assert.NotEqual(IntPtr.Zero, MarshallingHelpers.ToCallbackPtr<ICallback2>(callback));
         }
     }
 }

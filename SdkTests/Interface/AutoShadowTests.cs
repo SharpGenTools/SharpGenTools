@@ -17,7 +17,7 @@ namespace Interface
         private static IDisposable SetupTests(bool supportExceptions, out CallbackInterfaceNative nativeView, out ManagedImplementation target)
         {
             target = supportExceptions ? new ExceptionEnabledManagedImplementation() : new ManagedImplementation();
-            nativeView = new CallbackInterfaceNative(CppObject.ToCallbackPtr<CallbackInterface>(target));
+            nativeView = new CallbackInterfaceNative(MarshallingHelpers.ToCallbackPtr<CallbackInterface>(target));
 
             return new CompositeDisposable
             {
