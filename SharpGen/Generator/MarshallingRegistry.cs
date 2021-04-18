@@ -33,6 +33,7 @@ namespace SharpGen.Generator
                 new ValueTypeArrayMarshaller(globalNamespace),
                 new ValueTypeMarshaller(globalNamespace)
             };
+            WrappingMarshallers = Marshallers.Select(x => new RefWrapperMarshaller(globalNamespace, x)).ToArray();
             RelationMarshallers = new Dictionary<Type, IRelationMarshaller>
             {
                 { typeof(StructSizeRelation), new StructSizeRelationMarshaller(globalNamespace) },
@@ -43,12 +44,14 @@ namespace SharpGen.Generator
         }
 
         private IReadOnlyList<IMarshaller> Marshallers { get; }
+        private IReadOnlyList<RefWrapperMarshaller> WrappingMarshallers { get; }
 
         private IReadOnlyDictionary<Type, IRelationMarshaller> RelationMarshallers { get; }
 
         public IMarshaller GetMarshaller(CsMarshalBase csElement)
         {
-            var marshaller = Marshallers.FirstOrDefault(m => m.CanMarshal(csElement));
+            var list = RefWrapperMarshaller.IsApplicable(csElement) ? WrappingMarshallers : Marshallers;
+            var marshaller = list.FirstOrDefault(m => m.CanMarshal(csElement));
             if (marshaller != null)
                 return marshaller;
 

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Generator.Marshallers;
@@ -101,57 +103,100 @@ namespace SharpGen.Generator
                 MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
                     GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Unsafe),
-                    GenericName(Identifier(nameof(Unsafe.AsRef)))
-                    .WithTypeArgumentList(
-                        TypeArgumentList(
-                            SingletonSeparatedList(
-                                marshaller.GetMarshalTypeSyntax(publicElement))))))
-            .WithArgumentList(
-                ArgumentList(
-                    SingletonSeparatedList(
-                        Argument(
-                            nativeParameter))));
+                    GenericName(
+                        Identifier(nameof(Unsafe.AsRef)),
+                        TypeArgumentList(SingletonSeparatedList(marshaller.GetMarshalTypeSyntax(publicElement)))
+                    )
+                ),
+                ArgumentList(SingletonSeparatedList(Argument(nativeParameter)))
+            );
 
             var publicType = ParseTypeName(publicElement.PublicType.QualifiedName);
+            var generatesMarshalVariable = marshaller.GeneratesMarshalVariable(publicElement);
 
             if (publicElement.IsLocalByRef)
             {
-                if (!marshaller.GeneratesMarshalVariable(publicElement))
-                {
-                    publicType = RefType(publicType);
-                }
+                Debug.Assert(marshaller is RefWrapperMarshaller);
 
                 refToNativeExpression = RefExpression(refToNativeExpression);
             }
+            else
+            {
+                Debug.Assert(publicElement is CsParameter {IsRefIn: true});
+                Debug.Assert(marshaller is not RefWrapperMarshaller);
 
-            if (marshaller.GeneratesMarshalVariable(publicElement))
+                if (publicElement is CsParameter {IsOptional: true})
+                {
+                    var defaultLiteral = LiteralExpression(
+                        SyntaxKind.DefaultLiteralExpression,
+                        Token(SyntaxKind.DefaultKeyword)
+                    );
+
+                    refToNativeExpression = ConditionalExpression(
+                        BinaryExpression(SyntaxKind.NotEqualsExpression, nativeParameter, defaultLiteral),
+                        refToNativeExpression,
+                        defaultLiteral
+                    );
+                }
+            }
+
+            var refToNativeClause = EqualsValueClause(refToNativeExpression);
+            EqualsValueClauseSyntax publicParamInitializer = default;
+
+            if (publicElement is CsParameter {IsOptional: true, IsLocalByRef: true} parameter)
+            {
+                var refVariableDeclaration = LocalDeclarationStatement(
+                    VariableDeclaration(
+                        RefType(marshaller.GetMarshalTypeSyntax(publicElement)),
+                        SingletonSeparatedList(
+                            VariableDeclarator(MarshallerBase.GetRefLocationIdentifier(publicElement))
+                               .WithInitializer(refToNativeClause)
+                        )
+                    )
+                );
+
+                if (generatesMarshalVariable && parameter is {IsRef: true})
+                {
+                    refVariableDeclaration = refVariableDeclaration.WithLeadingTrivia(
+                        Comment("Optional ref parameter that requires generating marshal variable is unsupported.")
+                    );
+                }
+                else
+                {
+                    refToNativeClause = default;
+                }
+
+                yield return refVariableDeclaration;
+            }
+
+            if (generatesMarshalVariable)
             {
                 yield return LocalDeclarationStatement(
                     VariableDeclaration(
-                        RefType(marshaller.GetMarshalTypeSyntax(publicElement)))
-                    .WithVariables(
+                        RefType(marshaller.GetMarshalTypeSyntax(publicElement)),
                         SingletonSeparatedList(
-                            VariableDeclarator(
-                                MarshallerBase.GetMarshalStorageLocationIdentifier(publicElement))
-                            .WithInitializer(
-                                EqualsValueClause(
-                                    refToNativeExpression)))));
-
-                yield return LocalDeclarationStatement(
-                    VariableDeclaration(publicType)
-                    .WithVariables(
-                        SingletonSeparatedList(
-                            VariableDeclarator(
-                                Identifier(publicElement.Name)))));
+                            VariableDeclarator(MarshallerBase.GetMarshalStorageLocationIdentifier(publicElement))
+                               .WithInitializer(refToNativeClause)
+                        )
+                    )
+                );
             }
             else
             {
-                yield return LocalDeclarationStatement(
-                    VariableDeclaration(publicType)
-                    .AddVariables(
-                        VariableDeclarator(Identifier(publicElement.Name))
-                        .WithInitializer(EqualsValueClause(refToNativeExpression))));
+                publicParamInitializer = refToNativeClause;
+
+                if (publicElement is CsParameter {IsOptional: false, IsLocalByRef: true} or CsReturnValue)
+                    publicType = RefType(publicType);
             }
+
+            yield return LocalDeclarationStatement(
+                VariableDeclaration(
+                    publicType,
+                    SingletonSeparatedList(
+                        VariableDeclarator(Identifier(publicElement.Name), default, publicParamInitializer)
+                    )
+                )
+            );
         }
     }
 }
