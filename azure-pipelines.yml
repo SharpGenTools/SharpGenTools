@@ -42,12 +42,14 @@ stages:
           displayName: 'Get Release Name (if this is a tag-triggered build)'
           env:
             SourceBranch : '$(Build.SourceBranch)'
+        - pwsh: dotnet tool restore
+          displayName: 'Restore .NET tools'
         - pwsh: ./build.ps1 -Configuration $(Config)
           displayName: 'Build SharpGenTools'
           env:
             ReleaseTag: '$(ReleaseVersion)'
             BuildNumber: '$(buildNumber)'
-        - pwsh: ./test.ps1 -Configuration $(Config) -SkipCodeCoverage
+        - pwsh: ./test.ps1 -Configuration $(Config)
           displayName: 'Run Tests'
           env:
             ReleaseTag: '$(ReleaseVersion)'
@@ -59,6 +61,10 @@ stages:
             testResultsFiles: '*.trx'
             buildConfiguration: '$(Config)'
             searchFolder: '$(Build.SourcesDirectory)/artifacts/test-results'
+        - task: PublishCodeCoverageResults@2
+          displayName: 'Publish code coverage results'
+          inputs:
+            summaryFileLocation: '$(Build.SourcesDirectory)/artifacts/reports/*.xml'
         - task: CopyFiles@2
           condition: eq(variables['Config'], 'Release')
           displayName: 'Copy NuGet packages to Artifact staging directory'

@@ -1,18 +1,15 @@
 Param(
     [string] $Configuration = "Debug",
     [switch] $SkipUnitTests = $false,
-    [switch] $SkipOuterloopTests = $false,
-    [switch] $SkipCodeCoverage = $false
+    [switch] $SkipOuterloopTests = $false
 )
 
 $RepoRoot = Split-Path -parent $PSCommandPath
 mkdir $RepoRoot/artifacts/coverage -ErrorAction SilentlyContinue
 
-$RunCodeCoverage = ($Configuration -eq "Debug") -and (-not $SkipCodeCoverage)
-
 if (!$SkipUnitTests) {
     Write-Debug "Running Unit Tests"
-    if (!(./build/unit-test $RunCodeCoverage $Configuration -RepoRoot $RepoRoot)) {
+    if (!(./build/Run-UnitTest -Target "$RepoRoot/SharpGen.UnitTests/SharpGen.UnitTests.csproj" -Name "UnitTests" -Configuration $Configuration -RepoRoot $RepoRoot)) {
         Write-Error "Unit Tests Failed"
         exit 1
     }
@@ -30,6 +27,8 @@ if (!$SkipOuterloopTests -and !($env:ReleaseTag -and ($Configuration -eq "Releas
         Write-Error "Failed to build outerloop native projects"
         exit 1
     }
+
+    $SdkVersion = & "$RepoRoot/build/Get-SharpGenToolsVersion"
 
     # Peter Franta, CC BY-SA 3.0, https://stackoverflow.com/a/10242325
     function CartesianProduct-Lists
@@ -89,17 +88,7 @@ if (!$SkipOuterloopTests -and !($env:ReleaseTag -and ($Configuration -eq "Releas
         $tfm = $testArgs[0]
         $platform = $testArgs[1]
 
-        $hint = "$tfm-$platform"
-        $testArgs = "-p:TargetFramework=$tfm", "-p:TargetPlatform=$platform", "-p:Platform=$platform"
-
-        if (!(./build/build-outerloop $RunCodeCoverage -Parameters $testArgs -Projects $managedTests -Hint $hint -RepoRoot $RepoRoot)) {
-            Write-Error "Failed to build outerloop tests"
-            exit 1
-        }
-
-        $testArgs += "--framework", $tfm
-
-        if (!(./build/run-outerloop-tests $RunCodeCoverage -Parameters $testArgs -Projects $managedTests -Hint $hint -RepoRoot $RepoRoot -Platform $platform)) {
+        if (!(./build/run-outerloop-tests -Projects $managedTests -TargetFramework $tfm -Platform $platform -Version $SdkVersion -RepoRoot $RepoRoot)) {
             Write-Error "Outerloop tests failed"
             exit 1
         }
