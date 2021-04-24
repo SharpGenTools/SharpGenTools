@@ -61,10 +61,13 @@ stages:
             testResultsFiles: '*.trx'
             buildConfiguration: '$(Config)'
             searchFolder: '$(Build.SourcesDirectory)/artifacts/test-results'
-        - task: PublishCodeCoverageResults@2
+        - pwsh: dotnet reportgenerator -reports:"artifacts\coverage\*.xml" -targetdir:"artifacts\reports" -reporttypes:Cobertura -title:SharpGen
+          displayName: 'Merge coverage reports'
+        - task: PublishCodeCoverageResults@1
           displayName: 'Publish code coverage results'
           inputs:
             summaryFileLocation: '$(Build.SourcesDirectory)/artifacts/reports/*.xml'
+            codeCoverageTool: Cobertura
         - task: CopyFiles@2
           condition: eq(variables['Config'], 'Release')
           displayName: 'Copy NuGet packages to Artifact staging directory'
