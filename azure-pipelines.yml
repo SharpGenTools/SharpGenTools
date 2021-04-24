@@ -62,8 +62,10 @@ stages:
             buildConfiguration: '$(Config)'
             searchFolder: '$(Build.SourcesDirectory)/artifacts/test-results'
         - pwsh: dotnet reportgenerator -reports:"artifacts\coverage\*.xml" -targetdir:"artifacts\reports" -reporttypes:Cobertura -title:SharpGen
+          condition: eq(variables['Config'], 'Debug')
           displayName: 'Merge coverage reports'
         - task: PublishCodeCoverageResults@1
+          condition: eq(variables['Config'], 'Debug')
           displayName: 'Publish code coverage results'
           inputs:
             summaryFileLocation: '$(Build.SourcesDirectory)/artifacts/reports/*.xml'
