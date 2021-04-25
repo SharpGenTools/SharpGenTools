@@ -167,12 +167,7 @@ namespace SharpGen.Model
             if (newRule.FunctionDllName != null)
                 tag.FunctionDllName = RegexRename(patchRegex, element.FullName, newRule.FunctionDllName);
             if (newRule.Group != null) tag.Group = newRule.Group;
-            if (newRule.ParameterAttribute != null && element is CppParameter param)
-            {
-                param.Attribute = newRule.ParameterAttribute.Value;
-                tag.ParameterAttribute = newRule.ParameterAttribute.Value;
-            }
-
+            if (newRule.ParameterAttribute is { } paramAttributeValue) tag.ParameterAttribute = paramAttributeValue;
             if (newRule.ParameterUsedAsReturnType != null)
                 tag.ParameterUsedAsReturnType = newRule.ParameterUsedAsReturnType;
             if (newRule.Relation != null) tag.Relation = newRule.Relation;

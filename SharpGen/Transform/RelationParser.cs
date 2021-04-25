@@ -24,7 +24,7 @@ namespace SharpGen.Transform
         internal static CSharpParseOptions SharpParseOptions =>
             _sharpParseOptions ??= new CSharpParseOptions(LanguageVersion.Preview);
 
-        public static IList<MarshallableRelation> ParseRelation(string relation, Logger logger)
+        public static IReadOnlyList<MarshallableRelation> ParseRelation(string relation, Logger logger)
         {
             if (string.IsNullOrWhiteSpace(relation))
                 return null;
@@ -39,7 +39,7 @@ namespace SharpGen.Transform
             {
                 var tree = SyntaxFactory.ParseExpression(wrappedRelations, options: SharpParseOptions);
 
-                if (!(tree is ImplicitArrayCreationExpressionSyntax arrayCreationTree))
+                if (tree is not ImplicitArrayCreationExpressionSyntax arrayCreationTree)
                 {
                     logger.Error(LoggingCodes.InvalidRelation, "Relation [{0}] parse failed: internal expression wrapping error. Ignoring.", relation);
                     return null;
@@ -152,12 +152,12 @@ namespace SharpGen.Transform
 
         private static ParseResult ParseSingleRelation(ExpressionSyntax item)
         {
-            if (!(item is InvocationExpressionSyntax invocationExpression))
+            if (item is not InvocationExpressionSyntax invocationExpression)
                 return new ParseResult(ParseResult.ParseIssue.RelationInvocationExpected, item.Span);
 
             var functionNameExpression = invocationExpression.Expression;
 
-            if (!(functionNameExpression is IdentifierNameSyntax functionIdentifier))
+            if (functionNameExpression is not IdentifierNameSyntax functionIdentifier)
                 return new ParseResult(
                     ParseResult.ParseIssue.SimpleIdentifierAsFunctionNameExpected,
                     functionNameExpression.Span

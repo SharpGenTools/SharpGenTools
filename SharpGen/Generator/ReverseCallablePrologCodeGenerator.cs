@@ -97,7 +97,6 @@ namespace SharpGen.Generator
         private IEnumerable<StatementSyntax> GenerateNativeByRefProlog(CsMarshalCallableBase publicElement, ExpressionSyntax nativeParameter)
         {
             var marshaller = generators.Marshalling.GetMarshaller(publicElement);
-            var localByRef = publicElement.IsRef || publicElement.IsOut;
             ExpressionSyntax refToNativeExpression = InvocationExpression(
                 MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
@@ -115,7 +114,7 @@ namespace SharpGen.Generator
 
             var publicType = ParseTypeName(publicElement.PublicType.QualifiedName);
 
-            if (localByRef)
+            if (publicElement.IsLocalByRef)
             {
                 if (!marshaller.GeneratesMarshalVariable(publicElement))
                 {

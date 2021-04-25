@@ -3,6 +3,7 @@ using SharpGen.CppModel;
 using SharpGen.Logging;
 using SharpGen.Model;
 using System;
+using System.Diagnostics;
 using System.Linq;
 
 namespace SharpGen.Transform
@@ -51,8 +52,7 @@ namespace SharpGen.Transform
                     publicType = csMarshallable.HasPointer || csMarshallable.IsArray
                                      ? TypeRegistry.String
                                      : charType;
-                    if (csMarshallable.IsArray)
-                        marshalType = charType;
+                    marshalType = csMarshallable.IsArray ? charType : null;
                 }
 
                 switch (publicTypeName)
@@ -68,57 +68,56 @@ namespace SharpGen.Transform
 
                     default:
                         // Try to get a declared type
-                        publicType = typeRegistry.FindBoundType(publicTypeName);
-                        if (publicType == null)
+                        if (!typeRegistry.FindBoundType(publicTypeName, out var boundType))
                         {
                             logger.Fatal("Unknown type found [{0}]", publicTypeName);
+                            return;
                         }
+
+                        publicType = boundType.CSharpType;
 
                         // By default, use the underlying native type as the marshal type
                         // if it differs from the public type.
                         marshalType = typeRegistry.FindBoundType(marshallable.TypeName);
                         if (publicType == marshalType)
-                        {
                             marshalType = null;
-                        }
 
                         // Otherwise, get the registered marshal type if one exists
-                        marshalType ??= typeRegistry.FindBoundMarshalType(publicTypeName);
-
-                        switch (publicType)
-                        {
-                            case CsStruct csStruct:
-                            {
-                                if (!csStruct.IsFullyMapped)
-                                    // If a structure was not already parsed, then parse it before going further
-                                    RequestStructProcessing?.Invoke(csStruct);
-
-                                if (!csStruct.IsFullyMapped)
-                                    // No one tried to map the struct so we can't continue.
-                                    logger.Fatal(
-                                        $"No struct processor processed {csStruct.QualifiedName}. Cannot continue processing"
-                                    );
-
-                                if (csStruct.HasMarshalType && !csMarshallable.HasPointer)
-                                    // If referenced structure has a specialized marshalling, then use the structure's built-in marshalling 
-                                    marshalType = publicType;
-
-                                break;
-                            }
-                            case CsEnum:
-                                // enums don't need a marshal type. They can always marshal as their underlying type.
-                                marshalType = null;
-                                break;
-                        }
+                        marshalType ??= boundType.MarshalType;
 
                         break;
                 }
             }
 
-            if (publicType.IsWellKnownType(globalNamespace, WellKnownName.PointerSize))
+            switch (publicType)
             {
-                marshalType = PointerType(mappingRule);
+                case CsStruct csStruct:
+                {
+                    if (!csStruct.IsFullyMapped)
+                        // If a structure was not already parsed, then parse it before going further
+                        RequestStructProcessing?.Invoke(csStruct);
+
+                    if (!csStruct.IsFullyMapped)
+                        // No one tried to map the struct so we can't continue.
+                        logger.Fatal(
+                            $"No struct processor processed {csStruct.QualifiedName}. Cannot continue processing"
+                        );
+
+                    if (csStruct.HasMarshalType && !csMarshallable.HasPointer)
+                        // If referenced structure has a specialized marshalling, then use the structure's built-in marshalling 
+                        marshalType = publicType;
+
+                    break;
+                }
+
+                case CsEnum:
+                    // enums don't need a marshal type. They can always marshal as their underlying type.
+                    marshalType = null;
+                    break;
             }
+
+            if (publicType.IsWellKnownType(globalNamespace, WellKnownName.PointerSize))
+                marshalType = PointerType(mappingRule);
 
             // Present void* elements as IntPtr. Marshal strings as IntPtr
             if (csMarshallable.HasPointer)
@@ -187,19 +186,22 @@ namespace SharpGen.Transform
             CsParameter param = new(cppParameter, name);
             CreateCore(param);
 
-            var cppAttribute = cppParameter.Attribute;
             var paramRule = cppParameter.Rule;
+            var cppAttribute = cppParameter.Attribute;
+            if (paramRule.ParameterAttribute is { } paramAttributeValue)
+                cppAttribute = paramAttributeValue;
 
-            var isOptional = (cppAttribute & ParamAttribute.Optional) != 0;
+            // Parameters without any annotations are considered as In
+            if (cppAttribute == ParamAttribute.None)
+                cppAttribute = ParamAttribute.In;
+
+            static bool HasFlag(ParamAttribute value, ParamAttribute flag) => (value & flag) == flag;
 
             var publicType = param.PublicType;
             var marshalType = param.MarshalType;
 
             var parameterAttribute = CsParameterAttribute.In;
             var numIndirections = cppParameter.Pointer?.Count(p => p is '*' or '&') ?? 0;
-
-            if ((cppAttribute & ParamAttribute.Buffer) != 0)
-                param.IsArray = true;
 
             if (param.IsArray)
                 param.HasPointer = true;
@@ -214,24 +216,19 @@ namespace SharpGen.Transform
                 // --------------------------------------------------------------------------------
                 if (publicType is CsInterface)
                 {
-                    // Force Interface** to be ParamAttribute.Out when None
-                    if (cppAttribute is ParamAttribute.In or ParamAttribute.None)
-                    {
-                        if (numIndirections == 2)
-                        {
-                            cppAttribute = ParamAttribute.Out;
-                        }
-                    }
+                    // Force Interface** to be ParamAttribute.Out
+                    if (cppAttribute == ParamAttribute.In && numIndirections == 2)
+                        cppAttribute = ParamAttribute.Out;
 
-                    if ((cppAttribute & ParamAttribute.In) != 0 || (cppAttribute & ParamAttribute.InOut) != 0)
+                    if (HasFlag(cppAttribute, ParamAttribute.In) || HasFlag(cppAttribute, ParamAttribute.InOut))
                     {
                         parameterAttribute = CsParameterAttribute.In;
 
                         // Force all array of interface to support null
-                        if (param.IsArray) 
-                            isOptional = true;
+                        if (param.IsArray)
+                            param.IsOptional = true;
                     }
-                    else if ((cppAttribute & ParamAttribute.Out) != 0)
+                    else if (HasFlag(cppAttribute, ParamAttribute.Out))
                     {
                         parameterAttribute = CsParameterAttribute.Out;
                     }
@@ -247,17 +244,16 @@ namespace SharpGen.Transform
                 }
                 else
                 {
-                    if ((cppAttribute & ParamAttribute.In) != 0)
+                    if (HasFlag(cppAttribute, ParamAttribute.In))
                     {
-                        var fundamentalType = publicType as CsFundamentalType;
-                        parameterAttribute = (fundamentalType?.IsPointerSize ?? false)
+                        parameterAttribute = publicType is CsFundamentalType {IsPointerSize: true}
                                           || publicType.IsWellKnownType(globalNamespace, WellKnownName.FunctionCallback)
                                                  ? CsParameterAttribute.In
                                                  : CsParameterAttribute.RefIn;
                     }
-                    else if ((cppAttribute & ParamAttribute.InOut) != 0)
+                    else if (HasFlag(cppAttribute, ParamAttribute.InOut))
                     {
-                        if (isOptional)
+                        if (param.IsOptional)
                         {
                             publicType = marshalType = PointerType(paramRule);
                             parameterAttribute = CsParameterAttribute.In;
@@ -267,12 +263,14 @@ namespace SharpGen.Transform
                             parameterAttribute = CsParameterAttribute.Ref;
                         }
                     }
-                    else if ((cppAttribute & ParamAttribute.Out) != 0)
+                    else if (HasFlag(cppAttribute, ParamAttribute.Out))
+                    {
                         parameterAttribute = CsParameterAttribute.Out;
+                    }
 
                     // Handle void* with Buffer attribute
                     var isUntypedPointer = publicType is CsFundamentalType {IsUntypedPointer: true};
-                    if (isUntypedPointer && (cppAttribute & ParamAttribute.Buffer) != 0)
+                    if (isUntypedPointer && HasFlag(cppAttribute, ParamAttribute.Buffer))
                     {
                         param.IsArray = false;
                         parameterAttribute = CsParameterAttribute.In;
@@ -285,7 +283,7 @@ namespace SharpGen.Transform
                         param.IsArray = false;
                     }
                     else if (publicType is CsFundamentalType {IsString: true} &&
-                             (cppAttribute & ParamAttribute.Out) != 0)
+                             HasFlag(cppAttribute, ParamAttribute.Out))
                     {
                         publicType = TypeRegistry.IntPtr;
                         parameterAttribute = CsParameterAttribute.In;
@@ -297,16 +295,16 @@ namespace SharpGen.Transform
             param.Attribute = parameterAttribute;
             param.PublicType = publicType ?? throw new ArgumentException("Public type cannot be null");
             param.MarshalType = marshalType;
-            param.OptionalParameter = isOptional;
 
             // Force IsString to be only string (due to Buffer attribute)
             if (param.IsString)
                 param.IsArray = false;
 
-            if (param.Relations?.OfType<StructSizeRelation>().Any() ?? false)
-            {
-                logger.Error(LoggingCodes.InvalidRelation, $"Parameter [{cppParameter}] marked with a struct-size relationship");
-            }
+            if (param.Relations.OfType<StructSizeRelation>().Any())
+                logger.Error(
+                    LoggingCodes.InvalidRelation,
+                    $"Parameter [{cppParameter}] marked with a struct-size relationship"
+                );
 
             return param;
         }

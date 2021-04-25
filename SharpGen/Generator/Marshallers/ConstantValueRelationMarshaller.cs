@@ -14,9 +14,7 @@ namespace SharpGen.Generator.Marshallers
 
         public StatementSyntax GenerateManagedToNative(CsMarshalBase publicElement, CsMarshalBase relatedElement)
         {
-            var relation = relatedElement.Relations?.OfType<ConstantValueRelation>().Single();
-
-            if (relation is null) return null;
+            var relation = relatedElement.Relations.OfType<ConstantValueRelation>().Single();
 
             return ExpressionStatement(
                 AssignmentExpression(

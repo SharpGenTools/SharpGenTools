@@ -50,7 +50,7 @@ namespace SharpGen.Generator.Marshallers
 
         public FixedStatementSyntax GeneratePin(CsParameter csElement)
         {
-            if (csElement.IsFixed && !csElement.IsUsedAsReturnType)
+            if (csElement.IsFixed && !csElement.UsedAsReturn)
             {
                 return FixedStatement(
                     VariableDeclaration(

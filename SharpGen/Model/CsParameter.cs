@@ -35,9 +35,7 @@ namespace SharpGen.Model
 
         public bool HasParams { get; }
 
-        private bool IsFast { get; }
-
-        public override bool IsFastOut => IsFast && IsOut;
+        public bool IsFast { get; }
 
         public override bool IsFixed
         {
@@ -57,7 +55,7 @@ namespace SharpGen.Model
 
         public bool IsInInterfaceArrayLike => IsArray && PublicType is CsInterface {IsCallback: false} && !IsOut;
 
-        public override bool IsOptional => OptionalParameter;
+        public bool IsOptional { get; internal set; }
 
         /// <summary>
         /// Parameter is an Out parameter and passed by pointer.
@@ -67,12 +65,12 @@ namespace SharpGen.Model
         /// <summary>
         /// Parameter is an In/Out parameter and passed by pointer.
         /// </summary>
-        public override bool IsRef => Attribute == CsParameterAttribute.Ref;
+        public bool IsRef => Attribute == CsParameterAttribute.Ref;
 
         /// <summary>
         /// Parameter is an In parameter and passed by pointer.
         /// </summary>
-        public override bool IsRefIn => Attribute == CsParameterAttribute.RefIn;
+        public bool IsRefIn => Attribute == CsParameterAttribute.RefIn;
 
         private bool RefInPassedByValue => IsRefIn && IsValueType && !IsArray
                                         && (PublicType.Size <= SizeOfLimit && !HasNativeValueType || ForcePassByValue);
@@ -80,13 +78,12 @@ namespace SharpGen.Model
         public bool PassedByManagedReference => (IsRef || IsRefIn)
                                              && !(PassedByNullableInstance || RefInPassedByValue) && !IsStructClass;
 
-        public override bool PassedByNativeReference => IsRefIn || IsRef || IsOut;
+        public bool PassedByNullableInstance => IsRefIn && IsValueType && !IsArray && IsOptional;
+        public bool IsNullableStruct => PassedByNullableInstance && !IsStructClass;
+        public override bool PassedByNativeReference => !IsIn;
+        public override bool IsLocalByRef => IsRef || IsOut;
 
-        public bool IsUsedAsReturnType { get; }
-
-        public override bool UsedAsReturn => IsUsedAsReturnType;
-
-        public bool OptionalParameter { get; set; }
+        public override bool UsedAsReturn { get; }
 
         public CsParameter Clone()
         {
@@ -97,25 +94,35 @@ namespace SharpGen.Model
 
         public CsParameter(CppParameter cppParameter, string name) : base(cppParameter, name)
         {
-            if (cppParameter != null)
-                HasParams = (cppParameter.Attribute & ParamAttribute.Params) == ParamAttribute.Params;
+            if (cppParameter == null)
+                return;
 
-            var paramRule = cppParameter?.Rule;
+            var paramAttribute = cppParameter.Attribute;
+            var paramRule = cppParameter.Rule;
+            var attribute = paramRule.ParameterAttribute;
 
-            IsUsedAsReturnType = paramRule?.ParameterUsedAsReturnType ?? IsUsedAsReturnType;
-            DefaultValue = paramRule?.DefaultValue ?? DefaultValue;
+            UsedAsReturn = paramRule.ParameterUsedAsReturnType ?? UsedAsReturn;
+            DefaultValue = paramRule.DefaultValue ?? DefaultValue;
 
-            if (paramRule?.ParameterAttribute is { } attribute)
-            {
-                if ((attribute & ParamAttribute.Fast) != 0)
-                    IsFast = true;
+            if (HaveFlag(paramAttribute, attribute, ParamAttribute.Buffer))
+                IsArray = true;
 
-                if ((attribute & ParamAttribute.Value) != 0)
-                    ForcePassByValue = true;
+            if (HaveFlag(paramAttribute, attribute, ParamAttribute.Fast))
+                IsFast = true;
 
-                if ((attribute & ParamAttribute.Params) == ParamAttribute.Params)
-                    HasParams = true;
-            }
+            if (HaveFlag(paramAttribute, attribute, ParamAttribute.Value))
+                ForcePassByValue = true;
+
+            if (HaveFlag(paramAttribute, attribute, ParamAttribute.Params))
+                HasParams = true;
+
+            if (HaveFlag(paramAttribute, attribute, ParamAttribute.Optional))
+                IsOptional = true;
+
+            static bool HasFlag(ParamAttribute value, ParamAttribute flag) => (value & flag) == flag;
+
+            static bool HaveFlag(ParamAttribute value1, ParamAttribute? valueOptional, ParamAttribute flag) =>
+                HasFlag(value1, flag) || valueOptional is { } value2 && HasFlag(value2, flag);
         }
     }
 }

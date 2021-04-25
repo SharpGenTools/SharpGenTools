@@ -23,30 +23,28 @@ namespace SharpGen.Generator.Marshallers
 
         public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame)
         {
-            if (csElement is CsField)
+            ExpressionSyntax value = csElement switch
             {
-                return ExpressionStatement(
-                    AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                    GetMarshalStorageLocation(csElement),
-                    IdentifierName(csElement.IntermediateMarshalName)));
-            }
-            else
-            {
-                return ExpressionStatement(
-                    AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                        GetMarshalStorageLocation(csElement),
-                        CastExpression(
-                            GetMarshalTypeSyntax(csElement),
-                            ParenthesizedExpression(
-                                ConditionalExpression(
-                                    IdentifierName(csElement.Name),
-                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(1)),
-                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))
-                                )
-                            )
+                CsField => IdentifierName(csElement.IntermediateMarshalName),
+                _ => CastExpression(
+                    GetMarshalTypeSyntax(csElement),
+                    ParenthesizedExpression(
+                        ConditionalExpression(
+                            IdentifierName(csElement.Name),
+                            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(1)),
+                            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))
                         )
-                    ));
-            }
+                    )
+                )
+            };
+
+            return ExpressionStatement(
+                AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    GetMarshalStorageLocation(csElement),
+                    value
+                )
+            );
         }
 
         public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)

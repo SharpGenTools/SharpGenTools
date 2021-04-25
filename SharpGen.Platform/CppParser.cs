@@ -300,10 +300,6 @@ namespace SharpGen.Platform
 
                 ParseAnnotations(parameter, cppParameter);
 
-                // All parameters without any annotations are considerate as In
-                if (cppParameter.Attribute == ParamAttribute.None)
-                    cppParameter.Attribute = ParamAttribute.In;
-
                 Logger.PushContext("Parameter:[{0}]", cppParameter.Name);
 
                 ResolveAndFillType(parameter.AttributeValue("type"), cppParameter);

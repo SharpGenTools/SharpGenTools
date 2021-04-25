@@ -44,7 +44,26 @@ namespace SharpGen.Model
         public IReadOnlyList<CsParameter> Parameters => _parameters.GetList(this);
 
         public IEnumerable<CsParameter> PublicParameters => _parameters.Enumerate(this)
-           .Where(param => !param.IsUsedAsReturnType && (param.Relations?.Count ?? 0) == 0);
+           .Where(param => !param.UsedAsReturn && param.Relations.Count == 0);
+
+        public IEnumerable<CsParameter> InRefInRefParameters => _parameters.Enumerate(this)
+           .Where(param => !param.IsOut);
+
+        public IEnumerable<CsParameter> RefOutParameters => _parameters.Enumerate(this)
+           .Where(param => param.IsLocalByRef);
+
+        public CsMarshalCallableBase ActualReturnValue
+        {
+            get
+            {
+                foreach (var param in _parameters.Enumerate(this).Where(param => param.UsedAsReturn))
+                {
+                    return param;
+                }
+
+                return ReturnValue;
+            }
+        }
 
         public override void FillDocItems(IList<string> docItems, IDocumentationLinker manager)
         {
@@ -101,7 +120,7 @@ namespace SharpGen.Model
         /// <summary>
         /// Returns true if a parameter is marked to be used as the return type.
         /// </summary>
-        public bool HasReturnTypeParameter => Parameters.Any(param => param.IsUsedAsReturnType);
+        public bool HasReturnTypeParameter => _parameters.Enumerate(this).Any(param => param.UsedAsReturn);
 
         /// <summary>
         /// Return the Public return type. If a out parameter is used as a public return type
@@ -109,45 +128,25 @@ namespace SharpGen.Model
         /// </summary>
         public string GetPublicReturnTypeQualifiedName(GlobalNamespaceProvider globalNamespace)
         {
-            foreach (var param in Parameters.Where(param => param.IsUsedAsReturnType))
-            {
-                return param.PublicType.QualifiedName;
-            }
+            var returnValue = ActualReturnValue;
+            if (returnValue is CsParameter)
+                return returnValue.PublicType.QualifiedName;
 
             if (IsReturnTypeHidden(globalNamespace) && !ForceReturnType)
                 return "void";
 
-            return ReturnValue.PublicType.QualifiedName;
+            return returnValue.PublicType.QualifiedName;
         }
 
         /// <summary>
         /// Returns the documentation for the return type
         /// </summary>
-        protected string GetReturnTypeDoc(IDocumentationLinker linker)
-        {
-            foreach (var param in Parameters.Where(param => param.IsUsedAsReturnType))
-            {
-                return linker.GetSingleDoc(param);
-            }
-
-            return linker.GetSingleDoc(ReturnValue);
-        }
+        protected string GetReturnTypeDoc(IDocumentationLinker linker) => linker.GetSingleDoc(ActualReturnValue);
 
         /// <summary>
         /// Return the name of the variable used to return the value
         /// </summary>
-        public string ReturnName
-        {
-            get
-            {
-                foreach (var param in Parameters.Where(param => param.IsUsedAsReturnType))
-                {
-                    return param.Name;
-                }
-
-                return ReturnValue.Name;
-            }
-        }
+        public string ReturnName => ActualReturnValue.Name;
 
         private protected override IEnumerable<IExpiring> ExpiringOnItemsChange
         {

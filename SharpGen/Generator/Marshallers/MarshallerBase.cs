@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -37,8 +36,8 @@ namespace SharpGen.Generator.Marshallers
         protected static TypeSyntax VoidPtrType { get; } = PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword)));
 
         private static bool IsNullable(CsMarshalBase marshallable) =>
-            marshallable.IsOptional && (marshallable.IsArray || marshallable.IsInterface ||
-                                        marshallable.IsNullableStruct || marshallable.IsStructClass);
+            marshallable is CsParameter {IsOptional: true} param &&
+            (param.IsArray || param.IsInterface || param.IsNullableStruct || param.IsStructClass);
 
         protected static StatementSyntax GenerateNullCheckIfNeeded(CsMarshalBase marshallable,
                                                                    StatementSyntax statement) =>
@@ -68,9 +67,9 @@ namespace SharpGen.Generator.Marshallers
                 )
                 : expression;
 
-        protected StatementSyntax LoopThroughArrayParameter(
+        protected static StatementSyntax LoopThroughArrayParameter(
             CsMarshalBase marshallable,
-            Func<ExpressionSyntax, ExpressionSyntax, StatementSyntax> loopBodyFactory,
+            Func<ElementAccessExpressionSyntax, ElementAccessExpressionSyntax, StatementSyntax> loopBodyFactory,
             string variableName = "i")
         {
             var element = ElementAccessExpression(
@@ -115,13 +114,13 @@ namespace SharpGen.Generator.Marshallers
                                                              IdentifierName(variableName)))));
         }
 
-        protected StatementSyntax CreateMarshalStructStatement(
+        protected static StatementSyntax CreateMarshalStructStatement(
             CsMarshalBase marshallable,
             StructMarshalMethod marshalMethod,
             ExpressionSyntax publicElementExpr,
             ExpressionSyntax marshalElementExpr)
         {
-            var statements = new List<StatementSyntax>();
+            StatementSyntaxList statements = new();
 
             if (marshallable.IsStructClass && marshalMethod == StructMarshalMethod.From)
             {
@@ -163,7 +162,7 @@ namespace SharpGen.Generator.Marshallers
                                                                                             .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword))))))));
             }
 
-            return statements.Count == 1 ? statements[0] : Block(statements);
+            return statements.ToStatement();
         }
 
         protected static ExpressionStatementSyntax CreateMarshalCustomNewStatement(CsMarshalBase csElement, ExpressionSyntax marshalElement)
@@ -233,23 +232,27 @@ namespace SharpGen.Generator.Marshallers
                                         ))));
         }
 
-        protected internal static SyntaxToken GetMarshalStorageLocationIdentifier(CsMarshalBase marshallable) =>
+        protected internal static SyntaxToken GetMarshalStorageLocationIdentifier(CsMarshalCallableBase marshallable) =>
             marshallable switch
             {
                 CsParameter => Identifier($"{marshallable.Name}_"),
-                CsField => throw new ArgumentException(
-                               "Marshal storage location for a field cannot be represented by a token.",
-                               nameof(marshallable)
-                           ),
                 CsReturnValue => Identifier(CsReturnValue.MarshalStorageLocation),
+                _ => throw new ArgumentException(nameof(marshallable))
+            };
+
+        protected internal static SyntaxToken GetRefLocationIdentifier(CsMarshalCallableBase marshallable) =>
+            marshallable switch
+            {
+                CsParameter => Identifier($"{marshallable.Name}_ref_"),
+                CsReturnValue => throw new Exception("Return values as ref locals are not supported"),
                 _ => throw new ArgumentException(nameof(marshallable))
             };
 
         protected internal static ExpressionSyntax GetMarshalStorageLocation(CsMarshalBase marshallable) =>
             marshallable switch
             {
-                CsParameter => IdentifierName(GetMarshalStorageLocationIdentifier(marshallable)),
-                CsReturnValue => IdentifierName(GetMarshalStorageLocationIdentifier(marshallable)),
+                CsParameter parameter => IdentifierName(GetMarshalStorageLocationIdentifier(parameter)),
+                CsReturnValue returnValue => IdentifierName(GetMarshalStorageLocationIdentifier(returnValue)),
                 CsField => MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression, IdentifierName("@ref"),
                     IdentifierName(marshallable.Name)
@@ -263,12 +266,12 @@ namespace SharpGen.Generator.Marshallers
         {
             var interfaceType = (CsInterface)csElement.PublicType;
 
-            if (csElement.IsFastOut)
+            if (csElement is CsParameter {IsFast: true, IsOut: true})
             {
                 return ExpressionStatement(
                         AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                             MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                ParenthesizedExpression(publicElement),
+                                publicElement,
                                 IdentifierName("NativePointer")),
                             marshalElement));
             }
@@ -325,9 +328,6 @@ namespace SharpGen.Generator.Marshallers
                     null
                 )
             );
-
-        protected static StatementSyntax NotImplemented(string message) =>
-            ThrowException("System.NotImplementedException", message);
 
         protected static StatementSyntax NotSupported(string message) =>
             ThrowException("System.NotSupportedException", message);
@@ -393,19 +393,10 @@ namespace SharpGen.Generator.Marshallers
 
             var callable = (CsCallable) csElement.Parent;
 
-            bool MatchPredicate(CsParameter param)
-            {
-                var relations = param.Relations;
+            bool RelationPredicate(LengthRelation relation) => relation.Identifier == csElement.CppElementName;
+            bool MatchPredicate(CsParameter param) => param.Relations.OfType<LengthRelation>().Any(RelationPredicate);
 
-                if (relations is null) return false;
-
-                return relations.OfType<LengthRelation>()
-                    .Any(relation => relation.Identifier == csElement.CppElementName);
-            }
-
-            var lengthParam = callable.Parameters
-                .Where(MatchPredicate)
-                .ToArray();
+            var lengthParam = callable.Parameters.Where(MatchPredicate).ToArray();
 
             return lengthParam.Length switch
             {

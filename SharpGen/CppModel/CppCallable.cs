@@ -28,7 +28,7 @@ namespace SharpGen.CppModel
         {
             var builder = new StringBuilder();
             builder.Append(ReturnValue);
-            builder.Append(" ");
+            builder.Append(' ');
             if (Parent is CppInterface)
             {
                 builder.Append(Parent.Name);
@@ -36,7 +36,7 @@ namespace SharpGen.CppModel
             }
 
             builder.Append(Name);
-            builder.Append("(");
+            builder.Append('(');
 
             uint i = 0;
             foreach (var cppParameter in Parameters)
@@ -50,7 +50,7 @@ namespace SharpGen.CppModel
                 i++;
             }
 
-            builder.Append(")");
+            builder.Append(')');
             return builder.ToString();
         }
 

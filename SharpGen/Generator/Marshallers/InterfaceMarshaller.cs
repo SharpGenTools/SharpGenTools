@@ -19,14 +19,11 @@ namespace SharpGen.Generator.Marshallers
         {
             var arg = Argument(IdentifierName(csElement.Name));
 
-            if (csElement.IsOut && !csElement.IsFastOut)
-            {
+            if (csElement.IsOut && !csElement.IsFast)
                 return arg.WithRefOrOutKeyword(Token(SyntaxKind.OutKeyword));
-            }
-            else if (csElement.IsRef || csElement.IsRefIn)
-            {
+
+            if (csElement.IsRef || csElement.IsRefIn)
                 return arg.WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword));
-            }
 
             return arg;
         }
@@ -35,7 +32,7 @@ namespace SharpGen.Generator.Marshallers
         {
             var param = Parameter(Identifier(csElement.Name));
 
-            if (csElement.IsFastOut)
+            if (csElement.IsOut && csElement.IsFast)
             {
                 var iface = (CsInterface)csElement.PublicType;
                 param = param.WithType(ParseTypeName(iface.GetNativeImplementationOrThis().QualifiedName));

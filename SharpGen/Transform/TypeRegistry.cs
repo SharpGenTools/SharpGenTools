@@ -181,6 +181,9 @@ namespace SharpGen.Transform
         /// <param name = "marshalType">The C# marshal type</param>
         public void BindType(string cppName, CsTypeBase type, CsTypeBase marshalType = null, string source = null)
         {
+            if (cppName == null)
+                throw new ArgumentNullException(nameof(cppName));
+
             if (string.IsNullOrWhiteSpace(source))
                 source = null;
 
@@ -213,29 +216,17 @@ namespace SharpGen.Transform
         /// </summary>
         /// <param name = "cppName">Name of a c++ type</param>
         /// <returns>A C# type or null</returns>
-        public CsTypeBase FindBoundType(string cppName)
+        public CsTypeBase FindBoundType(string cppName) => FindBoundType(cppName, out var boundType)
+                                                               ? boundType.CSharpType
+                                                               : null;
+
+        public bool FindBoundType(string cppName, out BoundType boundType)
         {
-            if (cppName == null)
-                return null;
+            if (cppName != null)
+                return _mapCppNameToCSharpType.TryGetValue(cppName, out boundType);
 
-            return _mapCppNameToCSharpType.TryGetValue(cppName, out var typeMap)
-                       ? typeMap.CSharpType
-                       : null;
-        }
-
-        /// <summary>
-        ///   Finds the C# marshal type binded from a C++ typename.
-        /// </summary>
-        /// <param name = "cppName">Name of a c++ type</param>
-        /// <returns>A C# type or null</returns>
-        public CsTypeBase FindBoundMarshalType(string cppName)
-        {
-            if (cppName == null)
-                return null;
-
-            return _mapCppNameToCSharpType.TryGetValue(cppName, out var typeMap)
-                       ? typeMap.MarshalType
-                       : null;
+            boundType = null;
+            return false;
         }
 
         public IEnumerable<(string CppType, CsTypeBase CSharpType, CsTypeBase MarshalType)> GetTypeBindings()
@@ -244,9 +235,10 @@ namespace SharpGen.Transform
                    select (record.Key, record.Value.CSharpType, record.Value.MarshalType);
         }
 
-        private sealed class BoundType
+#nullable enable
+        public sealed class BoundType
         {
-            public BoundType(CsTypeBase csType, CsTypeBase marshalType, string source)
+            public BoundType(CsTypeBase csType, CsTypeBase? marshalType, string? source)
             {
                 CSharpType = csType ?? throw new ArgumentNullException(nameof(csType));
                 MarshalType = marshalType;
@@ -254,8 +246,9 @@ namespace SharpGen.Transform
             }
 
             public CsTypeBase CSharpType { get; }
-            public CsTypeBase MarshalType { get; }
-            public string Source { get; }
+            public CsTypeBase? MarshalType { get; }
+            public string? Source { get; }
         }
+#nullable restore
     }
 }

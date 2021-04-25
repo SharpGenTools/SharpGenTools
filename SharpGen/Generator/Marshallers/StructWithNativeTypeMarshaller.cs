@@ -25,7 +25,7 @@ namespace SharpGen.Generator.Marshallers
         {
             ExpressionSyntax publicElementExpression = IdentifierName(csElement.Name);
 
-            if (csElement.IsNullableStruct)
+            if (csElement is CsParameter {IsNullableStruct: true})
             {
                 publicElementExpression = MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
@@ -38,13 +38,14 @@ namespace SharpGen.Generator.Marshallers
                 publicElementExpression,
                 GetMarshalStorageLocation(csElement));
 
-            if (((CsStruct)csElement.PublicType).HasCustomNew)
+            return csElement.PublicType switch
             {
-                return Block(
+                CsStruct {HasCustomNew: true} => Block(
                     CreateMarshalCustomNewStatement(csElement, GetMarshalStorageLocation(csElement)),
-                    marshalToStatement);
-            }
-            return marshalToStatement;
+                    marshalToStatement
+                ),
+                _ => marshalToStatement
+            };
         }
 
         public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
@@ -90,7 +91,7 @@ namespace SharpGen.Generator.Marshallers
         {
             ExpressionSyntax publicElementExpression = IdentifierName(csElement.Name);
 
-            if (csElement.IsNullableStruct)
+            if (csElement is CsParameter {IsNullableStruct: true})
             {
                 publicElementExpression = MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
@@ -110,7 +111,7 @@ namespace SharpGen.Generator.Marshallers
         {
             ExpressionSyntax publicElementExpression = IdentifierName(csElement.Name);
 
-            if (csElement.IsNullableStruct)
+            if (csElement is CsParameter {IsNullableStruct: true})
             {
                 publicElementExpression = MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,

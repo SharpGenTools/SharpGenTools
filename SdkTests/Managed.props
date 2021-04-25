@@ -29,19 +29,17 @@
         <SharpGenMapping Include="Mapping.xml"/>
     </ItemGroup>
 
-<!--
-    <Target Name="SharpGenSdkTestsSetDebuggerAttach" BeforeTargets="SharpGenExecute">
+    <Target Name="SharpGenSdkTestsSetDebuggerAttach" BeforeTargets="SharpGenExecute" Condition="'$(SdkTestsDebuggerAttach)' == 'true'">
         <PropertyGroup>
             <SharpGenWaitForDebuggerAttach>true</SharpGenWaitForDebuggerAttach>
         </PropertyGroup>
     </Target>
 
-    <Target Name="SharpGenSdkTestsClearDebuggerAttach" AfterTargets="SharpGenExecute">
+    <Target Name="SharpGenSdkTestsClearDebuggerAttach" AfterTargets="SharpGenExecute" Condition="'$(SdkTestsDebuggerAttach)' == 'true'">
         <PropertyGroup>
             <SharpGenWaitForDebuggerAttach>false</SharpGenWaitForDebuggerAttach>
         </PropertyGroup>
     </Target>
--->
 
     <Target Name="SharpGenSdkTestsVerifyTFM" BeforeTargets="BeforeCompile;CoreCompile">
         <Error Text="TFM not set properly"

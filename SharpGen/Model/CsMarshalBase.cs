@@ -19,6 +19,7 @@
 // THE SOFTWARE.
 
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using SharpGen.CppModel;
 using SharpGen.Transform;
 
@@ -26,6 +27,10 @@ namespace SharpGen.Model
 {
     public abstract class CsMarshalBase : CsBase
     {
+#nullable enable
+        private IReadOnlyList<MarshallableRelation>? relations;
+#nullable restore
+
         /// <summary>
         ///   Public type used for element.
         /// </summary>
@@ -36,26 +41,26 @@ namespace SharpGen.Model
         /// </summary>
         public CsTypeBase MarshalType { get; set; }
 
+#nullable enable
         public bool HasPointer { get; protected internal set; }
         public bool IsArray { get; set; }
         public int ArrayDimensionValue { get; set; }
         public bool IsWideChar { get; set; }
 
-        public IList<MarshallableRelation> Relations { get; set; }
+        public IReadOnlyList<MarshallableRelation> Relations
+        {
+            get => relations ?? ImmutableList<MarshallableRelation>.Empty;
+            set => relations = value;
+        }
 
         public bool IsBoolToInt => MarshalType is CsFundamentalType {IsIntegerType: true}
                                 && PublicType == TypeRegistry.Boolean;
-
-        public virtual bool IsOptional => false;
-        public virtual bool IsRefIn => false;
-        public virtual bool IsFastOut => false;
 
         public int Size => MarshalType.Size * (ArrayDimensionValue > 1 ? ArrayDimensionValue : 1);
 
         public bool IsValueType =>
             PublicType is CsStruct {GenerateAsClass: false} or CsEnum or CsFundamentalType {IsValueType: true};
 
-        public bool PassedByNullableInstance => IsRefIn && IsValueType && !IsArray && IsOptional;
         public bool IsInterface => PublicType is CsInterface;
         public bool IsStructClass => PublicType is CsStruct {GenerateAsClass: true};
         public bool IsPrimitive => PublicType is CsFundamentalType {IsPrimitive: true};
@@ -63,7 +68,6 @@ namespace SharpGen.Model
         public bool HasNativeValueType => PublicType is CsStruct {HasMarshalType: true};
         public bool IsStaticMarshal => PublicType is CsStruct {IsStaticMarshal: true};
         public bool IsInterfaceArray => PublicType is CsInterfaceArray;
-        public bool IsNullableStruct => PassedByNullableInstance && !IsStructClass;
         public string IntermediateMarshalName => Name[0] == '@' ? $"_{Name.Substring(1)}" : $"_{Name}";
 
         public bool MappedToDifferentPublicType =>
@@ -71,6 +75,7 @@ namespace SharpGen.Model
             && !IsBoolToInt
             && !(MarshalType is CsFundamentalType {IsPointer: true} && HasPointer)
             && !(IsInterface && HasPointer);
+#nullable restore
 
         protected CsMarshalBase(CppElement cppElement, string name) : base(cppElement, name)
         {

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
@@ -8,6 +9,8 @@ namespace SharpGen.Generator.Marshallers
 {
     internal class BoolToIntArrayMarshaller : MarshallerBase, IMarshaller
     {
+        private static readonly SyntaxToken PtrIdentifier = Identifier("__ptr");
+
         public BoolToIntArrayMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
         {
         }
@@ -25,29 +28,25 @@ namespace SharpGen.Generator.Marshallers
             var marshalStorage = GetMarshalStorageLocation(csElement);
 
             // TODO: Reverse-callback support?
+            StatementSyntax value;
             if (singleStackFrame)
-            {
-                return GenerateNullCheckIfNeeded(
-                    csElement, EmitConvertToIntArray(marshalStorage)
-                );
-            }
+                value = EmitConvertToIntArray(marshalStorage);
             else
             {
-                return GenerateNullCheckIfNeeded(csElement,
-                                                 FixedStatement(
-                                                     VariableDeclaration(GetMarshalTypeSyntax(csElement))
-                                                        .WithVariables(
-                                                             SingletonSeparatedList(
-                                                                 VariableDeclarator(
-                                                                         Identifier("__ptr"))
-                                                                    .WithInitializer(
-                                                                         EqualsValueClause(
-                                                                             PrefixUnaryExpression(
-                                                                                 SyntaxKind.AddressOfExpression,
-                                                                                 marshalStorage))))),
-                                                     EmitConvertToIntArray(IdentifierName("__ptr"))
-                                                 ));
+                marshalStorage = PrefixUnaryExpression(SyntaxKind.AddressOfExpression, marshalStorage);
+
+                value = FixedStatement(
+                    VariableDeclaration(
+                        GetMarshalTypeSyntax(csElement),
+                        SingletonSeparatedList(
+                            VariableDeclarator(PtrIdentifier, default, EqualsValueClause(marshalStorage))
+                        )
+                    ),
+                    EmitConvertToIntArray(IdentifierName(PtrIdentifier))
+                );
             }
+
+            return GenerateNullCheckIfNeeded(csElement, value);
 
             ExpressionStatementSyntax EmitConvertToIntArray(ExpressionSyntax destination) => ExpressionStatement(
                 InvocationExpression(
@@ -128,30 +127,32 @@ namespace SharpGen.Generator.Marshallers
         public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame)
         {
             var marshalStorage = GetMarshalStorageLocation(csElement);
+
+            StatementSyntax value;
             if (singleStackFrame)
             {
-                return GenerateNullCheckIfNeeded(csElement, EmitConvertToBoolArray(marshalStorage));
+                value = EmitConvertToBoolArray(marshalStorage);
             }
             else if (csElement is CsField)
             {
-                return GenerateNullCheckIfNeeded(csElement,
-                                                 FixedStatement(
-                                                     VariableDeclaration(GetMarshalTypeSyntax(csElement))
-                                                        .WithVariables(
-                                                             SingletonSeparatedList(
-                                                                 VariableDeclarator(
-                                                                         Identifier("__ptr"))
-                                                                    .WithInitializer(
-                                                                         EqualsValueClause(
-                                                                             PrefixUnaryExpression(
-                                                                                 SyntaxKind.AddressOfExpression,
-                                                                                 marshalStorage))))),
-                                                     EmitConvertToBoolArray(IdentifierName("__ptr"))));
+                marshalStorage = PrefixUnaryExpression(SyntaxKind.AddressOfExpression, marshalStorage);
+
+                value = FixedStatement(
+                    VariableDeclaration(
+                        GetMarshalTypeSyntax(csElement),
+                        SingletonSeparatedList(
+                            VariableDeclarator(PtrIdentifier, default, EqualsValueClause(marshalStorage))
+                        )
+                    ),
+                    EmitConvertToBoolArray(IdentifierName(PtrIdentifier))
+                );
             }
             else // Reverse-callbacks
             {
-                return GenerateNullCheckIfNeeded(csElement, EmitConvertToBoolArray(marshalStorage));
+                value = EmitConvertToBoolArray(marshalStorage);
             }
+
+            return GenerateNullCheckIfNeeded(csElement, value);
 
             ExpressionStatementSyntax EmitConvertToBoolArray(ExpressionSyntax storage) => ExpressionStatement(
                 InvocationExpression(

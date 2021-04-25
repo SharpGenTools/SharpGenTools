@@ -14,6 +14,7 @@
 
   <bindings>
     <bind from="RESULT" to="SharpGen.Runtime.Result" />
+    <bind from="SHARPGEN_RUNTIME_SEEKORIGIN" to="System.IO.SeekOrigin" />
   </bindings>
 
   <mapping>
@@ -40,6 +41,21 @@
     <!-- Issue #67 -->
     <map interface="FastOutInterface" callback="true" callback-dual="true" autogen-shadow="true" />
     <map param="FastOutInterfaceTest::out" attribute="fast out" />
+
+    <map interface="IStream" callback-visibility="public" callback="true" callback-dual="true" callback-name="ComStream" autogen-shadow="true" />
+    <map param="IStream::QueryInterface::ppvObject" attribute="out" />
+    <map param="IStream::Seek::dwOrigin" type="SHARPGEN_RUNTIME_SEEKORIGIN"/>
+    <map param="IStream::Seek::plibNewPosition" return="true" attribute="out optional"/>
+    <map param="IStream::CopyTo::pcbRead" attribute="out" return="true"/>
+    <map param="IStream::CopyTo::pcbWritten" attribute="out"/>
+    <map method="IStream::Stat" name="GetStatistics" />
+    <map param="IStream::Stat::pstatstg" attribute="out" return="true"/>
+    <map param="IStream::Clone::ppstm" attribute="out" return="true"/>
+    <map param="IStream::Read::pv" attribute="out buffer"/>
+    <map param="IStream::Read::pcbRead" attribute="out optional" return="true"/>
+    <map param="IStream::Write::pv" attribute="in buffer"/>
+    <map param="IStream::Write::pcbWritten" attribute="out optional" return="true"/>
+    <map method="IStream::.*" keep-implement-public="true"/>
   </mapping>
 
   <depends>SharpGen.Runtime</depends>

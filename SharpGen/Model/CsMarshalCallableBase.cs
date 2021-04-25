@@ -4,11 +4,11 @@ namespace SharpGen.Model
 {
     public abstract class CsMarshalCallableBase : CsMarshalBase
     {
-        public virtual bool UsedAsReturn => false;
-        public virtual bool IsRef => false;
-        public virtual bool IsOut => false;
-        public virtual bool IsFixed => false;
-        public virtual bool PassedByNativeReference => false;
+        public abstract bool UsedAsReturn { get; }
+        public abstract bool IsOut { get; }
+        public abstract bool IsFixed { get; }
+        public abstract bool IsLocalByRef { get; }
+        public abstract bool PassedByNativeReference { get; }
 
         protected CsMarshalCallableBase(CppMarshallable cppElement, string name) : base(cppElement, name)
         {

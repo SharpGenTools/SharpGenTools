@@ -170,7 +170,7 @@ namespace SharpGen.Transform
                                 || csField.HasNativeValueType
                                 || csField.IsArray;
 
-                            if ((csField.Relations?.Count ?? 0) != 0)
+                            if (csField.Relations.Count != 0)
                                 hasMarshalType = true;
 
                             // BoolToInt doesn't generate native Marshaling although they have a different marshaller

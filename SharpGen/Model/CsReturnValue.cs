@@ -11,9 +11,9 @@ namespace SharpGen.Model
         public static string MarshalStorageLocation => "__result__native";
 
         public override bool IsOut => true;
-
+        public override bool IsFixed => false;
+        public override bool IsLocalByRef => true;
         public override bool UsedAsReturn => true;
-
         public override bool PassedByNativeReference => true;
     }
 }

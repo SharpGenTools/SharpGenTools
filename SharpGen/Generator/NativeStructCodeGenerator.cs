@@ -142,7 +142,7 @@ namespace SharpGen.Generator
         {
             IEnumerable<StatementSyntax> FieldMarshallers(CsField field)
             {
-                if ((field.Relations?.Count ?? 0) == 0)
+                if (field.Relations.Count == 0)
                 {
                     yield return generators.Marshalling.GetMarshaller(field).GenerateManagedToNative(field, false);
                     yield break;
@@ -189,10 +189,9 @@ namespace SharpGen.Generator
             "__MarshalFrom",
             Block(
                 csStruct.Fields
-                        .Where(field => (field.Relations?.Count ?? 0) == 0)
-                        .Select(field =>
-                                    generators.Marshalling.GetMarshaller(field)
-                                              .GenerateNativeToManaged(field, false))
+                        .Where(field => field.Relations.Count == 0)
+                        .Select(field => generators.Marshalling.GetMarshaller(field)
+                                                   .GenerateNativeToManaged(field, false))
                         .Where(statement => statement != null)
             )
         );

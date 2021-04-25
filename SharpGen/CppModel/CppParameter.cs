@@ -26,8 +26,17 @@ namespace SharpGen.CppModel
     {
         public ParamAttribute Attribute { get; set; }
 
-        [ExcludeFromCodeCoverage]
-        public override string ToString() => "[" + Attribute + "] " + base.ToString();
+        public override string ToString()
+        {
+            var attribute = Rule.ParameterAttribute switch
+            {
+                { } paramAttributeValue => paramAttributeValue,
+                _ => Attribute
+            };
+            if (attribute == ParamAttribute.None)
+                attribute = ParamAttribute.In;
+            return "[" + attribute + "] " + base.ToString();
+        }
 
         public CppParameter(string name) : base(name)
         {

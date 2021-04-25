@@ -14,7 +14,7 @@ namespace SharpGen.Generator.Marshallers
         }
 
         public bool CanMarshal(CsMarshalBase csElement) =>
-            csElement.PassedByNullableInstance && !csElement.HasNativeValueType;
+            csElement is CsParameter {PassedByNullableInstance: true, HasNativeValueType: false};
 
         public ArgumentSyntax GenerateManagedArgument(CsParameter csElement) =>
             GenerateManagedValueTypeArgument(csElement);

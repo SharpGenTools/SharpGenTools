@@ -81,7 +81,7 @@ namespace SharpGen.Generator.Marshallers
             FixedArrayToUnmanaged,
         }
 
-        private StatementSyntax GenerateCopyBlock(CsMarshalBase parameter, CopyBlockDirection direction)
+        private static StatementSyntax GenerateCopyBlock(CsMarshalCallableBase parameter, CopyBlockDirection direction)
         {
             var arrayIdentifier = IdentifierName(parameter.Name);
             var pointerIdentifier = GetMarshalStorageLocationIdentifier(parameter);

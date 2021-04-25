@@ -111,3 +111,54 @@ struct PassThroughMethodTest {
 };
 
 extern "C" __declspec(dllexport) PassThroughMethodTest* GetPassThroughMethodTest();
+
+#define HRESULT unsigned int
+#define STDMETHODCALLTYPE __stdcall
+#define LARGE_INTEGER long long
+#define ULARGE_INTEGER unsigned long long
+#define ULONG unsigned long
+#define REFIID void*
+#define STATSTG void
+#define DWORD unsigned int
+struct IStream {
+    virtual HRESULT STDMETHODCALLTYPE QueryInterface(
+        /* [in] */ REFIID riid,
+        /* [iid_is][out] */ void * *ppvObject) = 0;
+    virtual ULONG STDMETHODCALLTYPE AddRef(void) = 0;
+    virtual ULONG STDMETHODCALLTYPE Release(void) = 0;
+    virtual /* [local] */ HRESULT STDMETHODCALLTYPE Read(
+        /* [annotation] */ void *pv,
+        /* [annotation][in] */ ULONG cb,
+        /* [annotation] */ ULONG *pcbRead) = 0;
+    virtual /* [local] */ HRESULT STDMETHODCALLTYPE Write(
+        /* [annotation] */ const void *pv,
+        /* [annotation][in] */ ULONG cb,
+        /* [annotation] */ ULONG *pcbWritten) = 0;
+    virtual /* [local] */ HRESULT STDMETHODCALLTYPE Seek(
+        /* [in] */ LARGE_INTEGER dlibMove,
+        /* [in] */ DWORD dwOrigin,
+        /* [annotation] */ ULARGE_INTEGER *plibNewPosition) = 0;
+    virtual HRESULT STDMETHODCALLTYPE SetSize(
+        /* [in] */ ULARGE_INTEGER libNewSize) = 0;
+    virtual /* [local] */ HRESULT STDMETHODCALLTYPE CopyTo(
+        /* [annotation][unique][in] */ IStream *pstm,
+        /* [in] */ ULARGE_INTEGER cb,
+        /* [annotation] */ ULARGE_INTEGER *pcbRead,
+        /* [annotation] */ ULARGE_INTEGER *pcbWritten) = 0;
+    virtual HRESULT STDMETHODCALLTYPE Commit(
+        /* [in] */ DWORD grfCommitFlags) = 0;
+    virtual HRESULT STDMETHODCALLTYPE Revert(void) = 0;
+    virtual HRESULT STDMETHODCALLTYPE LockRegion(
+        /* [in] */ ULARGE_INTEGER libOffset,
+        /* [in] */ ULARGE_INTEGER cb,
+        /* [in] */ DWORD dwLockType) = 0;
+    virtual HRESULT STDMETHODCALLTYPE UnlockRegion(
+        /* [in] */ ULARGE_INTEGER libOffset,
+        /* [in] */ ULARGE_INTEGER cb,
+        /* [in] */ DWORD dwLockType) = 0;
+    virtual HRESULT STDMETHODCALLTYPE Stat(
+        /* [out] */ STATSTG *pstatstg,
+        /* [in] */ DWORD grfStatFlag) = 0;
+    virtual HRESULT STDMETHODCALLTYPE Clone(
+        /* [out] */ IStream **ppstm) = 0;
+};

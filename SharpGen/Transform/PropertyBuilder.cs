@@ -85,16 +85,16 @@ namespace SharpGen.Transform
         private bool ValidateSetter(CsMethod setter)
         {
             if (setter == null)
-            {
                 return true;
-            }
 
-            return (setter.IsReturnTypeResult(globalNamespace) || !setter.HasReturnType)
-                && setter.Parameters.Count == 1
-                && (setter.Parameters[0].IsRefIn
-                    || setter.Parameters[0].IsIn
-                    || setter.Parameters[0].IsRef)
-                && !setter.Parameters[0].IsArray;
+            if (!setter.IsReturnTypeResult(globalNamespace) && setter.HasReturnType)
+                return false;
+
+            if (setter.Parameters.Count != 1)
+                return false;
+
+            var parameter = setter.Parameters[0];
+            return !parameter.IsOut && !parameter.IsArray;
         }
         
         private static (string PropertyName, PropertyMethod? PropertyMethod) GetPropertySpec(CsMethod csMethod)
