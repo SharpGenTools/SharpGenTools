@@ -4,7 +4,7 @@ namespace SharpGen.Transform
 {
     public class DocumentationLinker : IDocumentationLinker
     {
-        private readonly Dictionary<string, string> _docToCSharp = new Dictionary<string, string>();
+        private readonly Dictionary<string, string> _docToCSharp = new();
 
         public void AddOrUpdateDocLink(string cppName, string cSharpName)
         {

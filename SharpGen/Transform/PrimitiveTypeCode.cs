@@ -17,7 +17,6 @@ namespace SharpGen.Transform
         Char,
         Decimal,
         String,
-        Object,
         IntPtr,
         UIntPtr
     }

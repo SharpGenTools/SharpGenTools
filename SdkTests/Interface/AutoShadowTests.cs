@@ -163,6 +163,17 @@ namespace Interface
             }
         }
 
+        [Fact]
+        public void ValueTypeArrayReverseMarshalling()
+        {
+            using (SetupTests(false, out var nativeView, out _))
+            {
+                var array = new int[] {1,2,3,4,5};
+
+                Assert.Equal(15, nativeView.ArrayRelationSum(array));
+            }
+        }
+
         class ExceptionEnabledManagedImplementation : ManagedImplementation, IExceptionCallback
         {
             public void RaiseException(Exception e)

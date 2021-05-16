@@ -89,7 +89,8 @@ namespace SharpGen.Parser
             catch (Exception e)
             {
                 Logger.LogRawMessage(
-                    LogLevel.Warning, null, "Visual Studio installation discovery has thrown an exception", e
+                    LogLevel.Warning, LoggingCodes.VisualStudioDiscoveryError,
+                    "Visual Studio installation discovery has thrown an exception", e
                 );
             }
 

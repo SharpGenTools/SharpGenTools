@@ -18,7 +18,7 @@ namespace SharpGen.Transform
             ExternalCommentsDocuments = externalCommentsDocuments;
         }
 
-        public Dictionary<string, XmlDocument> ExternalCommentsDocuments { get; }
+        private Dictionary<string, XmlDocument> ExternalCommentsDocuments { get; }
 
         public string GetDocumentWithExternalComments(CsBase element)
         {

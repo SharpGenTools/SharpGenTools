@@ -61,6 +61,14 @@ namespace SharpGen.Logging
 
         public const string ExtensionRelativePath = "SG0028";
 
+        public const string UnknownArrayDimension = "SG0029";
+
+        public const string InvalidLengthRelation = "SG0030";
+
+        public const string ParserDiagnosticDumpIoError = "SG0031";
+
+        public const string VisualStudioDiscoveryError = "SG0032";
+
         public const string CastXmlError = "CX0001";
 
         public const string CastXmlWarning = "CX0002";

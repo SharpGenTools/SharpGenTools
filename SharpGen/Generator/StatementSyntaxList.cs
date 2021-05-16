@@ -53,6 +53,9 @@ namespace SharpGen.Generator
         public void AddRange<T>(IEnumerable<T> source, Func<T, StatementSyntax> transform) =>
             AddRange(source.Select(transform));
 
+        public void AddRange<T>(IEnumerable<T> source, Func<T, IEnumerable<StatementSyntax>> transform) =>
+            AddRange(source.SelectMany(transform));
+
         public BlockSyntax ToBlock()
         {
             var statement = ToStatement();

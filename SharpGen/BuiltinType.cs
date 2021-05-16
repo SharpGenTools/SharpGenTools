@@ -4,6 +4,7 @@ namespace SharpGen
     {
         Marshal,
         Math,
-        Unsafe
+        Unsafe,
+        Span,
     }
 }

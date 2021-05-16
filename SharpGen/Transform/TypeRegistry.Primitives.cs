@@ -70,10 +70,6 @@ namespace SharpGen.Transform
             typeof(string), new PrimitiveTypeIdentity(PrimitiveTypeCode.String), "string"
         );
 
-        public static readonly CsFundamentalType Object = new(
-            typeof(object), new PrimitiveTypeIdentity(PrimitiveTypeCode.Object), "object"
-        );
-
         public static readonly CsFundamentalType IntPtr = new(
             typeof(IntPtr), new PrimitiveTypeIdentity(PrimitiveTypeCode.IntPtr), "System.IntPtr"
         );
@@ -102,7 +98,6 @@ namespace SharpGen.Transform
                 [Char.PrimitiveTypeIdentity.Value] = Char,
                 [Decimal.PrimitiveTypeIdentity.Value] = Decimal,
                 [String.PrimitiveTypeIdentity.Value] = String,
-                [Object.PrimitiveTypeIdentity.Value] = Object,
                 [IntPtr.PrimitiveTypeIdentity.Value] = IntPtr,
                 [UIntPtr.PrimitiveTypeIdentity.Value] = UIntPtr,
                 // ReSharper restore PossibleInvalidOperationException
@@ -126,7 +121,6 @@ namespace SharpGen.Transform
             ["char"] = Char,
             ["decimal"] = Decimal,
             ["string"] = String,
-            ["object"] = Object,
             ["IntPtr"] = IntPtr,
             ["UIntPtr"] = UIntPtr,
             ["System.IntPtr"] = IntPtr,
@@ -150,7 +144,6 @@ namespace SharpGen.Transform
             [PrimitiveTypeCode.Char] = typeof(char),
             [PrimitiveTypeCode.Decimal] = typeof(decimal),
             [PrimitiveTypeCode.String] = typeof(string),
-            [PrimitiveTypeCode.Object] = typeof(object),
             [PrimitiveTypeCode.IntPtr] = typeof(IntPtr),
             [PrimitiveTypeCode.UIntPtr] = typeof(UIntPtr),
         };

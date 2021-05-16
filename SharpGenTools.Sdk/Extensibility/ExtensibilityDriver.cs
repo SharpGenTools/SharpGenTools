@@ -19,7 +19,7 @@ using SharpGenTools.Sdk.Internal.Roslyn;
 
 namespace SharpGenTools.Sdk.Extensibility
 {
-    internal class ExtensibilityDriver
+    internal sealed class ExtensibilityDriver
     {
         private readonly HashSet<ExtensionReference> extensionReferences = new();
         private ImmutableHashSet<ExtensionReference>? extensionsImmutable;
