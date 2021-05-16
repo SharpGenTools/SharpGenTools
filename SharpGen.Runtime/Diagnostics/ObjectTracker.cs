@@ -21,7 +21,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
 using System.Text;
 using System.Threading;
 
@@ -53,9 +52,9 @@ namespace SharpGen.Runtime.Diagnostics
     /// </summary>
     public static class ObjectTracker
     {
-        private static Dictionary<IntPtr, List<ObjectReference>> processGlobalObjectReferences;
+        private static Dictionary<IntPtr, List<ObjectReference>> _processGlobalObjectReferences;
 
-        private static readonly ThreadLocal<Dictionary<IntPtr, List<ObjectReference>>> threadStaticObjectReferences = new ThreadLocal<Dictionary<IntPtr, List<ObjectReference>>>();
+        private static readonly ThreadLocal<Dictionary<IntPtr, List<ObjectReference>>> ThreadStaticObjectReferences = new(static () => new Dictionary<IntPtr, List<ObjectReference>>(), false);
 
         /// <summary>
         /// Occurs when a CppObject is tracked.
@@ -72,30 +71,10 @@ namespace SharpGen.Runtime.Diagnostics
         /// </summary>
         public static Func<string> StackTraceProvider { get; set; } = GetStackTrace;
 
-        private static Dictionary<IntPtr, List<ObjectReference>> ObjectReferences
-        {
-            get
-            {
-                Dictionary<IntPtr, List<ObjectReference>> objectReferences;
-
-                if (Configuration.UseThreadStaticObjectTracking)
-                {
-                    if (threadStaticObjectReferences == null)
-                        threadStaticObjectReferences.Value = new Dictionary<IntPtr, List<ObjectReference>>();
-
-                    objectReferences = threadStaticObjectReferences.Value;
-                }
-                else
-                {
-                    if (processGlobalObjectReferences == null)
-                        processGlobalObjectReferences = new Dictionary<IntPtr, List<ObjectReference>>();
-
-                    objectReferences = processGlobalObjectReferences;
-                }
-
-                return objectReferences;
-            }
-        }
+        private static Dictionary<IntPtr, List<ObjectReference>> ObjectReferences =>
+            Configuration.UseThreadStaticObjectTracking
+                ? ThreadStaticObjectReferences.Value
+                : _processGlobalObjectReferences ??= new Dictionary<IntPtr, List<ObjectReference>>();
 
         /// <summary>
         /// Gets default stack trace.
@@ -112,7 +91,7 @@ namespace SharpGen.Runtime.Diagnostics
                 return ex.StackTrace;
             }
 #else
-            return new StackTrace().ToString();
+            return new StackTrace(1).ToString();
 #endif
         }
 
@@ -122,21 +101,26 @@ namespace SharpGen.Runtime.Diagnostics
         /// <param name="cppObject">The C++ object.</param>
         public static void Track(CppObject cppObject)
         {
-            if (cppObject == null || cppObject.NativePointer == IntPtr.Zero)
+            if (cppObject == null)
                 return;
+
+            var nativePointer = cppObject.NativePointer;
+            if (nativePointer == IntPtr.Zero)
+                return;
+
             lock (ObjectReferences)
             {
-                if (!ObjectReferences.TryGetValue(cppObject.NativePointer, out List<ObjectReference> referenceList))
+                if (!ObjectReferences.TryGetValue(nativePointer, out var referenceList))
                 {
                     referenceList = new List<ObjectReference>();
-                    ObjectReferences.Add(cppObject.NativePointer, referenceList);
+                    ObjectReferences.Add(nativePointer, referenceList);
                 }
 
-                referenceList.Add(new ObjectReference(DateTime.Now, cppObject, StackTraceProvider != null ? StackTraceProvider() : String.Empty));
-
-                // Fire Tracked event.
-                OnTracked(cppObject);
+                referenceList.Add(new ObjectReference(DateTime.Now, cppObject, StackTraceProvider != null ? StackTraceProvider() : string.Empty));
             }
+
+            // Fire Tracked event.
+            OnTracked(cppObject);
         }
 
         /// <summary>
@@ -148,9 +132,8 @@ namespace SharpGen.Runtime.Diagnostics
         {
             lock (ObjectReferences)
             {
-                List<ObjectReference> referenceList;
                 // Object is already tracked
-                if (ObjectReferences.TryGetValue(objPtr, out referenceList))
+                if (ObjectReferences.TryGetValue(objPtr, out var referenceList))
                     return new List<ObjectReference>(referenceList);
             }
             return new List<ObjectReference>();
@@ -165,7 +148,7 @@ namespace SharpGen.Runtime.Diagnostics
         {
             lock (ObjectReferences)
             {
-                if (ObjectReferences.TryGetValue(cppObject.NativePointer, out List<ObjectReference> referenceList))
+                if (ObjectReferences.TryGetValue(cppObject.NativePointer, out var referenceList))
                 {
                     foreach (var objectReference in referenceList)
                     {
@@ -173,7 +156,8 @@ namespace SharpGen.Runtime.Diagnostics
                             return objectReference;
                     }
                 }
-            }            
+            }
+
             return null;
         }
 
@@ -186,11 +170,12 @@ namespace SharpGen.Runtime.Diagnostics
             if (cppObject == null || cppObject.NativePointer == IntPtr.Zero)
                 return;
 
+            bool foundTracked;
             lock (ObjectReferences)
             {
-                List<ObjectReference> referenceList;
                 // Object is already tracked
-                if (ObjectReferences.TryGetValue(cppObject.NativePointer, out referenceList))
+                foundTracked = ObjectReferences.TryGetValue(cppObject.NativePointer, out var referenceList);
+                if (foundTracked)
                 {
                     for (int i = referenceList.Count-1; i >=0; i--)
                     {
@@ -203,10 +188,13 @@ namespace SharpGen.Runtime.Diagnostics
                     // Remove empty list
                     if (referenceList.Count == 0)
                         ObjectReferences.Remove(cppObject.NativePointer);
-
-                    // Fire UnTracked event
-                    OnUnTracked(cppObject);
                 }
+            }
+
+            if (foundTracked)
+            {
+                // Fire UnTracked event
+                OnUnTracked(cppObject);
             }
         }
 
@@ -242,23 +230,19 @@ namespace SharpGen.Runtime.Diagnostics
             foreach (var findActiveObject in FindActiveObjects())
             {
                 var findActiveObjectStr = findActiveObject.ToString();
-                if (!string.IsNullOrEmpty(findActiveObjectStr))
-                {
-                    text.AppendFormat("[{0}]: {1}", count, findActiveObjectStr);
+                if (string.IsNullOrEmpty(findActiveObjectStr))
+                    continue;
 
-                    var target = findActiveObject.Object.Target;
-                    if (target != null)
-                    {
-                        var targetType = target.GetType().Name;
-                        if (!countPerType.TryGetValue(targetType, out int typeCount))
-                        {
-                            countPerType[targetType] = 0;
-                        }
-                        else
-                            countPerType[targetType] = typeCount + 1;
-                    }
-                }
-                count++;
+                text.AppendFormat("[{0}]: {1}", count++, findActiveObjectStr);
+
+                var target = findActiveObject.Object.Target;
+                if (target == null)
+                    continue;
+
+                var targetType = target.GetType().Name;
+                countPerType[targetType] = countPerType.TryGetValue(targetType, out var typeCount)
+                                               ? typeCount + 1
+                                               : 1;
             }
 
             var keys = new List<string>(countPerType.Keys);
@@ -271,6 +255,7 @@ namespace SharpGen.Runtime.Diagnostics
                 text.AppendFormat("{0} : {1}", key, countPerType[key]);
                 text.AppendLine();
             }
+
             return text.ToString();
         }
 

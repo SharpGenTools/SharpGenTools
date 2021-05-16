@@ -75,9 +75,8 @@ namespace SharpGen.Runtime.Diagnostics
         /// </returns>
         public override string ToString()
         {
-            var cppObject = Object.Target as CppObject;
-            if (cppObject == null)
-                return "";
+            if (Object.Target is not CppObject cppObject)
+                return string.Empty;
 
             var builder = new StringBuilder();
             builder.AppendFormat(CultureInfo.InvariantCulture, "Active C++ Object: [0x{0:X}] Class: [{1}] Time [{2}] Stack:\r\n{3}", cppObject.NativePointer.ToInt64(), cppObject.GetType().FullName, CreationTime, StackTrace).AppendLine();
