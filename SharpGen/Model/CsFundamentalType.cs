@@ -44,7 +44,7 @@ namespace SharpGen.Model
 
             // We need to ensure that we always return 8 (64-bit) even when running the generator on x64.
             Size = IsPointerSize ? 8 : SizeOf(type);
-            AlignmentCore = IsPointerSize ? null : GetAlignment(type);
+            AlignmentCore = IsPointerSize ? null : GetAlignment(type) ?? base.AlignmentCore;
         }
 
         internal readonly PrimitiveTypeIdentity? PrimitiveTypeIdentity;

@@ -107,6 +107,39 @@ struct ReservedRelation
 	int reserved;
 };
 
+typedef enum _MF_ATTRIBUTE_TYPE
+{
+	MF_ATTRIBUTE_UINT32		= 19,
+	MF_ATTRIBUTE_UINT64		= 21,
+	MF_ATTRIBUTE_DOUBLE		= 5,
+	MF_ATTRIBUTE_GUID		= 72,
+	MF_ATTRIBUTE_STRING		= 31,
+	MF_ATTRIBUTE_BLOB		= (0x1000 | 17),
+	MF_ATTRIBUTE_IUNKNOWN	= 13
+} MF_ATTRIBUTE_TYPE;
+
+typedef struct _GUID {
+	unsigned long  Data1;
+	unsigned short Data2;
+	unsigned short Data3;
+	unsigned char  Data4[8];
+} GUID;
+
+typedef unsigned __int64 TOPOID;
+
+typedef struct _MFTOPONODE_ATTRIBUTE_UPDATE
+{
+	TOPOID NodeId;
+	GUID guidAttributeKey;
+	MF_ATTRIBUTE_TYPE attrType;
+	union
+	{
+		unsigned int u32;
+		unsigned __int64 u64;
+		double d;
+	};
+} MFTOPONODE_ATTRIBUTE_UPDATE;
+
 typedef enum D2D1_DEVICE_CONTEXT_OPTIONS
 {
     D2D1_DEVICE_CONTEXT_OPTIONS_NONE = 0,
