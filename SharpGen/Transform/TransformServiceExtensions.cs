@@ -8,10 +8,12 @@ namespace SharpGen.Transform
 {
     public static class TransformServiceExtensions
     {
-        private static readonly Regex RegexLinkStart = new Regex(@"^\s*\{\{.*?}}\s*(.*)", RegexOptions.Compiled);
-        private static readonly Regex RegexLink = new Regex(@"\{\{(.*?)}}", RegexOptions.Compiled);
-        private static readonly Regex RegexSpaceBegin = new Regex(@"^\s*(.*)", RegexOptions.Compiled);
-        
+        private static readonly Regex RegexLinkStart = new(@"^\s*\{\{.*?}}\s*(.*)", RegexOptions.Compiled);
+        private static readonly Regex RegexLink = new(@"\{\{(.*?)}}", RegexOptions.Compiled);
+        private static readonly Regex RegexSpaceBegin = new(@"^\s*(.*)", RegexOptions.Compiled);
+        private static readonly Regex RegexWithMethodW = new("([^W])::", RegexOptions.Compiled);
+        private static readonly Regex RegexWithTypeW = new("([^W])$", RegexOptions.Compiled);
+
         public static IEnumerable<string> GetDocItems(this IDocumentationLinker aggregator, ExternalDocCommentsReader reader, CsBase element)
         {
             var docItems = new List<string>();
@@ -83,22 +85,18 @@ namespace SharpGen.Transform
             return docItems.ToString();
         }
 
-
-        private static readonly Regex regexWithMethodW = new Regex("([^W])::");
-        private static readonly Regex regexWithTypeW = new Regex("([^W])$");
-
         public static string ReplaceCRefReferences(this IDocumentationLinker linker, Match match)
         {
             var matchName = match.Groups[1].Value;
             var csName = linker.FindDocName(matchName);
 
             // Tries to match with W::
-            if (csName == null && regexWithMethodW.Match(matchName).Success)
-                csName = linker.FindDocName(regexWithMethodW.Replace(matchName, "$1W::"));
+            if (csName == null && RegexWithMethodW.Match(matchName).Success)
+                csName = linker.FindDocName(RegexWithMethodW.Replace(matchName, "$1W::"));
 
             // Or with W
-            if (csName == null && regexWithTypeW.Match(matchName).Success)
-                csName = linker.FindDocName(regexWithTypeW.Replace(matchName, "$1W"));
+            if (csName == null && RegexWithTypeW.Match(matchName).Success)
+                csName = linker.FindDocName(RegexWithTypeW.Replace(matchName, "$1W"));
 
             if (csName == null)
                 return matchName;

@@ -44,7 +44,7 @@ namespace SharpGen.UnitTests.Parsing
 
         protected CastXmlRunner GetCastXml(ConfigFile config, string[] additionalArguments = null)
         {
-            var resolver = new IncludeDirectoryResolver(Logger);
+            IncludeDirectoryResolver resolver = new(Ioc);
             resolver.Configure(config);
 
             var rootPath = new DirectoryInfo(Environment.CurrentDirectory);
@@ -54,9 +54,8 @@ namespace SharpGen.UnitTests.Parsing
             if (rootPath == null)
                 throw new InvalidOperationException("CastXML not found");
 
-            return new CastXmlRunner(Logger, resolver,
-                                     Path.Combine(rootPath.FullName, CastXmlDirectoryPath),
-                                     additionalArguments ?? Array.Empty<string>())
+            return new CastXmlRunner(resolver, Path.Combine(rootPath.FullName, CastXmlDirectoryPath),
+                                     additionalArguments ?? Array.Empty<string>(), Ioc)
             {
                 OutputPath = TestDirectory.FullName
             };
@@ -69,7 +68,7 @@ namespace SharpGen.UnitTests.Parsing
             loaded.GetFilesWithIncludesAndExtensionHeaders(out var configsWithIncludes,
                                                            out var configsWithExtensionHeaders);
 
-            var cppHeaderGenerator = new CppHeaderGenerator(Logger, TestDirectory.FullName);
+            CppHeaderGenerator cppHeaderGenerator = new(TestDirectory.FullName, Ioc);
 
             var updated = cppHeaderGenerator
                          .GenerateCppHeaders(loaded, configsWithIncludes, configsWithExtensionHeaders)
@@ -88,7 +87,7 @@ namespace SharpGen.UnitTests.Parsing
                 loaded, TestDirectory.FullName, skeleton, configsWithExtensionHeaders, updated
             );
 
-            var parser = new CppParser(Logger, loaded)
+            CppParser parser = new(loaded, Ioc)
             {
                 OutputPath = TestDirectory.FullName
             };

@@ -3,25 +3,31 @@ using SharpGen.CppModel;
 using SharpGen.Model;
 using SharpGen.Transform;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace SharpGen.UnitTests
 {
-    public class PropertyBuilderTests
+    public class PropertyBuilderTests : TestBase
     {
+        private readonly PropertyBuilder propertyBuilder;
+
+        public PropertyBuilderTests(ITestOutputHelper outputHelper) : base(outputHelper)
+        {
+            propertyBuilder = new PropertyBuilder(Ioc);
+        }
+
         [Fact]
         public void MethodWithNameStartingWithIsCreatesProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
-
             var returnType = TypeRegistry.Int32;
 
-            var isMethod = new CsMethod(null, "IsActive")
+            CsMethod isMethod = new(Ioc, null, "IsActive")
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = returnType,
                     MarshalType = returnType
-                },
+                }
             };
 
             var properties = propertyBuilder.CreateProperties(new[] { isMethod });
@@ -33,17 +39,15 @@ namespace SharpGen.UnitTests
         [Fact]
         public void MethodWithNameStartingWithGetCreatesProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
-
             var returnType = TypeRegistry.Int32;
 
-            var getMethod = new CsMethod(null, "GetActive")
+            CsMethod getMethod = new(Ioc, null, "GetActive")
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = returnType,
                     MarshalType = returnType
-                },
+                }
             };
 
             var properties = propertyBuilder.CreateProperties(new[] { getMethod });
@@ -55,19 +59,17 @@ namespace SharpGen.UnitTests
         [Fact]
         public void MethodWithNameStartingWithSetCreatesProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
-
             var paramType = TypeRegistry.Int32;
 
-            var setMethod = new CsMethod(null, "SetActive")
+            CsMethod setMethod = new(Ioc, null, "SetActive")
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = TypeRegistry.Void
                 }
             };
 
-            setMethod.Add(new CsParameter(null, null)
+            setMethod.Add(new CsParameter(Ioc, null, null)
             {
                 PublicType = paramType
             });
@@ -81,19 +83,17 @@ namespace SharpGen.UnitTests
         [Fact]
         public void MethodWithNameStartingWithSetAndReturningResultGeneratesProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
-
             var paramType = TypeRegistry.Int32;
 
-            var setMethod = new CsMethod(null, "SetActive")
+            CsMethod setMethod = new(Ioc, null, "SetActive")
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = new CsStruct(null, "SharpGen.Runtime.Result")
                 }
             };
 
-            setMethod.Add(new CsParameter(null, null)
+            setMethod.Add(new CsParameter(Ioc, null, null)
             {
                 PublicType = paramType
             });
@@ -107,19 +107,17 @@ namespace SharpGen.UnitTests
         [Fact]
         public void GetterMethodReturningStatusCodeWithOutParamGeneratesProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
-
             var paramType = TypeRegistry.Int32;
 
-            var getMethod = new CsMethod(null, "GetActive")
+            CsMethod getMethod = new(Ioc, null, "GetActive")
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = new CsStruct(null, "SharpGen.Runtime.Result")
                 }
             };
 
-            getMethod.Add(new CsParameter(null, null)
+            getMethod.Add(new CsParameter(Ioc, null, null)
             {
                 PublicType = paramType,
                 Attribute = CsParameterAttribute.Out
@@ -136,22 +134,20 @@ namespace SharpGen.UnitTests
         [Fact]
         public void GetterWithInvalidSetterDoesNotGenerateProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
-
             var returnType = TypeRegistry.Int32;
 
-            var getMethod = new CsMethod(null, "GetActive")
+            CsMethod getMethod = new(Ioc, null, "GetActive")
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = returnType,
                     MarshalType = returnType
-                },
+                }
             };
 
-            var invalidSetMethod = new CsMethod(null, "SetActive")
+            var invalidSetMethod = new CsMethod(Ioc, null, "SetActive")
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = TypeRegistry.Void
                 }
@@ -165,17 +161,15 @@ namespace SharpGen.UnitTests
         [Fact]
         public void InvalidGetterDoesNotCreateProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
-
             var returnType = TypeRegistry.Void;
 
-            var getMethod = new CsMethod(null, "GetActive")
+            CsMethod getMethod = new(Ioc, null, "GetActive")
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = returnType,
                     MarshalType = returnType
-                },
+                }
             };
 
             Assert.Empty(propertyBuilder.CreateProperties(new[] { getMethod }));
@@ -184,11 +178,9 @@ namespace SharpGen.UnitTests
         [Fact]
         public void InvalidSetterDoesNotCreateProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
-
-            var setMethod = new CsMethod(null, "SetActive")
+            CsMethod setMethod = new(Ioc, null, "SetActive")
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = TypeRegistry.Void
                 }
@@ -200,28 +192,26 @@ namespace SharpGen.UnitTests
         [Fact]
         public void GeneratePropertyIfGetterAndSetterMatch()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
-
             var paramType = TypeRegistry.Int32;
 
-            var getMethod = new CsMethod(null, "GetActive")
+            CsMethod getMethod = new(Ioc, null, "GetActive")
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = paramType,
                     MarshalType = paramType
-                },
+                }
             };
 
-            var setMethod = new CsMethod(null, "SetActive")
+            CsMethod setMethod = new(Ioc, null, "SetActive")
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = TypeRegistry.Void
                 }
             };
 
-            setMethod.Add(new CsParameter(null, null)
+            setMethod.Add(new CsParameter(Ioc, null, null)
             {
                 PublicType = paramType
             });
@@ -235,28 +225,26 @@ namespace SharpGen.UnitTests
         [Fact]
         public void DoesNotGeneratePropertyIfGetterAndSetterMismatch()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
-
             var paramType = TypeRegistry.Int32;
 
-            var getMethod = new CsMethod(null, "GetActive")
+            CsMethod getMethod = new(Ioc, null, "GetActive")
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = paramType,
                     MarshalType = paramType
-                },
+                }
             };
 
-            var setMethod = new CsMethod(null, "SetActive")
+            CsMethod setMethod = new(Ioc, null, "SetActive")
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = TypeRegistry.Void
                 }
             };
 
-            setMethod.Add(new CsParameter(null, null)
+            setMethod.Add(new CsParameter(Ioc, null, null)
             {
                 PublicType = TypeRegistry.Int16
             });
@@ -268,33 +256,31 @@ namespace SharpGen.UnitTests
         [Fact]
         public void DoesNotGeneratePropertyIfGetterAndSetterMismatch_ParameterizedGetter()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
-
             var paramType = TypeRegistry.Int32;
 
-            var getMethod = new CsMethod(null, "GetActive")
+            CsMethod getMethod = new(Ioc, null, "GetActive")
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = new CsStruct(null, "SharpGen.Runtime.Result")
                 }
             };
 
-            getMethod.Add(new CsParameter(null, null)
+            getMethod.Add(new CsParameter(Ioc, null, null)
             {
                 PublicType = paramType,
                 Attribute = CsParameterAttribute.Out
             });
 
-            var setMethod = new CsMethod(null, "SetActive")
+            CsMethod setMethod = new(Ioc, null, "SetActive")
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = TypeRegistry.Void
                 }
             };
 
-            setMethod.Add(new CsParameter(null, null)
+            setMethod.Add(new CsParameter(Ioc, null, null)
             {
                 PublicType = TypeRegistry.Int16
             });
@@ -306,37 +292,35 @@ namespace SharpGen.UnitTests
         [Fact]
         public void DoesNotGeneratePropertyIfOverloaded()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
-
             var paramType = TypeRegistry.Int32;
 
-            var getMethod = new CsMethod(null, "GetActive")
+            CsMethod getMethod = new(Ioc, null, "GetActive")
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
+                {
+                    PublicType = paramType,
+                    MarshalType = paramType
+                }
+            };
+
+            CsMethod getMethodOverload = new(Ioc, null, "GetActive")
+            {
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = paramType,
                     MarshalType = paramType
                 },
             };
 
-            var getMethodOverload = new CsMethod(null, "GetActive")
+            CsMethod setMethod = new(Ioc, null, "SetActive")
             {
-                ReturnValue = new CsReturnValue(null)
-                {
-                    PublicType = paramType,
-                    MarshalType = paramType
-                },
-            };
-
-            var setMethod = new CsMethod(null, "SetActive")
-            {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = TypeRegistry.Void
                 }
             };
 
-            setMethod.Add(new CsParameter(null, null)
+            setMethod.Add(new CsParameter(Ioc, null, null)
             {
                 PublicType = paramType
             });
@@ -358,9 +342,9 @@ namespace SharpGen.UnitTests
                 }
             };
 
-            var getMethod = new CsMethod(cppGetMethod, cppGetMethod.Name)
+            CsMethod getMethod = new(Ioc, cppGetMethod, cppGetMethod.Name)
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = paramType,
                     MarshalType = paramType
@@ -370,7 +354,7 @@ namespace SharpGen.UnitTests
             var iface = new CsInterface(null, null);
             iface.Add(getMethod);
 
-            var prop = new CsProperty(null, "Active", getMethod, null);
+            CsProperty prop = new(Ioc, null, "Active", getMethod, null);
 
             PropertyBuilder.AttachPropertyToParent(prop);
 
@@ -390,15 +374,15 @@ namespace SharpGen.UnitTests
 
             var paramType = TypeRegistry.Int32;
 
-            var setMethod = new CsMethod(cppSetMethod, cppSetMethod.Name)
+            CsMethod setMethod = new(Ioc, cppSetMethod, cppSetMethod.Name)
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = TypeRegistry.Void
                 }
             };
 
-            setMethod.Add(new CsParameter(null, null)
+            setMethod.Add(new CsParameter(Ioc, null, null)
             {
                 PublicType = paramType
             });
@@ -406,7 +390,7 @@ namespace SharpGen.UnitTests
             var iface = new CsInterface(null, null);
             iface.Add(setMethod);
 
-            var prop = new CsProperty(null, "Active", null, setMethod);
+            CsProperty prop = new(Ioc, null, "Active", null, setMethod);
 
             PropertyBuilder.AttachPropertyToParent(prop);
 
@@ -426,9 +410,9 @@ namespace SharpGen.UnitTests
 
             var paramType = TypeRegistry.Int32;
 
-            var getMethod = new CsMethod(cppGetMethod, cppGetMethod.Name)
+            CsMethod getMethod = new(Ioc, cppGetMethod, cppGetMethod.Name)
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = paramType,
                     MarshalType = paramType
@@ -438,7 +422,7 @@ namespace SharpGen.UnitTests
             var iface = new CsInterface(null, null);
             iface.Add(getMethod);
 
-            var prop = new CsProperty(null, "Active", getMethod, null);
+            CsProperty prop = new(Ioc, null, "Active", getMethod, null);
 
             PropertyBuilder.AttachPropertyToParent(prop);
 
@@ -458,15 +442,15 @@ namespace SharpGen.UnitTests
 
             var paramType = TypeRegistry.Int32;
 
-            var setMethod = new CsMethod(cppSetMethod, cppSetMethod.Name)
+            CsMethod setMethod = new(Ioc, cppSetMethod, cppSetMethod.Name)
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = TypeRegistry.Void
                 }
             };
 
-            setMethod.Add(new CsParameter(null, null)
+            setMethod.Add(new CsParameter(Ioc, null, null)
             {
                 PublicType = paramType
             });
@@ -474,7 +458,7 @@ namespace SharpGen.UnitTests
             var iface = new CsInterface(null, null);
             iface.Add(setMethod);
 
-            var prop = new CsProperty(null, "Active", null, setMethod);
+            CsProperty prop = new(Ioc, null, "Active", null, setMethod);
 
             PropertyBuilder.AttachPropertyToParent(prop);
 
@@ -495,9 +479,9 @@ namespace SharpGen.UnitTests
 
             var paramType = TypeRegistry.Int32;
 
-            var getMethod = new CsMethod(cppGetMethod, cppGetMethod.Name)
+            CsMethod getMethod = new(Ioc, cppGetMethod, cppGetMethod.Name)
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = paramType,
                     MarshalType = paramType
@@ -507,7 +491,7 @@ namespace SharpGen.UnitTests
             var iface = new CsInterface(null, null);
             iface.Add(getMethod);
 
-            var prop = new CsProperty(null, "Active", getMethod, null);
+            CsProperty prop = new(Ioc, null, "Active", getMethod, null);
 
             PropertyBuilder.AttachPropertyToParent(prop);
 
@@ -527,9 +511,9 @@ namespace SharpGen.UnitTests
 
             var paramType = TypeRegistry.Int32;
 
-            var getMethod = new CsMethod(cppGetMethod, cppGetMethod.Name)
+            CsMethod getMethod = new(Ioc, cppGetMethod, cppGetMethod.Name)
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = paramType,
                     MarshalType = paramType
@@ -539,7 +523,7 @@ namespace SharpGen.UnitTests
             var iface = new CsInterface(null, null);
             iface.Add(getMethod);
 
-            var prop = new CsProperty(null, "Active", getMethod, null);
+            CsProperty prop = new(Ioc, null, "Active", getMethod, null);
 
             PropertyBuilder.AttachPropertyToParent(prop);
 
@@ -559,15 +543,15 @@ namespace SharpGen.UnitTests
 
             var paramType = TypeRegistry.Int32;
 
-            var setMethod = new CsMethod(cppSetMethod, cppSetMethod.Name)
+            CsMethod setMethod = new(Ioc, cppSetMethod, cppSetMethod.Name)
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = TypeRegistry.Void
                 }
             };
 
-            setMethod.Add(new CsParameter(null, null)
+            setMethod.Add(new CsParameter(Ioc, null, null)
             {
                 PublicType = paramType
             });
@@ -575,7 +559,7 @@ namespace SharpGen.UnitTests
             var iface = new CsInterface(null, null);
             iface.Add(setMethod);
 
-            var prop = new CsProperty(null, "Active", null, setMethod);
+            CsProperty prop = new(Ioc, null, "Active", null, setMethod);
 
             PropertyBuilder.AttachPropertyToParent(prop);
 
@@ -585,11 +569,9 @@ namespace SharpGen.UnitTests
         [Fact]
         public void NonPropertyMethodWithNonPropertyNameShouldNotCreateProperty()
         {
-            var propertyBuilder = new PropertyBuilder(new GlobalNamespaceProvider());
-
-            var setMethod = new CsMethod(null, "MyMethod")
+            CsMethod setMethod = new(Ioc, null, "MyMethod")
             {
-                ReturnValue = new CsReturnValue(null)
+                ReturnValue = new CsReturnValue(Ioc, null)
                 {
                     PublicType = TypeRegistry.Void
                 }

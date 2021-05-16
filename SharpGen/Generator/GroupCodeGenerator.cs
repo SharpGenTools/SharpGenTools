@@ -1,35 +1,29 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.CodeAnalysis.CSharp;
+﻿using System.Collections.Generic;
 using System.Linq;
-using Microsoft.CodeAnalysis;
-using SharpGen.Transform;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Model;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    class GroupCodeGenerator : MemberCodeGeneratorBase<CsGroup>
+    internal sealed class GroupCodeGenerator : MemberCodeGeneratorBase<CsGroup>
     {
-        public GroupCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation, ExternalDocCommentsReader reader)
-            : base(documentation, reader)
-        {
-            Generators = generators;
-        }
-
-        public IGeneratorRegistry Generators { get; }
-
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsGroup csElement)
         {
-            yield return ClassDeclaration(Identifier(csElement.Name))
-                .WithModifiers(csElement.VisibilityTokenList.Add(Token(SyntaxKind.PartialKeyword)))
-                .WithMembers(
-                    List(
-                        csElement.Variables.SelectMany(var => Generators.Constant.GenerateCode(var))
-                    ).AddRange(csElement.Functions.SelectMany(func => Generators.Function.GenerateCode(func))))
-                .WithLeadingTrivia(Trivia(GenerateDocumentationTrivia(csElement)));
+            var members = csElement.Variables.SelectMany(var => Generators.Constant.GenerateCode(var));
+            members = members.Concat(csElement.Functions.SelectMany(func => Generators.Function.GenerateCode(func)));
+
+            yield return AddDocumentationTrivia(
+                ClassDeclaration(Identifier(csElement.Name))
+                   .WithModifiers(csElement.VisibilityTokenList.Add(Token(SyntaxKind.PartialKeyword)))
+                   .WithMembers(List(members)),
+                csElement
+            );
+        }
+
+        public GroupCodeGenerator(Ioc ioc) : base(ioc)
+        {
         }
     }
 }

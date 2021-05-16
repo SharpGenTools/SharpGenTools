@@ -29,12 +29,13 @@ namespace SharpGen.Model
         public CsGroup(string name) : base(null, name)
         {
             Visibility = Visibility.SharpGenGroup | Visibility.Static;
-            Description = "Functions";
         }
 
         public IEnumerable<CsFunction> Functions => Items.OfType<CsFunction>();
 
         public IEnumerable<CsVariable> Variables => Items.OfType<CsVariable>();
+
+        protected override string DefaultDescription => "Functions";
 
         [ExcludeFromCodeCoverage]
         public override string ToString() => Name;

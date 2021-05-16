@@ -7,53 +7,59 @@ using SharpGen.Model;
 
 namespace SharpGen.Generator
 {
-    public class MarshallingRegistry
+    public sealed class MarshallingRegistry
     {
-        private readonly Logger logger;
+        private readonly Ioc ioc;
 
-        public MarshallingRegistry(GlobalNamespaceProvider globalNamespace, Logger logger)
+        public MarshallingRegistry(Ioc ioc)
         {
+            this.ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
+
+            ValueTypeMarshaller valueTypeMarshaller = new(ioc);
             Marshallers = new List<IMarshaller>
             {
-                new InterfaceArrayMarshaller(globalNamespace),
-                new ArrayOfInterfaceMarshaller(globalNamespace),
-                new BoolToIntArrayMarshaller(globalNamespace),
-                new BoolToIntMarshaller(globalNamespace),
-                new EnumParameterMarshaller(globalNamespace),
-                new InterfaceMarshaller(globalNamespace),
-                new PointerSizeMarshaller(globalNamespace),
-                new StringMarshaller(globalNamespace),
-                new RemappedTypeMarshaller(globalNamespace),
-                new StructWithNativeTypeMarshaller(globalNamespace),
-                new StructWithNativeTypeArrayMarshaller(globalNamespace),
-                new NullableInstanceMarshaller(globalNamespace),
-                new BitfieldMarshaller(globalNamespace),
-                new ValueTypeArrayFieldMarshaller(globalNamespace),
-                new FallbackFieldMarshaller(globalNamespace),
-                new ValueTypeArrayMarshaller(globalNamespace),
-                new ValueTypeMarshaller(globalNamespace)
+                new InterfaceArrayMarshaller(ioc),
+                new ArrayOfInterfaceMarshaller(ioc),
+                new BoolToIntArrayMarshaller(ioc),
+                new BoolToIntMarshaller(ioc),
+                new InterfaceMarshaller(ioc),
+                new PointerSizeMarshaller(ioc),
+                new StringMarshaller(ioc),
+                new RemappedTypeMarshaller(ioc),
+                new StructWithNativeTypeMarshaller(ioc),
+                new StructWithNativeTypeArrayMarshaller(ioc),
+                new NullableInstanceMarshaller(ioc),
+                new BitfieldMarshaller(ioc),
+                new ValueTypeArrayMarshaller(ioc),
+                new FallbackFieldMarshaller(ioc),
+                valueTypeMarshaller
             };
+            RefWrappingMarshallers = Marshallers.Select(x => new RefWrapperMarshaller(ioc, x)).ToArray();
+            EnumWrappingMarshaller = new EnumParameterWrapperMarshaller(ioc, valueTypeMarshaller);
             RelationMarshallers = new Dictionary<Type, IRelationMarshaller>
             {
-                { typeof(StructSizeRelation), new StructSizeRelationMarshaller(globalNamespace) },
-                { typeof(LengthRelation), new LengthRelationMarshaller(globalNamespace) },
-                { typeof(ConstantValueRelation), new ConstantValueRelationMarshaller(globalNamespace) }
+                [typeof(StructSizeRelation)] = new StructSizeRelationMarshaller(ioc),
+                [typeof(LengthRelation)] = new LengthRelationMarshaller(ioc),
+                [typeof(ConstantValueRelation)] = new ConstantValueRelationMarshaller(ioc)
             };
-            this.logger = logger;
         }
 
         private IReadOnlyList<IMarshaller> Marshallers { get; }
+        private IReadOnlyList<WrapperMarshallerBase> RefWrappingMarshallers { get; }
+        private WrapperMarshallerBase EnumWrappingMarshaller { get; }
 
         private IReadOnlyDictionary<Type, IRelationMarshaller> RelationMarshallers { get; }
 
         public IMarshaller GetMarshaller(CsMarshalBase csElement)
         {
-            var marshaller = Marshallers.FirstOrDefault(m => m.CanMarshal(csElement));
+            var marshaller = GetMarshallers(csElement).FirstOrDefault(m => m.CanMarshal(csElement));
             if (marshaller != null)
                 return marshaller;
 
             if (csElement.PublicType is CsUndefinedType || csElement.MarshalType is CsUndefinedType)
             {
+                var logger = ioc.Logger;
+
                 logger.Error(
                     LoggingCodes.CannotMarshalUnknownType,
                     $"The element '{csElement}' has an unknown type and cannot be marshalled accurately. Maybe you used a <bind> directive and didn't use a <define> to define the type for SharpGen?"
@@ -65,6 +71,15 @@ namespace SharpGen.Generator
             }
 
             throw new InvalidOperationException($"No marshaller found for {csElement}");
+        }
+
+        private IEnumerable<IMarshaller> GetMarshallers(CsMarshalBase csElement)
+        {
+            if (RefWrapperMarshaller.IsApplicable(csElement))
+                return RefWrappingMarshallers;
+            if (EnumParameterWrapperMarshaller.IsApplicable(csElement))
+                return Marshallers.Prepend(EnumWrappingMarshaller);
+            return Marshallers;
         }
 
         public IRelationMarshaller GetRelationMarshaller(MarshallableRelation relation)

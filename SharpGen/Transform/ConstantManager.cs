@@ -1,25 +1,25 @@
-﻿using SharpGen.Config;
+﻿using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace SharpGen.Transform
 {
     public class ConstantManager
     {
-        private readonly Dictionary<string, List<CsVariable>> _mapConstantToCSharpType = new Dictionary<string, List<CsVariable>>();
+        private readonly Dictionary<string, List<CsVariable>> _mapConstantToCSharpType = new();
+        private readonly Ioc ioc;
 
-        public ConstantManager(NamingRulesManager namingRules, IDocumentationLinker linker)
+        public ConstantManager(NamingRulesManager namingRules, Ioc ioc)
         {
-            NamingRules = namingRules;
-            DocumentationLinker = linker;
+            NamingRules = namingRules ?? throw new ArgumentNullException(nameof(namingRules));
+            this.ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
         }
 
-        public NamingRulesManager NamingRules { get; }
-        public IDocumentationLinker DocumentationLinker { get; }
+        private NamingRulesManager NamingRules { get; }
+        private IDocumentationLinker DocumentationLinker => ioc.DocumentationLinker;
 
         /// <summary>
         /// Adds a list of constant gathered from macros/guids to a C# type.

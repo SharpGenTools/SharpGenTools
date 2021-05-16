@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -38,14 +39,18 @@ namespace SharpGen.Model
     {
         private ObservableCollection<CsBase> _items;
         private string _cppElementName;
+        private string description;
 
         protected CsBase(CppElement cppElement, string name)
         {
             CppElement = cppElement;
             Name = name;
 
-            var tag = cppElement?.Rule;
-            Visibility = tag?.Visibility ?? Visibility;
+            if (cppElement == null)
+                return;
+
+            var tag = cppElement.Rule;
+            Visibility = tag.Visibility ?? Visibility;
         }
 
         private void ItemsChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -66,6 +71,7 @@ namespace SharpGen.Model
                 }
             }
 
+            OnItemsChanged();
             ExpireOnItemsChange();
         }
 
@@ -76,6 +82,10 @@ namespace SharpGen.Model
 
             foreach (var itemList in ExpiringOnItemsChange)
                 itemList?.Expire();
+        }
+
+        protected virtual void OnItemsChanged()
+        {
         }
 
         /// <summary>
@@ -199,7 +209,13 @@ namespace SharpGen.Model
         /// <summary>
         /// Gets or sets the description documentation.
         /// </summary>
-        public string Description { get; set; } = "No documentation.";
+        public virtual string Description
+        {
+            get => string.IsNullOrEmpty(description) ? DefaultDescription : description;
+            set => description = value;
+        }
+
+        protected virtual string DefaultDescription => "No documentation.";
 
         /// <summary>
         /// Gets or sets the remarks documentation.

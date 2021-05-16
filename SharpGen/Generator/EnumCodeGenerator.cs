@@ -1,65 +1,59 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using SharpGen.Transform;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Model;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    class EnumCodeGenerator : MemberCodeGeneratorBase<CsEnum>
+    internal sealed class EnumCodeGenerator : MemberCodeGeneratorBase<CsEnum>
     {
-        public EnumCodeGenerator(IDocumentationLinker documentation, ExternalDocCommentsReader docReader) : base(documentation, docReader)
-        {
-        }
+        private static readonly SyntaxList<AttributeListSyntax> FlagAttributeList = SingletonList(
+            AttributeList(SingletonSeparatedList(Attribute(ParseName("System.FlagsAttribute"))))
+        );
 
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsEnum csElement)
         {
             var enumDecl = EnumDeclaration(csElement.Name);
             var underlyingType = ParseTypeName(csElement.UnderlyingType.Name);
-            enumDecl = enumDecl.WithModifiers(csElement.VisibilityTokenList)
-                .WithBaseList(
-                    BaseList().
-                        WithTypes(SingletonSeparatedList<BaseTypeSyntax>
-                (
-                    SimpleBaseType(underlyingType)
-                )))
-                .AddMembers(csElement.EnumItems.Select(item =>
-                {
-                    var itemDecl = EnumMemberDeclaration(item.Name);
+            enumDecl = enumDecl
+                      .WithModifiers(csElement.VisibilityTokenList)
+                      .WithBaseList(BaseList(SingletonSeparatedList<BaseTypeSyntax>(SimpleBaseType(underlyingType))))
+                      .AddMembers(
+                           csElement.EnumItems
+                                    .Select(item =>
+                                     {
+                                         var itemDecl = EnumMemberDeclaration(item.Name);
 
-                    if (!string.IsNullOrEmpty(item.Value))
-                    {
-                        itemDecl = itemDecl.WithEqualsValue(
-                        EqualsValueClause(
-                            CheckedExpression(
-                                SyntaxKind.UncheckedExpression,
-                                CastExpression(
-                                    underlyingType,
-                                    ParenthesizedExpression(
-                                        LiteralExpression(
-                                            SyntaxKind.NumericLiteralExpression,
-                                            Literal(int.Parse(item.Value))))))));
-                    }
-                    return itemDecl
-                        .WithLeadingTrivia(Trivia(GenerateDocumentationTrivia(item)));
-                }).ToArray()).WithLeadingTrivia(Trivia(GenerateDocumentationTrivia(csElement)));
+                                         if (!string.IsNullOrEmpty(item.Value))
+                                         {
+                                             itemDecl = itemDecl.WithEqualsValue(
+                                                 EqualsValueClause(
+                                                     CheckedExpression(
+                                                         SyntaxKind.UncheckedExpression,
+                                                         CastExpression(
+                                                             underlyingType,
+                                                             LiteralExpression(
+                                                                 SyntaxKind.NumericLiteralExpression,
+                                                                 Literal(int.Parse(item.Value))
+                                                             )))));
+                                         }
+
+                                         return AddDocumentationTrivia(itemDecl, item);
+                                     })
+                                    .ToArray()
+                       );
 
             if (csElement.IsFlag)
-            {
-                enumDecl = enumDecl.WithAttributeLists(SingletonList(
-                    AttributeList(SingletonSeparatedList
-                    (
-                        Attribute(ParseName("System.FlagsAttribute"))
-                    ))
-                ));
-            }
+                enumDecl = enumDecl.WithAttributeLists(FlagAttributeList);
 
-            yield return enumDecl;
+            yield return AddDocumentationTrivia(enumDecl, csElement);
+        }
+
+        public EnumCodeGenerator(Ioc ioc) : base(ioc)
+        {
         }
     }
 }

@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Text;
 
 namespace SharpGen.CppModel
@@ -27,11 +28,37 @@ namespace SharpGen.CppModel
     /// </summary>
     public abstract class CppMarshallable : CppElement
     {
-        public string TypeName { get; set; }
-        public string Pointer { get; set; }
+#nullable enable
+        private string? typeName;
+        private string? arrayDimension;
+
+        public string TypeName
+        {
+            get => (Rule.OverrideNativeType == true ? Rule.MappingType : typeName)
+                ?? throw new InvalidOperationException(
+                       $"{nameof(CppMarshallable)} is expected to have {nameof(TypeName)}"
+                   );
+            set => typeName = value;
+        }
+
+        public string Pointer
+        {
+            get => Rule.Pointer ?? string.Empty;
+            set => Rule.Pointer = value;
+        }
+
         public bool Const { get; set; }
-        public bool IsArray { get; set; }
-        public string ArrayDimension { get; set; }
+        public bool IsArray => ArrayDimension != null;
+
+        public string? ArrayDimension
+        {
+            get => Rule.TypeArrayDimension switch
+            {
+                { } arrayDimensionValue => arrayDimensionValue,
+                _ => arrayDimension
+            };
+            set => arrayDimension = value;
+        }
 
         public override string ToString()
         {
@@ -65,6 +92,7 @@ namespace SharpGen.CppModel
                 return !string.IsNullOrEmpty(pointer) && (pointer.Contains("*") || pointer.Contains("&"));
             }
         }
+#nullable restore
 
         protected CppMarshallable(string name) : base(name)
         {

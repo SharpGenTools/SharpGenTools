@@ -4,7 +4,7 @@ namespace SharpGen.Model
 {
     public sealed class CsReturnValue : CsMarshalCallableBase
     {
-        public CsReturnValue(CppReturnValue cppReturnValue) : base(cppReturnValue, "__result__")
+        public CsReturnValue(Ioc ioc, CppReturnValue cppReturnValue) : base(ioc, cppReturnValue, "__result__")
         {
         }
 
@@ -12,7 +12,7 @@ namespace SharpGen.Model
 
         public override bool IsOut => true;
         public override bool IsFixed => false;
-        public override bool IsLocalByRef => true;
+        public override bool IsLocalManagedReference => true;
         public override bool UsedAsReturn => true;
         public override bool PassedByNativeReference => true;
     }

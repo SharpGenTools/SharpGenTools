@@ -7,12 +7,8 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    internal class InterfaceMarshaller : MarshallerBase, IMarshaller
+    internal sealed class InterfaceMarshaller : MarshallerBase, IMarshaller
     {
-        public InterfaceMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
-        {
-        }
-
         public bool CanMarshal(CsMarshalBase csElement) => csElement.IsInterface && !csElement.IsArray;
 
         public ArgumentSyntax GenerateManagedArgument(CsParameter csElement)
@@ -31,15 +27,15 @@ namespace SharpGen.Generator.Marshallers
         public ParameterSyntax GenerateManagedParameter(CsParameter csElement)
         {
             var param = Parameter(Identifier(csElement.Name));
+            TypeSyntax type;
 
             if (csElement.IsOut && csElement.IsFast)
             {
-                var iface = (CsInterface)csElement.PublicType;
-                param = param.WithType(ParseTypeName(iface.GetNativeImplementationOrThis().QualifiedName));
+                type = ParseTypeName(csElement.PublicType.GetNativeImplementationQualifiedName());
             }
             else
             {
-                param = param.WithType(ParseTypeName(csElement.PublicType.QualifiedName));
+                type = ParseTypeName(csElement.PublicType.QualifiedName);
 
                 if (csElement.IsOut)
                 {
@@ -51,14 +47,34 @@ namespace SharpGen.Generator.Marshallers
                 }
             }
 
-            return param;
+            return param.WithType(type);
         }
 
         public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame) =>
-            MarshalInterfaceInstanceToNative(
-                csElement,
-                IdentifierName(csElement.Name),
-                GetMarshalStorageLocation(csElement)
+            ExpressionStatement(
+                AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    GetMarshalStorageLocation(csElement),
+                    InvocationExpression(
+                        MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            GlobalNamespace.GetTypeNameSyntax(WellKnownName.MarshallingHelpers),
+                            GenericName(Identifier("ToCallbackPtr"))
+                               .WithTypeArgumentList(
+                                    TypeArgumentList(
+                                        SingletonSeparatedList<TypeSyntax>(
+                                            IdentifierName(csElement.PublicType.QualifiedName)
+                                        )
+                                    )
+                                )
+                        ),
+                        ArgumentList(
+                            SingletonSeparatedList(
+                                Argument(IdentifierName(csElement.Name))
+                            )
+                        )
+                    )
+                )
             );
 
         public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
@@ -80,7 +96,7 @@ namespace SharpGen.Generator.Marshallers
         public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement) => Argument(
             csElement.IsOut
                 ? PrefixUnaryExpression(SyntaxKind.AddressOfExpression, GetMarshalStorageLocation(csElement))
-                : CastExpression(VoidPtrType, GetMarshalStorageLocation(csElement))
+                : GeneratorHelpers.CastExpression(VoidPtrType, GetMarshalStorageLocation(csElement))
         );
 
         public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame) =>
@@ -101,5 +117,9 @@ namespace SharpGen.Generator.Marshallers
         public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement) => true;
 
         public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement) => IntPtrType;
+
+        public InterfaceMarshaller(Ioc ioc) : base(ioc)
+        {
+        }
     }
 }

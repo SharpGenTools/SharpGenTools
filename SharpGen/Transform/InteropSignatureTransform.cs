@@ -23,25 +23,26 @@ namespace SharpGen.Transform
             public static implicit operator SignatureInteropTypeOverride(CsFundamentalType input) => new(input);
         }
 
-        private readonly GlobalNamespaceProvider provider;
-        private readonly Logger logger;
+        private GlobalNamespaceProvider Provider => ioc.GlobalNamespace;
+        private Logger Logger => ioc.Logger;
+
         private readonly Dictionary<string, SignatureInteropTypeOverride> returnTypeOverrides;
         private readonly Dictionary<string, SignatureInteropTypeOverride> windowsOnlyReturnTypeOverrides;
         private readonly Dictionary<string, SignatureInteropTypeOverride> systemvOnlyReturnTypeOverrides;
+        private readonly Ioc ioc;
 
-        public InteropSignatureTransform(GlobalNamespaceProvider provider, Logger logger)
+        public InteropSignatureTransform(Ioc ioc)
         {
-            this.provider = provider;
-            this.logger = logger;
+            this.ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
 
             returnTypeOverrides = new Dictionary<string, SignatureInteropTypeOverride>
             {
                 {
-                    provider.GetTypeName(WellKnownName.Result),
+                    Provider.GetTypeName(WellKnownName.Result),
                     TypeRegistry.Int32
                 },
                 {
-                    provider.GetTypeName(WellKnownName.PointerSize),
+                    Provider.GetTypeName(WellKnownName.PointerSize),
                     TypeRegistry.VoidPtr
                 }
             };
@@ -52,11 +53,11 @@ namespace SharpGen.Transform
             windowsOnlyReturnTypeOverrides = new Dictionary<string, SignatureInteropTypeOverride>
             {
                 {
-                    provider.GetTypeName(WellKnownName.NativeLong),
+                    Provider.GetTypeName(WellKnownName.NativeLong),
                     new SignatureInteropTypeOverride(TypeRegistry.Int32, castToNativeLong)
                 },
                 {
-                    provider.GetTypeName(WellKnownName.NativeULong),
+                    Provider.GetTypeName(WellKnownName.NativeULong),
                     new SignatureInteropTypeOverride(TypeRegistry.UInt32, castToNativeULong)
                 }
             };
@@ -64,11 +65,11 @@ namespace SharpGen.Transform
             systemvOnlyReturnTypeOverrides = new Dictionary<string, SignatureInteropTypeOverride>
             {
                 {
-                    provider.GetTypeName(WellKnownName.NativeLong),
+                    Provider.GetTypeName(WellKnownName.NativeLong),
                     new SignatureInteropTypeOverride(TypeRegistry.IntPtr, castToNativeLong)
                 },
                 {
-                    provider.GetTypeName(WellKnownName.NativeULong),
+                    Provider.GetTypeName(WellKnownName.NativeULong),
                     new SignatureInteropTypeOverride(TypeRegistry.UIntPtr, castToNativeULong)
                 }
             };
@@ -156,11 +157,11 @@ namespace SharpGen.Transform
         {
             foreach (var param in callable.Parameters)
             {
-                var interopType = GetInteropTypeForParameter(provider, param);
+                var interopType = GetInteropTypeForParameter(param);
 
                 if (interopType == null)
                 {
-                    logger.Error(LoggingCodes.InvalidMethodParameterType, "Invalid parameter {0} for method {1}",
+                    Logger.Error(LoggingCodes.InvalidMethodParameterType, "Invalid parameter {0} for method {1}",
                                  param.PublicType.QualifiedName, callable.CppElement);
                     continue;
                 }
@@ -181,7 +182,7 @@ namespace SharpGen.Transform
 
             if (returnType == null)
             {
-                logger.Error(LoggingCodes.InvalidMethodReturnType, "Invalid return type {0} for method {1}",
+                Logger.Error(LoggingCodes.InvalidMethodReturnType, "Invalid return type {0} for method {1}",
                              callable.ReturnValue.PublicType.QualifiedName, callable.CppElement);
                 returnType = callable.ReturnValue.PublicType.QualifiedName;
             }
@@ -232,12 +233,12 @@ namespace SharpGen.Transform
             return null;
         }
 
-        private static InteropType GetInteropTypeForParameter(GlobalNamespaceProvider nsProvider, CsParameter param)
+        private InteropType GetInteropTypeForParameter(CsParameter param)
         {
             if (param.HasPointer)
                 return TypeRegistry.VoidPtr;
 
-            if (param.PublicType.IsWellKnownType(nsProvider, WellKnownName.PointerSize))
+            if (param.PublicType.IsWellKnownType(Provider, WellKnownName.PointerSize))
                 return TypeRegistry.VoidPtr;
 
             if (param.MarshalType is CsFundamentalType marshalFundamental)

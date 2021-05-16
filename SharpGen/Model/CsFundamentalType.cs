@@ -44,12 +44,12 @@ namespace SharpGen.Model
 
             // We need to ensure that we always return 8 (64-bit) even when running the generator on x64.
             Size = IsPointerSize ? 8 : SizeOf(type);
-            Alignment = IsPointerSize ? -1 : GetAlignment(type);
+            AlignmentCore = IsPointerSize ? null : GetAlignment(type);
         }
 
         internal readonly PrimitiveTypeIdentity? PrimitiveTypeIdentity;
-        public override int Size { get; }
-        private int? Alignment { get; }
+        public override uint Size { get; }
+        protected override uint? AlignmentCore { get; }
         public bool IsValueType { get; }
         public bool IsPrimitive { get; }
         public bool IsIntPtr { get; }
@@ -60,11 +60,13 @@ namespace SharpGen.Model
         public bool IsIntegerType { get; }
         public bool IsPointerSize => IsPointer || IsString;
 
-        private static int SizeOf(Type type)
+        private static uint SizeOf(Type type)
         {
             try
             {
-                return Marshal.SizeOf(type);
+                if (type.IsEnum)
+                    type = Enum.GetUnderlyingType(type);
+                return checked((uint) Marshal.SizeOf(type));
             }
             catch (Exception)
             {
@@ -73,18 +75,9 @@ namespace SharpGen.Model
         }
 
         /// <summary>
-        /// Calculates the natural alignment of a type. -1 if it is a pointer alignment (4 on x86, 8 on x64)
+        ///     Calculates the natural alignment of a type or null if it is a pointer alignment
         /// </summary>
-        /// <returns>System.Int32.</returns>
-        public override int CalculateAlignment()
-        {
-            if (Alignment is { } alignment)
-                return alignment;
-
-            return base.CalculateAlignment();
-        }
-
-        private static int? GetAlignment(Type type)
+        private static uint? GetAlignment(Type type)
         {
             if (type == typeof(long) || type == typeof(ulong) || type == typeof(double))
                 return 8;

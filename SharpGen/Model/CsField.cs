@@ -28,14 +28,12 @@ namespace SharpGen.Model
     public class CsField : CsMarshalBase
     {
         public int BitMask { get; set; }
-
         public int BitOffset { get; set; }
-
         public bool IsBitField { get; }
+        public uint Offset { get; set; }
+        public bool IsBoolBitField => BitMask == 1;
 
-        public int Offset { get; set; }
-
-        public CsField(CppField cppElement, string name) : base(cppElement, name)
+        public CsField(Ioc ioc, CppField cppElement, string name) : base(ioc, cppElement, name)
         {
             if (cppElement == null)
                 return;

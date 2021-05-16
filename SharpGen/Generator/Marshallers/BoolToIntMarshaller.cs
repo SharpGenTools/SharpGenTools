@@ -7,12 +7,8 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    internal class BoolToIntMarshaller : MarshallerBase, IMarshaller
+    internal sealed class BoolToIntMarshaller : MarshallerBase, IMarshaller
     {
-        public BoolToIntMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
-        {
-        }
-
         public bool CanMarshal(CsMarshalBase csElement) => csElement.IsBoolToInt && !csElement.IsArray;
 
         public ArgumentSyntax GenerateManagedArgument(CsParameter csElement) =>
@@ -21,31 +17,19 @@ namespace SharpGen.Generator.Marshallers
         public ParameterSyntax GenerateManagedParameter(CsParameter csElement) =>
             GenerateManagedValueTypeParameter(csElement);
 
-        public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            ExpressionSyntax value = csElement switch
-            {
-                CsField => IdentifierName(csElement.IntermediateMarshalName),
-                _ => CastExpression(
-                    GetMarshalTypeSyntax(csElement),
-                    ParenthesizedExpression(
-                        ConditionalExpression(
-                            IdentifierName(csElement.Name),
-                            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(1)),
-                            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))
-                        )
-                    )
-                )
-            };
-
-            return ExpressionStatement(
+        public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame) =>
+            ExpressionStatement(
                 AssignmentExpression(
                     SyntaxKind.SimpleAssignmentExpression,
                     GetMarshalStorageLocation(csElement),
-                    value
+                    csElement is CsField
+                        ? IdentifierName(csElement.IntermediateMarshalName)
+                        : GeneratorHelpers.CastExpression(
+                            GetMarshalTypeSyntax(csElement),
+                            GeneratorHelpers.GenerateBoolToIntConversion(IdentifierName(csElement.Name))
+                        )
                 )
             );
-        }
 
         public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
         {
@@ -65,29 +49,20 @@ namespace SharpGen.Generator.Marshallers
 
         public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame) => null;
 
-        public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame)
-        {
-            if (csElement is CsField)
-            {
-                return ExpressionStatement(
-                    AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                    IdentifierName(csElement.IntermediateMarshalName),
-                    GetMarshalStorageLocation(csElement)));
-            }
-            else
-            {
-                return ExpressionStatement(
-                    AssignmentExpression(
+        public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame) =>
+            ExpressionStatement(
+                csElement is CsField
+                    ? AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression,
+                        IdentifierName(csElement.IntermediateMarshalName),
+                        GetMarshalStorageLocation(csElement)
+                    )
+                    : AssignmentExpression(
                         SyntaxKind.SimpleAssignmentExpression,
                         IdentifierName(csElement.Name),
-                        BinaryExpression(
-                            SyntaxKind.NotEqualsExpression,
-                            GetMarshalStorageLocation(csElement),
-                            LiteralExpression(
-                                SyntaxKind.NumericLiteralExpression,
-                                Literal(0)))));
-            }
-        }
+                        GeneratorHelpers.GenerateIntToBoolConversion(GetMarshalStorageLocation(csElement))
+                    )
+            );
 
         public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement) =>
             Enumerable.Empty<StatementSyntax>();
@@ -98,5 +73,9 @@ namespace SharpGen.Generator.Marshallers
 
         public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement) =>
             ParseTypeName(csElement.MarshalType.QualifiedName);
+
+        public BoolToIntMarshaller(Ioc ioc) : base(ioc)
+        {
+        }
     }
 }

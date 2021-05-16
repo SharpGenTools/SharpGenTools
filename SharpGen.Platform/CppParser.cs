@@ -59,17 +59,18 @@ namespace SharpGen.Platform
         private readonly Dictionary<string, XElement> _mapIdToXElement = new();
         private readonly Dictionary<string, List<XElement>> _mapFileToXElement = new();
         private readonly Dictionary<string, int> _mapIncludeToAnonymousEnumCount = new();
+        private readonly Ioc ioc;
 
-        public CppParser(Logger logger, ConfigFile configRoot)
+        public CppParser(ConfigFile configRoot, Ioc ioc)
         {
-            Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
             _configRoot = configRoot ?? throw new ArgumentNullException(nameof(configRoot));
             Initialize();
         }
 
         public string OutputPath { get; set; }
 
-        public Logger Logger { get; }
+        private Logger Logger => ioc.Logger;
 
         private void Initialize()
         {
@@ -181,7 +182,8 @@ namespace SharpGen.Platform
                 catch (Exception e)
                 {
                     Logger.LogRawMessage(
-                        LogLevel.Warning, null, "Writing GCC-XML file [{0}] failed", e, GccXmlFileName
+                        LogLevel.Warning, LoggingCodes.ParserDiagnosticDumpIoError,
+                        "Writing GCC-XML file [{0}] failed", e, GccXmlFileName
                     );
                 }
             }
@@ -1009,10 +1011,9 @@ namespace SharpGen.Platform
                         break;
                     case CastXml.TagPointerType:
                         xType = _mapIdToXElement[nextType];
-                        type.Pointer = (type.Pointer ?? "") + "*";
+                        type.Pointer += "*";
                         break;
                     case CastXml.TagArrayType:
-                        type.IsArray = true;
                         var maxArrayIndex = xType.AttributeValue("max");
                         var arrayDim = int.Parse(maxArrayIndex.TrimEnd('u')) + 1;
                         if (type.ArrayDimension == null)
@@ -1023,7 +1024,7 @@ namespace SharpGen.Platform
                         break;
                     case CastXml.TagReferenceType:
                         xType = _mapIdToXElement[nextType];
-                        type.Pointer = (type.Pointer ?? "") + "&";
+                        type.Pointer += "&";
                         break;
                     case CastXml.TagCvQualifiedType:
                         xType = _mapIdToXElement[nextType];

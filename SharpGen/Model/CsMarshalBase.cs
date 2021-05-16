@@ -18,9 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using SharpGen.CppModel;
+using SharpGen.Generator.Marshallers;
+using SharpGen.Logging;
 using SharpGen.Transform;
 
 namespace SharpGen.Model
@@ -29,23 +32,59 @@ namespace SharpGen.Model
     {
 #nullable enable
         private IReadOnlyList<MarshallableRelation>? relations;
-#nullable restore
+        private CsTypeBase? marshalType;
+        private CsTypeBase publicType;
 
         /// <summary>
         ///   Public type used for element.
         /// </summary>
-        public CsTypeBase PublicType { get; set; }
+        public CsTypeBase PublicType
+        {
+            get => publicType;
+            set => publicType = value ?? throw new ArgumentException("Public type cannot be null");
+        }
 
         /// <summary>
         ///   Internal type used for marshalling to native.
         /// </summary>
-        public CsTypeBase MarshalType { get; set; }
+        public CsTypeBase MarshalType
+        {
+            get => marshalType ?? PublicType;
+            set => marshalType = value;
+        }
 
-#nullable enable
-        public bool HasPointer { get; protected internal set; }
-        public bool IsArray { get; set; }
-        public int ArrayDimensionValue { get; set; }
+        public void SetPublicResetMarshalType(CsTypeBase type)
+        {
+            PublicType = type;
+            marshalType = null;
+        }
+
+        public virtual bool HasPointer { get; }
+
+        public ArraySpecification? ArraySpecification { get; private set; }
         public bool IsWideChar { get; set; }
+
+        public virtual bool IsArray
+        {
+            get => ArraySpecification.HasValue;
+            set
+            {
+                switch (value)
+                {
+                    case true when ArraySpecification.HasValue:
+                        return;
+                    case true:
+                        ArraySpecification = new ArraySpecification();
+                        return;
+                    case false:
+                        ArraySpecification = null;
+                        break;
+                }
+            }
+        }
+
+        public int ArrayDimensionValue => ArraySpecification is {Dimension: { } value} ? checked((int) value) : 0;
+        public uint ArrayDimensionValueUnsigned => ArraySpecification is {Dimension: { } value} ? value : 0;
 
         public IReadOnlyList<MarshallableRelation> Relations
         {
@@ -56,18 +95,30 @@ namespace SharpGen.Model
         public bool IsBoolToInt => MarshalType is CsFundamentalType {IsIntegerType: true}
                                 && PublicType == TypeRegistry.Boolean;
 
-        public int Size => MarshalType.Size * (ArrayDimensionValue > 1 ? ArrayDimensionValue : 1);
+        public uint Size => MarshalType.Size * (ArraySpecification is {Dimension: { } value} ? Math.Max(value, 1) : 1);
 
         public bool IsValueType =>
             PublicType is CsStruct {GenerateAsClass: false} or CsEnum or CsFundamentalType {IsValueType: true};
 
         public bool IsInterface => PublicType is CsInterface;
         public bool IsStructClass => PublicType is CsStruct {GenerateAsClass: true};
-        public bool IsPrimitive => PublicType is CsFundamentalType {IsPrimitive: true};
+        public bool IsPrimitive => PublicType is CsFundamentalType {IsPrimitive: true} or CsEnum;
         public bool IsString => PublicType is CsFundamentalType {IsString: true};
         public bool HasNativeValueType => PublicType is CsStruct {HasMarshalType: true};
         public bool IsStaticMarshal => PublicType is CsStruct {IsStaticMarshal: true};
         public bool IsInterfaceArray => PublicType is CsInterfaceArray;
+
+        /// <remarks>
+        /// Used in 2 cases:
+        /// <list type="number">
+        /// <item>
+        /// <description>Backing field in structs for non-trivial cases</description>
+        /// </item>
+        /// <item>
+        /// <description>Pinned Span element pointer from <see cref="ArrayMarshallerBase"/></description>
+        /// </item>
+        /// </list>
+        /// </remarks>
         public string IntermediateMarshalName => Name[0] == '@' ? $"_{Name.Substring(1)}" : $"_{Name}";
 
         public bool MappedToDifferentPublicType =>
@@ -77,32 +128,29 @@ namespace SharpGen.Model
             && !(IsInterface && HasPointer);
 #nullable restore
 
-        protected CsMarshalBase(CppElement cppElement, string name) : base(cppElement, name)
+        protected CsMarshalBase(Ioc ioc, CppElement cppElement, string name) : base(cppElement, name)
         {
             if (cppElement is CppMarshallable cppMarshallable)
             {
-                IsArray = cppMarshallable.IsArray;
                 HasPointer = cppMarshallable.HasPointer;
 
-                ArrayDimensionValue = ParseArrayDimensionValue(cppMarshallable.ArrayDimension);
-
-                // If array Dimension is 0, then it is not an array
-                if (ArrayDimensionValue == 0)
-                    IsArray = false;
+                ArraySpecification = ParseArrayDimensionValue(cppMarshallable.IsArray, cppMarshallable.ArrayDimension);
             }
 
-            int ParseArrayDimensionValue(string arrayDimension)
+            ArraySpecification? ParseArrayDimensionValue(bool isArray, string arrayDimension)
             {
+                if (!isArray || string.IsNullOrEmpty(arrayDimension))
+                    return null;
+
+                if (arrayDimension.Contains(","))
+                {
+                    ioc.Logger.Warning(null, "SharpGen might not handle multidimensional arrays properly.");
+                }
+
                 // TODO: handle multidimensional arrays
-                if (!IsArray)
-                    return 0;
-
-                if (string.IsNullOrEmpty(arrayDimension))
-                    return 0;
-
-                return int.TryParse(arrayDimension, out var arrayDimensionValue)
-                           ? arrayDimensionValue
-                           : 1;
+                return uint.TryParse(arrayDimension, out var arrayDimensionValue) && arrayDimensionValue >= 1
+                           ? new ArraySpecification(arrayDimensionValue)
+                           : null;
             }
         }
 

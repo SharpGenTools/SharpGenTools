@@ -5,42 +5,41 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    internal class LengthRelationMarshaller : MarshallerBase, IRelationMarshaller
+    internal sealed class LengthRelationMarshaller : MarshallerBase, IRelationMarshaller
     {
-        public LengthRelationMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
-        {
-        }
-
-        public StatementSyntax GenerateManagedToNative(CsMarshalBase publicElement, CsMarshalBase relatedElement)
-        {
-            return ExpressionStatement(
+        public StatementSyntax GenerateManagedToNative(CsMarshalBase publicElement, CsMarshalBase relatedElement) =>
+            ExpressionStatement(
                 AssignmentExpression(
                     SyntaxKind.SimpleAssignmentExpression,
                     IdentifierName(relatedElement.Name),
                     GenerateNullCheckIfNeeded(
                         publicElement,
-                        MemberAccessExpression(
-                            SyntaxKind.SimpleMemberAccessExpression,
-                            IdentifierName(publicElement.Name), IdentifierName("Length")
-                        ),
-                        LiteralExpression(SyntaxKind.DefaultLiteralExpression, Token(SyntaxKind.DefaultKeyword))
+                        GeneratorHelpers.LengthExpression(IdentifierName(publicElement.Name)),
+                        DefaultLiteral
                     )
                 )
             );
-        }
 
-        public StatementSyntax GenerateNativeToManaged(CsMarshalBase publicElement, CsMarshalBase relatedElement)
-        {
-            return ExpressionStatement(
-                AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+        public static StatementSyntax GenerateNativeToManaged(CsMarshalBase publicElement,
+                                                              CsMarshalBase relatedElement) => ExpressionStatement(
+            AssignmentExpression(
+                SyntaxKind.SimpleAssignmentExpression,
                 IdentifierName(publicElement.Name),
                 ObjectCreationExpression(
                     ArrayType(
                         ParseTypeName(publicElement.PublicType.QualifiedName),
                         SingletonList(
                             ArrayRankSpecifier(
-                                SingletonSeparatedList<ExpressionSyntax>(
-                                    IdentifierName(relatedElement.Name))))))));
+                                SingletonSeparatedList<ExpressionSyntax>(IdentifierName(relatedElement.Name))
+                            )
+                        )
+                    )
+                )
+            )
+        );
+
+        public LengthRelationMarshaller(Ioc ioc) : base(ioc)
+        {
         }
     }
 }

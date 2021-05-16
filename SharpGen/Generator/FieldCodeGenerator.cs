@@ -1,215 +1,149 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis;
-using SharpGen.Transform;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Model;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class FieldCodeGenerator : MemberCodeGeneratorBase<CsField>
+    internal sealed partial class FieldCodeGenerator : MemberCodeGeneratorBase<CsField>
     {
         private readonly bool explicitLayout;
 
-        public FieldCodeGenerator(IDocumentationLinker documentation, ExternalDocCommentsReader docReader, bool explicitLayout)
-            :base(documentation, docReader)
+        public FieldCodeGenerator(Ioc ioc, bool explicitLayout) : base(ioc)
         {
             this.explicitLayout = explicitLayout;
         }
 
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsField csElement)
         {
-            var docComments = Trivia(GenerateDocumentationTrivia(csElement));
             if (csElement.IsBoolToInt && !csElement.IsArray)
             {
-                yield return PropertyDeclaration(PredefinedType(Token(SyntaxKind.BoolKeyword)), csElement.Name)
-                    .WithAccessorList(
-                    AccessorList(
-                        List(
-                            new[]
-                            {
-                                AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                                    .WithExpressionBody(ArrowExpressionClause(
-                                        GenerateIntToBoolConversion(IdentifierName(csElement.IntermediateMarshalName))))
-                                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
-                                AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
-                                    .WithExpressionBody(ArrowExpressionClause(
-                                        AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                                            IdentifierName(csElement.IntermediateMarshalName),
-                                            CastExpression(
-                                                ParseTypeName(csElement.MarshalType.QualifiedName),
-                                                ParenthesizedExpression(
-                                                    GenerateBoolToIntConversion(IdentifierName("value"))
-                                        )))))
-                                    .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
-                            })))
-                    .WithModifiers(csElement.VisibilityTokenList)
-                    .WithLeadingTrivia(docComments);
-                yield return GenerateBackingField(csElement, csElement.MarshalType, explicitLayout ? csElement.Offset : null);
+                yield return GenerateBackingField(csElement, csElement.MarshalType);
+
+                yield return GenerateProperty(
+                    csElement, PredefinedType(Token(SyntaxKind.BoolKeyword)),
+                    GeneratorHelpers.GenerateIntToBoolConversion,
+                    (_, value) => GeneratorHelpers.CastExpression(
+                        ParseTypeName(csElement.MarshalType.QualifiedName),
+                        GeneratorHelpers.GenerateBoolToIntConversion(value)
+                    )
+                );
             }
             else if (csElement.IsArray && !csElement.IsString)
             {
                 var elementType = ParseTypeName(csElement.PublicType.QualifiedName);
-                yield return PropertyDeclaration(ArrayType(elementType, SingletonList(ArrayRankSpecifier())), csElement.Name)
-                    .WithAccessorList(
-                        AccessorList(
-                            List(
-                                new[]
-                                {
-                                    AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                                        .WithExpressionBody(ArrowExpressionClause(
-                                            AssignmentExpression(SyntaxKind.CoalesceAssignmentExpression,
-                                                ParseName(csElement.IntermediateMarshalName),
-                                                ObjectCreationExpression(
-                                                    ArrayType(elementType,
-                                                    SingletonList(
-                                                        ArrayRankSpecifier(
-                                                            SingletonSeparatedList<ExpressionSyntax>(
-                                                                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.ArrayDimensionValue))))
-                                            ))))))
-                                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)),
-                                    AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
-                                        .WithExpressionBody(ArrowExpressionClause(
-                                                AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                                                    ParseName(csElement.IntermediateMarshalName),
-                                                    IdentifierName("value"))))
-                                        .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
-                                        .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)))
-                                })))
-                    .WithModifiers(csElement.VisibilityTokenList)
-                    .WithLeadingTrivia(docComments);
 
-                yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : null, isArray: true);
+                yield return GenerateBackingField(csElement, csElement.PublicType, isArray: true);
+
+                yield return GenerateProperty(
+                    csElement, ArrayType(elementType, SingletonList(ArrayRankSpecifier())),
+                    value => AssignmentExpression(
+                        SyntaxKind.CoalesceAssignmentExpression,
+                        value,
+                        ObjectCreationExpression(
+                            ArrayType(
+                                elementType,
+                                SingletonList(
+                                    ArrayRankSpecifier(
+                                        SingletonSeparatedList<ExpressionSyntax>(
+                                            LiteralExpression(
+                                                SyntaxKind.NumericLiteralExpression,
+                                                Literal(csElement.ArrayDimensionValue)
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    null
+                );
             }
             else if (csElement.IsBitField)
             {
-                if (csElement.BitMask == 1)
+                PropertyValueGetTransform getterTransform;
+                PropertyValueSetTransform setterTransform;
+                TypeSyntax propertyType;
+
+                if (csElement.IsBoolBitField)
                 {
-                    yield return PropertyDeclaration(PredefinedType(Token(SyntaxKind.BoolKeyword)), csElement.Name)
-                        .WithAccessorList(
-                            AccessorList(
-                                List(
-                                    new[]
-                                    {
-                                        GenerateBitFieldGetter(csElement, GenerateIntToBoolConversion),
-                                        GenerateBitFieldSetter(csElement, GenerateBoolToIntConversion)
-                                    }
-                                    )))
-                    .WithModifiers(csElement.VisibilityTokenList)
-                    .WithLeadingTrivia(docComments);
+                    getterTransform = GeneratorHelpers.GenerateIntToBoolConversion;
+                    setterTransform = (_, value) => GeneratorHelpers.GenerateBoolToIntConversion(value);
+                    propertyType = PredefinedType(Token(SyntaxKind.BoolKeyword));
                 }
                 else
                 {
-
-                    yield return PropertyDeclaration(ParseTypeName(csElement.PublicType.QualifiedName), csElement.Name)
-                        .WithAccessorList(
-                            AccessorList(
-                                List(
-                                    new[]
-                                    {
-                                        GenerateBitFieldGetter(csElement, valueExpression => CastExpression(ParseTypeName(csElement.PublicType.QualifiedName), valueExpression)),
-                                        GenerateBitFieldSetter(csElement)
-                                    }
-                                    )))
-                    .WithModifiers(csElement.VisibilityTokenList)
-                    .WithLeadingTrivia(docComments);
+                    getterTransform = valueExpression => GeneratorHelpers.CastExpression(
+                        ParseTypeName(csElement.PublicType.QualifiedName),
+                        valueExpression
+                    );
+                    setterTransform = null;
+                    propertyType = ParseTypeName(csElement.PublicType.QualifiedName);
                 }
-                yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : null);
+
+                yield return GenerateBackingField(csElement, csElement.PublicType);
+
+                var bitMask = LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.BitMask));
+                var bitOffset = LiteralExpression(
+                    SyntaxKind.NumericLiteralExpression, Literal(csElement.BitOffset)
+                );
+
+                yield return GenerateProperty(
+                    csElement, propertyType,
+                    Compose(
+                        getterTransform,
+                        value => BinaryExpression(
+                            SyntaxKind.BitwiseAndExpression,
+                            GeneratorHelpers.WrapInParentheses(
+                                BinaryExpression(SyntaxKind.RightShiftExpression, value, bitOffset)
+                            ),
+                            bitMask
+                        )
+                    ),
+                    Compose(
+                        (oldValue, value) => GeneratorHelpers.CastExpression(
+                            ParseTypeName(csElement.PublicType.QualifiedName),
+                            BinaryExpression(
+                                SyntaxKind.BitwiseOrExpression,
+                                GeneratorHelpers.WrapInParentheses(
+                                    BinaryExpression(
+                                        SyntaxKind.BitwiseAndExpression,
+                                        oldValue,
+                                        PrefixUnaryExpression(
+                                            SyntaxKind.BitwiseNotExpression,
+                                            GeneratorHelpers.WrapInParentheses(
+                                                BinaryExpression(SyntaxKind.LeftShiftExpression, bitMask, bitOffset)
+                                            )
+                                        )
+                                    )
+                                ),
+                                GeneratorHelpers.WrapInParentheses(
+                                    BinaryExpression(
+                                        SyntaxKind.LeftShiftExpression,
+                                        GeneratorHelpers.WrapInParentheses(
+                                            BinaryExpression(SyntaxKind.BitwiseAndExpression, value, bitMask)
+                                        ),
+                                        bitOffset
+                                    )
+                                )
+                            )
+                        ),
+                        setterTransform
+                    )
+                );
             }
             else
             {
-                yield return GenerateBackingField(csElement, csElement.PublicType, explicitLayout ? csElement.Offset : null, docTrivia: docComments, propertyBacking: false);
+                yield return GenerateBackingField(
+                    csElement, csElement.PublicType, propertyBacking: false, document: true
+                );
             }
         }
 
-        private static BinaryExpressionSyntax GenerateIntToBoolConversion(ExpressionSyntax valueExpression) =>
-            BinaryExpression(
-                SyntaxKind.NotEqualsExpression,
-                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)),
-                valueExpression
-            );
-
-        private static AccessorDeclarationSyntax GenerateBitFieldGetter(CsField csElement, Func<ExpressionSyntax, ExpressionSyntax> valueTransformation = null)
-        {
-            var valueExpression = BinaryExpression(SyntaxKind.BitwiseAndExpression,
-                            ParenthesizedExpression(
-                                BinaryExpression(SyntaxKind.RightShiftExpression,
-                                    ParseName(csElement.IntermediateMarshalName),
-                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.BitOffset)))),
-                            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.BitMask)));
-
-            return AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-            .WithExpressionBody(ArrowExpressionClause(
-                valueTransformation != null
-                ? valueTransformation(ParenthesizedExpression(valueExpression))
-                : valueExpression))
-            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
-        }
-
-        private static AccessorDeclarationSyntax GenerateBitFieldSetter(CsField csElement, Func<ExpressionSyntax, ExpressionSyntax> valueTransformation = null)
-        {
-            ExpressionSyntax valueExpression = IdentifierName("value");
-
-            return AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
-                .WithExpressionBody(ArrowExpressionClause(
-                    AssignmentExpression(
-                        SyntaxKind.SimpleAssignmentExpression,
-                        MemberAccessExpression(
-                            SyntaxKind.SimpleMemberAccessExpression,
-                            ThisExpression(),
-                            IdentifierName(csElement.IntermediateMarshalName)),
-                        CastExpression(
-                            ParseTypeName(csElement.PublicType.QualifiedName),
-                            ParenthesizedExpression(
-                                BinaryExpression(
-                                    SyntaxKind.BitwiseOrExpression,
-                                    ParenthesizedExpression(
-                                        BinaryExpression(
-                                            SyntaxKind.BitwiseAndExpression,
-                                            MemberAccessExpression(
-                                                SyntaxKind.SimpleMemberAccessExpression,
-                                                ThisExpression(),
-                                                IdentifierName(csElement.IntermediateMarshalName)),
-                                            PrefixUnaryExpression(
-                                                SyntaxKind.BitwiseNotExpression,
-                                                ParenthesizedExpression(
-                                                    BinaryExpression(
-                                                        SyntaxKind.LeftShiftExpression,
-                                                        LiteralExpression(
-                                                            SyntaxKind.NumericLiteralExpression,
-                                                            Literal(csElement.BitMask)),
-                                                        LiteralExpression(
-                                                            SyntaxKind.NumericLiteralExpression,
-                                                            Literal(csElement.BitOffset))))))),
-                                    ParenthesizedExpression(
-                                        BinaryExpression(
-                                            SyntaxKind.LeftShiftExpression,
-                                            ParenthesizedExpression(
-                                                BinaryExpression(
-                                                    SyntaxKind.BitwiseAndExpression,
-                                                    valueTransformation != null ?
-                                                    ParenthesizedExpression(valueTransformation(valueExpression))
-                                                    : valueExpression,
-                                                    LiteralExpression(
-                                                        SyntaxKind.NumericLiteralExpression,
-                                                        Literal(csElement.BitMask)))),
-                                            LiteralExpression(
-                                                SyntaxKind.NumericLiteralExpression,
-                                                Literal(csElement.BitOffset))))))))))
-                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
-        }
-
-        private static ExpressionSyntax GenerateBoolToIntConversion(ExpressionSyntax valueExpression) =>
-            ConditionalExpression(
-                valueExpression,
-                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(1)),
-                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))
-            );
-
-        private static MemberDeclarationSyntax GenerateBackingField(CsField field, CsTypeBase backingType, int? offset, bool isArray = false, bool propertyBacking = true, SyntaxTrivia? docTrivia = null)
+        private MemberDeclarationSyntax GenerateBackingField(CsField field, CsTypeBase backingType,
+                                                             bool isArray = false, bool propertyBacking = true,
+                                                             bool document = false)
         {
             var elementType = ParseTypeName(backingType.QualifiedName);
 
@@ -229,19 +163,10 @@ namespace SharpGen.Generator
                         : field.VisibilityTokenList
                 );
 
-            if (offset.HasValue)
-            {
-                fieldDecl = fieldDecl.WithAttributeLists(SingletonList(
-                    AttributeList(
-                        SingletonSeparatedList(Attribute(
-                            ParseName("System.Runtime.InteropServices.FieldOffset"),
-                            AttributeArgumentList(
-                                SingletonSeparatedList(AttributeArgument(
-                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(offset.Value))))))))
-                ));
-            }
+            if (explicitLayout)
+                fieldDecl = AddFieldOffsetAttribute(fieldDecl, field.Offset);
 
-            return docTrivia is { } trivia ? fieldDecl.WithLeadingTrivia(trivia) : fieldDecl;
+            return document ? AddDocumentationTrivia(fieldDecl, field) : fieldDecl;
         }
     }
 }

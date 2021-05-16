@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -32,20 +33,16 @@ namespace SharpGen.Transform
     /// </summary>
     public class StructTransform : TransformBase<CsStruct, CppStruct>, ITransformer<CsStruct>, ITransformPreparer<CppStruct, CsStruct>
     {
+        private TypeRegistry TypeRegistry => Ioc.TypeRegistry;
         private readonly MarshalledElementFactory factory;
-        private readonly TypeRegistry typeRegistry;
         private readonly NamespaceRegistry namespaceRegistry;
 
-        public StructTransform(
-            NamingRulesManager namingRules,
-            Logger logger,
-            NamespaceRegistry namespaceRegistry,
-            TypeRegistry typeRegistry,
-            MarshalledElementFactory factory)
-            : base(namingRules, logger)
+        public StructTransform(NamingRulesManager namingRules,
+                               NamespaceRegistry namespaceRegistry,
+                               MarshalledElementFactory factory,
+                               Ioc ioc) : base(namingRules, ioc)
         {
             this.namespaceRegistry = namespaceRegistry;
-            this.typeRegistry = typeRegistry;
             this.factory = factory;
             factory.RequestStructProcessing += Process;
         }
@@ -81,7 +78,7 @@ namespace SharpGen.Transform
             nameSpace.Add(csStruct);
 
             // Map the C++ name to the C# struct
-            typeRegistry.BindType(cppStruct.Name, csStruct, source: cppStruct.ParentInclude?.Name);
+            TypeRegistry.BindType(cppStruct.Name, csStruct, source: cppStruct.ParentInclude?.Name);
             return csStruct;
         }
 
@@ -104,7 +101,6 @@ namespace SharpGen.Transform
 
             // Get the associated CppStruct and CSharpTag
             var cppStruct = (CppStruct)csStruct.CppElement;
-            bool hasMarshalType = csStruct.HasMarshalType;
 
             // If this structure need to me moved to another container, move it now
             foreach (var keyValuePair in _mapMoveStructToInner)
@@ -112,7 +108,7 @@ namespace SharpGen.Transform
                 if (keyValuePair.Key.Match(csStruct.CppElementName).Success)
                 {
                     string cppName = keyValuePair.Key.Replace(csStruct.CppElementName, keyValuePair.Value);
-                    var destSharpStruct = (CsStruct)typeRegistry.FindBoundType(cppName);
+                    var destSharpStruct = (CsStruct)TypeRegistry.FindBoundType(cppName);
                     // Remove the struct from his container
                     csStruct.Parent.Remove(csStruct);
                     // Add this struct to the new container struct
@@ -121,16 +117,15 @@ namespace SharpGen.Transform
             }
 
             // Current offset of a field
-            int currentFieldAbsoluteOffset = 0;
+            uint currentFieldAbsoluteOffset = 0;
 
             // Last field offset
             int previousFieldOffsetIndex = -1;
 
             // Size of the last field
-            int previousFieldSize = 0;
+            uint previousFieldSize = 0;
 
-            // 
-            int maxSizeOfField = 0;
+            uint maxSizeOfField = 0;
 
             bool isNonSequential = false;
 
@@ -141,7 +136,7 @@ namespace SharpGen.Transform
             while (currentStruct != null && currentStruct.Base != currentStruct.Name)
             {
                 inheritedStructs.Push(currentStruct);
-                currentStruct = typeRegistry.FindBoundType(currentStruct.Base)?.CppElement as CppStruct;
+                currentStruct = TypeRegistry.FindBoundType(currentStruct.Base)?.CppElement as CppStruct;
             }
 
             while (inheritedStructs.Count > 0)
@@ -166,17 +161,6 @@ namespace SharpGen.Transform
                             var csField = factory.Create(cppField, fieldName);
                             csStruct.Add(csField);
 
-                            var fieldHasMarshalType = csField.PublicType != csField.MarshalType
-                                || csField.HasNativeValueType
-                                || csField.IsArray;
-
-                            if (csField.Relations.Count != 0)
-                                hasMarshalType = true;
-
-                            // BoolToInt doesn't generate native Marshaling although they have a different marshaller
-                            if (fieldHasMarshalType && (!csField.IsBoolToInt || csField.IsArray))
-                                hasMarshalType = true;
-
                             // If last field has same offset, then it's a union
                             // CurrentOffset is not moved
                             if (isNonSequential && previousFieldOffsetIndex != cppField.Offset)
@@ -187,17 +171,14 @@ namespace SharpGen.Transform
                             }
 
                             currentFieldAbsoluteOffset += previousFieldSize;
-                            var fieldAlignment = (csField.MarshalType ?? csField.PublicType).CalculateAlignment();
 
-                            // If field alignment is < 0, then we have a pointer somewhere so we can't align
-                            if (fieldAlignment > 0)
+                            // If field alignment is null, then we have a pointer somewhere so we can't align
+                            if (csField.MarshalType.Alignment is { } fieldAlignment)
                             {
                                 // otherwise, align the field on the alignment requirement of the field
                                 var delta = currentFieldAbsoluteOffset % fieldAlignment;
                                 if (delta != 0)
-                                {
                                     currentFieldAbsoluteOffset += fieldAlignment - delta;
-                                }
                             }
 
                             // Get correct offset (for handling union)
@@ -205,26 +186,24 @@ namespace SharpGen.Transform
 
                             // Handle bit fields : calculate BitOffset and BitMask for this field
                             if (previousFieldOffsetIndex != cppField.Offset)
-                            {
                                 cumulatedBitOffset = 0;
-                            }
+
                             if (cppField.IsBitField)
                             {
-                                int lastCumulatedBitOffset = cumulatedBitOffset;
+                                var lastCumulatedBitOffset = cumulatedBitOffset;
                                 cumulatedBitOffset += cppField.BitOffset;
-                                csField.BitMask = ((1 << cppField.BitOffset) - 1);
+                                csField.BitMask = (1 << cppField.BitOffset) - 1;
                                 csField.BitOffset = lastCumulatedBitOffset;
                             }
 
                             var nextFieldIndex = fieldIndex + 1;
                             if (previousFieldOffsetIndex == cppField.Offset
-                             || (nextFieldIndex < fieldCount && fields[nextFieldIndex].Offset == cppField.Offset))
+                             || nextFieldIndex < fieldCount && fields[nextFieldIndex].Offset == cppField.Offset)
                             {
                                 if (previousFieldOffsetIndex != cppField.Offset)
-                                {
                                     maxSizeOfField = 0;
-                                }
-                                maxSizeOfField = csField.Size > maxSizeOfField ? csField.Size : maxSizeOfField;
+
+                                maxSizeOfField = Math.Max(csField.Size, maxSizeOfField);
                                 isNonSequential = true;
                                 csStruct.ExplicitLayout = true;
                                 previousFieldSize = 0;
@@ -244,30 +223,31 @@ namespace SharpGen.Transform
             // using pointers, we can't)
             if (!csStruct.HasCustomMarshal && csStruct.ExplicitLayout && !cppStruct.IsUnion)
             {
-                var fieldList = csStruct.Fields.ToList();
-                for(int i = 0; i < fieldList.Count; i++)
+                var fieldList = csStruct.Fields;
+                for (var i = 0; i < fieldList.Count; i++)
                 {
                     var field = fieldList[i];
-                    var fieldAlignment = (field.MarshalType ?? field.PublicType).CalculateAlignment();
+                    var fieldAlignment = field.MarshalType.Alignment;
 
-                    if(fieldAlignment < 0)
-                    {
-                        // If pointer field is not the last one, than we can't handle it
-                        if ((i + 1) < fieldList.Count)
-                        {
-                            Logger.Error(
-                                LoggingCodes.NonPortableAlignment,
-                                "The field [{0}] in structure [{1}] has pointer alignment within a structure that requires explicit layout. This situation cannot be handled on both 32-bit and 64-bit architectures. This structure needs manual layout (remove fields from definition) and write them manually in xml mapping files",
-                                field.CppElementName,
-                                csStruct.CppElementName);
-                            break;
-                        }
-                    }
+                    if (fieldAlignment.HasValue)
+                        continue;
+
+                    // If pointer field is not the last one, than we can't handle it
+                    if (i + 1 >= fieldList.Count)
+                        continue;
+
+                    Logger.Error(
+                        LoggingCodes.NonPortableAlignment,
+                        "The field [{0}] in structure [{1}] has pointer alignment within a structure that requires explicit layout. This situation cannot be handled on both 32-bit and 64-bit architectures. This structure needs manual layout (remove fields from definition) and write them manually in xml mapping files",
+                        field.CppElementName,
+                        csStruct.CppElementName
+                    );
+
+                    break;
                 }
             }
 
             csStruct.StructSize = currentFieldAbsoluteOffset + previousFieldSize;
-            csStruct.HasMarshalType = hasMarshalType;
         }
     }
 }

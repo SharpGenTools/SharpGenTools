@@ -11,20 +11,11 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class ShadowCallbackGenerator : IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax>
+    internal sealed class ShadowCallbackGenerator : CodeGeneratorBase, IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax>
     {
-        private readonly IGeneratorRegistry generators;
-        private readonly GlobalNamespaceProvider globalNamespace;
-
-        public ShadowCallbackGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
-        {
-            this.generators = generators ?? throw new ArgumentNullException(nameof(generators));
-            this.globalNamespace = globalNamespace ?? throw new ArgumentNullException(nameof(globalNamespace));
-        }
-
         public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsCallable csElement)
         {
-            foreach (var sig in csElement.InteropSignatures.Where(sig => (sig.Key & generators.Config.Platforms) != 0))
+            foreach (var sig in csElement.InteropSignatures.Where(sig => (sig.Key & Generators.Config.Platforms) != 0))
             {
                 yield return GenerateDelegateDeclaration(csElement, sig.Key, sig.Value);
                 yield return GenerateShadowCallback(csElement, sig.Key, sig.Value);
@@ -59,7 +50,7 @@ namespace SharpGen.Generator
                     (csElement is CsMethod ?
                         SingletonSeparatedList(
                             Parameter(Identifier("thisObject"))
-                            .WithType(ParseTypeName("System.IntPtr")))
+                            .WithType(GeneratorHelpers.IntPtrType))
                         : default)
                     .AddRange(
                         sig.ParameterTypes
@@ -131,7 +122,9 @@ namespace SharpGen.Generator
                     parentName,
                     SingletonSeparatedList(
                         VariableDeclarator(Identifier("@this"))
-                           .WithInitializer(EqualsValueClause(CastExpression(parentName, callbackValue)))
+                           .WithInitializer(
+                                EqualsValueClause(GeneratorHelpers.CastExpression(parentName, callbackValue))
+                            )
                     )
                 )
             );
@@ -151,24 +144,19 @@ namespace SharpGen.Generator
                         Token(SyntaxKind.UnsafeKeyword)));
 
             if (csElement is CsMethod)
-            {
-                methodDecl = methodDecl
-                    .AddParameterListParameters(
-                        Parameter(Identifier("thisObject"))
-                        .WithType(ParseTypeName("System.IntPtr")));
-            }
+                methodDecl = methodDecl.AddParameterListParameters(
+                    Parameter(Identifier("thisObject")).WithType(GeneratorHelpers.IntPtrType)
+                );
 
-            methodDecl = methodDecl
-                .AddParameterListParameters(
-                    sig.ParameterTypes
-                       .Select(type =>
-                                   Parameter(Identifier(type.Name))
-                                      .WithType(type.InteropTypeSyntax))
-                       .ToArray());
+            methodDecl = methodDecl.AddParameterListParameters(
+                sig.ParameterTypes
+                   .Select(type => Parameter(Identifier(type.Name)).WithType(type.InteropTypeSyntax))
+                   .ToArray()
+            );
 
-            StatementSyntaxList statements = new(generators.Marshalling);
+            StatementSyntaxList statements = new(Generators.Marshalling);
 
-            statements.AddRange(generators.ReverseCallableProlog.GenerateCode((csElement, sig)));
+            statements.AddRange(Generators.ReverseCallableProlog.GenerateCode((csElement, sig)));
 
             statements.AddRange(
                 csElement.ReturnValue,
@@ -181,9 +169,7 @@ namespace SharpGen.Generator
             );
 
             if (csElement is CsMethod)
-            {
                 statements.Add(GenerateShadowCallbackStatement(csElement));
-            }
 
             statements.AddRange(
                 csElement.InRefInRefParameters,
@@ -191,7 +177,7 @@ namespace SharpGen.Generator
             );
 
             var managedArguments = csElement.PublicParameters
-                .Select(param => generators.Marshalling.GetMarshaller(param).GenerateManagedArgument(param))
+                .Select(param => GetMarshaller(param).GenerateManagedArgument(param))
                 .ToList();
 
             ExpressionSyntax callableName = csElement is CsFunction
@@ -204,11 +190,9 @@ namespace SharpGen.Generator
 
             var invocation = InvocationExpression(callableName, ArgumentList(SeparatedList(managedArguments)));
 
-            var returnValueMarshaller = generators.Marshalling.GetMarshaller(csElement.ReturnValue);
+            var returnValueNeedsMarshalling = GetMarshaller(csElement.ReturnValue).GeneratesMarshalVariable(csElement.ReturnValue);
 
-            var returnValueNeedsMarshalling = returnValueMarshaller.GeneratesMarshalVariable(csElement.ReturnValue);
-
-            if (!csElement.HasReturnStatement(globalNamespace))
+            if (!csElement.HasReturnStatement)
             {
                 statements.Add(ExpressionStatement(invocation));
             }
@@ -216,10 +200,15 @@ namespace SharpGen.Generator
             {
                 var publicReturnValue = csElement.ActualReturnValue;
 
-                statements.Add(ExpressionStatement(
-                    AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                        IdentifierName(publicReturnValue.Name),
-                        invocation)));
+                statements.Add(
+                    ExpressionStatement(
+                        AssignmentExpression(
+                            SyntaxKind.SimpleAssignmentExpression,
+                            IdentifierName(publicReturnValue.Name),
+                            invocation
+                        )
+                    )
+                );
 
                 if (returnValueNeedsMarshalling && publicReturnValue is CsReturnValue)
                     statements.Add(
@@ -229,7 +218,7 @@ namespace SharpGen.Generator
             }
 
             statements.AddRange(
-                csElement.RefOutParameters,
+                csElement.LocalManagedReferenceParameters,
                 static(marshaller, item) => marshaller.GenerateManagedToNative(item, false)
             );
 
@@ -239,15 +228,10 @@ namespace SharpGen.Generator
                                            ? MarshallerBase.GetMarshalStorageLocation(csElement.ReturnValue)
                                            : IdentifierName(csElement.ReturnValue.Name);
 
-            var doReturnResult = csElement.IsReturnTypeResult(globalNamespace);
+            if (csElement.HasReturnTypeValue && !csElement.HasReturnTypeParameter && (returnValueNeedsMarshalling || isForcedReturnBufferSig || !ReverseCallablePrologCodeGenerator.GetPublicType(csElement.ReturnValue).IsEquivalentTo(interopReturnType)))
+                nativeReturnLocation = GeneratorHelpers.CastExpression(interopReturnType, nativeReturnLocation);
 
-            if (csElement.HasReturnTypeValue(globalNamespace) && !csElement.HasReturnTypeParameter)
-            {
-                nativeReturnLocation = CastExpression(interopReturnType, nativeReturnLocation);
-            }
-
-            if (csElement.HasReturnTypeValue(globalNamespace))
-            {
+            if (csElement.HasReturnTypeValue)
                 statements.Add(
                     ReturnStatement(
                         isForcedReturnBufferSig
@@ -255,23 +239,22 @@ namespace SharpGen.Generator
                             : nativeReturnLocation
                     )
                 );
-            }
 
             var exceptionVariableIdentifier = Identifier("__exception__");
 
-            CatchClauseSyntax catchClause;
+            StatementSyntax[] catchClauseStatements = null;
 
-            if (doReturnResult)
+            if (csElement.IsReturnTypeResult)
             {
-                catchClause = GenerateCatchClause(
-                    csElement, exceptionVariableIdentifier,
+                catchClauseStatements = new StatementSyntax[]
+                {
                     ReturnStatement(
                         MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
                             InvocationExpression(
                                 MemberAccessExpression(
                                     SyntaxKind.SimpleMemberAccessExpression,
-                                    globalNamespace.GetTypeNameSyntax(WellKnownName.Result),
+                                    GlobalNamespace.GetTypeNameSyntax(WellKnownName.Result),
                                     IdentifierName("GetResultFromException")
                                 ),
                                 ArgumentList(
@@ -281,41 +264,47 @@ namespace SharpGen.Generator
                             IdentifierName("Code")
                         )
                     )
-                );
+                };
 
-                if (csElement.IsReturnTypeHidden(globalNamespace) && !csElement.ForceReturnType)
+                if (csElement.IsReturnTypeHidden && !csElement.ForceReturnType)
                 {
                     statements.Add(ReturnStatement(
                             MemberAccessExpression(
                                 SyntaxKind.SimpleMemberAccessExpression,
                                 MemberAccessExpression(
                                     SyntaxKind.SimpleMemberAccessExpression,
-                                    globalNamespace.GetTypeNameSyntax(WellKnownName.Result),
+                                    GlobalNamespace.GetTypeNameSyntax(WellKnownName.Result),
                                     IdentifierName("Ok")),
                                 IdentifierName("Code"))));
                 }
             }
             else if (csElement.HasReturnType)
             {
-                catchClause = GenerateCatchClause(
-                    csElement, exceptionVariableIdentifier,
+                catchClauseStatements = new StatementSyntax[]
+                {
                     ReturnStatement(
                         isForcedReturnBufferSig
                             ? IdentifierName("returnSlot")
                             : LiteralExpression(SyntaxKind.DefaultLiteralExpression, Token(SyntaxKind.DefaultKeyword))
                     )
-                );
-            }
-            else
-            {
-                catchClause = GenerateCatchClause(csElement, exceptionVariableIdentifier);
+                };
             }
 
             return methodDecl.WithBody(
                 Block(
                     TryStatement()
-                    .WithBlock(statements.ToBlock())
-                    .WithCatches(SingletonList(catchClause))));
+                       .WithBlock(statements.ToBlock())
+                       .WithCatches(
+                            SingletonList(
+                                GenerateCatchClause(csElement, exceptionVariableIdentifier, catchClauseStatements)
+                            )
+                        )
+                )
+            );
+        }
+
+        public ShadowCallbackGenerator(Ioc ioc) : base(ioc)
+        {
         }
     }
 }

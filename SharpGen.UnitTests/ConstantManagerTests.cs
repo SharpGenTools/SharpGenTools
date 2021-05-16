@@ -1,19 +1,25 @@
 ﻿using System;
 using System.Linq;
-using FakeItEasy;
 using SharpGen.CppModel;
 using SharpGen.Model;
 using SharpGen.Transform;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace SharpGen.UnitTests
 {
-    public class ConstantManagerTests
+    public class ConstantManagerTests : TestBase
     {
+        private readonly ConstantManager constantManager;
+
+        public ConstantManagerTests(ITestOutputHelper outputHelper) : base(outputHelper)
+        {
+            constantManager = new ConstantManager(new NamingRulesManager(), Ioc);
+        }
+
         [Fact]
         public void CanAddConstantFromCppConstant()
         {
-            var constantManager = new ConstantManager(new NamingRulesManager(), A.Fake<IDocumentationLinker>());
             var value = "1";
             var macro = new CppConstant("Macro", value);
             var csTypeName = "MyClass";
@@ -27,13 +33,11 @@ namespace SharpGen.UnitTests
 
             Assert.Equal(value, variable.Value);
             Assert.Equal(constantName, variable.Name);
-
         }
 
         [Fact]
         public void CanAddConstantFromGuid()
         {
-            var constantManager = new ConstantManager(new NamingRulesManager(), A.Fake<IDocumentationLinker>());
             var guid = Guid.NewGuid();
             var macro = new CppGuid("Macro", guid);
             var csTypeName = "MyClass";
@@ -47,7 +51,6 @@ namespace SharpGen.UnitTests
 
             Assert.Equal(guid.ToString(), variable.Value);
             Assert.Equal(constantName, variable.Name);
-
         }
     }
 }

@@ -1,40 +1,30 @@
 ﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SharpGen.Logging;
 using SharpGen.Model;
-using SharpGen.Transform;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SharpGen.Generator
 {
-    internal sealed class DefaultGenerators : IGeneratorRegistry
+    public sealed class DefaultGenerators : IGeneratorRegistry
     {
-        public DefaultGenerators(
-            GlobalNamespaceProvider globalNamespace,
-            IDocumentationLinker documentation,
-            ExternalDocCommentsReader docReader,
-            GeneratorConfig config,
-            Logger logger)
+        public DefaultGenerators(GeneratorConfig config, Ioc ioc)
         {
-            Constant = new ConstantCodeGenerator();
-            Property = new PropertyCodeGenerator(this, documentation, docReader);
-            Enum = new EnumCodeGenerator(documentation, docReader);
-            ExplicitOffsetField = new FieldCodeGenerator(documentation, docReader, true);
-            AutoLayoutField = new FieldCodeGenerator(documentation, docReader, false);
-            Struct = new StructCodeGenerator(this, documentation, docReader);
-            NativeStruct = new NativeStructCodeGenerator(this, globalNamespace);
-            NativeInvocation = new NativeInvocationCodeGenerator(this, globalNamespace);
-            Callable = new CallableCodeGenerator(this, documentation, docReader, globalNamespace, logger);
-            Method = new MethodCodeGenerator(this);
-            Function = new FunctionCodeGenerator(this);
-            Interface = new InterfaceCodeGenerator(this, documentation, docReader, globalNamespace, logger);
-            Group = new GroupCodeGenerator(this, documentation, docReader);
-            ShadowCallable = new ShadowCallbackGenerator(this, globalNamespace);
-            ReverseCallableProlog = new ReverseCallablePrologCodeGenerator(this, globalNamespace);
-            Vtbl = new VtblGenerator(this, globalNamespace);
-            Shadow = new ShadowGenerator(this, globalNamespace);
-            Marshalling = new MarshallingRegistry(globalNamespace, logger);
+            Constant = new ConstantCodeGenerator(ioc);
+            Property = new PropertyCodeGenerator(ioc);
+            Enum = new EnumCodeGenerator(ioc);
+            ExplicitOffsetField = new FieldCodeGenerator(ioc, true);
+            AutoLayoutField = new FieldCodeGenerator(ioc, false);
+            Struct = new StructCodeGenerator(ioc);
+            NativeStruct = new NativeStructCodeGenerator(ioc);
+            NativeInvocation = new NativeInvocationCodeGenerator(ioc);
+            Callable = new CallableCodeGenerator(ioc);
+            Method = new MethodCodeGenerator(ioc);
+            Function = new FunctionCodeGenerator(ioc);
+            Interface = new InterfaceCodeGenerator(ioc);
+            Group = new GroupCodeGenerator(ioc);
+            ShadowCallable = new ShadowCallbackGenerator(ioc);
+            ReverseCallableProlog = new ReverseCallablePrologCodeGenerator(ioc);
+            Vtbl = new VtblGenerator(ioc);
+            Shadow = new ShadowGenerator(ioc);
+            Marshalling = new MarshallingRegistry(ioc);
             Config = config;
         }
 

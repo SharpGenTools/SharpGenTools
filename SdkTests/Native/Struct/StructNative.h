@@ -107,6 +107,13 @@ struct ReservedRelation
 	int reserved;
 };
 
+typedef enum D2D1_DEVICE_CONTEXT_OPTIONS
+{
+    D2D1_DEVICE_CONTEXT_OPTIONS_NONE = 0,
+    D2D1_DEVICE_CONTEXT_OPTIONS_ENABLE_MULTITHREADED_OPTIMIZATIONS = 1,
+    D2D1_DEVICE_CONTEXT_OPTIONS_FORCE_DWORD = 0xffffffff
+} D2D1_DEVICE_CONTEXT_OPTIONS;
+
 static_assert(sizeof(wchar_t) == 2, "Wide character isn't wide.");
 
 STRUCTLIB_FUNC(SimpleStruct) GetSimpleStruct();
@@ -138,3 +145,5 @@ STRUCTLIB_FUNC(StructWithInterface) GetStructWithInterface();
 STRUCTLIB_FUNC(StructWithInterface) PassThroughStructWithInterface(StructWithInterface param); 
 
 STRUCTLIB_FUNC(PointerSizeMember) PassThroughPointerSizeMember(PointerSizeMember param);
+
+STRUCTLIB_FUNC(bool) VerifyFlags(D2D1_DEVICE_CONTEXT_OPTIONS param);

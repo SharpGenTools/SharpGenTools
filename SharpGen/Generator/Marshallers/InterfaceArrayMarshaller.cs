@@ -7,12 +7,8 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    internal class InterfaceArrayMarshaller : MarshallerBase, IMarshaller
+    internal sealed class InterfaceArrayMarshaller : MarshallerBase, IMarshaller
     {
-        public InterfaceArrayMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
-        {
-        }
-
         public bool CanMarshal(CsMarshalBase csElement) => csElement.IsInterfaceArray;
 
         public ArgumentSyntax GenerateManagedArgument(CsParameter csElement) =>
@@ -27,17 +23,15 @@ namespace SharpGen.Generator.Marshallers
             Enumerable.Empty<StatementSyntax>();
 
         public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement) => Argument(
-            CastExpression(
+            GeneratorHelpers.CastExpression(
                 VoidPtrType,
-                ParenthesizedExpression(
-                    BinaryExpression(
-                        SyntaxKind.CoalesceExpression,
-                        ConditionalAccessExpression(
-                            IdentifierName(csElement.Name),
-                            MemberBindingExpression(IdentifierName("NativePointer"))
-                        ),
-                        IntPtrZero
-                    )
+                BinaryExpression(
+                    SyntaxKind.CoalesceExpression,
+                    ConditionalAccessExpression(
+                        IdentifierName(csElement.Name),
+                        MemberBindingExpression(IdentifierName("NativePointer"))
+                    ),
+                    IntPtrZero
                 )
             )
         );
@@ -56,5 +50,9 @@ namespace SharpGen.Generator.Marshallers
         public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement) => true;
 
         public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement) => IntPtrType;
+
+        public InterfaceArrayMarshaller(Ioc ioc) : base(ioc)
+        {
+        }
     }
 }

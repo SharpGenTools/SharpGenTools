@@ -9,19 +9,19 @@ using System.Text.RegularExpressions;
 
 namespace SharpGen.Transform
 {
-    public class NamespaceRegistry
+    public sealed class NamespaceRegistry
     {
         private readonly Dictionary<string, CsNamespace> _mapIncludeToNamespace = new();
         private readonly Dictionary<Regex, CsNamespace> _mapTypeToNamespace = new();
         private readonly Dictionary<string, CsNamespace> _namespaces = new();
+        private readonly Ioc ioc;
 
         public IEnumerable<CsNamespace> Namespaces => _namespaces.Values;
+        private Logger Logger => ioc.Logger;
 
-        private Logger Logger { get; }
-
-        public NamespaceRegistry(Logger logger)
+        public NamespaceRegistry(Ioc ioc)
         {
-            Logger = logger;
+            this.ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
         }
 
         /// <summary>
@@ -30,15 +30,12 @@ namespace SharpGen.Transform
         public CsNamespace GetOrCreateNamespace(string namespaceName)
         {
             if (_namespaces.TryGetValue(namespaceName, out var selectedNamespace))
-            {
                 return selectedNamespace;
-            }
-            
+
             selectedNamespace = new CsNamespace(namespaceName);
             _namespaces.Add(namespaceName, selectedNamespace);
             return selectedNamespace;
         }
-
 
         /// <summary>
         /// Maps a particular C++ include to a C# namespace.

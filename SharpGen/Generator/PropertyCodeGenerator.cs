@@ -8,20 +8,10 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    class PropertyCodeGenerator : MemberCodeGeneratorBase<CsProperty>
+    internal sealed class PropertyCodeGenerator : MemberCodeGeneratorBase<CsProperty>
     {
-        public PropertyCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation, ExternalDocCommentsReader docReader)
-            :base(documentation, docReader)
-        {
-            Generators = generators;
-        }
-
-        private IGeneratorRegistry Generators { get; }
-
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsProperty csElement)
         {
-            var documentation = GenerateDocumentationTrivia(csElement);
-
             var accessors = new List<AccessorDeclarationSyntax>();
 
             if (csElement.IsPropertyParam)
@@ -144,7 +134,7 @@ namespace SharpGen.Generator
             
             if (csElement.Setter != null)
             {
-                var paramByRef = Generators.Marshalling.GetMarshaller(csElement.Setter.Parameters[0])
+                var paramByRef = GetMarshaller(csElement.Setter.Parameters[0])
                     .GenerateManagedArgument(csElement.Setter.Parameters[0])
                     .RefOrOutKeyword.Kind() == SyntaxKind.RefKeyword;
 
@@ -160,12 +150,12 @@ namespace SharpGen.Generator
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
             }
 
-            yield return PropertyDeclaration(
-                ParseTypeName(csElement.PublicType.QualifiedName),
-                Identifier(csElement.Name))
-                .WithModifiers(csElement.VisibilityTokenList)
-                .WithAccessorList(AccessorList(List(accessors)))
-                .WithLeadingTrivia(Trivia(documentation));
+            yield return AddDocumentationTrivia(
+                PropertyDeclaration(ParseTypeName(csElement.PublicType.QualifiedName), Identifier(csElement.Name))
+                   .WithModifiers(csElement.VisibilityTokenList)
+                   .WithAccessorList(AccessorList(List(accessors))),
+                csElement
+            );
 
             if (csElement.IsPersistent)
             {
@@ -175,16 +165,13 @@ namespace SharpGen.Generator
                             ? NullableType(ParseTypeName(csElement.PublicType.QualifiedName))
                             : ParseTypeName(csElement.PublicType.QualifiedName)
                         )
-                    .WithVariables(
-                        SingletonSeparatedList(
-                            VariableDeclarator(
-                                Identifier($"{csElement.Name}__")))))
-                    .WithModifiers(
-                        TokenList(
-                            new[]{
-                                Token(SyntaxKind.ProtectedKeyword),
-                                Token(SyntaxKind.InternalKeyword)}));
+                    .WithVariables(SingletonSeparatedList(VariableDeclarator(Identifier($"{csElement.Name}__")))))
+                    .WithModifiers(TokenList(Token(SyntaxKind.ProtectedKeyword), Token(SyntaxKind.InternalKeyword)));
             }
+        }
+
+        public PropertyCodeGenerator(Ioc ioc) : base(ioc)
+        {
         }
     }
 }

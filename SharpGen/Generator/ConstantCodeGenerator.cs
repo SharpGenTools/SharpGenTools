@@ -1,54 +1,29 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Collections.Generic;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.CodeAnalysis.CSharp;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    class ConstantCodeGenerator : IMultiCodeGenerator<CsVariable, FieldDeclarationSyntax>
+    internal sealed class ConstantCodeGenerator : MemberCodeGeneratorBase<CsVariable>
     {
-        private static SyntaxTrivia GenerateConstantDocumentationTrivia(CsVariable csVar)
+        public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsVariable var)
         {
-            return Trivia(DocumentationCommentTrivia(
-                SyntaxKind.SingleLineDocumentationCommentTrivia,
-                List(
-                    new XmlNodeSyntax[]{
-                            XmlText(XmlTextNewLine("", true)),
-                            XmlElement(
-                                XmlElementStartTag(XmlName(Identifier("summary"))),
-                                SingletonList<XmlNodeSyntax>(
-                                    XmlText(TokenList(
-                                        XmlTextLiteral($"Constant {csVar.Name}")))),
-                                XmlElementEndTag(XmlName(Identifier("summary")))
-                            ),
-                            XmlText(XmlTextNewLine("\n", true)),
-                            XmlElement(
-                                XmlElementStartTag(XmlName(Identifier("unmanaged"))),
-                                SingletonList<XmlNodeSyntax>(
-                                    XmlText(TokenList(
-                                        XmlTextLiteral(csVar.CppElementName)))),
-                                XmlElementEndTag(XmlName(Identifier("unmanaged")))
-                            ),
-                            XmlText(XmlTextNewLine("\n", false))
-                    })));
+            yield return AddDocumentationTrivia(
+                FieldDeclaration(
+                        VariableDeclaration(
+                            IdentifierName(var.TypeName),
+                            SingletonSeparatedList(
+                                VariableDeclarator(Identifier(var.Name))
+                                   .WithInitializer(EqualsValueClause(ParseExpression(var.Value)))
+                            )))
+                   .WithModifiers(var.VisibilityTokenList),
+                var
+            );
         }
 
-        public IEnumerable<FieldDeclarationSyntax> GenerateCode(CsVariable var)
+        public ConstantCodeGenerator(Ioc ioc) : base(ioc)
         {
-            yield return FieldDeclaration(
-                VariableDeclaration(
-                    IdentifierName(var.TypeName),
-                    SingletonSeparatedList(
-                        VariableDeclarator(
-                            Identifier(var.Name))
-                        .WithInitializer(
-                            EqualsValueClause(ParseExpression(var.Value))))))
-                .WithModifiers(var.VisibilityTokenList)
-                .WithLeadingTrivia(GenerateConstantDocumentationTrivia(var));
         }
     }
 }

@@ -11,15 +11,16 @@ namespace SharpGen.Parser
 {
     public sealed class CppHeaderGenerator
     {
+        private readonly Ioc ioc;
         private const string Version = "1.1";
 
-        private Logger Logger { get; }
+        private Logger Logger => ioc.Logger;
         private string OutputPath { get; }
 
-        public CppHeaderGenerator(Logger logger, string outputPath)
+        public CppHeaderGenerator(string outputPath, Ioc ioc)
         {
-            Logger = logger;
             OutputPath = outputPath;
+            this.ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
         }
 
         public readonly struct Result

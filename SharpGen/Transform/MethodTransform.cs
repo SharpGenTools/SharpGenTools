@@ -35,20 +35,16 @@ namespace SharpGen.Transform
     {
         private readonly GroupRegistry groupRegistry;
         private readonly MarshalledElementFactory factory;
-        private readonly GlobalNamespaceProvider globalNamespace;
         private readonly IInteropSignatureTransform signatureTransform;
 
         public MethodTransform(NamingRulesManager namingRules,
-                               Logger logger,
                                GroupRegistry groupRegistry,
                                MarshalledElementFactory factory,
-                               GlobalNamespaceProvider globalNamespace,
-                               IInteropSignatureTransform interopSignatureTransform)
-            : base(namingRules, logger)
+                               IInteropSignatureTransform interopSignatureTransform,
+                               Ioc ioc) : base(namingRules, ioc)
         {
             this.groupRegistry = groupRegistry;
             this.factory = factory;
-            this.globalNamespace = globalNamespace;
             signatureTransform = interopSignatureTransform;
         }
 
@@ -57,11 +53,11 @@ namespace SharpGen.Transform
         /// </summary>
         /// <param name="cppMethod">The C++ element.</param>
         /// <returns>The C# element created and registered to the <see cref="TransformManager"/></returns>
-        public override CsMethod Prepare(CppMethod cppMethod) => new(cppMethod, NamingRules.Rename(cppMethod));
+        public override CsMethod Prepare(CppMethod cppMethod) => new(Ioc, cppMethod, NamingRules.Rename(cppMethod));
 
         public CsFunction Prepare(CppFunction cppFunction)
         {
-            CsFunction function = new(cppFunction, NamingRules.Rename(cppFunction));
+            CsFunction function = new(Ioc, cppFunction, NamingRules.Rename(cppFunction));
 
             var groupName = cppFunction.Rule.Group;
 

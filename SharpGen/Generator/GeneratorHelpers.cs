@@ -9,17 +9,91 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal static class GeneratorHelpers
+    public static class GeneratorHelpers
     {
         private static readonly PlatformDetectionType[] Platforms = (PlatformDetectionType[])Enum.GetValues(typeof(PlatformDetectionType));
         private static readonly PlatformDetectionType[] PlatformsNoAny = Platforms.Where(x => x != PlatformDetectionType.Any).ToArray();
         private static readonly int PlatformsNoAnyStringLength = PlatformsNoAny.Select(x => x.ToString().Length).Max() + 2;
 
-        private static readonly ThrowStatementSyntax ThrowPlatformNotSupportedStatement = ThrowStatement(
-            ObjectCreationExpression(
-                ParseTypeName("System.PlatformNotSupportedException")
-            ).WithArgumentList(ArgumentList())
+        private static ThrowStatementSyntax ThrowException(TypeSyntax exception, string message) =>
+            ThrowStatement(
+                ObjectCreationExpression(
+                    exception,
+                    ArgumentList(
+                        message == null
+                            ? default
+                            : SingletonSeparatedList(
+                                Argument(LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(message)))
+                            )
+                    ),
+                    null
+                )
+            );
+
+        private static readonly ThrowStatementSyntax ThrowPlatformNotSupportedStatement = ThrowException(
+            ParseTypeName("System.PlatformNotSupportedException"), null
         );
+
+        internal static readonly LiteralExpressionSyntax ZeroLiteral = LiteralExpression(
+            SyntaxKind.NumericLiteralExpression, Literal(0)
+        );
+
+        public static ExpressionSyntax WrapInParentheses(ExpressionSyntax expression) =>
+            expression is TypeSyntax or ParenthesizedExpressionSyntax or LiteralExpressionSyntax
+                or InvocationExpressionSyntax or MemberAccessExpressionSyntax or ElementAccessExpressionSyntax
+                or MemberBindingExpressionSyntax or ThisExpressionSyntax or BaseExpressionSyntax
+                ? expression
+                : ParenthesizedExpression(expression);
+
+        public static ExpressionSyntax LengthExpression(ExpressionSyntax expression) => MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression,
+            WrapInParentheses(expression),
+            IdentifierName("Length")
+        );
+
+        public static ExpressionSyntax OptionalLengthExpression(ExpressionSyntax expression) => BinaryExpression(
+            SyntaxKind.CoalesceExpression,
+            ConditionalAccessExpression(
+                WrapInParentheses(expression),
+                MemberBindingExpression(IdentifierName("Length"))
+            ),
+            ZeroLiteral
+        );
+
+        public static ExpressionSyntax CastExpression(TypeSyntax type, ExpressionSyntax expression)
+        {
+            var wrappedExpression = WrapInParentheses(expression);
+
+            return expression is CastExpressionSyntax {Type: { } castType} && castType.IsEquivalentTo(type)
+                ? wrappedExpression
+                : SyntaxFactory.CastExpression(type, wrappedExpression);
+        }
+
+        public static ExpressionSyntax GenerateBoolToIntConversion(ExpressionSyntax valueExpression) =>
+            ConditionalExpression(
+                WrapInParentheses(valueExpression),
+                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(1)),
+                ZeroLiteral
+            );
+
+        public static BinaryExpressionSyntax GenerateIntToBoolConversion(ExpressionSyntax valueExpression) =>
+            BinaryExpression(
+                SyntaxKind.NotEqualsExpression,
+                ZeroLiteral,
+                valueExpression
+            );
+
+        public static TypeSyntax IntPtrType { get; } = ParseTypeName("System.IntPtr");
+
+        public static TypeSyntax UIntPtrType { get; } = ParseTypeName("System.UIntPtr");
+
+        public static MemberAccessExpressionSyntax IntPtrZero { get; } = MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression,
+            IntPtrType,
+            IdentifierName(nameof(IntPtr.Zero))
+        );
+
+        public static TypeSyntax VoidPtrType { get; } = PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword)));
 
         public static string GetPlatformSpecificSuffix(PlatformDetectionType platform)
         {

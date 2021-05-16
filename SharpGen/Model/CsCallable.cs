@@ -10,19 +10,22 @@ namespace SharpGen.Model
     {
         private CsBaseItemListCache<CsParameter> _parameters;
         private Dictionary<PlatformDetectionType, InteropMethodSignature> interopSignatures;
+        protected readonly Ioc Ioc;
 
         protected abstract int MaxSizeReturnParameter { get; }
 
-        protected CsCallable(CppCallable callable, string name) : base(callable, name)
+        protected CsCallable(Ioc ioc, CppCallable callable, string name) : base(callable, name)
         {
-            var tag = callable?.Rule;
-            CheckReturnType = tag?.MethodCheckReturnType ?? CheckReturnType;
-            ForceReturnType = tag?.ParameterUsedAsReturnType ?? ForceReturnType;
-            AlwaysReturnHResult = tag?.AlwaysReturnHResult ?? AlwaysReturnHResult;
-            RequestRawPtr = tag?.RawPtr ?? RequestRawPtr;
+            Ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
 
             if (callable == null)
                 return;
+
+            var tag = callable.Rule;
+            CheckReturnType = tag.MethodCheckReturnType ?? CheckReturnType;
+            ForceReturnType = tag.ParameterUsedAsReturnType ?? ForceReturnType;
+            AlwaysReturnHResult = tag.AlwaysReturnHResult ?? AlwaysReturnHResult;
+            RequestRawPtr = tag.RawPtr ?? RequestRawPtr;
 
             CppSignature = callable.ToString();
             ShortName = callable.ToShortString();
@@ -49,8 +52,8 @@ namespace SharpGen.Model
         public IEnumerable<CsParameter> InRefInRefParameters => _parameters.Enumerate(this)
            .Where(param => !param.IsOut);
 
-        public IEnumerable<CsParameter> RefOutParameters => _parameters.Enumerate(this)
-           .Where(param => param.IsLocalByRef);
+        public IEnumerable<CsParameter> LocalManagedReferenceParameters => _parameters.Enumerate(this)
+           .Where(param => param.IsLocalManagedReference);
 
         public CsMarshalCallableBase ActualReturnValue
         {
@@ -71,7 +74,7 @@ namespace SharpGen.Model
                 docItems.Add("<param name=\"" + param.Name + "\">" + manager.GetSingleDoc(param) + "</param>");
 
             if (HasReturnType)
-                docItems.Add("<returns>" + GetReturnTypeDoc(manager) + "</returns>");
+                docItems.Add("<returns>" + manager.GetSingleDoc(ActualReturnValue) + "</returns>");
         }
 
         public bool IsReturnStructLarge
@@ -81,7 +84,7 @@ namespace SharpGen.Model
                 // Workaround for https://github.com/dotnet/coreclr/issues/19474. This workaround is sufficient
                 // for DirectX on Windows x86 and x64. It may produce incorrect code on other platforms depending
                 // on the calling convention details.
-                if ((ReturnValue.MarshalType ?? ReturnValue.PublicType) is CsStruct csStruct)
+                if (ReturnValue.MarshalType is CsStruct csStruct)
                 {
                     return !csStruct.IsNativePrimitive && csStruct.Size > MaxSizeReturnParameter;
                 }
@@ -103,19 +106,11 @@ namespace SharpGen.Model
         }
 
         // Hide return type only if it is a HRESULT and AlwaysReturnHResult is false
-        public bool IsReturnTypeHidden(GlobalNamespaceProvider globalNamespace) =>
-            CheckReturnType && IsReturnTypeResult(globalNamespace) && !AlwaysReturnHResult;
-
-        public bool IsReturnTypeResult(GlobalNamespaceProvider globalNamespace) =>
-            ReturnValue.PublicType?.IsWellKnownType(globalNamespace, WellKnownName.Result) ?? false;
-
+        public bool IsReturnTypeHidden => CheckReturnType && IsReturnTypeResult && !AlwaysReturnHResult;
+        public bool IsReturnTypeResult => ReturnValue.PublicType.IsWellKnownType(Ioc.GlobalNamespace, WellKnownName.Result);
         public bool HasReturnType => ReturnValue.PublicType != TypeRegistry.Void;
-
-        internal bool HasReturnStatement(GlobalNamespaceProvider globalNamespace) =>
-            HasReturnTypeParameter || HasReturnTypeValue(globalNamespace);
-
-        internal bool HasReturnTypeValue(GlobalNamespaceProvider globalNamespace) =>
-            HasReturnType && (ForceReturnType || !IsReturnTypeHidden(globalNamespace));
+        internal bool HasReturnStatement => HasReturnTypeParameter || HasReturnTypeValue;
+        internal bool HasReturnTypeValue => HasReturnType && (ForceReturnType || !IsReturnTypeHidden);
 
         /// <summary>
         /// Returns true if a parameter is marked to be used as the return type.
@@ -126,22 +121,20 @@ namespace SharpGen.Model
         /// Return the Public return type. If a out parameter is used as a public return type
         /// then use the type of the out parameter for the public API.
         /// </summary>
-        public string GetPublicReturnTypeQualifiedName(GlobalNamespaceProvider globalNamespace)
+        public string PublicReturnTypeQualifiedName
         {
-            var returnValue = ActualReturnValue;
-            if (returnValue is CsParameter)
+            get
+            {
+                var returnValue = ActualReturnValue;
+                if (returnValue is CsParameter)
+                    return returnValue.PublicType.QualifiedName;
+
+                if (IsReturnTypeHidden && !ForceReturnType)
+                    return "void";
+
                 return returnValue.PublicType.QualifiedName;
-
-            if (IsReturnTypeHidden(globalNamespace) && !ForceReturnType)
-                return "void";
-
-            return returnValue.PublicType.QualifiedName;
+            }
         }
-
-        /// <summary>
-        /// Returns the documentation for the return type
-        /// </summary>
-        protected string GetReturnTypeDoc(IDocumentationLinker linker) => linker.GetSingleDoc(ActualReturnValue);
 
         /// <summary>
         /// Return the name of the variable used to return the value
@@ -162,7 +155,7 @@ namespace SharpGen.Model
             var method = (CsCallable) MemberwiseClone();
 
             // Clear cached parameters
-            method.interopSignatures = null;
+            method.Expire();
             method.ResetItems();
             foreach (var parameter in Parameters)
                 method.Add(parameter.Clone());

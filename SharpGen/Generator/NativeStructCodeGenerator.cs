@@ -1,55 +1,72 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Logging;
 using SharpGen.Model;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class NativeStructCodeGenerator : IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax>
+    internal sealed class NativeStructCodeGenerator : CodeGeneratorBase, IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax>
     {
-        private readonly IGeneratorRegistry generators;
+        private static readonly NameSyntax StructLayoutAttributeName = ParseName("System.Runtime.InteropServices.StructLayoutAttribute");
+        private const string StructLayoutKindName = "System.Runtime.InteropServices.LayoutKind.";
+        private static readonly AttributeArgumentSyntax StructLayoutExplicit = AttributeArgument(ParseName(StructLayoutKindName + "Explicit"));
+        private static readonly AttributeArgumentSyntax StructLayoutSequential = AttributeArgument(ParseName(StructLayoutKindName + "Sequential"));
+        private static readonly NameEqualsSyntax StructLayoutPackName = NameEquals(IdentifierName("Pack"));
+        private static readonly SyntaxToken MarshalParameterRefName = Identifier("@ref");
 
-        public NativeStructCodeGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
-        {
-            this.generators = generators ?? throw new ArgumentNullException(nameof(generators));
-        }
+        private static readonly AttributeArgumentSyntax StructLayoutCharset = AttributeArgument(
+            ParseName("System.Runtime.InteropServices.CharSet.Unicode")
+        ).WithNameEquals(NameEquals(IdentifierName("CharSet")));
 
-        public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsStruct csElement)
+        public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsStruct csStruct)
         {
-            var layoutKind = csElement.ExplicitLayout ? "Explicit" : "Sequential";
-            var structLayoutAttribute = Attribute(ParseName("System.Runtime.InteropServices.StructLayoutAttribute"))
-               .WithArgumentList(
-                   AttributeArgumentList(SeparatedList(
-                       new[] {
-                                AttributeArgument(ParseName($"System.Runtime.InteropServices.LayoutKind.{layoutKind}")),
-                                AttributeArgument(
-                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.Align)))
-                                    .WithNameEquals(NameEquals(IdentifierName("Pack"))),
-                                AttributeArgument(
-                                    ParseName("System.Runtime.InteropServices.CharSet.Unicode")
-                                ).WithNameEquals(NameEquals(IdentifierName("CharSet")))
-                       }
-                   )
-               )
-           );
-            return GenerateMarshallingStructAndConversions(csElement, AttributeList(SingletonSeparatedList(structLayoutAttribute)));
-        }
-        private IEnumerable<MemberDeclarationSyntax> GenerateMarshallingStructAndConversions(CsStruct csStruct, AttributeListSyntax structLayoutAttributeList)
-        {
-            var marshalStruct = StructDeclaration("__Native")
-                               .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.PartialKeyword)))
-                               .WithAttributeLists(SingletonList(structLayoutAttributeList))
-                               .WithMembers(List(csStruct.Fields.SelectMany(GenerateMarshalStructField)));
+            yield return StructDeclaration("__Native")
+                        .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.PartialKeyword)))
+                        .WithAttributeLists(SingletonList(GenerateStructLayoutAttribute(csStruct)))
+                        .WithMembers(List(csStruct.Fields.SelectMany(GenerateMarshalStructField)));
 
-            yield return marshalStruct;
+            if (csStruct.GenerateAsClass)
+            {
+                var methodName = IdentifierName("__MarshalFrom");
+                var marshalArgument = Argument(IdentifierName(MarshalParameterRefName))
+                   .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword));
+
+                var invocationExpression = csStruct.IsStaticMarshal
+                                               ? InvocationExpression(
+                                                   methodName,
+                                                   ArgumentList(
+                                                       SeparatedList(
+                                                           new[]
+                                                           {
+                                                               Argument(ThisExpression())
+                                                                  .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)),
+                                                               marshalArgument
+                                                           }
+                                                       )
+                                                   )
+                                               )
+                                               : InvocationExpression(
+                                                   methodName,
+                                                   ArgumentList(SingletonSeparatedList(marshalArgument))
+                                               );
+
+                yield return ConstructorDeclaration(csStruct.Name)
+                            .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
+                            .WithBody(Block());
+
+                yield return ConstructorDeclaration(csStruct.Name)
+                            .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword)))
+                            .WithParameterList(MarshalParameterListSyntax)
+                            .WithBody(Block(ExpressionStatement(invocationExpression)));
+            }
 
             yield return GenerateMarshalFree(csStruct);
-
             yield return GenerateMarshalFrom(csStruct);
-
             yield return GenerateMarshalTo(csStruct);
 
             IEnumerable<MemberDeclarationSyntax> GenerateMarshalStructField(CsField field)
@@ -58,54 +75,34 @@ namespace SharpGen.Generator
                    .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)));
 
                 if (csStruct.ExplicitLayout)
-                {
-                    fieldDecl = fieldDecl.WithAttributeLists(
-                        SingletonList(
-                            AttributeList(
-                                SingletonSeparatedList(
-                                    Attribute(
-                                        ParseName("System.Runtime.InteropServices.FieldOffset"),
-                                        AttributeArgumentList(
-                                            SingletonSeparatedList(
-                                                AttributeArgument(
-                                                    LiteralExpression(
-                                                        SyntaxKind.NumericLiteralExpression,
-                                                        Literal(field.Offset))))))))
-                        ));
-                }
+                    fieldDecl = AddFieldOffsetAttribute(fieldDecl, field.Offset);
 
-                if (field.IsArray)
+                if (field.ArraySpecification is {} arraySpecification)
                 {
                     yield return fieldDecl.WithDeclaration(
                         fieldDecl.Declaration.AddVariables(VariableDeclarator(field.Name))
                     );
 
-                    for (var i = 1; i < field.ArrayDimensionValue; i++)
-                    {
-                        var declaration = fieldDecl.WithDeclaration(
-                            fieldDecl.Declaration.AddVariables(VariableDeclarator($"__{field.Name}{i}"))
-                        );
-
-                        if (csStruct.ExplicitLayout)
+                    if (arraySpecification.Dimension is { } dimension)
+                        for (var i = 1; i < dimension; i++)
                         {
-                            var offset = field.Offset + (field.Size / field.ArrayDimensionValue) * i;
-                            declaration = declaration.WithAttributeLists(
-                                SingletonList(
-                                    AttributeList(
-                                        SingletonSeparatedList(
-                                            Attribute(
-                                                ParseName("System.Runtime.InteropServices.FieldOffset"),
-                                                AttributeArgumentList(
-                                                    SingletonSeparatedList(
-                                                        AttributeArgument(
-                                                            LiteralExpression(
-                                                                SyntaxKind.NumericLiteralExpression,
-                                                                Literal(offset))))))))
-                                ));
-                        }
+                            var declaration = fieldDecl.WithDeclaration(
+                                fieldDecl.Declaration.AddVariables(VariableDeclarator($"__{field.Name}{i}"))
+                            );
 
-                        yield return declaration;
-                    }
+                            if (csStruct.ExplicitLayout)
+                            {
+                                var offset = field.Offset + i * field.Size / dimension;
+                                declaration = AddFieldOffsetAttribute(declaration, offset, true);
+                            }
+
+                            yield return declaration;
+                        }
+                    else
+                        Logger.Warning(
+                            LoggingCodes.UnknownArrayDimension, "Unknown array dimensions for [{0}]",
+                            field.QualifiedName
+                        );
                 }
                 else if (field.HasNativeValueType)
                 {
@@ -125,17 +122,31 @@ namespace SharpGen.Generator
             }
         }
 
-        private StatementSyntax GenerateMarshalFreeForField(CsMarshalBase field) =>
-            generators.Marshalling.GetMarshaller(field)?.GenerateNativeCleanup(field, false);
+        internal static AttributeListSyntax GenerateStructLayoutAttribute(CsStruct csElement) => AttributeList(
+            SingletonSeparatedList(
+                Attribute(
+                    StructLayoutAttributeName,
+                    AttributeArgumentList(
+                        SeparatedList(
+                            new[]
+                            {
+                                csElement.ExplicitLayout ? StructLayoutExplicit : StructLayoutSequential,
+                                AttributeArgument(
+                                        LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.Align))
+                                    )
+                                   .WithNameEquals(StructLayoutPackName),
+                                StructLayoutCharset
+                            }
+                        )
+                    )
+                )
+            )
+        );
 
         private MethodDeclarationSyntax GenerateMarshalFree(CsStruct csStruct) => GenerateMarshalMethod(
             "__MarshalFree",
-            Block(
-                csStruct.Fields
-                        .Where(field => !field.IsArray)
-                        .Select(GenerateMarshalFreeForField)
-                        .Where(statement => statement != null)
-            )
+            csStruct.Fields.Where(field => !field.IsArray),
+            field => GetMarshaller(field)?.GenerateNativeCleanup(field, false)
         );
 
         private MethodDeclarationSyntax GenerateMarshalTo(CsStruct csStruct)
@@ -144,15 +155,15 @@ namespace SharpGen.Generator
             {
                 if (field.Relations.Count == 0)
                 {
-                    yield return generators.Marshalling.GetMarshaller(field).GenerateManagedToNative(field, false);
+                    yield return GetMarshaller(field).GenerateManagedToNative(field, false);
                     yield break;
                 }
 
                 foreach (var relation in field.Relations)
                 {
-                    var marshaller = generators.Marshalling.GetRelationMarshaller(relation);
+                    var marshaller = GetRelationMarshaller(relation);
                     CsField publicElement = null;
-                    
+
                     if (relation is LengthRelation related)
                     {
                         var relatedMarshallableName = related.Identifier;
@@ -166,34 +177,47 @@ namespace SharpGen.Generator
 
             return GenerateMarshalMethod(
                 "__MarshalTo",
-                Block(
-                    csStruct.Fields.SelectMany(FieldMarshallers)
-                            .Where(statement => statement != null)
-                )
+                csStruct.Fields,
+                FieldMarshallers
             );
         }
 
         private static ParameterListSyntax MarshalParameterListSyntax => ParameterList(
-            SingletonSeparatedList(Parameter(Identifier("@ref")).WithType(RefType(ParseTypeName("__Native"))))
+            SingletonSeparatedList(Parameter(MarshalParameterRefName).WithType(RefType(ParseTypeName("__Native"))))
         );
 
-        private static MethodDeclarationSyntax GenerateMarshalMethod(string name, BlockSyntax body)
+        private MethodDeclarationSyntax GenerateMarshalMethod<T>(string name, IEnumerable<T> source,
+                                                                 Func<T, StatementSyntax> transform)
+            where T : CsMarshalBase
         {
-            return MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), name)
-                  .WithParameterList(MarshalParameterListSyntax)
-                  .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)))
-                  .WithBody(body);
+            StatementSyntaxList list = new(Generators.Marshalling);
+            list.AddRange(source, transform);
+            return GenerateMarshalMethod(name, list);
         }
+
+        private MethodDeclarationSyntax GenerateMarshalMethod<T>(string name, IEnumerable<T> source,
+                                                                 Func<T, IEnumerable<StatementSyntax>> transform)
+            where T : CsMarshalBase
+        {
+            StatementSyntaxList list = new(Generators.Marshalling);
+            list.AddRange(source, transform);
+            return GenerateMarshalMethod(name, list);
+        }
+
+        private static MethodDeclarationSyntax GenerateMarshalMethod(string name, StatementSyntaxList body) =>
+            MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), name)
+               .WithParameterList(MarshalParameterListSyntax)
+               .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.UnsafeKeyword)))
+               .WithBody(body.ToBlock());
 
         private MethodDeclarationSyntax GenerateMarshalFrom(CsStruct csStruct) => GenerateMarshalMethod(
             "__MarshalFrom",
-            Block(
-                csStruct.Fields
-                        .Where(field => field.Relations.Count == 0)
-                        .Select(field => generators.Marshalling.GetMarshaller(field)
-                                                   .GenerateNativeToManaged(field, false))
-                        .Where(statement => statement != null)
-            )
+            csStruct.PublicFields,
+            field => GetMarshaller(field).GenerateNativeToManaged(field, false)
         );
+
+        public NativeStructCodeGenerator(Ioc ioc) : base(ioc)
+        {
+        }
     }
 }

@@ -1,43 +1,37 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using SharpGen.Model;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
-using System.Linq;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Model;
 using SharpGen.Transform;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    abstract class MemberCodeGeneratorBase<T> : IMultiCodeGenerator<T, MemberDeclarationSyntax>
+    internal abstract class MemberCodeGeneratorBase<T> : CodeGeneratorBase, IMultiCodeGenerator<T, MemberDeclarationSyntax>
         where T : CsBase
     {
-        private readonly ExternalDocCommentsReader docReader;
-
-        protected MemberCodeGeneratorBase(IDocumentationLinker documentation, ExternalDocCommentsReader docReader)
-        {
-            docAggregator = documentation;
-            this.docReader = docReader;
-        }
-
         public abstract IEnumerable<MemberDeclarationSyntax> GenerateCode(T csElement);
-        
-        protected DocumentationCommentTriviaSyntax GenerateDocumentationTrivia(CsBase csElement)
-        {
-            var docItems = docAggregator.GetDocItems(docReader, csElement);
 
-            var builder = new StringBuilder();
+        private SyntaxTriviaList GenerateDocumentationTrivia(CsBase csElement)
+        {
+            var docItems = DocumentationLinker.GetDocItems(ExternalDocReader, csElement);
+
+            StringBuilder builder = new();
             foreach (var docItem in docItems)
-            {
                 builder.AppendLine($"/// {docItem}");
-            }
             builder.AppendLine();
 
-            var tree = CSharpSyntaxTree.ParseText(builder.ToString());
-            return (DocumentationCommentTriviaSyntax)tree.GetCompilationUnitRoot().EndOfFileToken.LeadingTrivia[0].GetStructure();
+            return ParseLeadingTrivia(builder.ToString());
         }
 
-        private readonly IDocumentationLinker docAggregator;
+        protected TMember AddDocumentationTrivia<TMember>(TMember member, CsBase csElement) where TMember : MemberDeclarationSyntax
+        {
+            return member.WithLeadingTrivia(GenerateDocumentationTrivia(csElement));
+        }
+
+        protected MemberCodeGeneratorBase(Ioc ioc) : base(ioc)
+        {
+        }
     }
 }

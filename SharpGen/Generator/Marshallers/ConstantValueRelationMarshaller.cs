@@ -6,12 +6,8 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    internal class ConstantValueRelationMarshaller : MarshallerBase, IRelationMarshaller
+    internal sealed class ConstantValueRelationMarshaller : MarshallerBase, IRelationMarshaller
     {
-        public ConstantValueRelationMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
-        {
-        }
-
         public StatementSyntax GenerateManagedToNative(CsMarshalBase publicElement, CsMarshalBase relatedElement)
         {
             var relation = relatedElement.Relations.OfType<ConstantValueRelation>().Single();
@@ -25,6 +21,10 @@ namespace SharpGen.Generator.Marshallers
                     relation.Value
                 )
             );
+        }
+
+        public ConstantValueRelationMarshaller(Ioc ioc) : base(ioc)
+        {
         }
     }
 }

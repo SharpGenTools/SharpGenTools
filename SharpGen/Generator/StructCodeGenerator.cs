@@ -10,58 +10,29 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    class StructCodeGenerator : MemberCodeGeneratorBase<CsStruct>
+    internal sealed class StructCodeGenerator : MemberCodeGeneratorBase<CsStruct>
     {
-        public StructCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation, ExternalDocCommentsReader docReader)
-            : base(documentation, docReader)
-        {
-            Generators = generators;
-        }
-
-        public IGeneratorRegistry Generators { get; }
-
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsStruct csElement)
         {
-            var documentationTrivia = GenerateDocumentationTrivia(csElement);
-            var layoutKind = csElement.ExplicitLayout ? "Explicit" : "Sequential";
-            var structLayoutAttribute = Attribute(ParseName("System.Runtime.InteropServices.StructLayoutAttribute"))
-                    .WithArgumentList(
-                        AttributeArgumentList(SeparatedList(
-                            new []
-                            {
-                                AttributeArgument(ParseName($"System.Runtime.InteropServices.LayoutKind.{layoutKind}")),
-                                AttributeArgument(
-                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(csElement.Align)))
-                                    .WithNameEquals(NameEquals(IdentifierName("Pack"))),
-                                AttributeArgument(
-                                    ParseName("System.Runtime.InteropServices.CharSet.Unicode")
-                                ).WithNameEquals(NameEquals(IdentifierName("CharSet")))
-                            }
-                        )
-                    )
-                );
-
             var innerStructs = csElement.InnerStructs.SelectMany(GenerateCode);
 
             var constants = csElement.Variables.SelectMany(var => Generators.Constant.GenerateCode(var));
 
-            var fields = csElement.Fields.Where(field => field.Relations.Count == 0).SelectMany(field =>
+            var fields = csElement.PublicFields.SelectMany(field =>
             {
                 var explicitLayout = !csElement.HasMarshalType && csElement.ExplicitLayout;
                 var generator = explicitLayout ? Generators.ExplicitOffsetField : Generators.AutoLayoutField;
                 return generator.GenerateCode(field);
             });
 
-            var marshallingStructAndConversions = Enumerable.Empty<MemberDeclarationSyntax>();
-
-            if (csElement.HasMarshalType && !csElement.HasCustomMarshal)
-            {
-                marshallingStructAndConversions = Generators.NativeStruct.GenerateCode(csElement);
-            }
+            var marshallingStructAndConversions = csElement.HasMarshalType && !csElement.HasCustomMarshal
+                                                      ? Generators.NativeStruct.GenerateCode(csElement)
+                                                      : Enumerable.Empty<MemberDeclarationSyntax>();
 
             var attributeList = !csElement.HasMarshalType
-                                    ? SingletonList(AttributeList(SingletonSeparatedList(structLayoutAttribute)))
+                                    ? SingletonList(NativeStructCodeGenerator.GenerateStructLayoutAttribute(csElement))
                                     : default;
+
             var modifierTokenList = csElement.VisibilityTokenList.Add(Token(SyntaxKind.PartialKeyword));
             var identifier = Identifier(csElement.Name);
             var memberList = List(
@@ -88,7 +59,11 @@ namespace SharpGen.Generator
                                                           memberList
                                                       );
 
-            yield return declaration.WithLeadingTrivia(Trivia(documentationTrivia));
+            yield return AddDocumentationTrivia(declaration, csElement);
+        }
+
+        public StructCodeGenerator(Ioc ioc) : base(ioc)
+        {
         }
     }
 }

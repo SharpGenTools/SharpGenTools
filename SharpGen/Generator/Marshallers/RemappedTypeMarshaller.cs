@@ -7,12 +7,8 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    internal class RemappedTypeMarshaller : MarshallerBase, IMarshaller
+    internal sealed class RemappedTypeMarshaller : MarshallerBase, IMarshaller
     {
-        public RemappedTypeMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
-        {
-        }
-
         public bool CanMarshal(CsMarshalBase csElement) => csElement.MappedToDifferentPublicType;
 
         public ArgumentSyntax GenerateManagedArgument(CsParameter csElement) =>
@@ -53,7 +49,7 @@ namespace SharpGen.Generator.Marshallers
                 AssignmentExpression(
                     SyntaxKind.SimpleAssignmentExpression,
                     IdentifierName(csElement.Name),
-                    CastExpression(
+                    GeneratorHelpers.CastExpression(
                         ParseTypeName(csElement.PublicType.QualifiedName), GetMarshalStorageLocation(csElement)
                     )
                 )
@@ -68,5 +64,9 @@ namespace SharpGen.Generator.Marshallers
 
         public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement) =>
             ParseTypeName(csElement.MarshalType.QualifiedName);
+
+        public RemappedTypeMarshaller(Ioc ioc) : base(ioc)
+        {
+        }
     }
 }

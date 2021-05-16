@@ -1,28 +1,34 @@
 ﻿using System;
 using System.Linq;
 using SharpGen.Logging;
+using SharpGen.Transform;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace SharpGen.UnitTests
 {
-    public class TestBase
+    public abstract class TestBase
     {
         private readonly XUnitLogger loggerImpl;
+        private readonly IocServiceContainer serviceContainer = new();
 
         protected TestBase(ITestOutputHelper outputHelper)
         {
             loggerImpl = new XUnitLogger(outputHelper);
-            Logger = new Logger(loggerImpl);
+            serviceContainer.AddService(new Logger(loggerImpl));
+            serviceContainer.AddService<IDocumentationLinker, DocumentationLinker>();
+            serviceContainer.AddService<GlobalNamespaceProvider>();
+            serviceContainer.AddService(new TypeRegistry(Ioc));
+            Ioc.ConfigureServices(serviceContainer);
         }
 
-        public IDisposable LoggerEnvironment(LoggerAssertHandler handler)
+        protected IDisposable LoggerEnvironment(LoggerAssertHandler handler)
         {
             return new LoggerTestEnvironment(loggerImpl, handler);
         }
 
         // ReSharper disable once ParameterOnlyUsedForPreconditionCheck.Global
-        public IDisposable LoggerCodeRequiredEnvironment(string code)
+        protected IDisposable LoggerCodeRequiredEnvironment(string code)
         {
             void AssertHandler(XUnitLogEvent[] events)
             {
@@ -32,7 +38,7 @@ namespace SharpGen.UnitTests
             return LoggerEnvironment(AssertHandler);
         }
 
-        public IDisposable LoggerMessageCountEnvironment(int expectedMessageCount, params LogLevel[] levels)
+        protected IDisposable LoggerMessageCountEnvironment(int expectedMessageCount, params LogLevel[] levels)
         {
             if (expectedMessageCount == 0 && levels.Length == 0)
                 throw new InvalidOperationException($"Use {nameof(LoggerEmptyEnvironment)} instead");
@@ -56,7 +62,7 @@ namespace SharpGen.UnitTests
             return LoggerEnvironment(AssertHandler);
         }
 
-        public IDisposable LoggerEmptyEnvironment()
+        protected IDisposable LoggerEmptyEnvironment()
         {
             return LoggerEnvironment(LoggerEmptyHandler);
         }
@@ -66,7 +72,9 @@ namespace SharpGen.UnitTests
             Assert.Empty(events);
         }
 
-        protected Logger Logger { get; }
+        protected Ioc Ioc { get; } = new();
+        protected Logger Logger => Ioc.Logger;
+        protected TypeRegistry TypeRegistry => Ioc.TypeRegistry;
 
         private sealed class LoggerTestEnvironment : IDisposable
         {

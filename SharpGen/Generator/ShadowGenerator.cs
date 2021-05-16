@@ -8,17 +8,8 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class ShadowGenerator : ICodeGenerator<CsInterface, MemberDeclarationSyntax>
+    internal sealed class ShadowGenerator : CodeGeneratorBase, ICodeGenerator<CsInterface, MemberDeclarationSyntax>
     {
-        private readonly GlobalNamespaceProvider globalNamespace;
-        private readonly IGeneratorRegistry generators;
-
-        public ShadowGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
-        {
-            this.generators = generators;
-            this.globalNamespace = globalNamespace;
-        }
-
         public MemberDeclarationSyntax GenerateCode(CsInterface csElement)
         {
             var shadowClassName = csElement.ShadowName.Split('.').Last();
@@ -36,7 +27,7 @@ namespace SharpGen.Generator
             );
 
             var vtblProperty = PropertyDeclaration(
-                                   globalNamespace.GetTypeNameSyntax(WellKnownName.CppObjectVtbl),
+                                   GlobalNamespace.GetTypeNameSyntax(WellKnownName.CppObjectVtbl),
                                    Identifier("Vtbl")
                                )
                               .WithModifiers(
@@ -47,7 +38,7 @@ namespace SharpGen.Generator
             List<MemberDeclarationSyntax> members = new();
 
             if (csElement.AutoGenerateVtbl)
-                members.Add(generators.Vtbl.GenerateCode(csElement));
+                members.Add(Generators.Vtbl.GenerateCode(csElement));
 
             if (csElement.StaticShadowVtbl)
             {
@@ -114,12 +105,16 @@ namespace SharpGen.Generator
                                SimpleBaseType(
                                    csElement.Base != null
                                        ? IdentifierName(csElement.Base.ShadowName)
-                                       : globalNamespace.GetTypeNameSyntax(WellKnownName.CppObjectShadow)
+                                       : GlobalNamespace.GetTypeNameSyntax(WellKnownName.CppObjectShadow)
                                )
                            )
                        )
                    )
                   .WithMembers(new SyntaxList<MemberDeclarationSyntax>(members));
+        }
+
+        public ShadowGenerator(Ioc ioc) : base(ioc)
+        {
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -26,10 +27,18 @@ namespace SharpGenTools.Sdk.Tasks
     {
         // Default encoding used by MSBuild ReadLinesFromFile task
         private static readonly Encoding DefaultEncoding = new UTF8Encoding(false, true);
+        private readonly IocServiceContainer serviceContainer = new();
+        private readonly Ioc ioc = new();
 
         public override bool Execute()
         {
             PrepareExecute();
+
+            serviceContainer.AddService(SharpGenLogger);
+            serviceContainer.AddService<IDocumentationLinker, DocumentationLinker>();
+            serviceContainer.AddService<GlobalNamespaceProvider>();
+            serviceContainer.AddService(new TypeRegistry(ioc));
+            ioc.ConfigureServices(serviceContainer);
 
             ExtensibilityDriver.Instance.LoadExtensions(SharpGenLogger,
                                                         ExtensionAssemblies.Select(x => x.ItemSpec).ToArray());
@@ -60,17 +69,17 @@ namespace SharpGenTools.Sdk.Tasks
                 out var configsWithExtensionHeaders
             );
 
-            var cppHeaderGenerator = new CppHeaderGenerator(SharpGenLogger, OutputPath);
+            CppHeaderGenerator cppHeaderGenerator = new(OutputPath, ioc);
 
             var cppHeaderGenerationResult = cppHeaderGenerator.GenerateCppHeaders(config, configsWithHeaders, configsWithExtensionHeaders);
 
             if (SharpGenLogger.HasErrors)
                 return false;
 
-            var resolver = new IncludeDirectoryResolver(SharpGenLogger);
+            IncludeDirectoryResolver resolver = new(ioc);
             resolver.Configure(config);
 
-            var castXml = new CastXmlRunner(SharpGenLogger, resolver, CastXmlExecutable.ItemSpec, CastXmlArguments)
+            CastXmlRunner castXml = new(resolver, CastXmlExecutable.ItemSpec, CastXmlArguments, ioc)
             {
                 OutputPath = OutputPath
             };
@@ -100,7 +109,7 @@ namespace SharpGenTools.Sdk.Tasks
                 return false;
 
             // Run the parser
-            var parser = new CppParser(SharpGenLogger, config)
+            var parser = new CppParser(config, ioc)
             {
                 OutputPath = OutputPath
             };
@@ -121,11 +130,9 @@ namespace SharpGenTools.Sdk.Tasks
 
             config.ExpandDynamicVariables(SharpGenLogger, group);
 
-            var docLinker = new DocumentationLinker();
-            var typeRegistry = new TypeRegistry(SharpGenLogger, docLinker);
-            var namingRules = new NamingRulesManager();
-
-            var globalNamespace = new GlobalNamespaceProvider();
+            var docLinker = ioc.DocumentationLinker;
+            var globalNamespace = ioc.GlobalNamespace;
+            NamingRulesManager namingRules = new();
 
             foreach (var nameOverride in GlobalNamespaceOverrides)
             {
@@ -150,13 +157,10 @@ namespace SharpGenTools.Sdk.Tasks
             }
 
             // Run the main mapping process
-            var transformer = new TransformManager(
-                globalNamespace,
+            TransformManager transformer = new(
                 namingRules,
-                SharpGenLogger,
-                typeRegistry,
-                docLinker,
-                new ConstantManager(namingRules, docLinker)
+                new ConstantManager(namingRules, ioc),
+                ioc
             );
 
             var (solution, defines) = transformer.Transform(group, config);
@@ -307,18 +311,20 @@ namespace SharpGenTools.Sdk.Tasks
             if (SharpGenLogger.HasErrors)
                 return false;
 
-            var generator = new RoslynGenerator(
-                SharpGenLogger,
-                globalNamespace,
-                docLinker,
-                new ExternalDocCommentsReader(documentationFiles),
-                new GeneratorConfig
-                {
-                    Platforms = platformMask
-                }
+            serviceContainer.AddService(new ExternalDocCommentsReader(documentationFiles));
+
+            serviceContainer.AddService<IGeneratorRegistry>(
+                new DefaultGenerators(
+                    new GeneratorConfig
+                    {
+                        Platforms = platformMask
+                    },
+                    ioc
+                )
             );
 
-            generator.Run(solution, GeneratedCodeFolder);
+            RoslynGenerator generator = new();
+            generator.Run(solution, GeneratedCodeFolder, ioc);
 
             return !SharpGenLogger.HasErrors;
         }

@@ -34,22 +34,22 @@ namespace SharpGen.Model
 
         public CsInterface(CppInterface cppInterface, string name) : base(cppInterface, name)
         {
-            var tag = cppInterface?.Rule;
-            IsCallback = tag?.IsCallbackInterface ?? IsCallback;
-            IsDualCallback = tag?.IsDualCallbackInterface ?? IsDualCallback;
-            AutoGenerateShadow = tag?.AutoGenerateShadow ?? AutoGenerateShadow;
-            AutoGenerateVtbl = tag?.AutoGenerateVtbl ?? AutoGenerateVtbl;
-            StaticShadowVtbl = tag?.StaticShadowVtbl ?? StaticShadowVtbl;
-            ShadowVisibility = tag?.ShadowVisibility ?? ShadowVisibility;
-            VtblVisibility = tag?.VtblVisibility ?? VtblVisibility;
-
-            if (tag?.ShadowName != null)
-                ShadowName = tag.ShadowName;
-            if (tag?.VtblName != null)
-                VtblName = tag.VtblName;
-
-            if (cppInterface is null)
+            if (cppInterface == null)
                 return;
+
+            var tag = cppInterface.Rule;
+            IsCallback = tag.IsCallbackInterface ?? IsCallback;
+            IsDualCallback = tag.IsDualCallbackInterface ?? IsDualCallback;
+            AutoGenerateShadow = tag.AutoGenerateShadow ?? AutoGenerateShadow;
+            AutoGenerateVtbl = tag.AutoGenerateVtbl ?? AutoGenerateVtbl;
+            StaticShadowVtbl = tag.StaticShadowVtbl ?? StaticShadowVtbl;
+            ShadowVisibility = tag.ShadowVisibility ?? ShadowVisibility;
+            VtblVisibility = tag.VtblVisibility ?? VtblVisibility;
+
+            if (tag.ShadowName != null)
+                ShadowName = tag.ShadowName;
+            if (tag.VtblName != null)
+                VtblName = tag.VtblName;
 
             Guid = FindGuid(cppInterface);
         }

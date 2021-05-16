@@ -1,53 +1,37 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SharpGen.Generator.Marshallers;
 using SharpGen.Logging;
 using SharpGen.Model;
-using SharpGen.Transform;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    class CallableCodeGenerator : MemberCodeGeneratorBase<CsCallable>
+    internal sealed class CallableCodeGenerator : MemberCodeGeneratorBase<CsCallable>
     {
-        public CallableCodeGenerator(IGeneratorRegistry generators, IDocumentationLinker documentation, ExternalDocCommentsReader docReader, GlobalNamespaceProvider globalNamespace, Logger logger)
-            :base(documentation, docReader)
-        {
-            Generators = generators;
-            this.globalNamespace = globalNamespace;
-            this.logger = logger;
-        }
-
-        private readonly GlobalNamespaceProvider globalNamespace;
-        private readonly Logger logger;
-
-        public IGeneratorRegistry Generators { get; }
-
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsCallable csElement)
         {
-            // Documentation
-            var documentationTrivia = GenerateDocumentationTrivia(csElement);
-
             // method signature
             var parameters = csElement.PublicParameters.Select(
-                param => Generators.Marshalling.GetMarshaller(param)
-                                   .GenerateManagedParameter(param)
-                                   .WithDefault(param.DefaultValue == null
-                                                    ? default
-                                                    : EqualsValueClause(ParseExpression(param.DefaultValue))
-                                    )
+                param => GetMarshaller(param)
+                        .GenerateManagedParameter(param)
+                        .WithDefault(
+                             param.DefaultValue == null
+                                 ? default
+                                 : EqualsValueClause(ParseExpression(param.DefaultValue))
+                         )
             );
 
-            var methodDeclaration = MethodDeclaration(
-                                        ParseTypeName(csElement.GetPublicReturnTypeQualifiedName(globalNamespace)),
-                                        csElement.Name
-                                    )
-                                   .WithModifiers(csElement.VisibilityTokenList.Add(Token(SyntaxKind.UnsafeKeyword)))
-                                   .WithParameterList(ParameterList(SeparatedList(parameters)))
-                                   .WithLeadingTrivia(Trivia(documentationTrivia));
+            var methodDeclaration = AddDocumentationTrivia(
+                MethodDeclaration(
+                        ParseTypeName(csElement.PublicReturnTypeQualifiedName),
+                        csElement.Name
+                    )
+                   .WithModifiers(csElement.VisibilityTokenList.Add(Token(SyntaxKind.UnsafeKeyword)))
+                   .WithParameterList(ParameterList(SeparatedList(parameters))),
+                csElement
+            );
 
             if (csElement.SignatureOnly)
             {
@@ -70,7 +54,7 @@ namespace SharpGen.Generator
                 {
                     if (!ValidRelationInScenario(relation))
                     {
-                        logger.Error(
+                        Logger.Error(
                             LoggingCodes.InvalidRelationInScenario,
                             $"The relation \"{relation}\" is invalid in a method/function."
                         );
@@ -88,7 +72,7 @@ namespace SharpGen.Generator
 
                         if (relatedParameter is null)
                         {
-                            logger.Error(
+                            Logger.Error(
                                 LoggingCodes.InvalidRelationInScenario,
                                 $"The relation with \"{relatedMarshallableName}\" parameter is invalid in a method/function \"{csElement.Name}\"."
                             );
@@ -98,9 +82,7 @@ namespace SharpGen.Generator
 
                     statements.Add(
                         relation,
-                        item => Generators.Marshalling
-                                          .GetRelationMarshaller(item)
-                                          .GenerateManagedToNative(relatedParameter, param)
+                        item => GetRelationMarshaller(item).GenerateManagedToNative(relatedParameter, param)
                     );
                 }
 
@@ -125,11 +107,11 @@ namespace SharpGen.Generator
             );
 
             var fixedStatements = csElement.PublicParameters
-                .Select(param => Generators.Marshalling.GetMarshaller(param).GeneratePin(param))
+                .Select(param => GetMarshaller(param).GeneratePin(param))
                 .Where(stmt => stmt != null).ToList();
 
             var callStmt = GeneratorHelpers.GetPlatformSpecificStatements(
-                globalNamespace, Generators.Config, csElement.InteropSignatures.Keys,
+                GlobalNamespace, Generators.Config, csElement.InteropSignatures.Keys,
                 platform => ExpressionStatement(
                     Generators.NativeInvocation.GenerateCall(
                         csElement, platform, csElement.InteropSignatures[platform]
@@ -146,7 +128,7 @@ namespace SharpGen.Generator
             statements.Add(fixedStatement ?? callStmt);
 
             statements.AddRange(
-                csElement.RefOutParameters,
+                csElement.LocalManagedReferenceParameters,
                 static (marshaller, item) => marshaller.GenerateNativeToManaged(item, true)
             );
 
@@ -161,7 +143,7 @@ namespace SharpGen.Generator
                 static (marshaller, item) => marshaller.GenerateNativeCleanup(item, true)
             );
 
-            if (csElement.IsReturnTypeResult(globalNamespace) && csElement.CheckReturnType)
+            if (csElement.IsReturnTypeResult && csElement.CheckReturnType)
             {
                 statements.Add(ExpressionStatement(
                     InvocationExpression(
@@ -171,7 +153,7 @@ namespace SharpGen.Generator
             }
 
             // Return
-            if (csElement.HasReturnStatement(globalNamespace))
+            if (csElement.HasReturnStatement)
             {
                 statements.Add(ReturnStatement(IdentifierName(csElement.ReturnName)));
             }
@@ -195,5 +177,9 @@ namespace SharpGen.Generator
 
         private static bool ValidRelationInScenario(MarshallableRelation relation) =>
             relation is ConstantValueRelation or LengthRelation;
+
+        public CallableCodeGenerator(Ioc ioc) : base(ioc)
+        {
+        }
     }
 }

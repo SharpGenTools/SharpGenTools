@@ -18,7 +18,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -29,27 +31,76 @@ namespace SharpGen
     /// </summary>
     public class GlobalNamespaceProvider
     {
-        private readonly Dictionary<WellKnownName, string> overrides = new();
+        private readonly Dictionary<WellKnownName, string> wellKnownOverrides = new();
+        private readonly Dictionary<WellKnownName, NameSyntax> wellKnownOverrideCache = new();
+        private readonly Dictionary<WellKnownName, NameSyntax> wellKnownDefaults = new();
 
-        public string GetTypeName(WellKnownName name) =>
-            overrides.TryGetValue(name, out var overridenName)
-                ? overridenName
-                : $"SharpGen.Runtime.{name}";
-
-        public NameSyntax GetTypeNameSyntax(WellKnownName name) => SyntaxFactory.ParseName(GetTypeName(name));
-
-        public static NameSyntax GetTypeNameSyntax(BuiltinType type) =>
-            type switch
-            {
-                BuiltinType.Marshal => SyntaxFactory.ParseName("System.Runtime.InteropServices.Marshal"),
-                BuiltinType.Math => SyntaxFactory.ParseName("System.Math"),
-                BuiltinType.Unsafe => SyntaxFactory.ParseName("System.Runtime.CompilerServices.Unsafe"),
-                _ => null
-            };
-
-        public void OverrideName(WellKnownName wellKnownName, string name)
+        private readonly Dictionary<BuiltinType, NameSyntax> builtInDefaults = new()
         {
-            overrides[wellKnownName] = name;
+            [BuiltinType.Marshal] = SyntaxFactory.ParseName("System.Runtime.InteropServices.Marshal"),
+            [BuiltinType.Math] = SyntaxFactory.ParseName("System.Math"),
+            [BuiltinType.Unsafe] = SyntaxFactory.ParseName("System.Runtime.CompilerServices.Unsafe"),
+            [BuiltinType.Span] = SyntaxFactory.ParseName("System.Span"),
+        };
+
+        private readonly Dictionary<BuiltinType, string> builtInOverrides = new();
+        private readonly Dictionary<BuiltinType, NameSyntax> builtInOverrideCache = new();
+
+        public string GetTypeName(WellKnownName name) => wellKnownOverrides.TryGetValue(name, out var overridenName)
+                                                             ? overridenName
+                                                             : WellKnownDefaultName(name);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static string WellKnownDefaultName(WellKnownName name) => "SharpGen.Runtime." + name;
+
+        public NameSyntax GetTypeNameSyntax(WellKnownName name)
+        {
+            if (wellKnownOverrideCache.TryGetValue(name, out var cache))
+                return cache;
+
+            NameSyntax value;
+            if (wellKnownOverrides.TryGetValue(name, out var overrideName))
+            {
+                value = SyntaxFactory.ParseName(overrideName);
+                wellKnownOverrideCache.Add(name, value);
+                return value;
+            }
+
+            if (wellKnownDefaults.TryGetValue(name, out var defaultName))
+                return defaultName;
+
+            value = SyntaxFactory.ParseName(WellKnownDefaultName(name));
+            wellKnownDefaults.Add(name, value);
+            return value;
         }
+
+        public NameSyntax GetTypeNameSyntax(BuiltinType type)
+        {
+            if (builtInOverrideCache.TryGetValue(type, out var cache))
+                return cache;
+
+            if (builtInOverrides.TryGetValue(type, out var overrideName))
+            {
+                var value = SyntaxFactory.ParseName(overrideName);
+                builtInOverrideCache.Add(type, value);
+                return value;
+            }
+
+            return builtInDefaults[type];
+        }
+
+        public NameSyntax GetGenericTypeNameSyntax(BuiltinType type, TypeArgumentListSyntax typeArgumentList)
+        {
+            if (type != BuiltinType.Span)
+                throw new ArgumentOutOfRangeException(nameof(type));
+
+            return SyntaxFactory.QualifiedName(
+                SyntaxFactory.IdentifierName("System"),
+                SyntaxFactory.GenericName(SyntaxFactory.Identifier("Span")).WithTypeArgumentList(typeArgumentList)
+            );
+        }
+
+        public void OverrideName(WellKnownName wellKnownName, string name) => wellKnownOverrides[wellKnownName] = name;
+        public void OverrideName(BuiltinType builtInName, string name) => builtInOverrides[builtInName] = name;
     }
 }

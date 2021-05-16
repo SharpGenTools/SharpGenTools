@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using SharpGen.CppModel;
 using SharpGen.Logging;
 using SharpGen.Model;
@@ -31,10 +32,12 @@ namespace SharpGen.Transform
         where TCsElement : CsBase
         where TCppElement : CppElement
     {
-        protected TransformBase(NamingRulesManager namingRules, Logger logger)
+        protected readonly Ioc Ioc;
+
+        protected TransformBase(NamingRulesManager namingRules, Ioc ioc)
         {
             NamingRules = namingRules;
-            Logger = logger;
+            Ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
         }
 
         /// <summary>
@@ -46,7 +49,7 @@ namespace SharpGen.Transform
         /// <summary>
         /// Gets the logger for this transformation
         /// </summary>
-        protected Logger Logger { get; }
+        protected Logger Logger => Ioc.Logger;
 
         /// <summary>
         /// Prepares the specified C++ element to a C# element.

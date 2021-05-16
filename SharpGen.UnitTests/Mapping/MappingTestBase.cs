@@ -32,18 +32,13 @@ namespace SharpGen.UnitTests.Mapping
 
         private TransformManager CreateTransformer()
         {
-            var docLinker = new DocumentationLinker();
-            var typeRegistry = new TypeRegistry(Logger, docLinker);
-            var namingRules = new NamingRulesManager();
+            NamingRulesManager namingRules = new();
 
             // Run the main mapping process
             return new TransformManager(
-                new GlobalNamespaceProvider(),
                 namingRules,
-                Logger,
-                typeRegistry,
-                docLinker,
-                new ConstantManager(namingRules, docLinker)
+                new ConstantManager(namingRules, Ioc),
+                Ioc
             );
         }
     }

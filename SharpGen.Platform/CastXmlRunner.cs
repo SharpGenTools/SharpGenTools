@@ -35,10 +35,10 @@ namespace SharpGen.Platform
     /// </summary>
     public sealed class CastXmlRunner : ICastXmlRunner
     {
-        private static readonly Regex MatchError = new Regex("error:", RegexOptions.Compiled);
+        private static readonly Regex MatchError = new("error:", RegexOptions.Compiled);
 
         // path/to/header.h:68:1: error:
-        private static readonly Regex MatchFileErrorRegex = new Regex(@"^(.*):(\d+):(\d+):\s+error:(.*)", RegexOptions.Compiled);
+        private static readonly Regex MatchFileErrorRegex = new(@"^(.*):(\d+):(\d+):\s+error:(.*)", RegexOptions.Compiled);
 
         private IReadOnlyList<string> AdditionalArguments { get; }
 
@@ -50,17 +50,18 @@ namespace SharpGen.Platform
         /// <value>The executable path.</value>
         private string ExecutablePath { get; }
 
-        private Logger Logger { get; }
+        private Logger Logger => ioc.Logger;
 
         private readonly IncludeDirectoryResolver directoryResolver;
+        private readonly Ioc ioc;
 
-        public CastXmlRunner(Logger logger, IncludeDirectoryResolver directoryResolver,
-                             string executablePath, IReadOnlyList<string> additionalArguments)
+        public CastXmlRunner(IncludeDirectoryResolver directoryResolver,
+                             string executablePath, IReadOnlyList<string> additionalArguments, Ioc ioc)
         {
+            this.ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
             this.directoryResolver = directoryResolver ?? throw new ArgumentNullException(nameof(directoryResolver));
             AdditionalArguments = additionalArguments ?? throw new ArgumentNullException(nameof(additionalArguments));
             ExecutablePath = executablePath ?? throw new ArgumentNullException(nameof(executablePath));
-            Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>

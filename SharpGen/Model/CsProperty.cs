@@ -18,13 +18,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Text.RegularExpressions;
 using SharpGen.CppModel;
 
 namespace SharpGen.Model
 {
     public sealed class CsProperty : CsMarshalBase
     {
-        public CsProperty(CppMethod cppCallable, string name, CsMethod getter, CsMethod setter, bool isPropertyParam = false) : base(cppCallable, name)
+        private static readonly Regex MatchGet = new(@"^\s*(\<[Pp]\>)?\s*(Gets?|Retrieves?|Returns)", RegexOptions.Compiled);
+
+        public CsProperty(Ioc ioc, CppMethod cppCallable, string name, CsMethod getter, CsMethod setter,
+                          bool isPropertyParam = false) : base(ioc, cppCallable, name)
         {
             Getter = getter;
             Setter = setter;
@@ -39,6 +43,22 @@ namespace SharpGen.Model
         public bool IsPropertyParam { get; }
 
         public bool IsPersistent { get; }
+
+        public override string Description
+        {
+            get
+            {
+                var description = base.Description;
+
+                // If we have a both getter and a setter, then we need to modify the documentation
+                // in order to print that we have both.
+                if (Getter != null && Setter != null && !string.IsNullOrEmpty(description))
+                    description = MatchGet.Replace(description, "$1$2 or sets");
+
+                return description;
+            }
+            set => base.Description = value;
+        }
 
         public override string DocUnmanagedName =>
             FormatDocUnmanagedName(Getter?.DocUnmanagedName, Setter?.DocUnmanagedName);

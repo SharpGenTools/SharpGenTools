@@ -16,12 +16,11 @@ namespace SharpGen.Transform
 
     public class PropertyBuilder
     {
-        private static readonly Regex MatchGet = new(@"^\s*(\<[Pp]\>)?\s*(Gets?|Retrieves?|Returns)", RegexOptions.Compiled);
-        private readonly GlobalNamespaceProvider globalNamespace;
+        private readonly Ioc ioc;
 
-        public PropertyBuilder(GlobalNamespaceProvider globalNamespace)
+        public PropertyBuilder(Ioc ioc)
         {
-            this.globalNamespace = globalNamespace;
+            this.ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
         }
 
         public Dictionary<string, CsProperty> CreateProperties(IEnumerable<CsMethod> methods)
@@ -61,7 +60,7 @@ namespace SharpGen.Transform
             // Associate the property with the underlying method's C++ element.
             var cppElement = getter?.CppElement ?? setter?.CppElement;
 
-            return new CsProperty((CppMethod) cppElement, group.Key, getter, setter, isParamGetter)
+            return new CsProperty(ioc, (CppMethod) cppElement, group.Key, getter, setter, isParamGetter)
             {
                 PublicType = getterPropType ?? setterPropType
             };
@@ -75,9 +74,9 @@ namespace SharpGen.Transform
             return getter.Parameters.Count switch
             {
                 1 when getter.Parameters[0].IsOut && !getter.Parameters[0].IsArray =>
-                    !getter.HasReturnType || getter.IsReturnTypeResult(globalNamespace),
+                    !getter.HasReturnType || getter.IsReturnTypeResult,
 
-                0 => getter.HasReturnTypeValue(globalNamespace),
+                0 => getter.HasReturnTypeValue,
                 _ => false
             };
         }
@@ -87,7 +86,7 @@ namespace SharpGen.Transform
             if (setter == null)
                 return true;
 
-            if (!setter.IsReturnTypeResult(globalNamespace) && setter.HasReturnType)
+            if (!setter.IsReturnTypeResult && setter.HasReturnType)
                 return false;
 
             if (setter.Parameters.Count != 1)
@@ -109,12 +108,6 @@ namespace SharpGen.Transform
 
         public static void AttachPropertyToParent(CsProperty property)
         {
-            // If We have a getter, then we need to modify the documentation in order to print that we have Gets and Sets.
-            if (property.Getter != null && property.Setter != null && !string.IsNullOrEmpty(property.Description))
-            {
-                property.Description = MatchGet.Replace(property.Description, "$1$2 or sets");
-            }
-
             var parent = property.Getter?.Parent ?? property.Setter?.Parent;
 
             // If mapping rule disallows properties, don't attach the property to the model.

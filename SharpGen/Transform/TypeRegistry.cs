@@ -6,18 +6,18 @@ using System.Linq;
 
 namespace SharpGen.Transform
 {
-    public partial class TypeRegistry
+    public sealed partial class TypeRegistry
     {
         private readonly Dictionary<string, BoundType> _mapCppNameToCSharpType = new();
         private readonly Dictionary<string, CsTypeBase> _mapDefinedCSharpType = new();
+        private readonly Ioc ioc;
 
-        private Logger Logger { get; }
-        private IDocumentationLinker DocLinker { get; }
+        private Logger Logger => ioc.Logger;
+        private IDocumentationLinker DocLinker => ioc.DocumentationLinker;
 
-        public TypeRegistry(Logger logger, IDocumentationLinker docLinker)
+        public TypeRegistry(Ioc ioc)
         {
-            Logger = logger;
-            DocLinker = docLinker;
+            this.ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
         }
 
         /// <summary>

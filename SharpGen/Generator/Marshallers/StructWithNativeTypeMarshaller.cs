@@ -7,12 +7,8 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    internal class StructWithNativeTypeMarshaller : MarshallerBase, IMarshaller
+    internal sealed class StructWithNativeTypeMarshaller : MarshallerBase, IMarshaller
     {
-        public StructWithNativeTypeMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
-        {
-        }
-
         public bool CanMarshal(CsMarshalBase csElement) => csElement.HasNativeValueType && !csElement.IsArray;
 
         public ArgumentSyntax GenerateManagedArgument(CsParameter csElement) =>
@@ -32,43 +28,32 @@ namespace SharpGen.Generator.Marshallers
                     publicElementExpression,
                     IdentifierName("Value"));
             }
-            var marshalToStatement = CreateMarshalStructStatement(
-                csElement,
-                StructMarshalMethod.To,
-                publicElementExpression,
-                GetMarshalStorageLocation(csElement));
 
-            return csElement.PublicType switch
-            {
-                CsStruct {HasCustomNew: true} => Block(
-                    CreateMarshalCustomNewStatement(csElement, GetMarshalStorageLocation(csElement)),
-                    marshalToStatement
-                ),
-                _ => marshalToStatement
-            };
+            return GenerateMarshalStructManagedToNative(
+                csElement, publicElementExpression, GetMarshalStorageLocation(csElement)
+            );
         }
 
         public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
         {
-            var defaultSyntax = LiteralExpression(SyntaxKind.DefaultLiteralExpression, Token(SyntaxKind.DefaultKeyword));
-
             yield return LocalDeclarationStatement(
                 VariableDeclaration(
                     GetMarshalTypeSyntax(csElement),
                     SingletonSeparatedList(
                         VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement))
                            .WithInitializer(
-                                EqualsValueClause(defaultSyntax))
+                                EqualsValueClause(DefaultLiteral))
                     )
                 )
             );
+
             if (csElement.IsOut)
             {
                 yield return ExpressionStatement(
                     AssignmentExpression(
                         SyntaxKind.SimpleAssignmentExpression,
                         IdentifierName(csElement.Name),
-                        defaultSyntax
+                        DefaultLiteral
                     )
                 );
             }
@@ -79,10 +64,7 @@ namespace SharpGen.Generator.Marshallers
                 ? GenerateNullCheckIfNeeded(
                     csElement,
                     PrefixUnaryExpression(SyntaxKind.AddressOfExpression, GetMarshalStorageLocation(csElement)),
-                    CastExpression(
-                        VoidPtrType,
-                        LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))
-                    )
+                    CastExpression(VoidPtrType, ZeroLiteral)
                 )
                 : GetMarshalStorageLocation(csElement)
         );
@@ -136,5 +118,9 @@ namespace SharpGen.Generator.Marshallers
 
         public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement) =>
             ParseTypeName($"{csElement.PublicType.QualifiedName}.__Native");
+
+        public StructWithNativeTypeMarshaller(Ioc ioc) : base(ioc)
+        {
+        }
     }
 }

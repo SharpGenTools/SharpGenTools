@@ -9,17 +9,8 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class VtblGenerator : ICodeGenerator<CsInterface, MemberDeclarationSyntax>
+    internal sealed class VtblGenerator : CodeGeneratorBase, ICodeGenerator<CsInterface, MemberDeclarationSyntax>
     {
-        private readonly IGeneratorRegistry generators;
-        private readonly GlobalNamespaceProvider globalNamespace;
-
-        public VtblGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
-        {
-            this.generators = generators ?? throw new ArgumentNullException(nameof(generators));
-            this.globalNamespace = globalNamespace ?? throw new ArgumentNullException(nameof(globalNamespace));
-        }
-
         public MemberDeclarationSyntax GenerateCode(CsInterface csElement)
         {
             var vtblClassName = csElement.VtblName.Split('.').Last();
@@ -63,7 +54,7 @@ namespace SharpGen.Generator
                     );
                 }
 
-                return GeneratorHelpers.GetPlatformSpecificStatements(globalNamespace, generators.Config,
+                return GeneratorHelpers.GetPlatformSpecificStatements(GlobalNamespace, Generators.Config,
                                                                       method.InteropSignatures.Keys, MethodBuilder);
             }
 
@@ -107,7 +98,7 @@ namespace SharpGen.Generator
                     )
             };
 
-            members.AddRange(csElement.Methods.SelectMany(method => generators.ShadowCallable.GenerateCode(method)));
+            members.AddRange(csElement.Methods.SelectMany(method => Generators.ShadowCallable.GenerateCode(method)));
 
             return ClassDeclaration(vtblClassName)
                   .WithModifiers(
@@ -120,7 +111,7 @@ namespace SharpGen.Generator
                                SimpleBaseType(
                                    csElement.Base != null
                                        ? IdentifierName(csElement.Base.VtblName)
-                                       : globalNamespace.GetTypeNameSyntax(WellKnownName.CppObjectVtbl)
+                                       : GlobalNamespace.GetTypeNameSyntax(WellKnownName.CppObjectVtbl)
                                )
                            )
                        )
@@ -130,5 +121,9 @@ namespace SharpGen.Generator
 
         internal static string GetMethodDelegateName(CsCallable csElement, PlatformDetectionType platform) =>
             csElement.Name + "Delegate" + GeneratorHelpers.GetPlatformSpecificSuffix(platform);
+
+        public VtblGenerator(Ioc ioc) : base(ioc)
+        {
+        }
     }
 }

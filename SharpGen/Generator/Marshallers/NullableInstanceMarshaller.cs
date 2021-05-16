@@ -7,12 +7,8 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    internal class NullableInstanceMarshaller : MarshallerBase, IMarshaller
+    internal sealed class NullableInstanceMarshaller : MarshallerBase, IMarshaller
     {
-        public NullableInstanceMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
-        {
-        }
-
         public bool CanMarshal(CsMarshalBase csElement) =>
             csElement is CsParameter {PassedByNullableInstance: true, HasNativeValueType: false};
 
@@ -31,8 +27,7 @@ namespace SharpGen.Generator.Marshallers
                         GetMarshalStorageLocation(csElement),
                         MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
-                            IdentifierName(csElement.Name),
-                            IdentifierName("Value")
+                            IdentifierName(csElement.Name), IdentifierName("Value")
                         )
                     )
                 )
@@ -52,19 +47,19 @@ namespace SharpGen.Generator.Marshallers
             GenerateNullCheckIfNeeded(
                 csElement,
                 PrefixUnaryExpression(SyntaxKind.AddressOfExpression, GetMarshalStorageLocation(csElement)),
-                CastExpression(
-                    VoidPtrType,
-                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))
-                )
+                CastExpression(VoidPtrType, ZeroLiteral)
             )
         );
 
         public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame) => null;
 
         public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame) =>
-            ExpressionStatement(AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                                                     IdentifierName(csElement.Name),
-                                                     GetMarshalStorageLocation(csElement)));
+            ExpressionStatement(
+                AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    IdentifierName(csElement.Name), GetMarshalStorageLocation(csElement)
+                )
+            );
 
         public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement) =>
             Enumerable.Empty<StatementSyntax>();
@@ -75,5 +70,9 @@ namespace SharpGen.Generator.Marshallers
 
         public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement) =>
             ParseTypeName(csElement.MarshalType.QualifiedName);
+
+        public NullableInstanceMarshaller(Ioc ioc) : base(ioc)
+        {
+        }
     }
 }

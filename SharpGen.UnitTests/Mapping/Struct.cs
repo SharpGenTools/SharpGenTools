@@ -115,9 +115,9 @@ namespace SharpGen.UnitTests.Mapping
             var field = csStruct.Fields.First(fld => fld.Name == "Field");
             var field2 = csStruct.Fields.First(fld => fld.Name == "Field2");
 
-            Assert.Equal(0, field.Offset);
+            Assert.Equal(0u, field.Offset);
 
-            Assert.Equal(4, field2.Offset);
+            Assert.Equal(4u, field2.Offset);
         }
 
         [Fact]
@@ -175,9 +175,9 @@ namespace SharpGen.UnitTests.Mapping
             var field = csStruct.Fields.First(fld => fld.Name == "Field");
             var field2 = csStruct.Fields.First(fld => fld.Name == "Field2");
 
-            Assert.Equal(0, field.Offset);
+            Assert.Equal(0u, field.Offset);
 
-            Assert.Equal(4, field2.Offset);
+            Assert.Equal(4u, field2.Offset);
         }
 
         [Fact]
@@ -298,19 +298,19 @@ namespace SharpGen.UnitTests.Mapping
             var bitField1 = csStruct.Fields.First(field => field.Name == "Bitfield1");
 
             Assert.Equal(0, bitField1.BitOffset);
-            Assert.Equal(0, bitField1.Offset);
+            Assert.Equal(0u, bitField1.Offset);
             Assert.Equal((1 << 16) - 1, bitField1.BitMask);
             Assert.True(bitField1.IsBitField);
 
             var csField = csStruct.Fields.First(field => field.Name == "Field");
 
-            Assert.Equal(4, csField.Offset);
+            Assert.Equal(4u, csField.Offset);
             Assert.False(csField.IsBitField);
 
             var bitField2 = csStruct.Fields.First(field => field.Name == "Bitfield2");
 
             Assert.Equal(0, bitField2.BitOffset);
-            Assert.Equal(8, bitField2.Offset);
+            Assert.Equal(8u, bitField2.Offset);
             Assert.Equal((1 << 16) - 1, bitField2.BitMask);
             Assert.True(bitField2.IsBitField);
         }
@@ -367,7 +367,7 @@ namespace SharpGen.UnitTests.Mapping
 
             foreach (var field in csStruct.Fields)
             {
-                Assert.Equal(0, field.Offset);
+                Assert.Equal(0u, field.Offset);
             }
 
             Assert.False(Logger.HasErrors);

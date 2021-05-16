@@ -34,7 +34,7 @@ namespace SharpGen.Transform
     public class InterfaceTransform : TransformBase<CsInterface, CppInterface>, ITransformPreparer<CppInterface, CsInterface>, ITransformer<CsInterface>
     {
         private readonly Dictionary<Regex, InnerInterfaceMethod> _mapMoveMethodToInnerInterface = new();
-        private readonly TypeRegistry typeRegistry;
+        private TypeRegistry TypeRegistry => Ioc.TypeRegistry;
         private readonly NamespaceRegistry namespaceRegistry;
         private readonly IInteropSignatureTransform interopSignatureTransform;
         private readonly PropertyBuilder propertyBuilder;
@@ -43,24 +43,21 @@ namespace SharpGen.Transform
         private readonly CsInterface DefaultCallbackable;
         private readonly CsInterface CppObjectType;
 
-        public InterfaceTransform(
-            NamingRulesManager namingRules,
-            Logger logger,
-            GlobalNamespaceProvider globalNamespace,
-            ITransformPreparer<CppMethod, CsMethod> methodPreparer,
-            ITransformer<CsMethod> methodTransformer,
-            TypeRegistry typeRegistry,
-            NamespaceRegistry namespaceRegistry,
-            IInteropSignatureTransform interopSignatureTransform)
-            : base(namingRules, logger)
+        public InterfaceTransform(NamingRulesManager namingRules,
+                                  ITransformPreparer<CppMethod, CsMethod> methodPreparer,
+                                  ITransformer<CsMethod> methodTransformer,
+                                  NamespaceRegistry namespaceRegistry,
+                                  IInteropSignatureTransform interopSignatureTransform,
+                                  Ioc ioc) : base(namingRules, ioc)
         {
             MethodPreparer = methodPreparer;
             MethodTransformer = methodTransformer;
-            this.typeRegistry = typeRegistry;
             this.namespaceRegistry = namespaceRegistry;
             this.interopSignatureTransform = interopSignatureTransform;
-            propertyBuilder = new PropertyBuilder(globalNamespace);
-            methodOverloadBuilder = new MethodOverloadBuilder(globalNamespace, typeRegistry);
+            propertyBuilder = new PropertyBuilder(Ioc);
+            methodOverloadBuilder = new MethodOverloadBuilder(Ioc);
+
+            var globalNamespace = Ioc.GlobalNamespace;
 
             CppObjectType = new CsInterface(null, globalNamespace.GetTypeName(WellKnownName.CppObject));
             DefaultCallbackable = new CsInterface(null, globalNamespace.GetTypeName(WellKnownName.ICallbackable))
@@ -109,7 +106,7 @@ namespace SharpGen.Transform
             var nameSpace = namespaceRegistry.ResolveNamespace(cppInterface);
             nameSpace.Add(cSharpInterface);
 
-            typeRegistry.BindType(cppInterface.Name, cSharpInterface, source: cppInterface.ParentInclude?.Name);
+            TypeRegistry.BindType(cppInterface.Name, cSharpInterface, source: cppInterface.ParentInclude?.Name);
 
             foreach (var cppMethod in cppInterface.Methods)
             {
@@ -133,7 +130,7 @@ namespace SharpGen.Transform
 
             var cppInterface = (CppInterface)interfaceType.CppElement;
             
-            var baseType = typeRegistry.FindBoundType(cppInterface.Base);
+            var baseType = TypeRegistry.FindBoundType(cppInterface.Base);
             if (baseType != null)
             {
                 interfaceType.Base = (CsInterface)baseType;

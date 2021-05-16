@@ -10,15 +10,8 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator.Marshallers
 {
-    internal class StringMarshaller : MarshallerBase, IMarshaller
+    internal sealed class StringMarshaller : MarshallerBase, IMarshaller
     {
-        private const string FromIdentifier = "__from";
-        private const string ToIdentifier = "__to";
-
-        public StringMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
-        {
-        }
-
         private static TypeSyntax StringType { get; } = PredefinedType(Token(SyntaxKind.StringKeyword));
 
         public bool CanMarshal(CsMarshalBase csElement) => csElement.IsString;
@@ -76,7 +69,7 @@ namespace SharpGen.Generator.Marshallers
                         InvocationExpression(
                             MemberAccessExpression(
                                 SyntaxKind.SimpleMemberAccessExpression,
-                                GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Marshal),
+                                GlobalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
                                 IdentifierName(
                                     csElement.IsWideChar
                                         ? nameof(Marshal.StringToHGlobalUni)
@@ -108,7 +101,7 @@ namespace SharpGen.Generator.Marshallers
         public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement) => Argument(
             csElement.IsOut
                 ? PrefixUnaryExpression(SyntaxKind.AddressOfExpression, GetMarshalStorageLocation(csElement))
-                : CastExpression(VoidPtrType, GetMarshalStorageLocation(csElement))
+                : GeneratorHelpers.CastExpression(VoidPtrType, GetMarshalStorageLocation(csElement))
         );
 
         public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame)
@@ -119,7 +112,7 @@ namespace SharpGen.Generator.Marshallers
                     InvocationExpression(
                         MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
-                            GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Marshal),
+                            GlobalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
                             IdentifierName(nameof(Marshal.FreeHGlobal))
                         ),
                         ArgumentList(SingletonSeparatedList(Argument(GetMarshalStorageLocation(csElement))))
@@ -145,13 +138,11 @@ namespace SharpGen.Generator.Marshallers
                 if (csElement.IsWideChar && singleStackFrame)
                     return null;
 
-                const string ptrName = "__ptr";
-
                 return FixedStatement(
                     VariableDeclaration(
                         VoidPtrType,
                         SingletonSeparatedList(
-                            VariableDeclarator(ptrName)
+                            VariableDeclarator(PtrIdentifier)
                                .WithInitializer(
                                     EqualsValueClause(
                                         PrefixUnaryExpression(
@@ -172,7 +163,7 @@ namespace SharpGen.Generator.Marshallers
                                     SeparatedList(
                                         new[]
                                         {
-                                            Argument(CastExpression(IntPtrType, IdentifierName(ptrName))),
+                                            Argument(CastExpression(IntPtrType, PtrIdentifierName)),
                                             Argument(
                                                 LiteralExpression(
                                                     SyntaxKind.NumericLiteralExpression,
@@ -194,7 +185,7 @@ namespace SharpGen.Generator.Marshallers
                     SyntaxKind.SimpleAssignmentExpression,
                     IdentifierName(csElement.Name),
                     InvocationExpression(
-                        PtrToString(GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Marshal)),
+                        PtrToString(GlobalNamespace.GetTypeNameSyntax(BuiltinType.Marshal)),
                         ArgumentList(SingletonSeparatedList(Argument(GetMarshalStorageLocation(csElement))))
                     )
                 )
@@ -230,35 +221,34 @@ namespace SharpGen.Generator.Marshallers
 
         public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement) => IntPtrType;
 
-        private static string LengthIdentifier(CsMarshalBase marshallable) => $"{marshallable.Name}_length";
+        private static SyntaxToken LengthVariableName(CsMarshalBase marshallable) =>
+            Identifier($"{marshallable.Name}_length");
 
         private StatementSyntax GenerateAnsiStringToArray(CsMarshalBase marshallable)
         {
-            var lengthIdentifier = LengthIdentifier(marshallable);
+            var lengthIdentifier = LengthVariableName(marshallable);
 
             return Block(
                     LocalDeclarationStatement(
                         VariableDeclaration(
-                            PredefinedType(Token(SyntaxKind.IntKeyword)),
+                            TypeInt32,
                             SingletonSeparatedList(
-                                VariableDeclarator(Identifier(lengthIdentifier))
+                                VariableDeclarator(lengthIdentifier)
                                 .WithInitializer(EqualsValueClause(
                                     InvocationExpression(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                        GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Math),
+                                        GlobalNamespace.GetTypeNameSyntax(BuiltinType.Math),
                                         IdentifierName(nameof(Math.Min))),
                                         ArgumentList(
                                             SeparatedList(
                                                 new[]
                                                 {
                                                     Argument(
-                                                        BinaryExpression(SyntaxKind.CoalesceExpression,
-                                                                ConditionalAccessExpression(
-                                                                    IdentifierName(marshallable.Name),
-                                                                    MemberBindingExpression(IdentifierName("Length"))),
-                                                                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)))),
+                                                        GeneratorHelpers.OptionalLengthExpression(IdentifierName(marshallable.Name))
+                                                    ),
                                                     Argument(
                                                         LiteralExpression(SyntaxKind.NumericLiteralExpression,
-                                                        Literal(marshallable.ArrayDimensionValue - 1)))
+                                                        Literal(marshallable.ArrayDimensionValue - 1))
+                                                    )
                                                 }
                                             )
                                     ))))))),
@@ -269,7 +259,7 @@ namespace SharpGen.Generator.Marshallers
                                 VariableDeclarator(Identifier(FromIdentifier))
                                     .WithInitializer(EqualsValueClause(
                                         InvocationExpression(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Marshal),
+                                            GlobalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
                                             IdentifierName(nameof(Marshal.StringToHGlobalAnsi))))
                                         .WithArgumentList(
                                             ArgumentList(SingletonSeparatedList(Argument(IdentifierName(marshallable.Name)))))))))),
@@ -283,17 +273,17 @@ namespace SharpGen.Generator.Marshallers
                                             GetMarshalStorageLocation(marshallable)))))
                             ),
                         Block(
-                            GenerateCopyMemoryInvocation(IdentifierName(lengthIdentifier)),
+                            GenerateCopyMemoryInvocation(IdentifierName(lengthIdentifier), castFrom: false),
                             ExpressionStatement(
                                 AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                                     ElementAccessExpression(IdentifierName(ToIdentifier),
                                         BracketedArgumentList(
                                             SingletonSeparatedList(
                                                 Argument(IdentifierName(lengthIdentifier))))),
-                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)))))),
+                                    ZeroLiteral)))),
                     ExpressionStatement(InvocationExpression(
                         MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                            GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Marshal),
+                            GlobalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
                             IdentifierName(nameof(Marshal.FreeHGlobal))),
                                 ArgumentList(SingletonSeparatedList(
                                     Argument(IdentifierName(FromIdentifier))))))
@@ -302,7 +292,7 @@ namespace SharpGen.Generator.Marshallers
 
         private StatementSyntax GenerateStringToArray(CsMarshalBase marshallable)
         {
-            var lengthIdentifier = LengthIdentifier(marshallable);
+            var lengthIdentifier = LengthVariableName(marshallable);
 
             return FixedStatement(
                 VariableDeclaration(
@@ -321,25 +311,23 @@ namespace SharpGen.Generator.Marshallers
                 Block(
                     LocalDeclarationStatement(
                         VariableDeclaration(
-                            PredefinedType(Token(SyntaxKind.IntKeyword)),
+                            TypeInt32,
                             SingletonSeparatedList(
-                                VariableDeclarator(Identifier(lengthIdentifier))
+                                VariableDeclarator(lengthIdentifier)
                                 .WithInitializer(EqualsValueClause(
                                     InvocationExpression(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                        GlobalNamespaceProvider.GetTypeNameSyntax(BuiltinType.Math),
+                                        GlobalNamespace.GetTypeNameSyntax(BuiltinType.Math),
                                         IdentifierName(nameof(Math.Min))),
                                         ArgumentList(
                                             SeparatedList(
                                                 new[]
                                                 {
                                                     Argument(
-                                                        BinaryExpression(SyntaxKind.MultiplyExpression,
+                                                        BinaryExpression(
+                                                            SyntaxKind.MultiplyExpression,
                                                             ParenthesizedExpression(
-                                                                BinaryExpression(SyntaxKind.CoalesceExpression,
-                                                                ConditionalAccessExpression(
-                                                                    IdentifierName(marshallable.Name),
-                                                                    MemberBindingExpression(IdentifierName("Length"))),
-                                                                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0)))),
+                                                                GeneratorHelpers.OptionalLengthExpression(IdentifierName(marshallable.Name))
+                                                            ),
                                                             LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(2))
                                                         )),
                                                     Argument(
@@ -349,7 +337,7 @@ namespace SharpGen.Generator.Marshallers
                                                 }
                                             )
                                     ))))))),
-                    GenerateCopyMemoryInvocation(IdentifierName(lengthIdentifier)),
+                    GenerateCopyMemoryInvocation(IdentifierName(lengthIdentifier), castTo: false, castFrom: false),
                     ExpressionStatement(
                         AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                             ElementAccessExpression(IdentifierName(ToIdentifier),
@@ -357,6 +345,10 @@ namespace SharpGen.Generator.Marshallers
                                     SingletonSeparatedList(
                                         Argument(IdentifierName(lengthIdentifier))))),
                             LiteralExpression(SyntaxKind.CharacterLiteralExpression, Literal('\0'))))));
+        }
+
+        public StringMarshaller(Ioc ioc) : base(ioc)
+        {
         }
     }
 }

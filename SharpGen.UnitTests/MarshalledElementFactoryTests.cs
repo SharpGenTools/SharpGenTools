@@ -1,6 +1,4 @@
-﻿using System;
-using FakeItEasy;
-using SharpGen.Config;
+﻿using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Logging;
 using SharpGen.Model;
@@ -12,8 +10,11 @@ namespace SharpGen.UnitTests
 {
     public class MarshalledElementFactoryTests : TestBase
     {
+        private readonly MarshalledElementFactory marshalledElementFactory;
+
         public MarshalledElementFactoryTests(ITestOutputHelper outputHelper) : base(outputHelper)
         {
+            marshalledElementFactory = new MarshalledElementFactory(Ioc);
         }
 
         [Fact]
@@ -25,9 +26,7 @@ namespace SharpGen.UnitTests
                 Pointer = "*"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("bool", TypeRegistry.Boolean, TypeRegistry.Int32);
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+            TypeRegistry.BindType("bool", TypeRegistry.Boolean, TypeRegistry.Int32);
 
             var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
             Assert.Equal(TypeRegistry.Int32, csMarshallable.MarshalType);
@@ -44,10 +43,7 @@ namespace SharpGen.UnitTests
                 TypeName = "int"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("int", TypeRegistry.Int32);
-
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+            TypeRegistry.BindType("int", TypeRegistry.Int32);
 
             var csMarshallable = marshalledElementFactory.Create(marshallable, marshallable.Name);
 
@@ -63,10 +59,7 @@ namespace SharpGen.UnitTests
                 Pointer = "**"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("Interface", new CsInterface(null, "Interface"));
-
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+            TypeRegistry.BindType("Interface", new CsInterface(null, "Interface"));
 
             var csParameter = marshalledElementFactory.Create(cppParameter, cppParameter.Name);
 
@@ -79,13 +72,8 @@ namespace SharpGen.UnitTests
             var cppMarshallable = new CppParameter("param")
             {
                 TypeName = "char",
-                IsArray = true,
                 ArrayDimension = "10"
             };
-
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
             var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
 
@@ -103,13 +91,8 @@ namespace SharpGen.UnitTests
             var cppMarshallable = new CppParameter("param")
             {
                 TypeName = "wchar_t",
-                IsArray = true,
                 ArrayDimension = "10"
             };
-
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
 
             var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
 
@@ -131,10 +114,6 @@ namespace SharpGen.UnitTests
                 Pointer = "*"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
-
             var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
 
             Assert.Equal(TypeRegistry.String, csMarshallable.PublicType);
@@ -153,10 +132,6 @@ namespace SharpGen.UnitTests
                 Pointer = "*"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
-
             var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
 
             Assert.Equal(TypeRegistry.String, csMarshallable.PublicType);
@@ -174,14 +149,10 @@ namespace SharpGen.UnitTests
             var cppMarshallable = new CppParameter("param")
             {
                 TypeName = "int",
-                ArrayDimension = "0",
-                IsArray = true
+                ArrayDimension = "0"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("int", TypeRegistry.Int32);
-
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+            TypeRegistry.BindType("int", TypeRegistry.Int32);
 
             var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
             Assert.Equal(TypeRegistry.Int32, csMarshallable.PublicType);
@@ -198,18 +169,14 @@ namespace SharpGen.UnitTests
             {
                 TypeName = "int",
                 ArrayDimension = "0",
-                IsArray = true,
                 Rule =
                 {
                     MappingType = "bool"
                 }
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("bool", TypeRegistry.Boolean);
-            typeRegistry.BindType("int", TypeRegistry.Int32);
-
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+            TypeRegistry.BindType("bool", TypeRegistry.Boolean);
+            TypeRegistry.BindType("int", TypeRegistry.Int32);
 
             var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
 
@@ -227,18 +194,14 @@ namespace SharpGen.UnitTests
             {
                 TypeName = "short",
                 ArrayDimension = "0",
-                IsArray = true,
                 Rule =
                 {
                     MappingType = "bool"
                 }
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("bool", TypeRegistry.Boolean, TypeRegistry.Int32);
-            typeRegistry.BindType("short", TypeRegistry.Int16);
-
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+            TypeRegistry.BindType("bool", TypeRegistry.Boolean, TypeRegistry.Int32);
+            TypeRegistry.BindType("short", TypeRegistry.Int16);
 
             var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
 
@@ -264,23 +227,22 @@ namespace SharpGen.UnitTests
             {
                 TypeName = "Integer",
                 ArrayDimension = "0",
-                IsArray = true,
                 Rule =
                 {
                     MappingType = "bool"
                 }
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("bool", TypeRegistry.Boolean);
-            typeRegistry.BindType("Integer", TypeRegistry.ImportPrimitiveType(integerType));
+            var integerPrimitiveType = TypeRegistry.ImportPrimitiveType(integerType);
 
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+            TypeRegistry.BindType("bool", TypeRegistry.Boolean);
+            TypeRegistry.BindType("Integer", integerPrimitiveType);
+
 
             var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
 
             Assert.Equal(TypeRegistry.Boolean, csMarshallable.PublicType);
-            Assert.Equal(TypeRegistry.ImportPrimitiveType(integerType), csMarshallable.MarshalType);
+            Assert.Equal(integerPrimitiveType, csMarshallable.MarshalType);
             Assert.True(csMarshallable.IsBoolToInt);
             Assert.False(csMarshallable.HasPointer);
             Assert.False(csMarshallable.IsArray);
@@ -296,9 +258,7 @@ namespace SharpGen.UnitTests
                 Pointer = "*"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("int", TypeRegistry.IntPtr);
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+            TypeRegistry.BindType("int", TypeRegistry.IntPtr);
 
             var csField = marshalledElementFactory.Create(cppField, cppField.Name);
 
@@ -315,13 +275,11 @@ namespace SharpGen.UnitTests
                 Pointer = "*"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("Interface", new CsInterface(null, "Interface"));
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+            TypeRegistry.BindType("Interface", new CsInterface(null, "Interface"));
 
             var csField = marshalledElementFactory.Create(cppField, cppField.Name);
 
-            Assert.Equal(typeRegistry.FindBoundType("Interface"), csField.PublicType);
+            Assert.Equal(TypeRegistry.FindBoundType("Interface"), csField.PublicType);
             Assert.Equal(TypeRegistry.IntPtr, csField.MarshalType);
             Assert.True(csField.IsInterface);
         }
@@ -335,9 +293,7 @@ namespace SharpGen.UnitTests
                 Pointer = "*"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("int", TypeRegistry.Int32);
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+            TypeRegistry.BindType("int", TypeRegistry.Int32);
 
             var csParameter = marshalledElementFactory.Create(cppParameter, cppParameter.Name);
 
@@ -356,9 +312,7 @@ namespace SharpGen.UnitTests
                 Attribute = ParamAttribute.In | ParamAttribute.Buffer
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("bool", TypeRegistry.Boolean, TypeRegistry.UInt8);
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+            TypeRegistry.BindType("bool", TypeRegistry.Boolean, TypeRegistry.UInt8);
 
             var csParameter = marshalledElementFactory.Create(cppParameter, cppParameter.Name);
 
@@ -381,9 +335,7 @@ namespace SharpGen.UnitTests
                 }
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("int", TypeRegistry.Int32);
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+            TypeRegistry.BindType("int", TypeRegistry.Int32);
 
             using (LoggerMessageCountEnvironment(1, LogLevel.Error))
             using (LoggerMessageCountEnvironment(0, ~LogLevel.Error))
@@ -402,9 +354,7 @@ namespace SharpGen.UnitTests
                 Pointer = "**"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("int", TypeRegistry.Int32);
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+            TypeRegistry.BindType("int", TypeRegistry.Int32);
             var csParameter = marshalledElementFactory.Create(cppParameter, cppParameter.Name);
 
             Assert.Equal(TypeRegistry.IntPtr, csParameter.PublicType);
@@ -424,9 +374,7 @@ namespace SharpGen.UnitTests
                 Attribute = ParamAttribute.Out
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("void", TypeRegistry.Void);
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+            TypeRegistry.BindType("void", TypeRegistry.Void);
             var csParameter = marshalledElementFactory.Create(cppParameter, cppParameter.Name);
 
             Assert.Equal(TypeRegistry.IntPtr, csParameter.PublicType);
@@ -446,9 +394,7 @@ namespace SharpGen.UnitTests
                 Pointer = "*"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("int", TypeRegistry.Int32);
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+            TypeRegistry.BindType("int", TypeRegistry.Int32);
             var csReturnValue = marshalledElementFactory.Create(cppReturnValue);
 
             Assert.Equal(TypeRegistry.IntPtr, csReturnValue.PublicType);
@@ -468,10 +414,7 @@ namespace SharpGen.UnitTests
                 Pointer = "***"
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
-            typeRegistry.BindType("Interface", new CsInterface(null, "Interface"));
-
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+            TypeRegistry.BindType("Interface", new CsInterface(null, "Interface"));
 
             var csParameter = marshalledElementFactory.Create(cppParameter, cppParameter.Name);
 
@@ -491,15 +434,11 @@ namespace SharpGen.UnitTests
             var cppMarshallable = new CppParameter("param")
             {
                 TypeName = elementType,
-                IsArray = true,
-                ArrayDimension = "ANYSIZE_ARRAY"
+                ArrayDimension = "1" // ANYSIZE_ARRAY
             };
 
-            var typeRegistry = new TypeRegistry(Logger, A.Fake<IDocumentationLinker>());
             CsInterface dynamicStringType = new(null, "DynamicString");
-            typeRegistry.BindType(elementType + "[ANYSIZE_ARRAY]", dynamicStringType);
-
-            var marshalledElementFactory = new MarshalledElementFactory(Logger, new GlobalNamespaceProvider(), typeRegistry);
+            TypeRegistry.BindType(elementType + "[1]", dynamicStringType);
 
             var csMarshallable = marshalledElementFactory.Create(cppMarshallable, cppMarshallable.Name);
 

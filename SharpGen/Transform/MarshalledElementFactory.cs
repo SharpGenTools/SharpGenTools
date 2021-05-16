@@ -1,24 +1,24 @@
-﻿using SharpGen.Config;
+﻿using System;
+using System.Diagnostics;
+using System.Linq;
+using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Logging;
 using SharpGen.Model;
-using System;
-using System.Diagnostics;
-using System.Linq;
 
 namespace SharpGen.Transform
 {
-    public class MarshalledElementFactory
+    public sealed class MarshalledElementFactory
     {
-        private readonly Logger logger;
-        private readonly GlobalNamespaceProvider globalNamespace;
-        private readonly TypeRegistry typeRegistry;
+        private readonly Ioc ioc;
 
-        public MarshalledElementFactory(Logger logger, GlobalNamespaceProvider globalNamespace, TypeRegistry typeRegistry)
+        private Logger Logger => ioc.Logger;
+        private GlobalNamespaceProvider GlobalNamespace => ioc.GlobalNamespace;
+        private TypeRegistry TypeRegistry => ioc.TypeRegistry;
+
+        public MarshalledElementFactory(Ioc ioc)
         {
-            this.typeRegistry = typeRegistry;
-            this.globalNamespace = globalNamespace;
-            this.logger = logger;
+            this.ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
         }
 
         public event Action<CsStruct> RequestStructProcessing;
@@ -36,13 +36,10 @@ namespace SharpGen.Transform
             // If CppType is an array, try first to get the binding for this array
             if (csMarshallable.IsArray)
             {
-                publicType = typeRegistry.FindBoundType(publicTypeName + "[" + marshallable.ArrayDimension + "]");
+                publicType = TypeRegistry.FindBoundType(publicTypeName + "[" + marshallable.ArrayDimension + "]");
 
                 if (publicType != null)
-                {
-                    csMarshallable.ArrayDimensionValue = 0;
                     csMarshallable.IsArray = false;
-                }
             }
 
             if (publicType == null)
@@ -68,9 +65,9 @@ namespace SharpGen.Transform
 
                     default:
                         // Try to get a declared type
-                        if (!typeRegistry.FindBoundType(publicTypeName, out var boundType))
+                        if (!TypeRegistry.FindBoundType(publicTypeName, out var boundType))
                         {
-                            logger.Fatal("Unknown type found [{0}]", publicTypeName);
+                            Logger.Fatal("Unknown type found [{0}]", publicTypeName);
                             return;
                         }
 
@@ -78,7 +75,7 @@ namespace SharpGen.Transform
 
                         // By default, use the underlying native type as the marshal type
                         // if it differs from the public type.
-                        marshalType = typeRegistry.FindBoundType(marshallable.TypeName);
+                        marshalType = TypeRegistry.FindBoundType(marshallable.TypeName);
                         if (publicType == marshalType)
                             marshalType = null;
 
@@ -99,7 +96,7 @@ namespace SharpGen.Transform
 
                     if (!csStruct.IsFullyMapped)
                         // No one tried to map the struct so we can't continue.
-                        logger.Fatal(
+                        Logger.Fatal(
                             $"No struct processor processed {csStruct.QualifiedName}. Cannot continue processing"
                         );
 
@@ -116,11 +113,11 @@ namespace SharpGen.Transform
                     break;
             }
 
-            if (publicType.IsWellKnownType(globalNamespace, WellKnownName.PointerSize))
+            if (publicType.IsWellKnownType(GlobalNamespace, WellKnownName.PointerSize))
                 marshalType = PointerType(mappingRule);
 
             // Present void* elements as IntPtr. Marshal strings as IntPtr
-            if (csMarshallable.HasPointer)
+            if (marshallable.HasPointer)
             {
                 if (publicType == TypeRegistry.Void)
                     publicType = marshalType = PointerType(mappingRule);
@@ -129,9 +126,9 @@ namespace SharpGen.Transform
             }
 
             csMarshallable.PublicType = publicType;
-            csMarshallable.MarshalType = marshalType ?? publicType;
+            csMarshallable.MarshalType = marshalType;
 
-            csMarshallable.Relations = RelationParser.ParseRelation(mappingRule.Relation, logger);
+            csMarshallable.Relations = RelationParser.ParseRelation(mappingRule.Relation, Logger);
         }
 
         private static CsFundamentalType PointerType(MappingRule mappingRule) => mappingRule.KeepPointers != true
@@ -140,7 +137,7 @@ namespace SharpGen.Transform
 
         public CsReturnValue Create(CppReturnValue cppReturnValue)
         {
-            CsReturnValue retVal = new(cppReturnValue);
+            CsReturnValue retVal = new(ioc, cppReturnValue);
 
             CreateCore(retVal);
 
@@ -156,7 +153,7 @@ namespace SharpGen.Transform
 
         public CsField Create(CppField cppField, string name)
         {
-            CsField field = new(cppField, name);
+            CsField field = new(ioc, cppField, name);
 
             CreateCore(field);
 
@@ -183,125 +180,98 @@ namespace SharpGen.Transform
 
         public CsParameter Create(CppParameter cppParameter, string name)
         {
-            CsParameter param = new(cppParameter, name);
+            CsParameter param = new(ioc, cppParameter, name);
             CreateCore(param);
 
-            var paramRule = cppParameter.Rule;
-            var cppAttribute = cppParameter.Attribute;
-            if (paramRule.ParameterAttribute is { } paramAttributeValue)
-                cppAttribute = paramAttributeValue;
-
-            // Parameters without any annotations are considered as In
-            if (cppAttribute == ParamAttribute.None)
-                cppAttribute = ParamAttribute.In;
-
             static bool HasFlag(ParamAttribute value, ParamAttribute flag) => (value & flag) == flag;
-
-            var publicType = param.PublicType;
-            var marshalType = param.MarshalType;
-
-            var parameterAttribute = CsParameterAttribute.In;
-            var numIndirections = cppParameter.Pointer?.Count(p => p is '*' or '&') ?? 0;
-
-            if (param.IsArray)
-                param.HasPointer = true;
 
             // --------------------------------------------------------------------------------
             // Pointer - Handle special cases
             // --------------------------------------------------------------------------------
             if (param.HasPointer)
             {
+                var paramRule = cppParameter.Rule;
+                var numIndirections = cppParameter.Pointer.Count(static p => p is '*' or '&');
+                bool isBuffer, isIn, isInOut, isOut;
+
+                {
+                    var cppAttribute = cppParameter.Attribute;
+
+                    // Force Interface** to be ParamAttribute.Out
+                    if (param.PublicType is CsInterface && cppAttribute == ParamAttribute.In && numIndirections == 2)
+                        cppAttribute = ParamAttribute.Out;
+
+                    isBuffer = HasFlag(cppAttribute, ParamAttribute.Buffer);
+                    isIn = HasFlag(cppAttribute, ParamAttribute.In);
+                    isInOut = HasFlag(cppAttribute, ParamAttribute.InOut);
+                    isOut = HasFlag(cppAttribute, ParamAttribute.Out);
+                }
+
+                // Either In, InOut or Out is set
+                Debug.Assert((isIn ? 1 : 0) + (isInOut ? 1 : 0) + (isOut ? 1 : 0) == 1);
+
                 // --------------------------------------------------------------------------------
                 // Handling Parameter Interface
                 // --------------------------------------------------------------------------------
-                if (publicType is CsInterface)
+                if (param.PublicType is CsInterface)
                 {
-                    // Force Interface** to be ParamAttribute.Out
-                    if (cppAttribute == ParamAttribute.In && numIndirections == 2)
-                        cppAttribute = ParamAttribute.Out;
+                    // Simplify logic by assuming interface instance pointer is the interface itself.
+                    --numIndirections;
 
-                    if (HasFlag(cppAttribute, ParamAttribute.In) || HasFlag(cppAttribute, ParamAttribute.InOut))
+                    if (isOut)
+                        param.Attribute = CsParameterAttribute.Out;
+                }
+                else if (isIn)
+                {
+                    var publicType = param.PublicType;
+
+                    param.Attribute = publicType is CsFundamentalType {IsPointerSize: true}
+                                   || publicType.IsWellKnownType(GlobalNamespace, WellKnownName.FunctionCallback)
+                                          ? CsParameterAttribute.In
+                                          : CsParameterAttribute.RefIn;
+                }
+                else if (isInOut)
+                {
+                    if (param.IsOptional)
                     {
-                        parameterAttribute = CsParameterAttribute.In;
-
-                        // Force all array of interface to support null
-                        if (param.IsArray)
-                            param.IsOptional = true;
+                        param.SetPublicResetMarshalType(PointerType(paramRule));
+                        param.Attribute = CsParameterAttribute.In;
                     }
-                    else if (HasFlag(cppAttribute, ParamAttribute.Out))
+                    else
                     {
-                        parameterAttribute = CsParameterAttribute.Out;
-                    }
-
-                    // There's no way to know how to deallocate native-allocated memory correctly since we don't know what allocator the native memory uses
-                    // so we treat triple-pointer indirections as IntPtr
-                    if (numIndirections > 2)
-                    {
-                        marshalType = publicType = TypeRegistry.IntPtr;
-                        parameterAttribute = CsParameterAttribute.In;
-                        param.IsArray = false;
+                        param.Attribute = CsParameterAttribute.Ref;
                     }
                 }
-                else
+                else if (isOut)
                 {
-                    if (HasFlag(cppAttribute, ParamAttribute.In))
-                    {
-                        parameterAttribute = publicType is CsFundamentalType {IsPointerSize: true}
-                                          || publicType.IsWellKnownType(globalNamespace, WellKnownName.FunctionCallback)
-                                                 ? CsParameterAttribute.In
-                                                 : CsParameterAttribute.RefIn;
-                    }
-                    else if (HasFlag(cppAttribute, ParamAttribute.InOut))
-                    {
-                        if (param.IsOptional)
-                        {
-                            publicType = marshalType = PointerType(paramRule);
-                            parameterAttribute = CsParameterAttribute.In;
-                        }
-                        else
-                        {
-                            parameterAttribute = CsParameterAttribute.Ref;
-                        }
-                    }
-                    else if (HasFlag(cppAttribute, ParamAttribute.Out))
-                    {
-                        parameterAttribute = CsParameterAttribute.Out;
-                    }
+                    param.Attribute = CsParameterAttribute.Out;
+                }
 
+                switch (param.PublicType)
+                {
                     // Handle void* with Buffer attribute
-                    var isUntypedPointer = publicType is CsFundamentalType {IsUntypedPointer: true};
-                    if (isUntypedPointer && HasFlag(cppAttribute, ParamAttribute.Buffer))
-                    {
+                    case CsFundamentalType {IsUntypedPointer: true} when isBuffer:
+                        param.Attribute = CsParameterAttribute.In;
                         param.IsArray = false;
-                        parameterAttribute = CsParameterAttribute.In;
-                    }
-                    // There's no way to know how to deallocate native-allocated memory correctly since we don't know what allocator the native memory uses
-                    // so we treat double-pointer indirections as IntPtr
-                    else if (numIndirections > 1 && !isUntypedPointer)
-                    {
-                        marshalType = publicType = PointerType(paramRule);
+                        break;
+                    // Handle strings with Out attribute
+                    case CsFundamentalType {IsString: true} when isOut:
+                        param.Attribute = CsParameterAttribute.In;
                         param.IsArray = false;
-                    }
-                    else if (publicType is CsFundamentalType {IsString: true} &&
-                             HasFlag(cppAttribute, ParamAttribute.Out))
-                    {
-                        publicType = TypeRegistry.IntPtr;
-                        parameterAttribute = CsParameterAttribute.In;
+                        param.SetPublicResetMarshalType(TypeRegistry.IntPtr);
+                        break;
+                    // There's no way to know how to deallocate native-allocated memory correctly
+                    // since we don't know what allocator the native memory uses,
+                    // so we treat any extra pointer indirections as IntPtr
+                    case not CsFundamentalType {IsUntypedPointer: true} when numIndirections > 1:
                         param.IsArray = false;
-                    }
+                        param.SetPublicResetMarshalType(TypeRegistry.IntPtr);
+                        break;
                 }
             }
 
-            param.Attribute = parameterAttribute;
-            param.PublicType = publicType ?? throw new ArgumentException("Public type cannot be null");
-            param.MarshalType = marshalType;
-
-            // Force IsString to be only string (due to Buffer attribute)
-            if (param.IsString)
-                param.IsArray = false;
-
             if (param.Relations.OfType<StructSizeRelation>().Any())
-                logger.Error(
+                Logger.Error(
                     LoggingCodes.InvalidRelation,
                     $"Parameter [{cppParameter}] marked with a struct-size relationship"
                 );

@@ -24,7 +24,7 @@ namespace SharpGen.Model
 {
     public sealed class CsFunction : CsCallable
     {
-        public CsFunction(CppFunction cppFunction, string name) : base(cppFunction, name)
+        public CsFunction(Ioc ioc, CppFunction cppFunction, string name) : base(ioc, cppFunction, name)
         {
             var tag = cppFunction.Rule;
 

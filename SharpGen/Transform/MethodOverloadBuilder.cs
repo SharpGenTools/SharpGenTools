@@ -1,22 +1,19 @@
-﻿using SharpGen.Config;
+﻿using System;
+using SharpGen.Config;
 using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using SharpGen.CppModel;
 
 namespace SharpGen.Transform
 {
-    class MethodOverloadBuilder
+    internal sealed class MethodOverloadBuilder
     {
-        private readonly TypeRegistry typeRegistry;
-        private readonly GlobalNamespaceProvider globalNamespace;
+        private readonly Ioc ioc;
 
-        public MethodOverloadBuilder(GlobalNamespaceProvider globalNamespace, TypeRegistry typeRegistry)
+        public MethodOverloadBuilder(Ioc ioc)
         {
-            this.globalNamespace = globalNamespace;
-            this.typeRegistry = typeRegistry;
+            this.ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
         }
+
+        private GlobalNamespaceProvider GlobalNamespace => ioc.GlobalNamespace;
 
         public CsMethod CreateInterfaceArrayOverload(CsMethod original)
         {
@@ -29,7 +26,7 @@ namespace SharpGen.Transform
 
                 csParameter.PublicType = new CsInterfaceArray(
                     (CsInterface) csParameter.PublicType,
-                    globalNamespace.GetTypeName(WellKnownName.InterfaceArray)
+                    GlobalNamespace.GetTypeName(WellKnownName.InterfaceArray)
                 );
 
                 csParameter.MarshalType = TypeRegistry.IntPtr;

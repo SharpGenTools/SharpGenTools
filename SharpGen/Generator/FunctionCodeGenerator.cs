@@ -9,15 +9,8 @@ using System.Linq;
 
 namespace SharpGen.Generator
 {
-    class FunctionCodeGenerator : IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax>
+    class FunctionCodeGenerator : CodeGeneratorBase, IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax>
     {
-        public FunctionCodeGenerator(IGeneratorRegistry generators)
-        {
-            Generators = generators;
-        }
-
-        public IGeneratorRegistry Generators { get; }
-
         public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsFunction csElement)
         {
             foreach (var member in Generators.Callable.GenerateCode(csElement))
@@ -83,5 +76,8 @@ namespace SharpGen.Generator
             }
         }
 
+        public FunctionCodeGenerator(Ioc ioc) : base(ioc)
+        {
+        }
     }
 }

@@ -130,29 +130,8 @@ namespace SharpGen.Model
             if (newRule.MappingType != null)
                 tag.MappingType = RegexRename(patchRegex, element.FullName, newRule.MappingType);
             if (newRule.OverrideNativeType != null) tag.OverrideNativeType = newRule.OverrideNativeType;
-
-            if (element is CppMarshallable cppType)
-            {
-                if (tag.OverrideNativeType == true)
-                {
-                    cppType.TypeName = tag.MappingType;
-                }
-
-                if (newRule.Pointer != null)
-                {
-                    cppType.Pointer = newRule.Pointer;
-                    tag.Pointer = newRule.Pointer;
-                }
-
-                if (newRule.TypeArrayDimension != null)
-                {
-                    cppType.ArrayDimension = newRule.TypeArrayDimension;
-                    if (newRule.TypeArrayDimension == null)
-                        cppType.IsArray = false;
-                    tag.TypeArrayDimension = newRule.TypeArrayDimension;
-                }
-            }
-
+            if (newRule.Pointer is { } pointer) tag.Pointer = pointer;
+            if (newRule.TypeArrayDimension is { } arrayDimension) tag.TypeArrayDimension = arrayDimension;
             if (newRule.EnumHasFlags != null) tag.EnumHasFlags = newRule.EnumHasFlags;
             if (newRule.EnumHasNone != null) tag.EnumHasNone = newRule.EnumHasNone;
             if (newRule.IsCallbackInterface != null) tag.IsCallbackInterface = newRule.IsCallbackInterface;

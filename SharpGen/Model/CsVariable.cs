@@ -33,7 +33,8 @@ namespace SharpGen.Model
         }
 
         public string Value { get; }
-
         public string TypeName { get; }
+
+        protected override string DefaultDescription => $"Constant {Name}";
     }
 }

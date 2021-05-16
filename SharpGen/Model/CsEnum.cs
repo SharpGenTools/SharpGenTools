@@ -29,7 +29,8 @@ namespace SharpGen.Model
     {
         public CsFundamentalType UnderlyingType { get; }
 
-        public override int Size => UnderlyingType.Size;
+        public override uint Size => UnderlyingType.Size;
+        protected override uint? AlignmentCore => UnderlyingType.Alignment;
 
         public bool IsFlag { get; }
 
@@ -38,7 +39,7 @@ namespace SharpGen.Model
         public CsEnum(CppEnum cppEnum, string name, CsFundamentalType underlyingType) : base(cppEnum, name)
         {
             UnderlyingType = underlyingType ?? throw new ArgumentNullException(nameof(underlyingType));
-            
+
             if (cppEnum == null)
                 return;
 

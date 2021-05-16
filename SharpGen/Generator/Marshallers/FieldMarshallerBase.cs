@@ -1,27 +1,15 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
 
 namespace SharpGen.Generator.Marshallers
 {
-    internal class ValueTypeArrayFieldMarshaller : MarshallerBase, IMarshaller
+    internal abstract class FieldMarshallerBase : MarshallerBase, IMarshaller
     {
-        public ValueTypeArrayFieldMarshaller(GlobalNamespaceProvider globalNamespace) : base(globalNamespace)
-        {
-        }
+        public bool CanMarshal(CsMarshalBase csElement) => csElement is CsField field && CanMarshal(field);
 
-        public bool CanMarshal(CsMarshalBase csElement) => csElement.IsValueType && csElement.IsArray &&
-                                                           !csElement.MappedToDifferentPublicType &&
-                                                           csElement is CsField;
-
-        public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame) =>
-            GenerateCopyMemory(csElement, false);
-
-        public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame) =>
-            GenerateCopyMemory(csElement, true);
-
-        #region Non-supported operations
+        protected abstract bool CanMarshal(CsField csField);
 
         public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement) => throw new NotSupportedException();
 
@@ -35,6 +23,15 @@ namespace SharpGen.Generator.Marshallers
         public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement) =>
             throw new NotSupportedException();
 
+        public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame) =>
+            GenerateManagedToNative((CsField) csElement, singleStackFrame);
+
+        public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame) =>
+            GenerateNativeToManaged((CsField) csElement, singleStackFrame);
+
+        protected abstract StatementSyntax GenerateManagedToNative(CsField csField, bool singleStackFrame);
+        protected abstract StatementSyntax GenerateNativeToManaged(CsField csField, bool singleStackFrame);
+
         public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement) =>
             throw new NotSupportedException();
 
@@ -43,8 +40,12 @@ namespace SharpGen.Generator.Marshallers
         public ParameterSyntax GenerateManagedParameter(CsParameter csElement) => throw new NotSupportedException();
 
         public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame) =>
-            throw new NotSupportedException();
+            AllowNativeCleanup ? null : throw new NotSupportedException();
 
-        #endregion
+        protected abstract bool AllowNativeCleanup { get; }
+
+        protected FieldMarshallerBase(Ioc ioc) : base(ioc)
+        {
+        }
     }
 }

@@ -24,19 +24,25 @@ namespace SharpGen.CppModel
 {
     public sealed class CppParameter : CppMarshallable
     {
-        public ParamAttribute Attribute { get; set; }
+        private ParamAttribute attribute;
 
-        public override string ToString()
+        public ParamAttribute Attribute
         {
-            var attribute = Rule.ParameterAttribute switch
+            get
             {
-                { } paramAttributeValue => paramAttributeValue,
-                _ => Attribute
-            };
-            if (attribute == ParamAttribute.None)
-                attribute = ParamAttribute.In;
-            return "[" + attribute + "] " + base.ToString();
+                var value = Rule.ParameterAttribute switch
+                {
+                    { } paramAttributeValue => paramAttributeValue,
+                    _ => attribute
+                };
+
+                // Parameters without any annotations are considered as In
+                return value == ParamAttribute.None ? ParamAttribute.In : value;
+            }
+            set => attribute = value;
         }
+
+        public override string ToString() => "[" + Attribute + "] " + base.ToString();
 
         public CppParameter(string name) : base(name)
         {

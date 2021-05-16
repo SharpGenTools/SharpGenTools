@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Logging;
 using SharpGen.Model;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -15,39 +16,42 @@ namespace SharpGen.Generator.Marshallers
         Free
     }
 
-    internal abstract class MarshallerBase
+    internal abstract partial class MarshallerBase
     {
-        protected readonly GlobalNamespaceProvider GlobalNamespace;
+        protected static readonly SyntaxToken PtrIdentifier = Identifier("__ptr");
+        protected static readonly IdentifierNameSyntax PtrIdentifierName = IdentifierName(PtrIdentifier);
+        protected static readonly SyntaxToken LengthIdentifier = Identifier("__length");
+        protected static readonly IdentifierNameSyntax LengthIdentifierName = IdentifierName(LengthIdentifier);
 
-        protected MarshallerBase(GlobalNamespaceProvider globalNamespace)
+        protected static readonly LiteralExpressionSyntax DefaultLiteral = LiteralExpression(
+            SyntaxKind.DefaultLiteralExpression
+        );
+
+        protected static readonly LiteralExpressionSyntax NullLiteral = LiteralExpression(
+            SyntaxKind.NullLiteralExpression
+        );
+
+        private readonly Ioc ioc;
+        protected GlobalNamespaceProvider GlobalNamespace => ioc.GlobalNamespace;
+        protected Logger Logger => ioc.Logger;
+
+        protected MarshallerBase(Ioc ioc)
         {
-            GlobalNamespace = globalNamespace;
+            this.ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
         }
 
-        protected static TypeSyntax IntPtrType { get; } = ParseTypeName("System.IntPtr");
+        protected static TypeSyntax IntPtrType => GeneratorHelpers.IntPtrType;
+        protected static MemberAccessExpressionSyntax IntPtrZero => GeneratorHelpers.IntPtrZero;
+        protected static TypeSyntax VoidPtrType => GeneratorHelpers.VoidPtrType;
+        protected static LiteralExpressionSyntax ZeroLiteral => GeneratorHelpers.ZeroLiteral;
 
-        protected static MemberAccessExpressionSyntax IntPtrZero { get; } =
-            MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                IntPtrType,
-                IdentifierName(nameof(IntPtr.Zero))
-            );
-
-        protected static TypeSyntax VoidPtrType { get; } = PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword)));
-
-        private static bool IsNullable(CsMarshalBase marshallable) =>
-            marshallable is CsParameter {IsOptional: true} param &&
-            (param.IsArray || param.IsInterface || param.IsNullableStruct || param.IsStructClass);
+        private static bool IsNullable(CsMarshalBase marshallable) => marshallable is CsParameter {IsNullable: true};
 
         protected static StatementSyntax GenerateNullCheckIfNeeded(CsMarshalBase marshallable,
                                                                    StatementSyntax statement) =>
             IsNullable(marshallable)
                 ? IfStatement(
-                    BinaryExpression(
-                        SyntaxKind.NotEqualsExpression,
-                        IdentifierName(marshallable.Name),
-                        LiteralExpression(SyntaxKind.NullLiteralExpression)
-                    ),
+                    BinaryExpression(SyntaxKind.NotEqualsExpression, IdentifierName(marshallable.Name), NullLiteral),
                     statement
                 )
                 : statement;
@@ -57,13 +61,8 @@ namespace SharpGen.Generator.Marshallers
                                                                     ExpressionSyntax nullAlternative) =>
             IsNullable(marshallable)
                 ? ConditionalExpression(
-                    BinaryExpression(
-                        SyntaxKind.EqualsExpression,
-                        IdentifierName(marshallable.Name),
-                        LiteralExpression(SyntaxKind.NullLiteralExpression)
-                    ),
-                    nullAlternative,
-                    expression
+                    BinaryExpression(SyntaxKind.EqualsExpression, IdentifierName(marshallable.Name), NullLiteral),
+                    nullAlternative, expression
                 )
                 : expression;
 
@@ -72,46 +71,44 @@ namespace SharpGen.Generator.Marshallers
             Func<ElementAccessExpressionSyntax, ElementAccessExpressionSyntax, StatementSyntax> loopBodyFactory,
             string variableName = "i")
         {
-            var element = ElementAccessExpression(
-                                                IdentifierName(marshallable.Name),
-                                                BracketedArgumentList(
-                                                    SingletonSeparatedList(
-                                                        Argument(
-                                                            IdentifierName(variableName)))));
-            var nativeElement = ElementAccessExpression(
-                                                ParenthesizedExpression(GetMarshalStorageLocation(marshallable)),
-                                                BracketedArgumentList(
-                                                    SingletonSeparatedList(
-                                                        Argument(
-                                                            IdentifierName(variableName)))));
+            var indexVariable = Identifier(variableName);
+            var indexVariableName = IdentifierName(variableName);
+            var arrayIdentifier = IdentifierName(marshallable.Name);
 
-            return GenerateNullCheckIfNeeded(marshallable,
-                                             ForStatement(loopBodyFactory(element, nativeElement))
-                                                .WithDeclaration(
-                                                     VariableDeclaration(
-                                                         PredefinedType(
-                                                             Token(SyntaxKind.IntKeyword)),
-                                                         SingletonSeparatedList(
-                                                             VariableDeclarator(
-                                                                     Identifier(variableName))
-                                                                .WithInitializer(
-                                                                     EqualsValueClause(
-                                                                         LiteralExpression(
-                                                                             SyntaxKind.NumericLiteralExpression,
-                                                                             Literal(0)))))))
-                                                .WithCondition(
-                                                     BinaryExpression(
-                                                         SyntaxKind.LessThanExpression,
-                                                         IdentifierName(variableName),
-                                                         MemberAccessExpression(
-                                                             SyntaxKind.SimpleMemberAccessExpression,
-                                                             IdentifierName(marshallable.Name),
-                                                             IdentifierName("Length"))))
-                                                .WithIncrementors(
-                                                     SingletonSeparatedList<ExpressionSyntax>(
-                                                         PrefixUnaryExpression(
-                                                             SyntaxKind.PreIncrementExpression,
-                                                             IdentifierName(variableName)))));
+            var element = ElementAccessExpression(
+                arrayIdentifier,
+                BracketedArgumentList(SingletonSeparatedList(Argument(indexVariableName)))
+            );
+            var nativeElement = ElementAccessExpression(
+                ParenthesizedExpression(GetMarshalStorageLocation(marshallable)),
+                BracketedArgumentList(SingletonSeparatedList(Argument(indexVariableName)))
+            );
+
+            return GenerateNullCheckIfNeeded(
+                marshallable,
+                ForStatement(loopBodyFactory(element, nativeElement))
+                   .WithDeclaration(
+                        VariableDeclaration(
+                            TypeInt32,
+                            SeparatedList(
+                                new[]
+                                {
+                                    VariableDeclarator(indexVariable, default, EqualsValueClause(ZeroLiteral)),
+                                    VariableDeclarator(
+                                        LengthIdentifier, default,
+                                        EqualsValueClause(GeneratorHelpers.LengthExpression(arrayIdentifier))
+                                    )
+                                }
+                            )))
+                   .WithCondition(
+                        BinaryExpression(SyntaxKind.LessThanExpression, indexVariableName, LengthIdentifierName)
+                    )
+                   .WithIncrementors(
+                        SingletonSeparatedList<ExpressionSyntax>(
+                            PrefixUnaryExpression(
+                                SyntaxKind.PreIncrementExpression,
+                                indexVariableName)))
+            );
         }
 
         protected static StatementSyntax CreateMarshalStructStatement(
@@ -122,47 +119,77 @@ namespace SharpGen.Generator.Marshallers
         {
             StatementSyntaxList statements = new();
 
-            if (marshallable.IsStructClass && marshalMethod == StructMarshalMethod.From)
+            var marshalArgument = Argument(marshalElementExpr).WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword));
+
+            if (marshallable.PublicType is CsStruct {GenerateAsClass: true} structType &&
+                marshalMethod == StructMarshalMethod.From)
             {
-                statements.Add(ExpressionStatement(
-                    AssignmentExpression(
-                        SyntaxKind.SimpleAssignmentExpression,
-                        publicElementExpr,
-                        ObjectCreationExpression(ParseTypeName(marshallable.PublicType.QualifiedName))
-                            .WithArgumentList(ArgumentList()))));
+                var constructor = ObjectCreationExpression(ParseTypeName(structType.QualifiedName));
+                var argumentList = !structType.HasCustomMarshal
+                                       ? ArgumentList(SingletonSeparatedList(marshalArgument))
+                                       : ArgumentList();
+
+                statements.Add(
+                    ExpressionStatement(
+                        AssignmentExpression(
+                            SyntaxKind.SimpleAssignmentExpression,
+                            publicElementExpr, constructor.WithArgumentList(argumentList)
+                        )
+                    )
+                );
+
+                if (!structType.HasCustomMarshal)
+                    return statements.ToStatement();
             }
 
-            if (marshallable.IsStaticMarshal)
-            {
-                statements.Add(GenerateNullCheckIfNeeded(marshallable,
-                                                         ExpressionStatement(InvocationExpression(
-                                                                                 MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                                                     ParseTypeName(marshallable.PublicType.QualifiedName),
-                                                                                     IdentifierName($"__Marshal{marshalMethod}")),
-                                                                                 ArgumentList(
-                                                                                     SeparatedList(
-                                                                                         new[]
-                                                                                         {
-                                                                                             Argument(publicElementExpr)
-                                                                                                .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)),
-                                                                                             Argument(marshalElementExpr)
-                                                                                                .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword))
-                                                                                         }))))));
-            }
-            else
-            {
-                statements.Add(GenerateNullCheckIfNeeded(marshallable,
-                                                         ExpressionStatement(InvocationExpression(
-                                                                                 MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                                                                     publicElementExpr,
-                                                                                     IdentifierName($"__Marshal{marshalMethod}")),
-                                                                                 ArgumentList(
-                                                                                     SingletonSeparatedList(
-                                                                                         Argument(marshalElementExpr)
-                                                                                            .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword))))))));
-            }
+            var methodName = IdentifierName($"__Marshal{marshalMethod}");
+
+            var invocationExpression = marshallable.IsStaticMarshal
+                                           ? InvocationExpression(
+                                               MemberAccessExpression(
+                                                   SyntaxKind.SimpleMemberAccessExpression,
+                                                   ParseTypeName(marshallable.PublicType.QualifiedName), methodName
+                                               ),
+                                               ArgumentList(
+                                                   SeparatedList(
+                                                       new[]
+                                                       {
+                                                           Argument(publicElementExpr)
+                                                              .WithRefOrOutKeyword(Token(SyntaxKind.RefKeyword)),
+                                                           marshalArgument
+                                                       }
+                                                   )
+                                               )
+                                           )
+                                           : InvocationExpression(
+                                               MemberAccessExpression(
+                                                   SyntaxKind.SimpleMemberAccessExpression,
+                                                   publicElementExpr, methodName
+                                               ),
+                                               ArgumentList(SingletonSeparatedList(marshalArgument))
+                                           );
+
+            statements.Add(GenerateNullCheckIfNeeded(marshallable, ExpressionStatement(invocationExpression)));
 
             return statements.ToStatement();
+        }
+
+        protected static StatementSyntax GenerateMarshalStructManagedToNative(CsMarshalBase csElement,
+                                                                              ExpressionSyntax publicElement,
+                                                                              ExpressionSyntax marshalElement)
+        {
+            var marshalTo = CreateMarshalStructStatement(
+                csElement,
+                StructMarshalMethod.To,
+                publicElement,
+                marshalElement
+            );
+            return ((CsStruct) csElement.PublicType).HasCustomNew
+                       ? Block(
+                           CreateMarshalCustomNewStatement(csElement, marshalElement),
+                           marshalTo
+                       )
+                       : marshalTo;
         }
 
         protected static ExpressionStatementSyntax CreateMarshalCustomNewStatement(CsMarshalBase csElement, ExpressionSyntax marshalElement)
@@ -175,61 +202,6 @@ namespace SharpGen.Generator.Marshallers
                             ParseTypeName(csElement.PublicType.QualifiedName),
                             IdentifierName("__NewNative")))
                     .WithArgumentList(ArgumentList())));
-        }
-
-        protected StatementSyntax GenerateCopyMemory(CsMarshalBase marshallable, bool copyFromNative, bool useIntermediate = false)
-        {
-            return FixedStatement(
-                VariableDeclaration(
-                    VoidPtrType,
-                    SeparatedList(
-                        new[]
-                        {
-                            VariableDeclarator(copyFromNative ? "__to": "__from")
-                                .WithInitializer(EqualsValueClause(
-                                    PrefixUnaryExpression(
-                                        SyntaxKind.AddressOfExpression,
-                                        ElementAccessExpression(
-                                            useIntermediate ?
-                                                IdentifierName(marshallable.IntermediateMarshalName)
-                                                : IdentifierName(marshallable.Name)
-                                        )
-                                        .WithArgumentList(
-                                            BracketedArgumentList(
-                                                SingletonSeparatedList(
-                                                    Argument(
-                                                        LiteralExpression(
-                                                            SyntaxKind.NumericLiteralExpression,
-                                                            Literal(0))))))))),
-                            VariableDeclarator(copyFromNative ? "__from" : "__to")
-                                .WithInitializer(EqualsValueClause(
-                                    PrefixUnaryExpression(SyntaxKind.AddressOfExpression,
-                                    GetMarshalStorageLocation(marshallable))))
-                        })
-                    ),
-                GenerateCopyMemoryInvocation(
-                    BinaryExpression(SyntaxKind.MultiplyExpression,
-                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(marshallable.ArrayDimensionValue)),
-                    SizeOfExpression(ParseTypeName(marshallable.MarshalType.QualifiedName))
-                )));
-        }
-
-        protected ExpressionStatementSyntax GenerateCopyMemoryInvocation(ExpressionSyntax numBytesExpression)
-        {
-            return ExpressionStatement(
-                                InvocationExpression(
-                                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                        GlobalNamespace.GetTypeNameSyntax(WellKnownName.MemoryHelpers),
-                                        IdentifierName("CopyMemory")),
-                                    ArgumentList(
-                                        SeparatedList(
-                                            new[]
-                                            {
-                                    Argument(CastExpression(IntPtrType, IdentifierName("__to"))),
-                                    Argument(CastExpression(IntPtrType, IdentifierName("__from"))),
-                                    Argument(numBytesExpression)
-                                            }
-                                        ))));
         }
 
         protected internal static SyntaxToken GetMarshalStorageLocationIdentifier(CsMarshalCallableBase marshallable) =>
@@ -262,75 +234,31 @@ namespace SharpGen.Generator.Marshallers
 
         protected static StatementSyntax MarshalInterfaceInstanceFromNative(CsMarshalBase csElement,
                                                                             ExpressionSyntax publicElement,
-                                                                            ExpressionSyntax marshalElement)
-        {
-            var interfaceType = (CsInterface)csElement.PublicType;
-
-            if (csElement is CsParameter {IsFast: true, IsOut: true})
-            {
-                return ExpressionStatement(
-                        AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                publicElement,
-                                IdentifierName("NativePointer")),
-                            marshalElement));
-            }
-
-            return ExpressionStatement(
-                AssignmentExpression(
-                    SyntaxKind.SimpleAssignmentExpression,
-                    publicElement,
-                    ConditionalExpression(
-                        BinaryExpression(SyntaxKind.NotEqualsExpression, marshalElement, IntPtrZero),
-                        ObjectCreationExpression(
-                                ParseTypeName(interfaceType.GetNativeImplementationOrThis().QualifiedName)
-                            )
-                           .WithArgumentList(ArgumentList(SingletonSeparatedList(Argument(marshalElement)))),
-                        LiteralExpression(SyntaxKind.NullLiteralExpression, Token(SyntaxKind.NullKeyword))
-                    )
-                )
-            );
-        }
-
-        protected ExpressionStatementSyntax MarshalInterfaceInstanceToNative(CsMarshalBase csElement,
-                                                                             ExpressionSyntax publicElement,
-                                                                             ExpressionSyntax marshalElement) =>
+                                                                            ExpressionSyntax marshalElement) =>
             ExpressionStatement(
-                AssignmentExpression(
-                    SyntaxKind.SimpleAssignmentExpression,
-                    marshalElement,
-                    InvocationExpression(
+                csElement switch
+                {
+                    CsParameter {IsFast: true, IsOut: true} => AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression,
                         MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
-                            GlobalNamespace.GetTypeNameSyntax(WellKnownName.MarshallingHelpers),
-                            GenericName(
-                                    Identifier("ToCallbackPtr"))
-                               .WithTypeArgumentList(
-                                    TypeArgumentList(
-                                        SingletonSeparatedList<TypeSyntax>(
-                                            IdentifierName(csElement.PublicType.QualifiedName))))),
-                        ArgumentList(
-                            SingletonSeparatedList(
-                                Argument(
-                                    publicElement))))));
-
-        private static ThrowStatementSyntax ThrowException(string exceptionName, string message) =>
-            ThrowStatement(
-                ObjectCreationExpression(
-                    ParseTypeName(exceptionName),
-                    ArgumentList(
-                        message == null
-                            ? default
-                            : SingletonSeparatedList(
-                                Argument(LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(message)))
-                            )
+                            publicElement, IdentifierName("NativePointer")
+                        ),
+                        marshalElement
                     ),
-                    null
-                )
+                    _ => AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression, publicElement,
+                        ConditionalExpression(
+                            BinaryExpression(SyntaxKind.NotEqualsExpression, marshalElement, IntPtrZero),
+                            ObjectCreationExpression(
+                                    ParseTypeName(csElement.PublicType.GetNativeImplementationQualifiedName())
+                                )
+                               .WithArgumentList(ArgumentList(SingletonSeparatedList(Argument(marshalElement)))),
+                            NullLiteral
+                        )
+                    )
+                }
             );
-
-        protected static StatementSyntax NotSupported(string message) =>
-            ThrowException("System.NotSupportedException", message);
 
         protected static ArgumentSyntax GenerateManagedValueTypeArgument(CsParameter csElement)
         {
@@ -400,12 +328,18 @@ namespace SharpGen.Generator.Marshallers
 
             return lengthParam.Length switch
             {
-                0 => NotSupported("Cannot marshal a native array to a managed array when length is not specified"),
+                0 => NotSupported("Cannot marshal a native array [{0}] to a managed array when length is not specified"),
                 > 1 => NotSupported(
-                    "Cannot marshal a native array to a managed array when length is specified multiple times"
+                    "Cannot marshal a native array [{0}] to a managed array when length is specified multiple times"
                 ),
-                _ => new LengthRelationMarshaller(GlobalNamespace).GenerateNativeToManaged(csElement, lengthParam[0])
+                _ => LengthRelationMarshaller.GenerateNativeToManaged(csElement, lengthParam[0])
             };
+
+            StatementSyntax NotSupported(string hint)
+            {
+                Logger.Error(LoggingCodes.InvalidLengthRelation, hint, csElement.QualifiedName);
+                return null;
+            }
         }
 
         protected static StatementSyntax GenerateGCKeepAlive(CsMarshalBase csElement) =>

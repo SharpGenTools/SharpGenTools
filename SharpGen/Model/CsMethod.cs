@@ -29,18 +29,18 @@ namespace SharpGen.Model
     {
         protected override int MaxSizeReturnParameter => 4;
 
-        public CsMethod(CppMethod cppMethod, string name) : base(cppMethod, name)
+        public CsMethod(Ioc ioc, CppMethod cppMethod, string name) : base(ioc, cppMethod, name)
         {
-            var tag = cppMethod?.Rule;
-
-            AllowProperty = tag?.Property ?? AllowProperty;
-            IsPersistent = tag?.Persist ?? IsPersistent;
-            Hidden = tag?.Hidden ?? Hidden;
-            CustomVtbl = tag?.CustomVtbl ?? CustomVtbl;
-            IsKeepImplementPublic = tag?.IsKeepImplementPublic ?? IsKeepImplementPublic;
-
             if (cppMethod == null)
                 return;
+
+            var tag = cppMethod.Rule;
+
+            AllowProperty = tag.Property ?? AllowProperty;
+            IsPersistent = tag.Persist ?? IsPersistent;
+            Hidden = tag.Hidden ?? Hidden;
+            CustomVtbl = tag.CustomVtbl ?? CustomVtbl;
+            IsKeepImplementPublic = tag.IsKeepImplementPublic ?? IsKeepImplementPublic;
 
             // Apply any offset to the method's vtable
             var offset = tag.LayoutOffsetTranslate;
@@ -50,26 +50,11 @@ namespace SharpGen.Model
         }
 
         public bool Hidden { get; set; }
-
         private bool IsKeepImplementPublic { get; }
-
-        public override void FillDocItems(IList<string> docItems, IDocumentationLinker manager)
-        {
-            foreach (var param in PublicParameters)
-                docItems.Add("<param name=\"" + param.Name + "\">" + manager.GetSingleDoc(param) + "</param>");
-
-            if (HasReturnType)
-                docItems.Add("<returns>" + GetReturnTypeDoc(manager) + "</returns>");
-        }
-
         public bool AllowProperty { get; } = true;
-
         public bool CustomVtbl { get; }
-
         public bool IsPersistent { get; }
-
         public int Offset { get; }
-
         public int WindowsOffset { get; }
 
         public bool IsPublicVisibilityForced(CsInterface parentInterface)

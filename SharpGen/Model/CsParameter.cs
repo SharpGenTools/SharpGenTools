@@ -25,17 +25,23 @@ namespace SharpGen.Model
 {
     public sealed class CsParameter : CsMarshalCallableBase
     {
+        private bool isOptional;
         private const int SizeOfLimit = 16;
 
-        public CsParameterAttribute Attribute { get; set; }
+        public CsParameterAttribute Attribute { get; set; } = CsParameterAttribute.In;
 
         public string DefaultValue { get; }
-
         private bool ForcePassByValue { get; }
-
         public bool HasParams { get; }
-
         public bool IsFast { get; }
+
+        public override bool IsArray
+        {
+            get => base.IsArray && !IsString;
+            set => base.IsArray = value;
+        }
+
+        public override bool HasPointer => base.HasPointer || ArraySpecification.HasValue;
 
         public override bool IsFixed
         {
@@ -55,7 +61,12 @@ namespace SharpGen.Model
 
         public bool IsInInterfaceArrayLike => IsArray && PublicType is CsInterface {IsCallback: false} && !IsOut;
 
-        public bool IsOptional { get; internal set; }
+        public bool IsOptional
+        {
+            // Arrays of reference types (interfaces) support null values
+            get => isOptional || PublicType is CsInterface && !IsOut && IsArray;
+            private set => isOptional = value;
+        }
 
         /// <summary>
         /// Parameter is an Out parameter and passed by pointer.
@@ -80,8 +91,11 @@ namespace SharpGen.Model
 
         public bool PassedByNullableInstance => IsRefIn && IsValueType && !IsArray && IsOptional;
         public bool IsNullableStruct => PassedByNullableInstance && !IsStructClass;
+        public bool IsNullable => IsOptional && (IsArray || IsInterface || IsNullableStruct || IsStructClass);
         public override bool PassedByNativeReference => !IsIn;
-        public override bool IsLocalByRef => IsRef || IsOut;
+
+        public override bool IsLocalManagedReference =>
+            Attribute is CsParameterAttribute.Ref or CsParameterAttribute.Out;
 
         public override bool UsedAsReturn { get; }
 
@@ -92,37 +106,33 @@ namespace SharpGen.Model
             return parameter;
         }
 
-        public CsParameter(CppParameter cppParameter, string name) : base(cppParameter, name)
+        public CsParameter(Ioc ioc, CppParameter cppParameter, string name) : base(ioc, cppParameter, name)
         {
             if (cppParameter == null)
                 return;
 
             var paramAttribute = cppParameter.Attribute;
             var paramRule = cppParameter.Rule;
-            var attribute = paramRule.ParameterAttribute;
 
             UsedAsReturn = paramRule.ParameterUsedAsReturnType ?? UsedAsReturn;
             DefaultValue = paramRule.DefaultValue ?? DefaultValue;
 
-            if (HaveFlag(paramAttribute, attribute, ParamAttribute.Buffer))
+            if (HasFlag(paramAttribute, ParamAttribute.Buffer))
                 IsArray = true;
 
-            if (HaveFlag(paramAttribute, attribute, ParamAttribute.Fast))
+            if (HasFlag(paramAttribute, ParamAttribute.Fast))
                 IsFast = true;
 
-            if (HaveFlag(paramAttribute, attribute, ParamAttribute.Value))
+            if (HasFlag(paramAttribute, ParamAttribute.Value))
                 ForcePassByValue = true;
 
-            if (HaveFlag(paramAttribute, attribute, ParamAttribute.Params))
+            if (HasFlag(paramAttribute, ParamAttribute.Params))
                 HasParams = true;
 
-            if (HaveFlag(paramAttribute, attribute, ParamAttribute.Optional))
+            if (HasFlag(paramAttribute, ParamAttribute.Optional))
                 IsOptional = true;
 
             static bool HasFlag(ParamAttribute value, ParamAttribute flag) => (value & flag) == flag;
-
-            static bool HaveFlag(ParamAttribute value1, ParamAttribute? valueOptional, ParamAttribute flag) =>
-                HasFlag(value1, flag) || valueOptional is { } value2 && HasFlag(value2, flag);
         }
     }
 }

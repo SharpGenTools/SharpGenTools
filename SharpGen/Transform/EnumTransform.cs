@@ -30,18 +30,13 @@ namespace SharpGen.Transform
     /// </summary>
     public class EnumTransform : TransformBase<CsEnum, CppEnum>, ITransformPreparer<CppEnum, CsEnum>, ITransformer<CsEnum>
     {
-        private readonly TypeRegistry typeRegistry;
+        private TypeRegistry TypeRegistry => Ioc.TypeRegistry;
         private readonly NamespaceRegistry namespaceRegistry;
 
-        public EnumTransform(
-            NamingRulesManager namingRules,
-            Logger logger, 
-            NamespaceRegistry namespaceRegistry,
-            TypeRegistry typeRegistry)
-            : base(namingRules, logger)
+        public EnumTransform(NamingRulesManager namingRules, NamespaceRegistry namespaceRegistry,
+                             Ioc ioc) : base(namingRules, ioc)
         {
             this.namespaceRegistry = namespaceRegistry;
-            this.typeRegistry = typeRegistry;
         }
 
         private static string GetTypeNameWithMapping(CppEnum cppEnum)
@@ -75,7 +70,7 @@ namespace SharpGen.Transform
             nameSpace.Add(newEnum);
 
             // Bind C++ enum to C# enum
-            typeRegistry.BindType(cppEnum.Name, newEnum, source: cppEnum.ParentInclude?.Name);
+            TypeRegistry.BindType(cppEnum.Name, newEnum, source: cppEnum.ParentInclude?.Name);
 
             return newEnum;
         }
@@ -139,7 +134,7 @@ namespace SharpGen.Transform
                 var csharpEnumItem = new CsEnumItem(null, noneElementName, "0")
                 {
                     CppElementName = noneElementName,
-                    Description = noneElementName
+                    Description = "Synthetic NONE value"
                 };
                 newEnum.Add(csharpEnumItem);
             }

@@ -6,15 +6,8 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class MethodCodeGenerator : IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax>
+    internal sealed class MethodCodeGenerator : CodeGeneratorBase, IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax>
     {
-        public MethodCodeGenerator(IGeneratorRegistry generators)
-        {
-            Generators = generators;
-        }
-
-        public IGeneratorRegistry Generators { get; }
-
         public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsMethod csElement)
         {
             if (csElement.CustomVtbl)
@@ -51,6 +44,10 @@ namespace SharpGen.Generator
 
             foreach (var member in Generators.Callable.GenerateCode(csElement))
                 yield return member;
+        }
+
+        public MethodCodeGenerator(Ioc ioc) : base(ioc)
+        {
         }
     }
 }

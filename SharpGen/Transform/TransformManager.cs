@@ -31,51 +31,40 @@ namespace SharpGen.Transform
     /// <summary>
     /// This class is responsible for generating the C# model from C++ model.
     /// </summary>
-    public class TransformManager
+    public sealed class TransformManager
     {
-        private readonly List<string> _includesToProcess = new();
-
-        private readonly IDocumentationLinker docLinker;
-        private readonly TypeRegistry typeRegistry;
-        private readonly NamespaceRegistry namespaceRegistry;
-        private readonly MarshalledElementFactory marshalledElementFactory;
+        private IDocumentationLinker DocLinker => ioc.DocumentationLinker;
+        private TypeRegistry TypeRegistry => ioc.TypeRegistry;
+        private Logger Logger => ioc.Logger;
+        private NamespaceRegistry NamespaceRegistry { get; }
+        private readonly List<string> includesToProcess = new();
         private readonly ConstantManager constantManager;
         private readonly GroupRegistry groupRegistry = new();
+        private readonly Ioc ioc;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TransformManager"/> class.
         /// </summary>
-        public TransformManager(GlobalNamespaceProvider globalNamespace,
-                                NamingRulesManager namingRules,
-                                Logger logger,
-                                TypeRegistry typeRegistry,
-                                IDocumentationLinker docLinker,
-                                ConstantManager constantManager)
+        public TransformManager(NamingRulesManager namingRules, ConstantManager constantManager, Ioc ioc)
         {
-            GlobalNamespace = globalNamespace;
-            Logger = logger;
             NamingRules = namingRules;
-            this.docLinker = docLinker;
-            this.typeRegistry = typeRegistry;
             this.constantManager = constantManager;
-            namespaceRegistry = new NamespaceRegistry(logger);
-            marshalledElementFactory = new MarshalledElementFactory(Logger, GlobalNamespace, typeRegistry);
-            var interopSignatureTransform = new InteropSignatureTransform(globalNamespace, logger);
+            this.ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
+            NamespaceRegistry = new NamespaceRegistry(ioc);
+            MarshalledElementFactory marshalledElementFactory = new(ioc);
+            InteropSignatureTransform interopSignatureTransform = new(ioc);
 
-            EnumTransform = new EnumTransform(namingRules, logger, namespaceRegistry, typeRegistry);
-
-            StructTransform = new StructTransform(namingRules, logger, namespaceRegistry, typeRegistry, marshalledElementFactory);
-
-            FunctionTransform = new MethodTransform(namingRules, logger, groupRegistry, marshalledElementFactory, globalNamespace, interopSignatureTransform);
-
-            InterfaceTransform = new InterfaceTransform(namingRules, logger, globalNamespace, FunctionTransform, FunctionTransform, typeRegistry, namespaceRegistry, interopSignatureTransform);
+            EnumTransform = new EnumTransform(namingRules, NamespaceRegistry, ioc);
+            StructTransform = new StructTransform(namingRules, NamespaceRegistry, marshalledElementFactory, ioc);
+            FunctionTransform = new MethodTransform(namingRules, groupRegistry, marshalledElementFactory, interopSignatureTransform, ioc);
+            InterfaceTransform = new InterfaceTransform(namingRules, FunctionTransform, FunctionTransform, NamespaceRegistry, interopSignatureTransform, ioc);
         }
 
         /// <summary>
         /// Gets the naming rules manager.
         /// </summary>
         /// <value>The naming rules manager.</value>
-        public NamingRulesManager NamingRules { get; }
+        private NamingRulesManager NamingRules { get; }
         
         /// <summary>
         /// Gets or sets the enum transformer.
@@ -100,9 +89,6 @@ namespace SharpGen.Transform
         /// </summary>
         /// <value>The interface transformer.</value>
         private InterfaceTransform InterfaceTransform { get; }
-
-        public GlobalNamespaceProvider GlobalNamespace { get; }
-        public Logger Logger { get; }
 
         /// <summary>
         /// Initializes this instance with the specified C++ module and config.
@@ -133,7 +119,7 @@ namespace SharpGen.Transform
 
             moduleToTransform.AddRange(
                 cppModule.Includes
-                         .Where(cppInclude => _includesToProcess.Contains(cppInclude.Name))
+                         .Where(cppInclude => includesToProcess.Contains(cppInclude.Name))
             );
 
             return moduleToTransform;
@@ -145,8 +131,8 @@ namespace SharpGen.Transform
         /// <param name="includeId">The include id.</param>
         private void AddIncludeToProcess(string includeId)
         {
-            if (!_includesToProcess.Contains(includeId))
-                _includesToProcess.Add(includeId);
+            if (!includesToProcess.Contains(includeId))
+                includesToProcess.Add(includeId);
         }
 
         /// <summary>
@@ -187,12 +173,12 @@ namespace SharpGen.Transform
         {
             foreach (var bindingRule in file.Bindings)
             {
-                typeRegistry.BindType(
+                TypeRegistry.BindType(
                     bindingRule.From,
-                    typeRegistry.ImportType(bindingRule.To),
+                    TypeRegistry.ImportType(bindingRule.To),
                     string.IsNullOrEmpty(bindingRule.Marshal)
                         ? null
-                        : typeRegistry.ImportType(bindingRule.Marshal),
+                        : TypeRegistry.ImportType(bindingRule.Marshal),
                     file.Id
                 );
             }
@@ -239,7 +225,7 @@ namespace SharpGen.Transform
                         newStruct.HasCustomNew = hasCustomNew;
 
                     if (defineRule.SizeOf is { } size)
-                        newStruct.StructSize = size;
+                        newStruct.StructSize = checked((uint) size);
 
                     if (defineRule.Align is { } align)
                         newStruct.Align = align;
@@ -264,7 +250,7 @@ namespace SharpGen.Transform
                         };
                         iface.IsCallback = true;
                         iface.IsDualCallback = true;
-                        typeRegistry.DefineType(iface.NativeImplementation);
+                        TypeRegistry.DefineType(iface.NativeImplementation);
                     }
 
                     defineType = iface;
@@ -276,7 +262,7 @@ namespace SharpGen.Transform
                 }
 
                 // Define this type
-                typeRegistry.DefineType(defineType);
+                TypeRegistry.DefineType(defineType);
             }
         }
 
@@ -315,7 +301,7 @@ namespace SharpGen.Transform
                 if (includeRule.Attach.HasValue && includeRule.Attach.Value)
                 {
                     AddIncludeToProcess(includeRule.Id);
-                    namespaceRegistry.MapIncludeToNamespace(includeRule.Id, includeRule.Namespace ?? file.Namespace, includeRule.Output);
+                    NamespaceRegistry.MapIncludeToNamespace(includeRule.Id, includeRule.Namespace ?? file.Namespace, includeRule.Output);
                 }
                 else
                 {
@@ -324,7 +310,7 @@ namespace SharpGen.Transform
                         AddIncludeToProcess(includeRule.Id);
 
                     foreach (var attachType in includeRule.AttachTypes)
-                        namespaceRegistry.AttachTypeToNamespace($"^{attachType}$", includeRule.Namespace ?? file.Namespace, includeRule.Output);
+                        NamespaceRegistry.AttachTypeToNamespace($"^{attachType}$", includeRule.Namespace ?? file.Namespace, includeRule.Output);
                 }
             }
 
@@ -332,7 +318,7 @@ namespace SharpGen.Transform
             if (file.Extension.Count > 0)
             {
                 AddIncludeToProcess(file.ExtensionId);
-                namespaceRegistry.MapIncludeToNamespace(file.ExtensionId, file.Namespace, null);
+                NamespaceRegistry.MapIncludeToNamespace(file.ExtensionId, file.Namespace, null);
             }
         }
 
@@ -372,7 +358,7 @@ namespace SharpGen.Transform
                         ruleUsed = elementFinder.ExecuteRule<CppElement>(mappingRule.Element, mappingRule);
                         break;
                     case MappingRule {DocItem: { }} mappingRule:
-                        docLinker.AddOrUpdateDocLink(mappingRule.DocItem, mappingRule.MappingNameFinal);
+                        DocLinker.AddOrUpdateDocLink(mappingRule.DocItem, mappingRule.MappingNameFinal);
                         ruleUsed = true;
                         break;
                     case RemoveRule {Enum: { }} removeRule:
@@ -463,7 +449,7 @@ namespace SharpGen.Transform
             }
         }
 
-        private void Init(IEnumerable<ConfigFile> configFiles)
+        private void Init(IReadOnlyCollection<ConfigFile> configFiles)
         {
             // We have to do these steps first, otherwise we'll get undefined types for types we've mapped, which breaks the mapping.
             foreach (var configFile in configFiles)
@@ -521,7 +507,7 @@ namespace SharpGen.Transform
 
             CsAssembly asm = new();
 
-            foreach (var ns in namespaceRegistry.Namespaces)
+            foreach (var ns in NamespaceRegistry.Namespaces)
             {
                 foreach (var group in ns.Classes)
                 {
@@ -554,7 +540,7 @@ namespace SharpGen.Transform
                         () =>
                         {
                             // If already mapped, it means that there is already a predefined mapping
-                            if (typeRegistry.FindBoundType(cppItem.Name) == null)
+                            if (TypeRegistry.FindBoundType(cppItem.Name) == null)
                             {
                                 var csElement = transform.Prepare(cppItem);
                                 if (csElement != null)
@@ -604,7 +590,7 @@ namespace SharpGen.Transform
                 className = Path.GetExtension(className).Trim('.');
             }
 
-            var csNameSpace = namespaceRegistry.GetOrCreateNamespace(namespaceName);
+            var csNameSpace = NamespaceRegistry.GetOrCreateNamespace(namespaceName);
 
             foreach (var cSharpFunctionGroup in csNameSpace.Classes)
             {
@@ -641,14 +627,14 @@ namespace SharpGen.Transform
 
         public (IEnumerable<BindRule> bindings, IEnumerable<DefineExtensionRule> defines) GenerateTypeBindingsForConsumers()
         {
-            return (from record in typeRegistry.GetTypeBindings()
+            return (from record in TypeRegistry.GetTypeBindings()
                    select new BindRule(record.CppType, record.CSharpType.QualifiedName, record.MarshalType?.QualifiedName),
                    GenerateDefinesForMappedTypes());
         }
 
         private IEnumerable<DefineExtensionRule> GenerateDefinesForMappedTypes()
         {
-            foreach (var (_, CSharpType, _) in typeRegistry.GetTypeBindings())
+            foreach (var (_, CSharpType, _) in TypeRegistry.GetTypeBindings())
             {
                 switch (CSharpType)
                 {
@@ -657,15 +643,15 @@ namespace SharpGen.Transform
                         yield return new DefineExtensionRule
                         {
                             Enum = csEnum.QualifiedName,
-                            SizeOf = csEnum.Size,
-                            UnderlyingType = (tempQualifier != null ? tempQualifier.Name : null)
+                            SizeOf = checked((int) csEnum.Size),
+                            UnderlyingType = tempQualifier?.Name
                         };
                         break;
                     case CsStruct csStruct:
                         yield return new DefineExtensionRule
                         {
                             Struct = csStruct.QualifiedName,
-                            SizeOf = csStruct.Size,
+                            SizeOf = checked((int) csStruct.Size),
                             Align = csStruct.Align,
                             HasCustomMarshal = csStruct.HasCustomMarshal,
                             HasCustomNew = csStruct.HasCustomNew,

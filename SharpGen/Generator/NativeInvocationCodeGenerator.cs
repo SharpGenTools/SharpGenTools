@@ -3,26 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SharpGen.CppModel;
 using SharpGen.Generator.Marshallers;
 using SharpGen.Model;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class NativeInvocationCodeGenerator : INativeCallCodeGenerator
+    internal sealed class NativeInvocationCodeGenerator : CodeGeneratorBase, INativeCallCodeGenerator
     {
         private static readonly PointerTypeSyntax VoidPtr = PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword)));
         private static readonly PointerTypeSyntax TripleVoidPtr = PointerType(PointerType(VoidPtr));
-
-        private readonly IGeneratorRegistry generators;
-        private readonly GlobalNamespaceProvider globalNamespace;
-
-        public NativeInvocationCodeGenerator(IGeneratorRegistry generators, GlobalNamespaceProvider globalNamespace)
-        {
-            this.generators = generators ?? throw new ArgumentNullException(nameof(generators));
-            this.globalNamespace = globalNamespace ?? throw new ArgumentNullException(nameof(globalNamespace));
-        }
 
         private IEnumerable<(ArgumentSyntax Argument, TypeSyntax Type)> IterateNativeArguments(CsCallable callable,
             InteropMethodSignature interopSig)
@@ -39,8 +29,7 @@ namespace SharpGen.Generator
             (ArgumentSyntax, TypeSyntax) ParameterSelector(InteropMethodSignatureParameter param)
             {
                 var csElement = param.Item;
-                var marshaller = generators.Marshalling.GetMarshaller(csElement);
-                return (marshaller.GenerateNativeArgument(csElement), param.InteropTypeSyntax);
+                return (GetMarshaller(csElement).GenerateNativeArgument(csElement), param.InteropTypeSyntax);
             }
 
             foreach (var parameter in interopSig.ParameterTypes)
@@ -68,7 +57,7 @@ namespace SharpGen.Generator
                     vtableOffsetExpression = ConditionalExpression(
                         MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
-                            globalNamespace.GetTypeNameSyntax(WellKnownName.PlatformDetection),
+                            GlobalNamespace.GetTypeNameSyntax(WellKnownName.PlatformDetection),
                             IdentifierName("Is" + nameof(PlatformDetectionType.Windows))),
                         windowsOffsetExpression,
                         nonWindowsOffsetExpression);
@@ -86,7 +75,7 @@ namespace SharpGen.Generator
                     ParenthesizedExpression(
                         PrefixUnaryExpression(
                             SyntaxKind.PointerIndirectionExpression,
-                            CastExpression(
+                            GeneratorHelpers.CastExpression(
                                 TripleVoidPtr,
                                 MemberAccessExpression(
                                     SyntaxKind.SimpleMemberAccessExpression,
@@ -112,14 +101,14 @@ namespace SharpGen.Generator
                 );
             }
 
-            CastExpressionSyntax FnPtrCall()
+            ExpressionSyntax FnPtrCall()
             {
                 var fnptrParameters = arguments
                                      .Select(x => x.Type)
                                      .Append(ParseTypeName(interopSig.ReturnType.TypeName))
                                      .Select(FunctionPointerParameter);
 
-                return CastExpression(
+                return GeneratorHelpers.CastExpression(
                     FunctionPointerType(
                         FunctionPointerCallingConvention(
                             Token(SyntaxKind.UnmanagedKeyword),
@@ -133,16 +122,16 @@ namespace SharpGen.Generator
                         ),
                         FunctionPointerParameterList(SeparatedList(fnptrParameters))
                     ),
-                    ParenthesizedExpression(vtblAccess)
+                    vtblAccess
                 );
             }
 
-            ExpressionSyntax what = callable switch
+            var what = callable switch
             {
                 CsFunction => IdentifierName(
                     callable.CppElementName + GeneratorHelpers.GetPlatformSpecificSuffix(platform)
                 ),
-                CsMethod => ParenthesizedExpression(FnPtrCall()),
+                CsMethod => GeneratorHelpers.WrapInParentheses(FnPtrCall()),
                 _ => throw new ArgumentOutOfRangeException()
             };
 
@@ -152,25 +141,25 @@ namespace SharpGen.Generator
             );
 
             if (interopSig.CastToNativeLong)
-                call = CastExpression(globalNamespace.GetTypeNameSyntax(WellKnownName.NativeLong), call);
+                call = CastExpression(GlobalNamespace.GetTypeNameSyntax(WellKnownName.NativeLong), call);
 
             if (interopSig.CastToNativeULong)
-                call = CastExpression(globalNamespace.GetTypeNameSyntax(WellKnownName.NativeULong), call);
+                call = CastExpression(GlobalNamespace.GetTypeNameSyntax(WellKnownName.NativeULong), call);
 
             if (interopSig.ForcedReturnBufferSig || !callable.HasReturnType)
                 return call;
 
-            var generatesMarshalVariable = generators.Marshalling
-                                                     .GetMarshaller(callable.ReturnValue)
-                                                     .GeneratesMarshalVariable(callable.ReturnValue);
-
             return AssignmentExpression(
                 SyntaxKind.SimpleAssignmentExpression,
-                generatesMarshalVariable
+                GetMarshaller(callable.ReturnValue).GeneratesMarshalVariable(callable.ReturnValue)
                     ? MarshallerBase.GetMarshalStorageLocation(callable.ReturnValue)
                     : IdentifierName(callable.ReturnValue.Name),
                 call
             );
+        }
+
+        public NativeInvocationCodeGenerator(Ioc ioc) : base(ioc)
+        {
         }
     }
 }
