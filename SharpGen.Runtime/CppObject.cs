@@ -32,7 +32,12 @@ namespace SharpGen.Runtime
         /// Logs a warning of a possible memory leak when <see cref="Configuration.EnableObjectTracking" /> is enabled.
         /// Default uses <see cref="System.Diagnostics.Debug"/>.
         /// </summary>
-        public static Action<string> LogMemoryLeakWarning = warning => System.Diagnostics.Debug.WriteLine(warning);
+        public static Action<string> LogMemoryLeakWarning = DefaultMemoryLeakWarningLogger;
+
+        private static void DefaultMemoryLeakWarningLogger(string warning)
+        {
+            System.Diagnostics.Debug.WriteLine(warning);
+        }
 
         /// <summary>
         /// The native pointer
@@ -40,7 +45,7 @@ namespace SharpGen.Runtime
         protected unsafe void* _nativePointer;
 
         /// <summary>
-        /// Gets or sets a custom user tag object to associate with this instance..
+        /// Gets or sets a custom user tag object to associate with this instance.
         /// </summary>
         /// <value>The tag object.</value>
         public object Tag { get; set; }
@@ -154,7 +159,7 @@ namespace SharpGen.Runtime
             MarshallingHelpers.ToCallbackPtr<TCallback>(obj);
 
         /// <summary>
-        /// Implements <see cref="ICallbackable"/> but it cannot not be set. 
+        /// Implements <see cref="ICallbackable"/> but it cannot not be set.
         /// This is only used to support for interop with unmanaged callback.
         /// </summary>
         ShadowContainer ICallbackable.Shadow

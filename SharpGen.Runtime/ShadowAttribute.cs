@@ -26,20 +26,12 @@ namespace SharpGen.Runtime
     /// Shadow attribute used to associate a COM callbackable interface to its Shadow implementation.
     /// </summary>
     [AttributeUsage(AttributeTargets.Interface)]
-    public class ShadowAttribute : Attribute
+    public sealed class ShadowAttribute : Attribute
     {
-        private Type type;
-
         /// <summary>
-        /// Gets the value.
+        /// Type of the associated shadow
         /// </summary>
-        public Type Type
-        {
-            get
-            {
-                return type;
-            }
-        }
+        public Type Type { get; }
 
         /// <summary>
         /// Initializes a new instance of <see cref="ShadowAttribute"/> class.
@@ -47,17 +39,25 @@ namespace SharpGen.Runtime
         /// <param name="typeOfTheAssociatedShadow">Type of the associated shadow</param>
         public ShadowAttribute(Type typeOfTheAssociatedShadow)
         {
-            type = typeOfTheAssociatedShadow;
+            Type = typeOfTheAssociatedShadow ?? throw new ArgumentNullException(nameof(typeOfTheAssociatedShadow));
+
+            if (!typeof(CppObjectShadow).GetTypeInfo().IsAssignableFrom(typeOfTheAssociatedShadow.GetTypeInfo()))
+                throw new ArgumentOutOfRangeException(
+                    nameof(typeOfTheAssociatedShadow),
+                    $"Shadows must inherit from {nameof(CppObjectShadow)}"
+                );
         }
 
         /// <summary>
-        /// Get ShadowAttribute from type.
+        /// Get <see cref="ShadowAttribute"/> from type.
         /// </summary>
-        /// <param name="type">Type to get shadow attribute</param>
         /// <returns>The associated shadow attribute or null if no shadow attribute were found</returns>
-        public static ShadowAttribute Get(Type type)
-        {
-            return type.GetTypeInfo().GetCustomAttribute<ShadowAttribute>();
-        }
+        public static ShadowAttribute Get(Type type) => type.GetTypeInfo().GetCustomAttribute<ShadowAttribute>();
+
+        /// <summary>
+        /// Checks if <see cref="ShadowAttribute"/> is present on the specified type.
+        /// </summary>
+        /// <returns>true if shadow attribute was found on the specified type</returns>
+        public static bool Has(Type type) => Get(type) != null;
     }
 }

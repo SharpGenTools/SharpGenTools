@@ -54,11 +54,9 @@ namespace SharpGen.Runtime
                 var shadow = (CppObjectShadow)Activator.CreateInstance(shadowAttribute.Type);
                 shadow.Initialize(callbackable);
 
-                guidToShadow.Add(item.GetTypeInfo().GUID, shadow);
-                if (item.GetTypeInfo().GetCustomAttribute<ExcludeFromTypeListAttribute>() != null)
-                {
-                    guidList.Add(item.GetTypeInfo().GUID);
-                }
+                guidToShadow.Add(GuidFromType(item), shadow);
+                if (ExcludeFromTypeListAttribute.Has(item))
+                    guidList.Add(GuidFromType(item));
 
                 // Associate also inherited interface to this shadow
                 var inheritList = item.GetTypeInfo().ImplementedInterfaces;
@@ -66,21 +64,20 @@ namespace SharpGen.Runtime
                 foreach (var inheritInterface in inheritList)
                 {
                     // If there isn't a Shadow attribute then this isn't a native interface.
-                    var inheritShadowAttribute = ShadowAttribute.Get(inheritInterface);
-                    if (inheritShadowAttribute == null)
+                    if (!ShadowAttribute.Has(inheritInterface))
                         continue;
+
+                    var guid = GuidFromType(inheritInterface);
 
                     // If we have the same GUID as an already added interface,
                     // then there's already an accurate shadow for it, so we have nothing to do.
-                    if (guidToShadow.ContainsKey(inheritInterface.GetTypeInfo().GUID))
+                    if (guidToShadow.ContainsKey(guid))
                         continue;
 
                     // Use same shadow as derived
-                    guidToShadow.Add(inheritInterface.GetTypeInfo().GUID, shadow);
-                    if (inheritInterface.GetTypeInfo().GetCustomAttribute<ExcludeFromTypeListAttribute>() != null)
-                    {
-                        guidList.Add(inheritInterface.GetTypeInfo().GUID);
-                    }
+                    guidToShadow.Add(guid, shadow);
+                    if (ExcludeFromTypeListAttribute.Has(inheritInterface))
+                        guidList.Add(guid);
                 }
             }
 
@@ -113,46 +110,41 @@ namespace SharpGen.Runtime
             // Cache reflection on interface inheritance
             lock (typeToShadowTypes)
             {
-                if (!typeToShadowTypes.TryGetValue(type, out List<Type> cachedInterfaces))
+                if (typeToShadowTypes.TryGetValue(type, out var cachedInterfaces))
+                    return cachedInterfaces;
+
+                var interfaces = type.GetTypeInfo().ImplementedInterfaces.ToList();
+                typeToShadowTypes.Add(type, interfaces);
+
+                List<Type> interfacesToRemove = new();
+
+                // First pass to identify most detailed interfaces
+                foreach (var item in interfaces)
                 {
-                    var interfaces = type.GetTypeInfo().ImplementedInterfaces.ToList();
-                    typeToShadowTypes.Add(type, interfaces);
-
-                    var interfacesToRemove = new List<Type>();
-
-                    // First pass to identify most detailed interfaces
-                    foreach (var item in interfaces)
+                    // Only process interfaces that are using shadow
+                    if (!ShadowAttribute.Has(item))
                     {
-                        // Only process interfaces that are using shadow
-                        var shadowAttribute = ShadowAttribute.Get(item);
-                        if (shadowAttribute == null)
-                        {
-                            interfacesToRemove.Add(item);
-                            continue;
-                        }
-
-                        // Keep only final interfaces and not intermediate.
-                        var inheritList = item.GetTypeInfo().ImplementedInterfaces;
-                        foreach (var inheritInterface in inheritList)
-                        {
-                            interfacesToRemove.Add(inheritInterface);
-                        }
+                        interfacesToRemove.Add(item);
+                        continue;
                     }
 
-                    foreach (var toRemove in interfacesToRemove)
-                    {
-                        interfaces.Remove(toRemove);
-                    }
-                    return interfaces;
+                    // Keep only final interfaces and not intermediate.
+                    interfacesToRemove.AddRange(item.GetTypeInfo().ImplementedInterfaces);
                 }
-                return cachedInterfaces;
+
+                foreach (var toRemove in interfacesToRemove)
+                    interfaces.Remove(toRemove);
+
+                return interfaces;
             }
         }
 
         public IntPtr Find(Type type)
         {
-            return Find(type.GetTypeInfo().GUID);
+            return Find(GuidFromType(type));
         }
+
+        internal static Guid GuidFromType(Type type) => type.GetTypeInfo().GUID;
 
         public IntPtr Find(Guid guidType)
         {

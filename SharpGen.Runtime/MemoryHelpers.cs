@@ -46,20 +46,57 @@ namespace SharpGen.Runtime
         /// <param name="dest">The destination memory location.</param>
         /// <param name="src">The source memory location.</param>
         /// <param name="sizeInBytesToCopy">The byte count.</param>
-        public static unsafe void CopyMemory(IntPtr dest, IntPtr src, int sizeInBytesToCopy)
-        {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe void CopyMemory(IntPtr dest, IntPtr src, int sizeInBytesToCopy) =>
             Unsafe.CopyBlockUnaligned((void*) dest, (void*) src, (uint) sizeInBytesToCopy);
-        }
 
         /// <summary>
         /// Native memcpy.
         /// </summary>
         /// <param name="dest">The destination memory location.</param>
         /// <param name="src">The source memory location.</param>
-        public static unsafe void CopyMemory<T>(IntPtr dest, ReadOnlySpan<T> src) where T : struct
-        {
+        /// <param name="sizeInBytesToCopy">The byte count.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe void CopyMemory(IntPtr dest, IntPtr src, uint sizeInBytesToCopy) =>
+            Unsafe.CopyBlockUnaligned((void*) dest, (void*) src, sizeInBytesToCopy);
+
+        /// <summary>
+        /// Native memcpy.
+        /// </summary>
+        /// <param name="dest">The destination memory location.</param>
+        /// <param name="src">The source memory location.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe void CopyMemory<T>(IntPtr dest, ReadOnlySpan<T> src) where T : struct =>
             src.CopyTo(new Span<T>((void*) dest, src.Length));
-        }
+
+        /// <summary>
+        /// Native memcpy.
+        /// </summary>
+        /// <param name="dest">The destination memory location.</param>
+        /// <param name="src">The source memory location.</param>
+        /// <param name="sizeInBytesToCopy">The byte count.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe void CopyMemory(void* dest, void* src, int sizeInBytesToCopy) =>
+            Unsafe.CopyBlockUnaligned(dest, src, (uint) sizeInBytesToCopy);
+
+        /// <summary>
+        /// Native memcpy.
+        /// </summary>
+        /// <param name="dest">The destination memory location.</param>
+        /// <param name="src">The source memory location.</param>
+        /// <param name="sizeInBytesToCopy">The byte count.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe void CopyMemory(void* dest, void* src, uint sizeInBytesToCopy) =>
+            Unsafe.CopyBlockUnaligned(dest, src, sizeInBytesToCopy);
+
+        /// <summary>
+        /// Native memcpy.
+        /// </summary>
+        /// <param name="dest">The destination memory location.</param>
+        /// <param name="src">The source memory location.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe void CopyMemory<T>(void* dest, ReadOnlySpan<T> src) where T : struct =>
+            src.CopyTo(new Span<T>(dest, src.Length));
 
         /// <summary>
         /// Clears the memory.
@@ -67,13 +104,19 @@ namespace SharpGen.Runtime
         /// <param name="dest">The dest.</param>
         /// <param name="value">The value.</param>
         /// <param name="sizeInBytesToClear">The size in bytes to clear.</param>
-        public static void ClearMemory(IntPtr dest, byte value, int sizeInBytesToClear)
-        {
-            unsafe
-            {
-                Unsafe.InitBlockUnaligned(ref *(byte*)dest, value, (uint)sizeInBytesToClear);
-            }
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe void ClearMemory(IntPtr dest, byte value, int sizeInBytesToClear) =>
+            Unsafe.InitBlockUnaligned(ref *(byte*) dest, value, (uint) sizeInBytesToClear);
+
+        /// <summary>
+        /// Clears the memory.
+        /// </summary>
+        /// <param name="dest">The dest.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="sizeInBytesToClear">The size in bytes to clear.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe void ClearMemory(IntPtr dest, byte value, uint sizeInBytesToClear) =>
+            Unsafe.InitBlockUnaligned(ref *(byte*) dest, value, sizeInBytesToClear);
 
         /// <summary>
         /// Reads the specified array T[] data from a memory location.
@@ -174,6 +217,7 @@ namespace SharpGen.Runtime
         /// <param name="memoryPtr">The memory pointer.</param>
         /// <param name="align">The align.</param>
         /// <returns><c>true</c> if the specified memory pointer is aligned in memory; otherwise, <c>false</c>.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsMemoryAligned(IntPtr memoryPtr, int align = 16) =>
             (memoryPtr.ToInt64() & (align - 1)) == 0;
 
