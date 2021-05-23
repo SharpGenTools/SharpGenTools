@@ -11,20 +11,14 @@ namespace SharpGen.Generator
 {
     internal sealed class NativeInvocationCodeGenerator : CodeGeneratorBase, INativeCallCodeGenerator
     {
-        private static readonly PointerTypeSyntax VoidPtr = PointerType(PredefinedType(Token(SyntaxKind.VoidKeyword)));
-        private static readonly PointerTypeSyntax TripleVoidPtr = PointerType(PointerType(VoidPtr));
+        private static readonly TypeSyntax TripleVoidPtr = PointerType(PointerType(GeneratorHelpers.VoidPtrType));
+        private static readonly IdentifierNameSyntax NativePointerIdentifierName = IdentifierName("NativePointer");
 
         private IEnumerable<(ArgumentSyntax Argument, TypeSyntax Type)> IterateNativeArguments(CsCallable callable,
-            InteropMethodSignature interopSig)
+                                                                                               InteropMethodSignature interopSig)
         {
             if (callable is CsMethod)
-            {
-                var ptr = MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression, ThisExpression(), IdentifierName("_nativePointer")
-                );
-
-                yield return (Argument(ptr), VoidPtr);
-            }
+                yield return (Argument(NativePointerIdentifierName), GeneratorHelpers.IntPtrType);
 
             (ArgumentSyntax, TypeSyntax) ParameterSelector(InteropMethodSignatureParameter param)
             {
@@ -72,19 +66,7 @@ namespace SharpGen.Generator
                 }
 
                 vtblAccess = ElementAccessExpression(
-                    ParenthesizedExpression(
-                        PrefixUnaryExpression(
-                            SyntaxKind.PointerIndirectionExpression,
-                            GeneratorHelpers.CastExpression(
-                                TripleVoidPtr,
-                                MemberAccessExpression(
-                                    SyntaxKind.SimpleMemberAccessExpression,
-                                    ThisExpression(),
-                                    IdentifierName("_nativePointer")
-                                )
-                            )
-                        )
-                    ),
+                    ThisExpression(),
                     BracketedArgumentList(
                         SingletonSeparatedList(
                             Argument(

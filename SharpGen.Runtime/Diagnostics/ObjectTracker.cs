@@ -20,7 +20,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text;
 using System.Threading;
 
@@ -50,7 +49,7 @@ namespace SharpGen.Runtime.Diagnostics
     /// <summary>
     /// Track all allocated objects.
     /// </summary>
-    public static class ObjectTracker
+    public static partial class ObjectTracker
     {
         private static Dictionary<IntPtr, List<ObjectReference>> _processGlobalObjectReferences;
 
@@ -66,34 +65,10 @@ namespace SharpGen.Runtime.Diagnostics
         /// </summary>
         public static event EventHandler<CppObjectEventArgs> UnTracked;
 
-        /// <summary>
-        /// Function which provides stack trace for object tracking.
-        /// </summary>
-        public static Func<string> StackTraceProvider { get; set; } = GetStackTrace;
-
         private static Dictionary<IntPtr, List<ObjectReference>> ObjectReferences =>
             Configuration.UseThreadStaticObjectTracking
                 ? ThreadStaticObjectReferences.Value
                 : _processGlobalObjectReferences ??= new Dictionary<IntPtr, List<ObjectReference>>();
-
-        /// <summary>
-        /// Gets default stack trace.
-        /// </summary>
-        public static string GetStackTrace()
-        {
-#if NETSTANDARD1_1
-            try
-            {
-                throw new GetStackTraceException();
-            }
-            catch (GetStackTraceException ex)
-            {
-                return ex.StackTrace;
-            }
-#else
-            return new StackTrace(1).ToString();
-#endif
-        }
 
         /// <summary>
         /// Tracks the specified C++ object.
@@ -108,25 +83,34 @@ namespace SharpGen.Runtime.Diagnostics
             if (nativePointer == IntPtr.Zero)
                 return;
 
-            lock (ObjectReferences)
-            {
-                if (!ObjectReferences.TryGetValue(nativePointer, out var referenceList))
-                {
-                    referenceList = new List<ObjectReference>();
-                    ObjectReferences.Add(nativePointer, referenceList);
-                }
+            var objectReferences = ObjectReferences;
 
-                referenceList.Add(new ObjectReference(DateTime.Now, cppObject, StackTraceProvider != null ? StackTraceProvider() : string.Empty));
-            }
+            lock (objectReferences)
+                TrackImpl(cppObject, nativePointer, objectReferences);
 
             // Fire Tracked event.
             OnTracked(cppObject);
         }
 
+        private static void TrackImpl(CppObject cppObject, IntPtr nativePointer, Dictionary<IntPtr, List<ObjectReference>> objectReferences)
+        {
+            if (!objectReferences.TryGetValue(nativePointer, out var referenceList))
+            {
+                referenceList = new List<ObjectReference>();
+                objectReferences.Add(nativePointer, referenceList);
+            }
+
+            referenceList.Add(
+                new ObjectReference(
+                    DateTime.Now, cppObject, StackTraceProvider != null ? StackTraceProvider() : string.Empty
+                )
+            );
+        }
+
         /// <summary>
         /// Finds a list of object reference from a specified C++ object pointer.
         /// </summary>
-        /// <param name="comObjectPtr">The C++ object pointer.</param>
+        /// <param name="objPtr">The C++ object pointer.</param>
         /// <returns>A list of object reference</returns>
         public static List<ObjectReference> Find(IntPtr objPtr)
         {
@@ -144,11 +128,13 @@ namespace SharpGen.Runtime.Diagnostics
         /// </summary>
         /// <param name="cppObject">The COM object.</param>
         /// <returns>An object reference</returns>
-        public static ObjectReference Find(CppObject cppObject)
+        public static ObjectReference Find(CppObject cppObject) => Find(cppObject, cppObject.NativePointer);
+
+        internal static ObjectReference Find(CppObject cppObject, IntPtr nativePointer)
         {
             lock (ObjectReferences)
             {
-                if (ObjectReferences.TryGetValue(cppObject.NativePointer, out var referenceList))
+                if (ObjectReferences.TryGetValue(nativePointer, out var referenceList))
                 {
                     foreach (var objectReference in referenceList)
                     {
@@ -165,36 +151,68 @@ namespace SharpGen.Runtime.Diagnostics
         /// Untracks the specified COM object.
         /// </summary>
         /// <param name="cppObject">The COM object.</param>
-        public static void UnTrack(CppObject cppObject)
+        public static void UnTrack(CppObject cppObject) => Untrack(cppObject, cppObject.NativePointer);
+
+        internal static void Untrack(CppObject cppObject, IntPtr nativePointer)
         {
-            if (cppObject == null || cppObject.NativePointer == IntPtr.Zero)
+            if (cppObject == null || nativePointer == IntPtr.Zero)
                 return;
 
+            var objectReferences = ObjectReferences;
+
             bool foundTracked;
-            lock (ObjectReferences)
+            lock (objectReferences)
             {
-                // Object is already tracked
-                foundTracked = ObjectReferences.TryGetValue(cppObject.NativePointer, out var referenceList);
-                if (foundTracked)
-                {
-                    for (int i = referenceList.Count-1; i >=0; i--)
-                    {
-                        var objectReference = referenceList[i];
-                        if (ReferenceEquals(objectReference.Object.Target, cppObject))
-                            referenceList.RemoveAt(i);
-                        else if (!objectReference.IsAlive)
-                            referenceList.RemoveAt(i);
-                    }
-                    // Remove empty list
-                    if (referenceList.Count == 0)
-                        ObjectReferences.Remove(cppObject.NativePointer);
-                }
+                foundTracked = UntrackImpl(cppObject, nativePointer, objectReferences);
             }
 
             if (foundTracked)
             {
                 // Fire UnTracked event
                 OnUnTracked(cppObject);
+            }
+        }
+
+        private static bool UntrackImpl(CppObject cppObject, IntPtr nativePointer, Dictionary<IntPtr, List<ObjectReference>> objectReferences)
+        {
+            var foundTracked = objectReferences.TryGetValue(nativePointer, out var referenceList);
+            if (!foundTracked)
+                return false;
+
+            // Object is tracked, remove from reference list
+            for (int i = referenceList.Count - 1; i >= 0; i--)
+            {
+                var objectReference = referenceList[i];
+                if (ReferenceEquals(objectReference.Object.Target, cppObject) || !objectReference.IsAlive)
+                    referenceList.RemoveAt(i);
+            }
+
+            // Remove empty list
+            if (referenceList.Count == 0)
+                objectReferences.Remove(nativePointer);
+
+            return true;
+        }
+
+        internal static void MigrateNativePointer(CppObject cppObject, IntPtr oldNativePointer, IntPtr newNativePointer)
+        {
+            if (cppObject == null)
+                return;
+
+            var hasOldNativePointer = oldNativePointer != IntPtr.Zero;
+            var hasNewNativePointer = newNativePointer != IntPtr.Zero;
+
+            if (!hasOldNativePointer && !hasNewNativePointer)
+                return;
+
+            var objectReferences = ObjectReferences;
+
+            lock (objectReferences)
+            {
+                if (hasOldNativePointer)
+                    UntrackImpl(cppObject, oldNativePointer, objectReferences);
+                if (hasNewNativePointer)
+                    TrackImpl(cppObject, newNativePointer, objectReferences);
             }
         }
 
@@ -268,11 +286,5 @@ namespace SharpGen.Runtime.Diagnostics
         {
             UnTracked?.Invoke(null, new CppObjectEventArgs(obj));
         }
-
-#if NETSTANDARD1_1
-        private class GetStackTraceException : Exception
-        {
-        }
-#endif
-   }
+    }
 }

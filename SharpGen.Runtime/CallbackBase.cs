@@ -17,7 +17,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
+
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace SharpGen.Runtime
@@ -29,10 +31,7 @@ namespace SharpGen.Runtime
     {
         private int refCount = 1;
 
-        /// <summary>
-        /// Releases unmanaged and - optionally - managed resources
-        /// </summary>
-        /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+        /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -43,43 +42,53 @@ namespace SharpGen.Runtime
 
         public uint AddRef()
         {
+#if DEBUG
+            if (Configuration.EnableObjectLifetimeTracing)
+                Debug.WriteLine(
+                    $"{GetType().Name}[{RuntimeHelpers.GetHashCode(this):X}:{Volatile.Read(ref refCount)}]::{nameof(AddRef)}"
+                );
+#endif
             return (uint) Interlocked.Increment(ref refCount);
         }
 
         public uint Release()
         {
+#if DEBUG
+            if (Configuration.EnableObjectLifetimeTracing)
+                Debug.WriteLine(
+                    $"{GetType().Name}[{RuntimeHelpers.GetHashCode(this):X}:{Volatile.Read(ref refCount)}]::{nameof(Release)}"
+                );
+#endif
             var newRefCount = Interlocked.Decrement(ref refCount);
             if (newRefCount == 0)
             {
                 // Dispose native resources
-                var callback = ((ICallbackable)this);
-                callback.Shadow = null;
+                Interlocked.Exchange(ref shadow, null)?.Dispose();
             }
             return (uint) newRefCount;
         }
 
         private ShadowContainer shadow;
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         ShadowContainer ICallbackable.Shadow
         {
             get
             {
-                return Volatile.Read(ref shadow);
-            }
-            set
-            {
-                if (value != null)
-                {
-                    // Only set the shadow container if it is not already set.
-                    if (Interlocked.CompareExchange(ref shadow, value, null) != null)
-                    {
-                        value.Dispose();
-                    }
-                }
-                else
-                {
-                    Interlocked.Exchange(ref shadow, value)?.Dispose();
-                }
+                var oldValue = Volatile.Read(ref shadow);
+                if (oldValue != null)
+                    return oldValue;
+
+                ShadowContainer value = new(this);
+
+                // Only set the shadow container if it is not already set.
+                oldValue = Interlocked.CompareExchange(ref shadow, value, null);
+                if (oldValue == null)
+                    return value;
+
+                // shadow remains set to an already initialized oldValue
+                value.Dispose();
+                return oldValue;
             }
         }
     }

@@ -18,7 +18,7 @@ namespace SharpGen.Runtime
                 {
                     null => IntPtr.Zero,
                     CppObject cpp => cpp.NativePointer,
-                    { } item => GetShadowContainer(item).Find(callbackTypeGuid ??= GetCallbackTypeGuid())
+                    { } item => item.Shadow.Find(callbackTypeGuid ??= GetCallbackTypeGuid())
                 };
 
             static Guid GetCallbackTypeGuid() => ShadowContainer.GuidFromType(typeof(TCallback));
@@ -38,7 +38,7 @@ namespace SharpGen.Runtime
                 {
                     null => IntPtr.Zero,
                     CppObject cpp => cpp.NativePointer,
-                    { } item => GetShadowContainer(item).Find(callbackTypeGuid ??= GetCallbackTypeGuid())
+                    { } item => item.Shadow.Find(callbackTypeGuid ??= GetCallbackTypeGuid())
                 };
 
             static Guid GetCallbackTypeGuid() => ShadowContainer.GuidFromType(typeof(TCallback));
@@ -58,7 +58,7 @@ namespace SharpGen.Runtime
                 {
                     null => IntPtr.Zero,
                     CppObject cpp => cpp.NativePointer,
-                    { } item => GetShadowContainer(item).Find(callbackTypeGuid ??= GetCallbackTypeGuid())
+                    { } item => item.Shadow.Find(callbackTypeGuid ??= GetCallbackTypeGuid())
                 };
 
             static Guid GetCallbackTypeGuid() => ShadowContainer.GuidFromType(typeof(TCallback));
@@ -78,7 +78,7 @@ namespace SharpGen.Runtime
                 {
                     null => IntPtr.Zero,
                     CppObject cpp => cpp.NativePointer,
-                    { } item => GetShadowContainer(item).Find(callbackTypeGuid ??= GetCallbackTypeGuid())
+                    { } item => item.Shadow.Find(callbackTypeGuid ??= GetCallbackTypeGuid())
                 };
 
             static Guid GetCallbackTypeGuid() => ShadowContainer.GuidFromType(typeof(TCallback));

@@ -21,7 +21,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+using System.Diagnostics;
 
 namespace SharpGen.Runtime
 {
@@ -29,93 +29,43 @@ namespace SharpGen.Runtime
     /// A fast method to pass array of <see cref="CppObject"/>-derived objects to SharpGen methods.
     /// </summary>
     /// <typeparam name="T">Type of the <see cref="CppObject"/></typeparam>
-    public class InterfaceArray<T>: DisposeBase, IEnumerable<T>
-        where T : CppObject
+    [DebuggerTypeProxy(typeof(InterfaceArray<>.InterfaceArrayDebugView))]
+    [DebuggerDisplay("Count={values.Length}")]
+    public sealed class InterfaceArray<T>: DisposeBase, IEnumerable<T> where T : CppObject
     {
-        protected T[] values;
-        private IntPtr nativeBuffer;
+        private T[] values;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="InterfaceArray"/> class.
-        /// </summary>
-        /// <param name="array">The array.</param>
-        public unsafe InterfaceArray(params T[] array)
+        public InterfaceArray(params T[] array)
         {
             values = array;
-            nativeBuffer = IntPtr.Zero;
+            NativePointer = IntPtr.Zero;
             if (values != null)
             {
                 var length = array.Length;
                 values = new T[length];
-                nativeBuffer = MemoryHelpers.AllocateMemory(length * sizeof(IntPtr));
+                NativePointer = MemoryHelpers.AllocateMemory(length * IntPtr.Size);
                 for (int i = 0; i < length; i++)
-                    Set(i, array[i]);
+                    this[i] = array[i];
             }
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="InterfaceArray"/> class.
-        /// </summary>
-        /// <param name="size">The size.</param>
-        public unsafe InterfaceArray(int size)
+        public InterfaceArray(int size)
         {
             values = new T[size];
-            nativeBuffer = MemoryHelpers.AllocateMemory(size * sizeof(IntPtr));
+            NativePointer = MemoryHelpers.AllocateMemory(size * IntPtr.Size);
         }
 
         /// <summary>
         /// Gets the pointer to the native array associated to this instance.
         /// </summary>
-        public IntPtr NativePointer
-        {
-            get
-            {
-                return nativeBuffer;
-            }
-        }
+        public IntPtr NativePointer { get; private set; }
 
-        /// <summary>
-        /// Gets the length.
-        /// </summary>
-        public int Length
-        {
-            get
-            {
-                return values == null ? 0 : values.Length;
-            }
-        }
+        public int Length => values?.Length ?? 0;
 
-        /// <summary>
-        /// Gets an object at the specified index.
-        /// </summary>
-        /// <param name="index">The index.</param>
-        /// <returns>A <see cref="ComObject"/></returns>
-        public CppObject Get(int index)
-        {
-            return values[index];
-        }
-
-        internal void SetFromNative(int index, T value)
+        internal unsafe void SetFromNative(int index, T value)
         {
             values[index] = value;
-            unsafe
-            {
-                value.NativePointer = ((IntPtr*)nativeBuffer)[index];
-            }
-        }
-
-        /// <summary>
-        /// Sets an object at the specified index.
-        /// </summary>
-        /// <param name="index">The index.</param>
-        /// <param name="value">The value.</param>
-        public void Set(int index, T value)
-        {
-            values[index] = value;
-            unsafe
-            {
-                ((IntPtr*)nativeBuffer)[index] = value?.NativePointer ?? IntPtr.Zero;
-            }
+            value.NativePointer = ((IntPtr*) NativePointer)[index];
         }
 
         protected override void Dispose(bool disposing)
@@ -124,74 +74,48 @@ namespace SharpGen.Runtime
             {
                 values = null;
             }
-            MemoryHelpers.FreeMemory(nativeBuffer);
-            nativeBuffer = IntPtr.Zero;
+            MemoryHelpers.FreeMemory(NativePointer);
+            NativePointer = IntPtr.Zero;
         }
 
         /// <summary>
         /// Gets or sets the <see cref="T"/> with the specified i.
         /// </summary>
-        public T this[int i]
+        public unsafe T this[int i]
         {
-            get
-            {
-                return (T)Get(i);
-            }
+            get => values[i];
             set
             {
-                Set(i, value);
+                values[i] = value;
+                ((IntPtr*) NativePointer)[i] = value?.NativePointer ?? IntPtr.Zero;
             }
         }
 
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return values.GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => values.GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => new ArrayEnumerator(values.GetEnumerator());
 
-        public IEnumerator<T> GetEnumerator()
-        {
-            return new ArrayEnumerator(values.GetEnumerator());
-        }
-
-        private struct ArrayEnumerator : IEnumerator<T>
+        private readonly struct ArrayEnumerator : IEnumerator<T>
         {
             private readonly IEnumerator enumerator;
 
-            public ArrayEnumerator(IEnumerator enumerator)
-            {
-                this.enumerator = enumerator;
-            }
+            public ArrayEnumerator(IEnumerator enumerator) => this.enumerator = enumerator;
 
             public void Dispose()
             {
             }
 
-            public bool MoveNext()
-            {
-                return enumerator.MoveNext();
-            }
+            public bool MoveNext() => enumerator.MoveNext();
+            public void Reset() => enumerator.Reset();
+            public T Current => (T)enumerator.Current;
+            object IEnumerator.Current => Current;
+        }
 
-            public void Reset()
-            {
-                enumerator.Reset();
-            }
+        private sealed class InterfaceArrayDebugView
+        {
+            public InterfaceArrayDebugView(T[] array) => Items = array;
 
-            public T Current
-            {
-                get
-                {
-                    return (T)enumerator.Current;
-                }
-            }
-
-            object IEnumerator.Current
-            {
-                get
-                {
-                    return Current;
-                }
-            }
+            [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+            public T[] Items { get; }
         }
     }
 }

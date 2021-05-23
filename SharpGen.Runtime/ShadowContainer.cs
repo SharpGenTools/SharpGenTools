@@ -17,12 +17,14 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Reflection;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace SharpGen.Runtime
 {
@@ -30,28 +32,81 @@ namespace SharpGen.Runtime
     /// The ShadowContainer is the main container used to keep references to all native COM/C++ callbacks.
     /// It is stored in the property <see cref="ICallbackable.Shadow"/>.
     /// </summary>
-    public class ShadowContainer : DisposeBase
+    public sealed class ShadowContainer : DisposeBase
     {
-        private readonly Dictionary<Guid, CppObjectShadow> guidToShadow = new();
+        private static readonly Dictionary<Type, List<Type>> TypeToShadowTypes = new();
+        private readonly IDictionary<Guid, CppObjectShadow> guidToShadow;
+        private readonly IntPtr guidPtr;
+        private readonly IntPtr[] guids;
+#if DEBUG
+        private readonly string callbackTypeName;
+#endif
 
-        private static readonly Dictionary<Type, List<Type>> typeToShadowTypes = new();
+        public IntPtr[] Guids => guids;
 
-        private IntPtr guidPtr;
-        public IntPtr[] Guids { get; }
-
-        internal ShadowContainer(ICallbackable callbackable)
+        public ShadowContainer(ICallbackable callbackable)
         {
-            var type = callbackable.GetType();
+#if DEBUG
+            callbackTypeName = callbackable.GetType().Name;
+#endif
+            guidToShadow = new Dictionary<Guid, CppObjectShadow>();
+            var guidList = BuildGuidList(callbackable, guidToShadow);
+            AllocateGuidsTable(guidList, out guids, out guidPtr);
+#if DEBUG
+            TraceAllocation(RuntimeHelpers.GetHashCode(callbackable));
+#endif
+        }
 
-            var guidList = new List<Guid>();
-            
+        public ShadowContainer(IReadOnlyList<Guid> guidList, IDictionary<Guid, CppObjectShadow> guidToShadow)
+        {
+#if DEBUG
+            callbackTypeName = "UNSPECIFIED";
+#endif
+            this.guidToShadow = guidToShadow;
+            AllocateGuidsTable(guidList, out guids, out guidPtr);
+#if DEBUG
+            TraceAllocation(0);
+#endif
+        }
+
+#if DEBUG
+        private void TraceAllocation(int parentId)
+        {
+            if (!Configuration.EnableObjectLifetimeTracing)
+                return;
+
+            Debug.WriteLine($"{GetType().Name}<{callbackTypeName}>[{guidPtr.ToInt64():X}]::new({parentId:X})");
+        }
+#endif
+
+        private static unsafe void AllocateGuidsTable(IReadOnlyList<Guid> guidList,
+                                                      out IntPtr[] guids, out IntPtr guidsPtr)
+        {
+            var guidCount = guidList.Count;
+
+            guids = new IntPtr[guidCount];
+            guidsPtr = Marshal.AllocHGlobal(Unsafe.SizeOf<Guid>() * guidCount);
+
+            var pGuid = (Guid*) guidsPtr;
+            for (var i = 0; i < guidCount; i++)
+            {
+                pGuid[i] = guidList[i];
+                // Store the pointer
+                guids[i] = new IntPtr(pGuid + i);
+            }
+        }
+
+        public static IReadOnlyList<Guid> BuildGuidList(ICallbackable callbackable, IDictionary<Guid, CppObjectShadow> guidToShadow)
+        {
+            List<Guid> guidList = new();
+
             // Associate all shadows with their interfaces.
-            foreach (var item in GetUninheritedShadowedInterfaces(type))
+            foreach (var item in GetUninheritedShadowedInterfaces(callbackable.GetType()))
             {
                 var shadowAttribute = ShadowAttribute.Get(item);
 
                 // Initialize the shadow with the callback
-                var shadow = (CppObjectShadow)Activator.CreateInstance(shadowAttribute.Type);
+                var shadow = (CppObjectShadow) Activator.CreateInstance(shadowAttribute.Type);
                 shadow.Initialize(callbackable);
 
                 guidToShadow.Add(GuidFromType(item), shadow);
@@ -81,23 +136,7 @@ namespace SharpGen.Runtime
                 }
             }
 
-            var guidCount = guidList.Count;
-            Guids = new IntPtr[guidCount];
-
-            guidPtr = Marshal.AllocHGlobal(Unsafe.SizeOf<Guid>() * guidCount);
-
-            unsafe
-            {
-                var i = 0;
-                var pGuid = (Guid*)guidPtr;
-                foreach (var guidKey in guidList)
-                {
-                    pGuid[i] = guidKey;
-                    // Store the pointer
-                    Guids[i] = new IntPtr(pGuid + i);
-                    i++;
-                }
-            }
+            return guidList;
         }
 
         /// <summary>
@@ -108,13 +147,13 @@ namespace SharpGen.Runtime
         private static List<Type> GetUninheritedShadowedInterfaces(Type type)
         {
             // Cache reflection on interface inheritance
-            lock (typeToShadowTypes)
+            lock (TypeToShadowTypes)
             {
-                if (typeToShadowTypes.TryGetValue(type, out var cachedInterfaces))
+                if (TypeToShadowTypes.TryGetValue(type, out var cachedInterfaces))
                     return cachedInterfaces;
 
                 var interfaces = type.GetTypeInfo().ImplementedInterfaces.ToList();
-                typeToShadowTypes.Add(type, interfaces);
+                TypeToShadowTypes.Add(type, interfaces);
 
                 List<Type> interfacesToRemove = new();
 
@@ -139,10 +178,7 @@ namespace SharpGen.Runtime
             }
         }
 
-        public IntPtr Find(Type type)
-        {
-            return Find(GuidFromType(type));
-        }
+        public IntPtr Find(Type type) => Find(GuidFromType(type));
 
         internal static Guid GuidFromType(Type type) => type.GetTypeInfo().GUID;
 
@@ -163,15 +199,20 @@ namespace SharpGen.Runtime
             if (!disposing)
                 return;
 
+            Debug.Assert(guidPtr != IntPtr.Zero);
+
+#if DEBUG
+            if (Configuration.EnableObjectLifetimeTracing)
+                Debug.WriteLine(
+                    $"{GetType().Name}<{callbackTypeName}>[{guidPtr.ToInt64():X}]::{nameof(Dispose)}"
+                );
+#endif
+
             foreach (var comObjectCallbackNative in guidToShadow.Values)
                 comObjectCallbackNative.Dispose();
             guidToShadow.Clear();
 
-            if (guidPtr != IntPtr.Zero)
-            {
-                Marshal.FreeHGlobal(guidPtr);
-                guidPtr = IntPtr.Zero;
-            }
+            Marshal.FreeHGlobal(guidPtr);
         }
     }
 }

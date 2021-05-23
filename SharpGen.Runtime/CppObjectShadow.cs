@@ -17,7 +17,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace SharpGen.Runtime
@@ -25,7 +27,7 @@ namespace SharpGen.Runtime
     /// <summary>
     /// An Interface shadow callback
     /// </summary>
-    public abstract class CppObjectShadow : CppObject
+    public abstract unsafe class CppObjectShadow : CppObject
     {
         /// <summary>
         /// Gets the callback.
@@ -41,39 +43,51 @@ namespace SharpGen.Runtime
         /// Initializes the specified shadow instance from a vtbl and a callback.
         /// </summary>
         /// <param name="callbackInstance">The callback.</param>
-        public unsafe virtual void Initialize(ICallbackable callbackInstance)
+        public virtual void Initialize(ICallbackable callbackInstance)
         {
             Callback = callbackInstance;
 
+            Debug.Assert(Marshal.SizeOf(typeof(CppObjectNative)) == CppObjectNative.Size);
+
             // Allocate ptr to vtbl + ptr to callback together
-            NativePointer = Marshal.AllocHGlobal(IntPtr.Size * 2);
+            var nativePointer = Marshal.AllocHGlobal(CppObjectNative.Size);
+            ref var native = ref *(CppObjectNative*)nativePointer;
 
-            var handle = GCHandle.Alloc(this);
-            Marshal.WriteIntPtr(NativePointer, Vtbl.Pointer);
+            native.VtblPointer = Vtbl.Pointer;
+            native.Shadow = GCHandle.Alloc(this);
 
-            *((IntPtr*) NativePointer + 1) = GCHandle.ToIntPtr(handle);
+            NativePointer = nativePointer;
         }
 
-        protected unsafe override void Dispose(bool disposing)
+        protected override void DisposeCore(IntPtr nativePointer, bool disposing)
         {
-            if (NativePointer != IntPtr.Zero)
-            {
-                // Free the GCHandle
-                GCHandle.FromIntPtr(*(((IntPtr*)NativePointer) + 1)).Free();
-
-                // Free instance
-                Marshal.FreeHGlobal(NativePointer);
-                NativePointer = IntPtr.Zero;
-            }
             Callback = null;
-            base.Dispose(disposing);
+
+            // Free the GCHandle
+            ((CppObjectNative*) nativePointer)->Shadow.Free();
+
+            // Free instance
+            Marshal.FreeHGlobal(nativePointer);
         }
 
         protected internal static T ToShadow<T>(IntPtr thisPtr) where T : CppObjectShadow
         {
-            unsafe
+            var target = ((CppObjectNative*) thisPtr)->Shadow.Target;
+            return (T) target;
+        }
+
+        private ref struct CppObjectNative
+        {
+            internal static readonly int Size = IntPtr.Size * 2;
+
+            // ReSharper disable once NotAccessedField.Local
+            public IntPtr VtblPointer;
+            private IntPtr shadowPointer;
+
+            public GCHandle Shadow
             {
-                return (T)GCHandle.FromIntPtr(*(((IntPtr*)thisPtr) + 1)).Target;
+                readonly get => GCHandle.FromIntPtr(shadowPointer);
+                set => shadowPointer = GCHandle.ToIntPtr(value);
             }
         }
     }

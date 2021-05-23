@@ -15,13 +15,6 @@ namespace SharpGen.Runtime
             cppObjectPtr == IntPtr.Zero ? null : (T) Activator.CreateInstance(typeof(T), cppObjectPtr);
 
         /// <summary>
-        /// Get or setup the shadow container in order to support multiple inheritance
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ShadowContainer GetShadowContainer(ICallbackable callback) =>
-            callback.Shadow ??= new ShadowContainer(callback);
-
-        /// <summary>
         /// Return the unmanaged C++ pointer from a <see cref="SharpGen.Runtime.ICallbackable"/> instance.
         /// </summary>
         /// <typeparam name="TCallback">The type of the callback.</typeparam>
@@ -32,7 +25,7 @@ namespace SharpGen.Runtime
             {
                 null => IntPtr.Zero,
                 CppObject cpp => cpp.NativePointer,
-                _ => GetShadowContainer(callback).Find(typeof(TCallback))
+                _ => callback.Shadow.Find(typeof(TCallback))
             };
 
         /// <summary>

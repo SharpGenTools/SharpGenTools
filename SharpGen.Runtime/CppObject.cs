@@ -17,9 +17,13 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using SharpGen.Runtime.Diagnostics;
+
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using SharpGen.Runtime.Diagnostics;
 
 namespace SharpGen.Runtime
 {
@@ -36,19 +40,34 @@ namespace SharpGen.Runtime
 
         private static void DefaultMemoryLeakWarningLogger(string warning)
         {
-            System.Diagnostics.Debug.WriteLine(warning);
+            Debug.WriteLine(warning);
         }
 
         /// <summary>
         /// The native pointer
         /// </summary>
-        protected unsafe void* _nativePointer;
+        private IntPtr _nativePointer;
+
+#if !NETSTANDARD1_1
+        private static readonly ConditionalWeakTable<CppObject, object> TagTable = new();
+#else
+        private object tag;
+#endif
 
         /// <summary>
         /// Gets or sets a custom user tag object to associate with this instance.
         /// </summary>
         /// <value>The tag object.</value>
-        public object Tag { get; set; }
+        public object Tag
+        {
+#if !NETSTANDARD1_1
+            get => TagTable.TryGetValue(this, out var tag) ? tag : null;
+            set => TagTable.Add(this, value);
+#else
+            get => tag;
+            set => tag = value;
+#endif
+        }
 
         /// <summary>
         ///   Default constructor.
@@ -57,6 +76,10 @@ namespace SharpGen.Runtime
         public CppObject(IntPtr pointer)
         {
             NativePointer = pointer;
+#if DEBUG
+            if (Configuration.EnableObjectLifetimeTracing)
+                Debug.WriteLine($"{GetType().Name}[{NativePointer.ToInt64():X}]::new()");
+#endif
         }
 
         /// <summary>
@@ -64,6 +87,10 @@ namespace SharpGen.Runtime
         /// </summary>
         protected CppObject()
         {
+#if DEBUG
+            if (Configuration.EnableObjectLifetimeTracing)
+                Debug.WriteLine($"{GetType().Name}[0]::new()");
+#endif
         }
 
         /// <summary>
@@ -71,76 +98,104 @@ namespace SharpGen.Runtime
         /// </summary>
         public IntPtr NativePointer
         {
-            get
-            {
-                unsafe
-                {
-                    return (IntPtr) _nativePointer;
-                }
-            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if !NETSTANDARD1_1
+            get => _nativePointer;
+#else
+            get => Volatile.Read(ref _nativePointer);
+#endif
             set
             {
-                unsafe
-                {
-                    var newNativePointer = (void*) value;
-                    if (_nativePointer != newNativePointer)
-                    {
-                        NativePointerUpdating();
-                        var oldNativePointer = _nativePointer;
-                        _nativePointer = newNativePointer;
-                        NativePointerUpdated((IntPtr)oldNativePointer);
-                    }
-                }
+                var oldNativePointer = Interlocked.Exchange(ref _nativePointer, value);
+                if (oldNativePointer != value)
+                    NativePointerUpdated(oldNativePointer);
             }
         }
 
         public static explicit operator IntPtr(CppObject cppObject) => cppObject?.NativePointer ?? IntPtr.Zero;
 
         /// <summary>
-        /// Method called when <see cref="NativePointer"/> is going to be update.
-        /// </summary>
-        protected virtual void NativePointerUpdating()
-        {
-            if (Configuration.EnableObjectTracking)
-                ObjectTracker.UnTrack(this);
-        }
-
-        /// <summary>
         /// Method called when the <see cref="NativePointer"/> is updated.
         /// </summary>
         protected virtual void NativePointerUpdated(IntPtr oldNativePointer)
         {
-            if (Configuration.EnableObjectTracking)
-                ObjectTracker.Track(this);
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (NativePointer == IntPtr.Zero)
+            if (!Configuration.EnableObjectTracking)
                 return;
 
+#if DEBUG
+            if (Configuration.EnableObjectLifetimeTracing)
+                Debug.WriteLine(
+                    $"{GetType().Name}[{oldNativePointer.ToInt64():X}]::{nameof(NativePointerUpdated)} ({NativePointer.ToInt64():X})"
+                );
+#endif
+
+            ObjectTracker.MigrateNativePointer(this, oldNativePointer, NativePointer);
+        }
+
+        protected unsafe void* this[int index]
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => (*(void***) _nativePointer)[index];
+        }
+
+        protected unsafe void* this[uint index]
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => (*(void***) _nativePointer)[index];
+        }
+
+        protected unsafe void* this[nint index]
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => (*(void***) _nativePointer)[index];
+        }
+
+        protected unsafe void* this[nuint index]
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => (*(void***) _nativePointer)[index];
+        }
+
+        protected sealed override void Dispose(bool disposing)
+        {
+            var nativePointer = NativePointer;
+            if (nativePointer == IntPtr.Zero)
+                return;
+
+            var isObjectTrackingEnabled = Configuration.EnableObjectTracking;
+
             // If object is disposed by the finalizer, emits a warning
-            if (!disposing && Configuration.EnableTrackingReleaseOnFinalizer)
+            if (!disposing && isObjectTrackingEnabled && Configuration.EnableTrackingReleaseOnFinalizer && !Configuration.EnableReleaseOnFinalizer)
             {
-                if (!Configuration.EnableReleaseOnFinalizer)
-                {
-                    var objectReference = ObjectTracker.Find(this);
-                    LogMemoryLeakWarning?.Invoke(
-                        $"Warning: Live CppObject released on finalizer [0x{NativePointer.ToInt64():X}], potential memory leak: {objectReference}"
-                    );
-                }
+                var objectReference = ObjectTracker.Find(this, nativePointer);
+                LogMemoryLeakWarning?.Invoke(
+                    $"Warning: Live CppObject released on finalizer [0x{nativePointer.ToInt64():X}], potential memory leak: {objectReference}"
+                );
             }
 
-            if (Configuration.EnableObjectTracking)
-            {
-                ObjectTracker.UnTrack(this);
-            }
+#if DEBUG
+            if (Configuration.EnableObjectLifetimeTracing)
+                Debug.WriteLine(
+                    $"{GetType().Name}[{nativePointer.ToInt64():X}]::{nameof(Dispose)}"
+                );
+#endif
 
-            unsafe
-            {
-                // Set pointer to null (using protected members in order to avoid callbacks).
-                _nativePointer = (void*) 0;
-            }
+            DisposeCore(nativePointer, disposing);
+
+            if (isObjectTrackingEnabled)
+                ObjectTracker.Untrack(this, nativePointer);
+
+            // Set pointer to null (using protected members in order to avoid callbacks).
+            Interlocked.Exchange(ref _nativePointer, IntPtr.Zero);
+        }
+
+        /// <summary>
+        /// Releases unmanaged and - optionally - managed resources
+        /// </summary>
+        /// <param name="nativePointer"><see cref="NativePointer"/></param>
+        /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+        protected virtual void DisposeCore(IntPtr nativePointer, bool disposing)
+        {
         }
 
         [Obsolete("Use " + nameof(MarshallingHelpers) + "." + nameof(MarshallingHelpers.FromPointer) + " instead")]
@@ -162,10 +217,7 @@ namespace SharpGen.Runtime
         /// Implements <see cref="ICallbackable"/> but it cannot not be set.
         /// This is only used to support for interop with unmanaged callback.
         /// </summary>
-        ShadowContainer ICallbackable.Shadow
-        {
-            get => throw new InvalidOperationException("Invalid access to Callback. This is used internally.");
-            set => throw new InvalidOperationException("Invalid access to Callback. This is used internally.");
-        }
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        ShadowContainer ICallbackable.Shadow => throw new InvalidOperationException("Invalid access to Callback. This is used internally.");
     }
 }

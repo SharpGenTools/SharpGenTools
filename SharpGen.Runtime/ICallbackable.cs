@@ -17,6 +17,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 
 namespace SharpGen.Runtime
@@ -36,11 +37,6 @@ namespace SharpGen.Runtime
         /// This property is set whenever this instance has an unmanaged shadow callback
         /// registered. This callback must be disposed when disposing this instance. 
         /// </remarks>
-        ShadowContainer Shadow { get; set; }
-    }
-
-    public interface IExceptionCallback
-    {
-        void RaiseException (Exception e);
+        ShadowContainer Shadow { get; }
     }
 }

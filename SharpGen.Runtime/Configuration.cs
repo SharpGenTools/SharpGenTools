@@ -52,6 +52,13 @@ namespace SharpGen.Runtime
         /// Use this property to track objects per thread.
         /// </summary>
         public static bool UseThreadStaticObjectTracking = false;
+
+#if DEBUG
+        /// <summary>
+        /// Enables or disables object lifetime tracing. Default is disabled (false). Very verbose.
+        /// </summary>
+        public static bool EnableObjectLifetimeTracing = false;
+#endif
     }
 }
 
