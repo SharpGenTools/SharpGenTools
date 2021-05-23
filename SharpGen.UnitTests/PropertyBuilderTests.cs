@@ -356,7 +356,7 @@ namespace SharpGen.UnitTests
 
             CsProperty prop = new(Ioc, null, "Active", getMethod, null);
 
-            PropertyBuilder.AttachPropertyToParent(prop);
+            propertyBuilder.AttachPropertyToParent(prop);
 
             Assert.Equal(iface, prop.Parent);
         }
@@ -392,7 +392,7 @@ namespace SharpGen.UnitTests
 
             CsProperty prop = new(Ioc, null, "Active", null, setMethod);
 
-            PropertyBuilder.AttachPropertyToParent(prop);
+            propertyBuilder.AttachPropertyToParent(prop);
 
             Assert.Equal(iface, prop.Parent);
         }
@@ -424,7 +424,7 @@ namespace SharpGen.UnitTests
 
             CsProperty prop = new(Ioc, null, "Active", getMethod, null);
 
-            PropertyBuilder.AttachPropertyToParent(prop);
+            propertyBuilder.AttachPropertyToParent(prop);
 
             Assert.Null(prop.Parent);
         }
@@ -460,7 +460,7 @@ namespace SharpGen.UnitTests
 
             CsProperty prop = new(Ioc, null, "Active", null, setMethod);
 
-            PropertyBuilder.AttachPropertyToParent(prop);
+            propertyBuilder.AttachPropertyToParent(prop);
 
             Assert.Null(prop.Parent);
         }
@@ -493,7 +493,7 @@ namespace SharpGen.UnitTests
 
             CsProperty prop = new(Ioc, null, "Active", getMethod, null);
 
-            PropertyBuilder.AttachPropertyToParent(prop);
+            propertyBuilder.AttachPropertyToParent(prop);
 
             Assert.True(prop.IsPersistent);
         }
@@ -525,7 +525,7 @@ namespace SharpGen.UnitTests
 
             CsProperty prop = new(Ioc, null, "Active", getMethod, null);
 
-            PropertyBuilder.AttachPropertyToParent(prop);
+            propertyBuilder.AttachPropertyToParent(prop);
 
             Assert.Equal(Visibility.Internal, getMethod.Visibility);
         }
@@ -561,7 +561,7 @@ namespace SharpGen.UnitTests
 
             CsProperty prop = new(Ioc, null, "Active", null, setMethod);
 
-            PropertyBuilder.AttachPropertyToParent(prop);
+            propertyBuilder.AttachPropertyToParent(prop);
 
             Assert.Equal(Visibility.Internal, setMethod.Visibility);
         }

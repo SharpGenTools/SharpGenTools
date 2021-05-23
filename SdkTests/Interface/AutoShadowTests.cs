@@ -31,7 +31,7 @@ namespace Interface
         {
             using (SetupTests(false, out var nativeView, out _))
             {
-                nativeView.GetZero(out var zero);
+                var zero = nativeView.GetZero();
 
                 Assert.Equal(0, zero);
             }
@@ -122,7 +122,7 @@ namespace Interface
         {
             using (SetupTests(false, out var nativeView, out _))
             {
-                nativeView.CloneInstance(out var test);
+                var test = nativeView.CloneInstance();
                 using (test)
                 {
                     Assert.Equal(1, test.Add(0, 1));
@@ -136,7 +136,7 @@ namespace Interface
             using (SetupTests(false, out var nativeView, out var target))
             {
                 target.ThrowExceptionInClone = true;
-                Assert.Throws<SharpGen.Runtime.SharpGenException>(() => nativeView.CloneInstance(out var inst));
+                Assert.Throws<SharpGen.Runtime.SharpGenException>(() => nativeView.CloneInstance());
             }
         }
 
@@ -146,7 +146,7 @@ namespace Interface
             using (SetupTests(true, out var nativeView, out var target))
             {
                 target.ThrowExceptionInClone = true;
-                Assert.Throws<InvalidOperationException>(() => nativeView.CloneInstance(out var inst));
+                Assert.Throws<InvalidOperationException>(() => nativeView.CloneInstance());
             }
         }
 
@@ -196,13 +196,13 @@ namespace Interface
                 return Add(1, 1) == rhs.Add(1, 1);
             }
 
-            public void CloneInstance(out CallbackInterface @out)
+            public CallbackInterface CloneInstance()
             {
                 if (ThrowExceptionInClone)
                 {
                     throw new InvalidOperationException();
                 }
-                @out = new ManagedImplementation();
+                return new ManagedImplementation();
             }
 
             public byte GetFirstAnsiCharacter(string str)
@@ -234,9 +234,9 @@ namespace Interface
                 };
             }
 
-            public void GetZero(out int valueOut)
+            public int GetZero()
             {
-                valueOut = 0;
+                return 0;
             }
 
             public void Increment(ref int valueRef)

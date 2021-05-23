@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Diagnostics;
 using SharpGen.Config;
 using SharpGen.CppModel;
 
@@ -25,7 +26,7 @@ namespace SharpGen.Model
 {
     public sealed class CsParameter : CsMarshalCallableBase
     {
-        private bool isOptional;
+        private bool isOptional, usedAsReturn;
         private const int SizeOfLimit = 16;
 
         public CsParameterAttribute Attribute { get; set; } = CsParameterAttribute.In;
@@ -97,7 +98,9 @@ namespace SharpGen.Model
         public override bool IsLocalManagedReference =>
             Attribute is CsParameterAttribute.Ref or CsParameterAttribute.Out;
 
-        public override bool UsedAsReturn { get; }
+        public override bool UsedAsReturn => usedAsReturn;
+
+        internal void MarkUsedAsReturn() => usedAsReturn = true;
 
         public CsParameter Clone()
         {
@@ -114,7 +117,7 @@ namespace SharpGen.Model
             var paramAttribute = cppParameter.Attribute;
             var paramRule = cppParameter.Rule;
 
-            UsedAsReturn = paramRule.ParameterUsedAsReturnType ?? UsedAsReturn;
+            usedAsReturn = paramRule.ParameterUsedAsReturnType ?? UsedAsReturn;
             DefaultValue = paramRule.DefaultValue ?? DefaultValue;
 
             if (HasFlag(paramAttribute, ParamAttribute.Buffer))

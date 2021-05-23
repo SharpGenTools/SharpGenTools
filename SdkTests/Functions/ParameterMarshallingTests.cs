@@ -104,7 +104,7 @@ namespace Functions
         [Fact]
         public void EnumOut()
         {
-            NativeFunctions.EnumOut(out MyEnum value);
+            var value = NativeFunctions.EnumOut();
 
             Assert.Equal(MyEnum.TestValue, value);
         }

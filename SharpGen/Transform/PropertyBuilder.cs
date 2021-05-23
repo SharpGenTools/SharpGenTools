@@ -60,6 +60,9 @@ namespace SharpGen.Transform
             // Associate the property with the underlying method's C++ element.
             var cppElement = getter?.CppElement ?? setter?.CppElement;
 
+            if (isParamGetter)
+                isParamGetter = !getter.Parameters[0].UsedAsReturn;
+
             return new CsProperty(ioc, (CppMethod) cppElement, group.Key, getter, setter, isParamGetter)
             {
                 PublicType = getterPropType ?? setterPropType
@@ -106,13 +109,25 @@ namespace SharpGen.Transform
             return (propertyName, isGet ? PropertyMethod.Getter : isSet ? PropertyMethod.Setter : null);
         }
 
-        public static void AttachPropertyToParent(CsProperty property)
+        public void AttachPropertyToParent(CsProperty property)
         {
             var parent = property.Getter?.Parent ?? property.Setter?.Parent;
 
-            // If mapping rule disallows properties, don't attach the property to the model.
-            if (parent is null || property.Getter?.AllowProperty == false || property.Setter?.AllowProperty == false)
+            if (parent is null)
                 return;
+
+            // If mapping rule disallows properties, don't attach the property to the model.
+            if (property.Getter?.AllowProperty == false || property.Setter?.AllowProperty == false)
+                return;
+
+            // If mapping rule doesn't force properties, don't attach the set-only property to the model.
+            // https://docs.microsoft.com/en-us/dotnet/standard/design-guidelines/property
+            if (property.Getter == null && property.Setter is {AllowProperty: null or false} setter)
+            {
+                if (setter.AllowProperty == false)
+                    ioc.Logger.Message("Method [{0}] has redundant property rule specification", setter.QualifiedName);
+                return;
+            }
 
             // Update visibility for getter and setter (set to internal)
             ReducePropertyMethodVisibility(property.Getter);

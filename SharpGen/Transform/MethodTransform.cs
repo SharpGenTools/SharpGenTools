@@ -134,13 +134,58 @@ namespace SharpGen.Transform
 
             Debug.Assert(parameters.Length == parameterNames.Count);
 
+            uint? outCount = 0;
+
             // Iterates on parameters to convert them to C# parameters
             for (var index = 0; index < parameters.Length; index++)
             {
                 var cppParameter = parameters[index];
                 var parameterName = parameterNames[index];
-                method.Add(factory.Create(cppParameter, parameterName));
+                var csParameter = factory.Create(cppParameter, parameterName);
+                method.Add(csParameter);
+
+                if (!outCount.HasValue)
+                    continue;
+
+                if (csParameter.IsOut && csParameter.Relations.Count == 0)
+                    ++outCount;
+
+                if (cppParameter.Rule.ParameterUsedAsReturnType == false)
+                    outCount = null;
             }
+
+            if (outCount == 1)
+                TransformOutParametersToReturnValues(method);
+        }
+
+        private void TransformOutParametersToReturnValues(CsCallable method)
+        {
+            if (method.HasReturnTypeValue)
+                return;
+
+            var outCsParameter = method.Parameters.Single(x => x.IsOut && x.Relations.Count == 0);
+
+            if (outCsParameter.IsArray)
+                return;
+
+            var outCppParameter = outCsParameter.CppElement;
+
+            if (outCppParameter is not CppParameter {Attribute: var attribute})
+                return;
+
+            if ((attribute & ParamAttribute.Buffer) == ParamAttribute.Buffer)
+                return;
+
+            if ((attribute & ParamAttribute.Fast) == ParamAttribute.Fast)
+                return;
+
+            if ((attribute & ParamAttribute.Value) == ParamAttribute.Value)
+                return;
+
+            outCsParameter.MarkUsedAsReturn();
+
+            if (outCppParameter.Rule.ParameterUsedAsReturnType == true)
+                Logger.Message("Parameter [{0}] has redundant return rule specification", outCppParameter.FullName);
         }
 
         internal static void CreateNativeInteropSignatures(IInteropSignatureTransform sigTransform, CsCallable callable)

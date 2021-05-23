@@ -133,7 +133,7 @@ namespace SharpGen.Model
         private string DefaultShadowFullName => $"{QualifiedName}Shadow";
         private string DefaultVtblFullName => $"{ShadowName}.{Name}Vtbl";
 
-        public bool AutoGenerateShadow { get; }
+        public bool AutoGenerateShadow { get; } = true;
         public bool AutoGenerateVtbl { get; } = true;
         public bool StaticShadowVtbl { get; } = true;
 

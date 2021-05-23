@@ -51,7 +51,7 @@ namespace SharpGen.Model
 
         public bool Hidden { get; set; }
         private bool IsKeepImplementPublic { get; }
-        public bool AllowProperty { get; } = true;
+        public bool? AllowProperty { get; }
         public bool CustomVtbl { get; }
         public bool IsPersistent { get; }
         public int Offset { get; }

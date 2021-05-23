@@ -303,7 +303,7 @@ namespace SharpGen.Transform
             // Add the property to the parentContainer
             foreach (var property in cSharpProperties.Values)
             {
-                PropertyBuilder.AttachPropertyToParent(property);
+                propertyBuilder.AttachPropertyToParent(property);
             }
         }
 
