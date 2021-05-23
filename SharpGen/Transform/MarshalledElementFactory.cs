@@ -183,6 +183,9 @@ namespace SharpGen.Transform
             CsParameter param = new(ioc, cppParameter, name);
             CreateCore(param);
 
+            if (cppParameter.IsAttributeRuleRedundant)
+                Logger.Message("Parameter [{0}] has redundant attribute rule specification", cppParameter.FullName);
+
             static bool HasFlag(ParamAttribute value, ParamAttribute flag) => (value & flag) == flag;
 
             // --------------------------------------------------------------------------------

@@ -28,19 +28,26 @@ namespace SharpGen.CppModel
 
         public ParamAttribute Attribute
         {
-            get
-            {
-                var value = Rule.ParameterAttribute switch
+            get => CoerceAttribute(
+                Rule.ParameterAttribute switch
                 {
                     { } paramAttributeValue => paramAttributeValue,
                     _ => attribute
-                };
-
-                // Parameters without any annotations are considered as In
-                return value == ParamAttribute.None ? ParamAttribute.In : value;
-            }
+                }
+            );
             set => attribute = value;
         }
+
+        private static ParamAttribute CoerceAttribute(ParamAttribute value)
+        {
+            const ParamAttribute inOutMask = ParamAttribute.In | ParamAttribute.InOut | ParamAttribute.Out;
+
+            // Parameters without In/Out annotations are considered as In
+            return (value & inOutMask) == 0 ? value | ParamAttribute.In : value;
+        }
+
+        internal bool IsAttributeRuleRedundant => Rule.ParameterAttribute is { } ruleValue
+                                               && CoerceAttribute(ruleValue) == CoerceAttribute(attribute);
 
         public override string ToString() => "[" + Attribute + "] " + base.ToString();
 

@@ -5,12 +5,6 @@ namespace SharpGen.Config
     [XmlType("map")]
     public class MappingRule : MappingBaseRule
     {
-        public MappingRule()
-        {
-            IsFinalMappingName = false;
-            MethodCheckReturnType = true;
-        }
-
         /// <summary>
         ///     Default Value for parameters
         /// </summary>
@@ -29,7 +23,7 @@ namespace SharpGen.Config
         [XmlAttribute("default")]
         public string DefaultValue { get; set; }
 
-        [XmlIgnore] public bool? MethodCheckReturnType { get; set; }
+        [XmlIgnore] public bool? MethodCheckReturnType { get; set; } = true;
 
         [XmlAttribute("check")]
         public bool _MethodCheckReturnType_
@@ -191,7 +185,7 @@ namespace SharpGen.Config
         ///     True if the MappingName doesn't need any further rename processing
         /// </summary>
         [XmlIgnore]
-        public bool? IsFinalMappingName { get; set; }
+        public bool? IsFinalMappingName { get; set; } = false;
 
         /// <summary>
         ///     True if a struct should used a native value type marshalling
