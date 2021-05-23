@@ -62,6 +62,8 @@ namespace SharpGenTools.Sdk.Tasks
             }
         }
 
+        private bool AbortExecution => SharpGenLogger.HasErrors || IsCancellationRequested;
+
         private bool Execute(ConfigFile config)
         {
             config.GetFilesWithIncludesAndExtensionHeaders(
@@ -73,7 +75,7 @@ namespace SharpGenTools.Sdk.Tasks
 
             var cppHeaderGenerationResult = cppHeaderGenerator.GenerateCppHeaders(config, configsWithHeaders, configsWithExtensionHeaders);
 
-            if (SharpGenLogger.HasErrors)
+            if (AbortExecution)
                 return false;
 
             IncludeDirectoryResolver resolver = new(ioc);
@@ -105,7 +107,7 @@ namespace SharpGenTools.Sdk.Tasks
                             .Distinct()
             );
 
-            if (SharpGenLogger.HasErrors)
+            if (AbortExecution)
                 return false;
 
             // Run the parser
@@ -114,7 +116,7 @@ namespace SharpGenTools.Sdk.Tasks
                 OutputPath = OutputPath
             };
 
-            if (SharpGenLogger.HasErrors)
+            if (AbortExecution)
                 return false;
 
             CppModule group;
@@ -125,7 +127,7 @@ namespace SharpGenTools.Sdk.Tasks
                 group = parser.Run(module, xmlReader);
             }
 
-            if (SharpGenLogger.HasErrors)
+            if (AbortExecution)
                 return false;
 
             config.ExpandDynamicVariables(SharpGenLogger, group);
@@ -189,7 +191,7 @@ namespace SharpGenTools.Sdk.Tasks
 
             GenerateConfigForConsumers(consumerConfig);
 
-            if (SharpGenLogger.HasErrors)
+            if (AbortExecution)
                 return false;
 
             var documentationCacheItemSpec = DocumentationCache.ItemSpec;
@@ -272,7 +274,7 @@ namespace SharpGenTools.Sdk.Tasks
 
             cache.WriteIfDirty(documentationCacheItemSpec);
 
-            if (SharpGenLogger.HasErrors)
+            if (AbortExecution)
                 return false;
 
             var documentationFiles = new Dictionary<string, XmlDocument>();
@@ -308,7 +310,7 @@ namespace SharpGenTools.Sdk.Tasks
             if (platformMask == 0)
                 platformMask = PlatformDetectionType.Any;
 
-            if (SharpGenLogger.HasErrors)
+            if (AbortExecution)
                 return false;
 
             serviceContainer.AddService(new ExternalDocCommentsReader(documentationFiles));

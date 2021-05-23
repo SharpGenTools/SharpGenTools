@@ -1,19 +1,24 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
 using Logger = SharpGen.Logging.Logger;
+using Task = Microsoft.Build.Utilities.Task;
 
 namespace SharpGenTools.Sdk.Tasks
 {
-    public abstract class SharpTaskBase : Task
+    public abstract class SharpTaskBase : Task, ICancelableTask
     {
+        private volatile bool isCancellationRequested;
+
         // ReSharper disable MemberCanBePrivate.Global, UnusedAutoPropertyAccessor.Global
         [Required] public bool DebugWaitForDebuggerAttach { get; set; }
         // ReSharper restore UnusedAutoPropertyAccessor.Global, MemberCanBePrivate.Global
 
         protected Logger SharpGenLogger { get; private set; }
+
+        protected bool IsCancellationRequested => isCancellationRequested;
 
         protected void PrepareExecute()
         {
@@ -36,8 +41,13 @@ namespace SharpGenTools.Sdk.Tasks
                 Thread.Yield();
             }
 
-            while (!Debugger.IsAttached)
+            while (!Debugger.IsAttached && !IsCancellationRequested)
                 Thread.Sleep(TimeSpan.FromSeconds(1));
+        }
+
+        public void Cancel()
+        {
+            isCancellationRequested = true;
         }
     }
 }
