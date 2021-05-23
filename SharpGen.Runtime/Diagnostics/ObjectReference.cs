@@ -17,10 +17,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
-using System.Diagnostics;
 using System.Globalization;
-using System.Text;
 
 namespace SharpGen.Runtime.Diagnostics
 {
@@ -73,15 +72,14 @@ namespace SharpGen.Runtime.Diagnostics
         /// <returns>
         /// A <see cref="System.String"/> that represents this instance.
         /// </returns>
-        public override string ToString()
+        public override string ToString() => Object.Target switch
         {
-            if (Object.Target is not CppObject cppObject)
-                return string.Empty;
-
-            var builder = new StringBuilder();
-            builder.AppendFormat(CultureInfo.InvariantCulture, "Active C++ Object: [0x{0:X}] Class: [{1}] Time [{2}] Stack:\r\n{3}", cppObject.NativePointer.ToInt64(), cppObject.GetType().FullName, CreationTime, StackTrace).AppendLine();
-            return builder.ToString();
-        }
+            CppObject cppObject => string.Format(
+                CultureInfo.InvariantCulture,
+                "Active C++ Object: [0x{0:X}] Class: [{1}] Time [{2}] Stack:\r\n{3}\r\n",
+                cppObject.NativePointer.ToInt64(), cppObject.GetType().FullName, CreationTime, StackTrace
+            ),
+            _ => string.Empty
+        };
     }
-        
 }

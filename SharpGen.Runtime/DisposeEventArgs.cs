@@ -5,7 +5,7 @@ namespace SharpGen.Runtime
     /// <summary>
     /// Event args which can tell whether calling Dispose with dispoing flag or not.
     /// </summary>
-    public class DisposeEventArgs : EventArgs
+    public sealed class DisposeEventArgs : EventArgs
     {
         /// <summary>
         /// DisposeEventArgs with Disposing flag set to true.
