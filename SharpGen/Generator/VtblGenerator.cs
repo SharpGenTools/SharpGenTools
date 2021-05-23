@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Config;
@@ -11,6 +11,21 @@ namespace SharpGen.Generator
 {
     internal sealed class VtblGenerator : CodeGeneratorBase, ICodeGenerator<CsInterface, MemberDeclarationSyntax>
     {
+        private static readonly SyntaxList<AttributeListSyntax> DebuggerTypeProxyAttribute = SingletonList(
+            AttributeList(
+                SingletonSeparatedList(
+                    Attribute(
+                        ParseName("System.Diagnostics.DebuggerTypeProxy"),
+                        AttributeArgumentList(
+                            SingletonSeparatedList(
+                                AttributeArgument(TypeOfExpression(IdentifierName("CppObjectVtblDebugView")))
+                            )
+                        )
+                    )
+                )
+            )
+        );
+
         public MemberDeclarationSyntax GenerateCode(CsInterface csElement)
         {
             var vtblClassName = csElement.VtblName.Split('.').Last();
@@ -105,6 +120,7 @@ namespace SharpGen.Generator
                        ModelUtilities.VisibilityToTokenList(vtblVisibility, SyntaxKind.UnsafeKeyword,
                                                             SyntaxKind.PartialKeyword)
                    )
+                  .WithAttributeLists(DebuggerTypeProxyAttribute)
                   .WithBaseList(
                        BaseList(
                            SingletonSeparatedList<BaseTypeSyntax>(
