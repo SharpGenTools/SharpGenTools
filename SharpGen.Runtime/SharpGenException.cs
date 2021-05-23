@@ -17,103 +17,38 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
+#nullable enable
+
 using System;
 using System.Globalization;
 
 namespace SharpGen.Runtime
 {
     /// <summary>
-    ///   The base class for errors that occur in native code invoked by SharpGen.
+    ///     The base class for errors that occur in native code invoked by SharpGen.
     /// </summary>
-    public class SharpGenException : Exception
+    public partial class SharpGenException : Exception
     {
-        /// <summary>
-        ///   Initializes a new instance of the <see cref = "SharpGenException" /> class.
-        /// </summary>
-        public SharpGenException() : base("A SharpGen exception occurred.")
+        private ResultDescriptor? descriptor;
+
+        private SharpGenException(Result result, ResultDescriptor? descriptor, string message,
+                                  Exception? innerException) : base(message, innerException)
         {
-            Descriptor = ResultDescriptor.Find(Result.Fail);
-            HResult = (int)Result.Fail;
+            this.descriptor = descriptor;
+            HResult = (int) result;
         }
 
         /// <summary>
-        ///   Initializes a new instance of the <see cref = "SharpGenException" /> class.
+        ///     Gets the <see cref="SharpGen.Runtime.Result">Result code</see> for the exception if one exists.
+        ///     This value indicates the specific type of failure that occurred within the native code.
         /// </summary>
-        /// <param name = "result">The result code that caused this exception.</param>
-        public SharpGenException(Result result)
-            : this(ResultDescriptor.Find(result))
-        {
-            HResult = (int)result;
-        }
+        public Result ResultCode => HResult;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SharpGenException"/> class.
+        ///     Gets the <see cref="SharpGen.Runtime.ResultDescriptor">Result descriptor</see> for the exception.
+        ///     This value indicates the specific type of failure that occurred within the native code.
         /// </summary>
-        /// <param name="descriptor">The result descriptor.</param>
-        public SharpGenException(ResultDescriptor descriptor)
-            : base(descriptor.ToString())
-        {
-            Descriptor = descriptor;
-            HResult = (int)descriptor.Result;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SharpGenException"/> class.
-        /// </summary>
-        /// <param name="result">The error result code.</param>
-        /// <param name="message">The message describing the exception.</param>
-        public SharpGenException(Result result, string message)
-            : base(message)
-        {
-            Descriptor = ResultDescriptor.Find(result);
-            HResult = (int)result;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SharpGenException"/> class.
-        /// </summary>
-        /// <param name="result">The error result code.</param>
-        /// <param name="message">The message describing the exception.</param>
-        /// <param name="args">formatting arguments</param>
-        public SharpGenException(Result result, string message, params object[] args)
-            : base(string.Format(CultureInfo.InvariantCulture, message, args))
-        {
-            Descriptor = ResultDescriptor.Find(result);
-            HResult = (int)result;
-        }
-
-        /// <summary>
-        ///   Initializes a new instance of the <see cref = "SharpGenException" /> class.
-        /// </summary>
-        /// <param name = "message">The message describing the exception.</param>
-        /// <param name="args">formatting arguments</param>
-        public SharpGenException(string message, params object[] args) : this(Result.Fail, message, args)
-        {
-        }
-
-        /// <summary>
-        ///   Initializes a new instance of the <see cref = "SharpGenException" /> class.
-        /// </summary>
-        /// <param name = "message">The message describing the exception.</param>
-        /// <param name = "innerException">The exception that caused this exception.</param>
-        /// <param name="args">formatting arguments</param>
-        public SharpGenException(string message, Exception innerException, params object[] args)
-            : base(string.Format(CultureInfo.InvariantCulture, message, args), innerException)
-        {
-            Descriptor = ResultDescriptor.Find(Result.Fail);
-            HResult = (int)Result.Fail;
-        }
-
-        /// <summary>
-        ///   Gets the <see cref = "SharpGen.Runtime.Result">Result code</see> for the exception if one exists. This value indicates
-        ///   the specific type of failure that occurred within the native code.
-        /// </summary>
-        public Result ResultCode => Descriptor?.Result ?? HResult;
-
-        /// <summary>
-        ///   Gets the <see cref = "SharpGen.Runtime.ResultDescriptor">Result descriptor</see> for the exception. This value indicates
-        ///   the specific type of failure that occurred within the native code.
-        /// </summary>
-        public ResultDescriptor Descriptor { get; }
+        public ResultDescriptor Descriptor => descriptor ??= ResultDescriptor.Find(HResult);
     }
 }

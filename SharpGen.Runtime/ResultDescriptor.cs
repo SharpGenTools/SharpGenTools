@@ -31,7 +31,7 @@ namespace SharpGen.Runtime
     /// </summary>
     public sealed class ResultDescriptor
     {
-        private static readonly ConcurrentDictionary<Result, ResultDescriptor> Descriptors = new ConcurrentDictionary<Result, ResultDescriptor>();
+        private static readonly ConcurrentDictionary<Result, ResultDescriptor> Descriptors = new();
         private const string UnknownText = "Unknown";
 
         /// <summary>
@@ -124,10 +124,8 @@ namespace SharpGen.Runtime
         }
 
         /// <inheritdoc/>
-        public override string ToString()
-        {
-            return string.Format("HRESULT: [0x{0:X}], Module: [{1}], ApiCode: [{2}/{3}], Message: {4}", this.Result.Code, this.Module, this.NativeApiCode, this.ApiCode, this.Description);
-        }
+        public override string ToString() =>
+            $"HRESULT: [0x{Result.Code:X}], Module: [{Module}], ApiCode: [{NativeApiCode}/{ApiCode}], Message: {Description}";
 
         /// <summary>
         /// Performs an implicit conversion from <see cref="ResultDescriptor"/> to <see cref="SharpDX.Result"/>.
@@ -194,9 +192,7 @@ namespace SharpGen.Runtime
         /// <returns>A descriptor for the specified result</returns>
         public static ResultDescriptor Find(Result result)
         {
-            ResultDescriptor descriptor;
-
-            if (!Descriptors.TryGetValue(result, out descriptor))
+            if (!Descriptors.TryGetValue(result, out var descriptor))
             {
                 descriptor = new ResultDescriptor(result, UnknownText, UnknownText, UnknownText);
             }
