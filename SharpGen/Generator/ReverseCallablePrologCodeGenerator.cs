@@ -115,13 +115,12 @@ namespace SharpGen.Generator
             var marshalTypeSyntax = marshaller.GetMarshalTypeSyntax(publicElement);
             var publicType = ParseTypeName(publicElement.PublicType.QualifiedName);
             var generatesMarshalVariable = marshaller.GeneratesMarshalVariable(publicElement);
-            var defaultValue = EqualsValueClause(DefaultLiteral);
-            var publicDefaultValue = publicElement.UsedAsReturn ? default : defaultValue;
+            ExpressionSyntax publicDefaultValue = publicElement.UsedAsReturn ? default : DefaultLiteral;
 
             var refToNativeClause = GenerateAsRefInitializer(publicElement, nativeParameter, marshalTypeSyntax);
 
             TypeSyntax publicVariableType, marshalVariableType;
-            EqualsValueClauseSyntax publicVariableInitializer, marshalVariableInitializer;
+            ExpressionSyntax publicVariableInitializer, marshalVariableInitializer;
 
             if (publicElement is CsParameter {IsOptional: true, IsLocalManagedReference: true} parameter)
             {
@@ -133,7 +132,7 @@ namespace SharpGen.Generator
                         SingletonSeparatedList(
                             VariableDeclarator(
                                 MarshallerBase.GetRefLocationIdentifier(publicElement),
-                                default, refToNativeClause
+                                default, EqualsValueClause(refToNativeClause)
                             )
                         )
                     )
@@ -142,7 +141,7 @@ namespace SharpGen.Generator
                 publicVariableType = publicType;
                 marshalVariableType = marshalTypeSyntax;
                 publicVariableInitializer = publicDefaultValue;
-                marshalVariableInitializer = defaultValue;
+                marshalVariableInitializer = DefaultLiteral;
 
                 if (generatesMarshalVariable && parameter is {IsRef: true})
                 {
@@ -163,9 +162,6 @@ namespace SharpGen.Generator
                 Debug.Assert(marshaller is not RefWrapperMarshaller);
 
                 marshalVariableInitializer = refToNativeClause;
-                publicVariableInitializer = generatesMarshalVariable
-                                                ? publicDefaultValue
-                                                : refToNativeClause;
 
                 if (publicElement is {IsLocalManagedReference: true})
                 {
@@ -175,13 +171,31 @@ namespace SharpGen.Generator
                     publicVariableType = generatesMarshalVariable
                                              ? publicType
                                              : RefType(publicType);
+                    publicVariableInitializer = generatesMarshalVariable
+                                                    ? publicDefaultValue
+                                                    : refToNativeClause;
+
                 }
                 else
                 {
                     Debug.Assert(publicElement is CsParameter {IsRefIn: true});
 
+                    var isNullable = publicElement is CsParameter {PassedByNullableInstance: true};
+
                     marshalVariableType = marshalTypeSyntax;
-                    publicVariableType = publicType;
+                    publicVariableType = isNullable ? NullableType(publicType) : publicType;
+                    publicVariableInitializer = generatesMarshalVariable
+                                                    ? isNullable
+                                                          ? ConditionalExpression(
+                                                              BinaryExpression(
+                                                                  SyntaxKind.NotEqualsExpression,
+                                                                  nativeParameter, DefaultLiteral
+                                                              ),
+                                                              ImplicitObjectCreationExpression(),
+                                                              LiteralExpression(SyntaxKind.NullLiteralExpression)
+                                                          )
+                                                          : publicDefaultValue
+                                                    : refToNativeClause;
                 }
             }
 
@@ -193,7 +207,7 @@ namespace SharpGen.Generator
                         SingletonSeparatedList(
                             VariableDeclarator(
                                 MarshallerBase.GetMarshalStorageLocationIdentifier(publicElement),
-                                default, marshalVariableInitializer
+                                default, EqualsValueClause(marshalVariableInitializer)
                             )
                         )
                     )
@@ -204,15 +218,20 @@ namespace SharpGen.Generator
                 VariableDeclaration(
                     publicVariableType,
                     SingletonSeparatedList(
-                        VariableDeclarator(Identifier(publicElement.Name), default, publicVariableInitializer)
+                        VariableDeclarator(
+                            Identifier(publicElement.Name), default,
+                            publicVariableInitializer != default
+                                ? EqualsValueClause(publicVariableInitializer)
+                                : default
+                        )
                     )
                 )
             );
         }
 
-        private EqualsValueClauseSyntax GenerateAsRefInitializer(CsMarshalCallableBase publicElement,
-                                                                 ExpressionSyntax nativeParameter,
-                                                                 TypeSyntax marshalTypeSyntax)
+        private ExpressionSyntax GenerateAsRefInitializer(CsMarshalCallableBase publicElement,
+                                                          ExpressionSyntax nativeParameter,
+                                                          TypeSyntax marshalTypeSyntax)
         {
             var refToNativeExpression = InvocationExpression(
                 MemberAccessExpression(
@@ -257,7 +276,7 @@ namespace SharpGen.Generator
                 }
             }
 
-            return EqualsValueClause(refToNativeClauseExpression);
+            return refToNativeClauseExpression;
         }
 
         public ReverseCallablePrologCodeGenerator(Ioc ioc) : base(ioc)
