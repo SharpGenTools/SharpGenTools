@@ -359,7 +359,6 @@ namespace SharpGen.Platform
 
             // Parse attributes
             const string gccXmlAttribute = "annotate(";
-            var isPre = false;
             var isPost = false;
             var hasWritable = false;
 
@@ -373,12 +372,10 @@ namespace SharpGen.Platform
 
                 if (newItem.StartsWith("SAL_pre"))
                 {
-                    isPre = true;
                     isPost = false;
                 }
                 else if (newItem.StartsWith("SAL_post"))
                 {
-                    isPre = false;
                     isPost = true;
                 }
                 else if (isPost && newItem.StartsWith("SAL_valid"))
@@ -393,7 +390,10 @@ namespace SharpGen.Platform
                 {
                     if (newItem.StartsWith("SAL_writableTo"))
                     {
-                        if (isPre) paramAttribute |= ParamAttribute.Out;
+                        // When changing something related to in/out SAL, check resulting attributes
+                        // for IInspectable::GetIids::iids (_Outptr_result_buffer_to_maybenull_)
+                        // Should be Out|Buffer|Optional
+                        if (!isPost) paramAttribute |= ParamAttribute.Out;
                         hasWritable = true;
                     }
 
