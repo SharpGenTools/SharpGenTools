@@ -105,7 +105,7 @@ namespace SharpGen.Platform
                 // Delete any previously generated xml file
                 File.Delete(xmlFile);
 
-                RunCastXml(headerFile, LogCastXmlOutput, $"-o {xmlFile}");
+                RunCastXml(headerFile, LogCastXmlOutput, $"-o \"{xmlFile}\"");
 
                 if (!File.Exists(xmlFile) || Logger.HasErrors)
                 {
