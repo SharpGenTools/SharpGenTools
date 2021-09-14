@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace SharpGen.Runtime
 {
@@ -7,16 +8,17 @@ namespace SharpGen.Runtime
     public sealed class ExcludeFromTypeListAttribute : Attribute
     {
         /// <summary>
-        /// Get <see cref="ExcludeFromTypeListAttribute"/> from type.
+        /// Check presence of <see cref="ExcludeFromTypeListAttribute"/> on the specified type.
         /// </summary>
-        /// <returns>The associated attribute or null if no attribute were found</returns>
-        public static ExcludeFromTypeListAttribute Get(Type type) =>
-            type.GetTypeInfo().GetCustomAttribute<ExcludeFromTypeListAttribute>();
+        /// <returns>true if attribute was found on the specified type</returns>
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        internal static bool Has(Type type) => Has(type.GetTypeInfo());
 
         /// <summary>
         /// Check presence of <see cref="ExcludeFromTypeListAttribute"/> on the specified type.
         /// </summary>
         /// <returns>true if attribute was found on the specified type</returns>
-        public static bool Has(Type type) => Get(type) != null;
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        internal static bool Has(TypeInfo type) => type.GetCustomAttribute<ExcludeFromTypeListAttribute>() != null;
     }
 }

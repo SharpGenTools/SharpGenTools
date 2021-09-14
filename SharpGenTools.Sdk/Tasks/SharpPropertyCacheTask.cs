@@ -92,6 +92,7 @@ namespace SharpGenTools.Sdk.Tasks
             WriteTaskItems(Platforms);
             WriteTaskItems(SilenceMissingDocumentationErrorIdentifierPatterns);
             WriteTaskItem(ConsumerBindMappingConfig);
+            WriteBool(UseFunctionPointersInVtbl);
 
             void WriteString(string s)
             {

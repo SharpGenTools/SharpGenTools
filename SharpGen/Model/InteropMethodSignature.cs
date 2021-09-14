@@ -21,6 +21,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.CppModel;
 
 namespace SharpGen.Model
@@ -31,13 +33,13 @@ namespace SharpGen.Model
         None = 0x0,
         ForcedReturnBufferSig = 0x1,
         IsFunction = 0x2,
-        CastToNativeLong = 0x4,
-        CastToNativeULong = 0x8,
     }
 
     public sealed class InteropMethodSignature : IEquatable<InteropMethodSignature>
     {
+        private TypeSyntax _returnTypeSyntax;
         public InteropType ReturnType { get; set; }
+        public TypeSyntax ReturnTypeSyntax => _returnTypeSyntax ??= SyntaxFactory.ParseTypeName(ReturnType.TypeName);
         public List<InteropMethodSignatureParameter> ParameterTypes { get; } = new();
 
         public bool ForcedReturnBufferSig
@@ -61,30 +63,6 @@ namespace SharpGen.Model
                     Flags |= InteropMethodSignatureFlags.IsFunction;
                 else
                     Flags &= ~InteropMethodSignatureFlags.IsFunction;
-            }
-        }
-
-        public bool CastToNativeLong
-        {
-            get => Flags.HasFlag(InteropMethodSignatureFlags.CastToNativeLong);
-            set
-            {
-                if (value)
-                    Flags |= InteropMethodSignatureFlags.CastToNativeLong;
-                else
-                    Flags &= ~InteropMethodSignatureFlags.CastToNativeLong;
-            }
-        }
-
-        public bool CastToNativeULong
-        {
-            get => Flags.HasFlag(InteropMethodSignatureFlags.CastToNativeULong);
-            set
-            {
-                if (value)
-                    Flags |= InteropMethodSignatureFlags.CastToNativeULong;
-                else
-                    Flags &= ~InteropMethodSignatureFlags.CastToNativeULong;
             }
         }
 

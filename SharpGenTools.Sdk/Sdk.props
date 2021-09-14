@@ -1,7 +1,4 @@
 ﻿<Project>
-  <PropertyGroup>
-    <MSBuildAllProjects Condition="'$(MSBuildToolsVersion)' != 'Current'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
-  </PropertyGroup>
 
   <PropertyGroup>
     <SharpGenGenerateConsumerBindMapping Condition="'$(SharpGenGenerateConsumerBindMapping)' == ''">true</SharpGenGenerateConsumerBindMapping>
@@ -32,4 +29,5 @@
     <GenerateSharpGenBindingsDependsOn Include="SharpGenExecute" />
     <GenerateSharpGenBindingsDependsOn Include="GenerateConsumerBindMappingFile" />
   </ItemGroup>
+
 </Project>

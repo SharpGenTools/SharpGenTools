@@ -62,11 +62,9 @@ namespace SharpGen.Model
         public IEnumerable<CsField> PublicFields => _fields.Enumerate(this)
                                                            .Where(field => field.Relations.Count == 0);
 
-        /// <summary>
-        /// Gets the variables stored in this container.
-        /// </summary>
-        /// <value>The variables.</value>
-        public IEnumerable<CsVariable> Variables => Items.OfType<CsVariable>();
+        public IEnumerable<CsExpressionConstant> ExpressionConstants => Items.OfType<CsExpressionConstant>();
+        public IEnumerable<CsGuidConstant> GuidConstants => Items.OfType<CsGuidConstant>();
+        public IEnumerable<CsResultConstant> ResultConstants => Items.OfType<CsResultConstant>();
 
         /// <summary>
         ///   True if this structure is using an explicit layout else it's a sequential structure
@@ -119,6 +117,8 @@ namespace SharpGen.Model
                 return structAlignment;
             }
         }
+
+        public override bool IsBlittable => Fields.All(x => x.MarshalType.IsBlittable && !x.IsArray && !x.HasPointer);
 
         public bool IsFullyMapped { get; set; } = true;
 

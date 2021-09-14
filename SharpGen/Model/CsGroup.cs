@@ -32,8 +32,9 @@ namespace SharpGen.Model
         }
 
         public IEnumerable<CsFunction> Functions => Items.OfType<CsFunction>();
-
-        public IEnumerable<CsVariable> Variables => Items.OfType<CsVariable>();
+        public IEnumerable<CsExpressionConstant> ExpressionConstants => Items.OfType<CsExpressionConstant>();
+        public IEnumerable<CsGuidConstant> GuidConstants => Items.OfType<CsGuidConstant>();
+        public IEnumerable<CsResultConstant> ResultConstants => Items.OfType<CsResultConstant>();
 
         protected override string DefaultDescription => "Functions";
 

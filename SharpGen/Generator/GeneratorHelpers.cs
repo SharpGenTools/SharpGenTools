@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
@@ -36,6 +37,10 @@ namespace SharpGen.Generator
 
         internal static readonly LiteralExpressionSyntax ZeroLiteral = LiteralExpression(
             SyntaxKind.NumericLiteralExpression, Literal(0)
+        );
+
+        internal static readonly IdentifierNameSyntax VarIdentifierName = IdentifierName(
+            Identifier(SyntaxTriviaList.Empty, SyntaxKind.VarKeyword, "var", "var", SyntaxTriviaList.Empty)
         );
 
         public static ExpressionSyntax WrapInParentheses(ExpressionSyntax expression) =>

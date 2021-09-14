@@ -108,6 +108,18 @@ namespace SharpGen.Transform
 
             TypeRegistry.BindType(cppInterface.Name, cSharpInterface, source: cppInterface.ParentInclude?.Name);
 
+            if (cppInterface.Rule.AutoGenerateShadow == true)
+                Logger.Message("Interface [{0}] has redundant shadow generation flag", cppInterface.FullName);
+
+            if (cppInterface.Rule.AutoGenerateVtbl == true)
+                Logger.Message("Interface [{0}] has redundant vtbl generation flag", cppInterface.FullName);
+
+            if (cppInterface.Rule.StaticShadowVtbl == true)
+                Logger.Message("Interface [{0}] has redundant static vtbl generation flag", cppInterface.FullName);
+
+            if (cppInterface.Rule.VtblVisibility == Visibility.ProtectedInternal)
+                Logger.Message("Interface [{0}] has redundant vtbl visibility specification", cppInterface.FullName);
+
             foreach (var cppMethod in cppInterface.Methods)
             {
                 cSharpInterface.Add(MethodPreparer.Prepare(cppMethod));

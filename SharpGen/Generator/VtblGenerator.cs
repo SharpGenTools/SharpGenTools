@@ -9,7 +9,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class VtblGenerator : CodeGeneratorBase, ICodeGenerator<CsInterface, MemberDeclarationSyntax>
+    internal sealed class VtblGenerator : MemberSingleCodeGeneratorBase<CsInterface>
     {
         private static readonly SyntaxList<AttributeListSyntax> DebuggerTypeProxyAttribute = SingletonList(
             AttributeList(
@@ -26,7 +26,7 @@ namespace SharpGen.Generator
             )
         );
 
-        public MemberDeclarationSyntax GenerateCode(CsInterface csElement)
+        public override MemberDeclarationSyntax GenerateCode(CsInterface csElement)
         {
             var vtblClassName = csElement.VtblName.Split('.').Last();
 
@@ -37,35 +37,50 @@ namespace SharpGen.Generator
             {
                 StatementSyntax MethodBuilder(PlatformDetectionType platform)
                 {
-                    var arguments = new[]
+                    var vtblMethodName = IdentifierName(
+                        $"{method.Name}{GeneratorHelpers.GetPlatformSpecificSuffix(platform)}"
+                    );
+
+                    FunctionPointerTypeSyntax FnPtrType()
                     {
-                        Argument(
-                            ObjectCreationExpression(IdentifierName(GetMethodDelegateName(method, platform)))
-                               .WithArgumentList(
-                                    ArgumentList(
-                                        SingletonSeparatedList(
-                                            Argument(
-                                                IdentifierName(
-                                                    $"{method.Name}{GeneratorHelpers.GetPlatformSpecificSuffix(platform)}"
-                                                )
-                                            )
+                        var sig = method.InteropSignatures[platform];
+
+                        var fnptrParameters = sig.ParameterTypes
+                                                 .Select(x => x.InteropTypeSyntax)
+                                                 .Prepend(GeneratorHelpers.IntPtrType)
+                                                 .Append(sig.ReturnTypeSyntax)
+                                                 .Select(FunctionPointerParameter);
+
+                        return FunctionPointerType(
+                            FunctionPointerCallingConvention(
+                                Token(SyntaxKind.UnmanagedKeyword),
+                                FunctionPointerUnmanagedCallingConventionList(
+                                    SingletonSeparatedList(
+                                        FunctionPointerUnmanagedCallingConvention(
+                                            Identifier(method.CppCallingConvention.ToCallConvShortName())
                                         )
                                     )
                                 )
-                        ),
+                            ),
+                            FunctionPointerParameterList(SeparatedList(fnptrParameters))
+                        );
+                    }
+
+                    var arguments = new[]
+                    {
                         Argument(
-                            LiteralExpression(
-                                SyntaxKind.NumericLiteralExpression,
-                                Literal((platform & PlatformDetectionType.Windows) != 0
-                                            ? method.WindowsOffset
-                                            : method.Offset)
-                            )
-                        )
+                            method.IsFunctionPointerInVtbl
+                                ? GeneratorHelpers.CastExpression(
+                                    FnPtrType(), PrefixUnaryExpression(SyntaxKind.AddressOfExpression, vtblMethodName)
+                                )
+                                : ObjectCreationExpression(IdentifierName(GetMethodDelegateName(method, platform)))
+                                   .WithArgumentList(ArgumentList(SingletonSeparatedList(Argument(vtblMethodName))))
+                        ),
+                        Argument(method.VTableOffsetExpression(platform))
                     };
 
                     return ExpressionStatement(
-                        InvocationExpression(IdentifierName("AddMethod"))
-                           .WithArgumentList(ArgumentList(SeparatedList(arguments)))
+                        InvocationExpression(IdentifierName("AddMethod"), ArgumentList(SeparatedList(arguments)))
                     );
                 }
 
@@ -73,8 +88,9 @@ namespace SharpGen.Generator
                                                                       method.InteropSignatures.Keys, MethodBuilder);
             }
 
-            List<MemberDeclarationSyntax> members = new()
-            {
+            var members = NewMemberList;
+
+            members.Add(
                 ConstructorDeclaration(Identifier(vtblClassName))
                    .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
                    .WithParameterList(
@@ -111,9 +127,9 @@ namespace SharpGen.Generator
                                      .Select(VtblMethodSelector)
                         )
                     )
-            };
+            );
 
-            members.AddRange(csElement.Methods.SelectMany(method => Generators.ShadowCallable.GenerateCode(method)));
+            members.AddRange(csElement.Methods, Generators.ShadowCallable);
 
             return ClassDeclaration(vtblClassName)
                   .WithModifiers(

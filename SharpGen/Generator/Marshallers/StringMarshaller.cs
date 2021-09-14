@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.Config;
 using SharpGen.Model;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -62,22 +63,41 @@ namespace SharpGen.Generator.Marshallers
 
             if (!csElement.IsWideChar || !singleStackFrame)
             {
+                var argumentList = ArgumentList(SingletonSeparatedList(Argument(IdentifierName(csElement.Name))));
+                ExpressionSyntax value = csElement.StringMarshal switch
+                {
+                    StringMarshalType.WindowsRuntimeString => ObjectCreationExpression(
+                        GlobalNamespace.GetTypeNameSyntax(WellKnownName.WinRTString),
+                        argumentList,
+                        default
+                    ),
+                    var type => InvocationExpression(
+                        MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            GlobalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
+                            IdentifierName(
+                                type switch
+                                {
+                                    StringMarshalType.GlobalHeap when csElement.IsWideChar =>
+                                        nameof(Marshal.StringToHGlobalUni),
+                                    StringMarshalType.GlobalHeap => nameof(Marshal.StringToHGlobalAnsi),
+                                    StringMarshalType.ComTaskAllocator when csElement.IsWideChar =>
+                                        nameof(Marshal.StringToCoTaskMemUni),
+                                    StringMarshalType.ComTaskAllocator => nameof(Marshal.StringToCoTaskMemAnsi),
+                                    StringMarshalType.BinaryString => nameof(Marshal.StringToBSTR),
+                                    _ => throw new ArgumentOutOfRangeException()
+                                }
+                            )
+                        ),
+                        argumentList
+                    )
+                };
+
                 return ExpressionStatement(
                     AssignmentExpression(
                         SyntaxKind.SimpleAssignmentExpression,
                         GetMarshalStorageLocation(csElement),
-                        InvocationExpression(
-                            MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                GlobalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
-                                IdentifierName(
-                                    csElement.IsWideChar
-                                        ? nameof(Marshal.StringToHGlobalUni)
-                                        : nameof(Marshal.StringToHGlobalAnsi)
-                                )
-                            ),
-                            ArgumentList(SingletonSeparatedList(Argument(IdentifierName(csElement.Name))))
-                        )
+                        value
                     )
                 );
             }
@@ -108,12 +128,22 @@ namespace SharpGen.Generator.Marshallers
         {
             if (!csElement.IsWideChar || !singleStackFrame)
             {
+                ThrowIf(csElement, StringMarshalType.WindowsRuntimeString);
+
                 return ExpressionStatement(
                     InvocationExpression(
                         MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
                             GlobalNamespace.GetTypeNameSyntax(BuiltinType.Marshal),
-                            IdentifierName(nameof(Marshal.FreeHGlobal))
+                            IdentifierName(
+                                csElement.StringMarshal switch
+                                {
+                                    StringMarshalType.GlobalHeap => nameof(Marshal.FreeHGlobal),
+                                    StringMarshalType.ComTaskAllocator => nameof(Marshal.FreeCoTaskMem),
+                                    StringMarshalType.BinaryString => nameof(Marshal.FreeBSTR),
+                                    _ => throw new ArgumentOutOfRangeException()
+                                }
+                            )
                         ),
                         ArgumentList(SingletonSeparatedList(Argument(GetMarshalStorageLocation(csElement))))
                     )
@@ -129,7 +159,11 @@ namespace SharpGen.Generator.Marshallers
                     SyntaxKind.SimpleMemberAccessExpression,
                     implName,
                     IdentifierName(
-                        csElement.IsWideChar ? nameof(Marshal.PtrToStringUni) : nameof(Marshal.PtrToStringAnsi)
+                        csElement.StringMarshal == StringMarshalType.BinaryString
+                            ? nameof(Marshal.PtrToStringBSTR)
+                            : csElement.IsWideChar
+                                ? nameof(Marshal.PtrToStringUni)
+                                : nameof(Marshal.PtrToStringAnsi)
                     )
                 );
 
@@ -137,6 +171,8 @@ namespace SharpGen.Generator.Marshallers
             {
                 if (csElement.IsWideChar && singleStackFrame)
                     return null;
+
+                ThrowIf(csElement, StringMarshalType.WindowsRuntimeString);
 
                 return FixedStatement(
                     VariableDeclaration(
@@ -178,6 +214,8 @@ namespace SharpGen.Generator.Marshallers
                     )
                 );
             }
+
+            ThrowIf(csElement, StringMarshalType.WindowsRuntimeString);
 
             // Variable-length string represented as a pointer.
             return ExpressionStatement(
@@ -226,6 +264,8 @@ namespace SharpGen.Generator.Marshallers
 
         private StatementSyntax GenerateAnsiStringToArray(CsMarshalBase marshallable)
         {
+            ThrowIfNot(marshallable, StringMarshalType.GlobalHeap);
+
             var lengthIdentifier = LengthVariableName(marshallable);
 
             return Block(
@@ -292,6 +332,8 @@ namespace SharpGen.Generator.Marshallers
 
         private StatementSyntax GenerateStringToArray(CsMarshalBase marshallable)
         {
+            ThrowIfNot(marshallable, StringMarshalType.GlobalHeap, StringMarshalType.ComTaskAllocator);
+
             var lengthIdentifier = LengthVariableName(marshallable);
 
             return FixedStatement(
@@ -345,6 +387,18 @@ namespace SharpGen.Generator.Marshallers
                                     SingletonSeparatedList(
                                         Argument(IdentifierName(lengthIdentifier))))),
                             LiteralExpression(SyntaxKind.CharacterLiteralExpression, Literal('\0'))))));
+        }
+
+        private static void ThrowIf(CsMarshalBase marshallable, params StringMarshalType[] forbidden)
+        {
+            if (forbidden.Contains(marshallable.StringMarshal))
+                throw new NotImplementedException();
+        }
+
+        private static void ThrowIfNot(CsMarshalBase marshallable, params StringMarshalType[] allowed)
+        {
+            if (!allowed.Contains(marshallable.StringMarshal))
+                throw new NotImplementedException();
         }
 
         public StringMarshaller(Ioc ioc) : base(ioc)

@@ -53,9 +53,9 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(cppModule, config);
 
-            Assert.Single(solution.EnumerateDescendants().OfType<CsStruct>());
+            Assert.Single(solution.EnumerateDescendants<CsStruct>());
 
-            var csStruct = solution.EnumerateDescendants().OfType<CsStruct>().First();
+            var csStruct = solution.EnumerateDescendants<CsStruct>().First();
 
             Assert.Single(csStruct.Fields.Where(fld => fld.Name == "Field"));
 
@@ -110,7 +110,7 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(cppModule, config);
 
-            var csStruct = solution.EnumerateDescendants().OfType<CsStruct>().First();
+            var csStruct = solution.EnumerateDescendants<CsStruct>().First();
 
             var field = csStruct.Fields.First(fld => fld.Name == "Field");
             var field2 = csStruct.Fields.First(fld => fld.Name == "Field2");
@@ -170,7 +170,7 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(cppModule, config);
 
-            var csStruct = solution.EnumerateDescendants().OfType<CsStruct>().First(@struct => @struct.Name == "Inheriting");
+            var csStruct = solution.EnumerateDescendants<CsStruct>().First(@struct => @struct.Name == "Inheriting");
 
             var field = csStruct.Fields.First(fld => fld.Name == "Field");
             var field2 = csStruct.Fields.First(fld => fld.Name == "Field2");
@@ -228,9 +228,9 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(module, config);
 
-            Assert.Single(solution.EnumerateDescendants().OfType<CsStruct>().Where(csStruct => csStruct.Name == structName));
+            Assert.Single(solution.EnumerateDescendants<CsStruct>().Where(csStruct => csStruct.Name == structName));
 
-            var generatedStruct = solution.EnumerateDescendants().OfType<CsStruct>().First(csStruct => csStruct.Name == structName);
+            var generatedStruct = solution.EnumerateDescendants<CsStruct>().First(csStruct => csStruct.Name == structName);
 
             Assert.Single(generatedStruct.Fields);
 
@@ -293,7 +293,7 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(module, config);
 
-            var csStruct = solution.EnumerateDescendants().OfType<CsStruct>().First();
+            var csStruct = solution.EnumerateDescendants<CsStruct>().First();
 
             var bitField1 = csStruct.Fields.First(field => field.Name == "Bitfield1");
 
@@ -363,7 +363,7 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(module, config);
 
-            var csStruct = solution.EnumerateDescendants().OfType<CsStruct>().First();
+            var csStruct = solution.EnumerateDescendants<CsStruct>().First();
 
             foreach (var field in csStruct.Fields)
             {

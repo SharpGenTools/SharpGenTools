@@ -65,7 +65,7 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(cppModel, config);
 
-            Assert.Empty(solution.EnumerateDescendants().OfType<CsEnum>().Where(csEnum => csEnum.Name == "AnotherEnum"));
+            Assert.Empty(solution.EnumerateDescendants<CsEnum>().Where(csEnum => csEnum.Name == "AnotherEnum"));
         }
     }
 }

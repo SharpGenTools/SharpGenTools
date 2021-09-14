@@ -32,8 +32,8 @@ namespace SharpGen.UnitTests
                 new[]
                 {
                     "pShaderDESC",
-                    "shaderDESCRef",
-                    "shaderDescriptionRef",
+                    "shaderDESC",
+                    "shaderDescription",
                     "p0",
                     "p01",
                     "arg0",

@@ -21,9 +21,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Generator.Marshallers;
-using SharpGen.Logging;
 using SharpGen.Transform;
 
 namespace SharpGen.Model
@@ -126,6 +126,9 @@ namespace SharpGen.Model
             && !IsBoolToInt
             && !(MarshalType is CsFundamentalType {IsPointer: true} && HasPointer)
             && !(IsInterface && HasPointer);
+
+        public StringMarshalType StringMarshal { get; } = StringMarshalType.GlobalHeap;
+
 #nullable restore
 
         protected CsMarshalBase(Ioc ioc, CppElement cppElement, string name) : base(cppElement, name)
@@ -136,6 +139,9 @@ namespace SharpGen.Model
 
                 ArraySpecification = ParseArrayDimensionValue(cppMarshallable.IsArray, cppMarshallable.ArrayDimension);
             }
+
+            if (cppElement is { Rule: { StringMarshal: { } stringMarshal } })
+                StringMarshal = stringMarshal;
 
             ArraySpecification? ParseArrayDimensionValue(bool isArray, string arrayDimension)
             {

@@ -36,7 +36,7 @@ namespace SharpGen.Model
         public bool RequestRawPtr { get; }
         private string CppSignature { get; }
         private string ShortName { get; }
-        public bool CheckReturnType { get; }
+        public bool CheckReturnType { get; } = true;
         public bool ForceReturnType { get; }
         private bool AlwaysReturnHResult { get; }
         public CsReturnValue ReturnValue { get; set; }
@@ -60,9 +60,7 @@ namespace SharpGen.Model
             get
             {
                 foreach (var param in _parameters.Enumerate(this).Where(param => param.UsedAsReturn))
-                {
                     return param;
-                }
 
                 return ReturnValue;
             }
@@ -70,28 +68,31 @@ namespace SharpGen.Model
 
         public override void FillDocItems(IList<string> docItems, IDocumentationLinker manager)
         {
+            string doc;
             foreach (var param in PublicParameters)
-                docItems.Add("<param name=\"" + param.Name + "\">" + manager.GetSingleDoc(param) + "</param>");
-
-            if (HasReturnType)
-                docItems.Add("<returns>" + manager.GetSingleDoc(ActualReturnValue) + "</returns>");
-        }
-
-        public bool IsReturnStructLarge
-        {
-            get
             {
-                // Workaround for https://github.com/dotnet/coreclr/issues/19474. This workaround is sufficient
-                // for DirectX on Windows x86 and x64. It may produce incorrect code on other platforms depending
-                // on the calling convention details.
-                if (ReturnValue.MarshalType is CsStruct csStruct)
-                {
-                    return !csStruct.IsNativePrimitive && csStruct.Size > MaxSizeReturnParameter;
-                }
+                doc = manager.GetSingleDoc(param);
+                if (string.IsNullOrEmpty(doc) || doc == DefaultNoDescription)
+                    continue;
 
-                return false;
+                docItems.Add("<param name=\"" + param.Name + "\">" + doc + "</param>");
             }
+
+            if (!HasReturnType)
+                return;
+
+            doc = manager.GetSingleDoc(ActualReturnValue);
+            if (string.IsNullOrEmpty(doc) || doc == DefaultNoDescription)
+                return;
+
+            docItems.Add("<returns>" + doc + "</returns>");
         }
+
+        // Workaround for https://github.com/dotnet/runtime/issues/10901. This workaround is sufficient
+        // for DirectX on Windows x86 and x64. It may produce incorrect code on other platforms depending
+        // on the calling convention details.
+        public bool IsReturnStructLarge => ReturnValue.MarshalType is CsStruct { IsNativePrimitive: false } csStruct
+                                        && csStruct.Size > MaxSizeReturnParameter;
 
         public Dictionary<PlatformDetectionType, InteropMethodSignature> InteropSignatures
         {

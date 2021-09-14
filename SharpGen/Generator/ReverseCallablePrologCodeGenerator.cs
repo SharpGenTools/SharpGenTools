@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Generator.Marshallers;
@@ -9,15 +11,13 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class ReverseCallablePrologCodeGenerator : CodeGeneratorBase, IMultiCodeGenerator<(CsCallable, InteropMethodSignature), StatementSyntax>
+    internal sealed class ReverseCallablePrologCodeGenerator : StatementPlatformMultiCodeGeneratorBase<CsCallable>
     {
-        private static readonly LiteralExpressionSyntax DefaultLiteral = LiteralExpression(
-            SyntaxKind.DefaultLiteralExpression, Token(SyntaxKind.DefaultKeyword)
-        );
+        public override IEnumerable<PlatformDetectionType> GetPlatforms(CsCallable csElement) => csElement.InteropSignatures.Keys;
 
-        public IEnumerable<StatementSyntax> GenerateCode((CsCallable, InteropMethodSignature) callableSig)
+        public override IEnumerable<StatementSyntax> GenerateCode(CsCallable csElement, PlatformDetectionType platform)
         {
-            var (csElement, interopSig) = callableSig;
+            var interopSig = csElement.InteropSignatures[platform];
 
             if (!interopSig.ForcedReturnBufferSig && csElement.HasReturnTypeValue)
             {
@@ -39,10 +39,13 @@ namespace SharpGen.Generator
             }
         }
 
+        private readonly Lazy<PrologGenerationDelegate> _nativeByRefPrologDelegate;
+        private readonly Lazy<PrologGenerationDelegate> _prologDelegate;
+
         private PrologGenerationDelegate GetPrologBuilder(CsMarshalCallableBase publicParameter) =>
             publicParameter.PassedByNativeReference && !publicParameter.IsArray
-                ? GenerateNativeByRefProlog
-                : GenerateProlog;
+                ? _nativeByRefPrologDelegate.Value
+                : _prologDelegate.Value;
 
         private delegate IEnumerable<StatementSyntax> PrologGenerationDelegate(
             CsMarshalCallableBase publicElement, ExpressionSyntax nativeParameter, TypeSyntax nativeParameterType
@@ -192,7 +195,7 @@ namespace SharpGen.Generator
                                                                   nativeParameter, DefaultLiteral
                                                               ),
                                                               ImplicitObjectCreationExpression(),
-                                                              LiteralExpression(SyntaxKind.NullLiteralExpression)
+                                                              NullLiteral
                                                           )
                                                           : publicDefaultValue
                                                     : refToNativeClause;
@@ -281,6 +284,8 @@ namespace SharpGen.Generator
 
         public ReverseCallablePrologCodeGenerator(Ioc ioc) : base(ioc)
         {
+            _nativeByRefPrologDelegate = new(() => GenerateNativeByRefProlog, LazyThreadSafetyMode.None);
+            _prologDelegate = new(() => GenerateProlog, LazyThreadSafetyMode.None);
         }
     }
 }

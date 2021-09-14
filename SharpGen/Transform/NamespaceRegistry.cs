@@ -1,17 +1,15 @@
-﻿using SharpGen.Config;
+﻿using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using SharpGen.CppModel;
 using SharpGen.Logging;
 using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace SharpGen.Transform
 {
     public sealed class NamespaceRegistry
     {
-        private readonly Dictionary<string, CsNamespace> _mapIncludeToNamespace = new();
+        private readonly Dictionary<string, CsNamespace> _mapIncludeToNamespace = new(StringComparer.InvariantCultureIgnoreCase);
         private readonly Dictionary<Regex, CsNamespace> _mapTypeToNamespace = new();
         private readonly Dictionary<string, CsNamespace> _namespaces = new();
         private readonly Ioc ioc;
@@ -42,13 +40,9 @@ namespace SharpGen.Transform
         /// </summary>
         /// <param name="includeName">Name of the include.</param>
         /// <param name="nameSpace">The namespace.</param>
-        /// <param name="outputDirectory">The output directory for the namespace.</param>
-        public void MapIncludeToNamespace(string includeName, string nameSpace, string outputDirectory)
+        public void MapIncludeToNamespace(string includeName, string nameSpace)
         {
-            var cSharpNamespace = GetOrCreateNamespace(nameSpace);
-            if (outputDirectory != null)
-                cSharpNamespace.OutputDirectory = outputDirectory;
-            _mapIncludeToNamespace.Add(includeName, cSharpNamespace);
+            _mapIncludeToNamespace.Add(includeName, GetOrCreateNamespace(nameSpace));
         }
 
         /// <summary>
@@ -56,14 +50,9 @@ namespace SharpGen.Transform
         /// </summary>
         /// <param name="typeNameRegex">The C++ regex selection.</param>
         /// <param name="namespaceName">The namespace.</param>
-        /// <param name="outputDirectory">The output directory for the namespace.</param>
-        /// 
-        public void AttachTypeToNamespace(string typeNameRegex, string namespaceName, string outputDirectory)
+        public void AttachTypeToNamespace(string typeNameRegex, string namespaceName)
         {
-            var cSharpNamespace = GetOrCreateNamespace(namespaceName);
-            if (outputDirectory != null)
-                cSharpNamespace.OutputDirectory = outputDirectory;
-            _mapTypeToNamespace.Add(new Regex(typeNameRegex), cSharpNamespace);
+            _mapTypeToNamespace.Add(new Regex(typeNameRegex), GetOrCreateNamespace(namespaceName));
         }
 
         private bool TryGetNamespaceForInclude(string includeName, out CsNamespace cSharpNamespace)

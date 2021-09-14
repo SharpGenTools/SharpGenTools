@@ -50,15 +50,15 @@ namespace SharpGen.Platform
     public sealed class CppParser
     {
         private CppModule _group;
-        private readonly HashSet<string> _includeToProcess = new();
-        private readonly Dictionary<string, bool> _includeIsAttached = new();
-        private readonly Dictionary<string, HashSet<string>> _includeAttachedTypes = new();
+        private readonly HashSet<string> _includeToProcess = new(StringComparer.InvariantCultureIgnoreCase);
+        private readonly Dictionary<string, bool> _includeIsAttached = new(StringComparer.InvariantCultureIgnoreCase);
+        private readonly Dictionary<string, HashSet<string>> _includeAttachedTypes = new(StringComparer.InvariantCultureIgnoreCase);
         private readonly HashSet<string> _boundTypes = new();
         private readonly ConfigFile _configRoot;
         private CppInclude _currentCppInclude;
         private readonly Dictionary<string, XElement> _mapIdToXElement = new();
-        private readonly Dictionary<string, List<XElement>> _mapFileToXElement = new();
-        private readonly Dictionary<string, int> _mapIncludeToAnonymousEnumCount = new();
+        private readonly Dictionary<string, List<XElement>> _mapFileToXElement = new(StringComparer.InvariantCultureIgnoreCase);
+        private readonly Dictionary<string, int> _mapIncludeToAnonymousEnumCount = new(StringComparer.InvariantCultureIgnoreCase);
         private readonly Ioc ioc;
 
         public CppParser(ConfigFile configRoot, Ioc ioc)
@@ -81,7 +81,8 @@ namespace SharpGen.Platform
             {
                 foreach (var includeRule in configFile.Includes)
                 {
-                    _includeToProcess.Add(includeRule.Id);
+                    var includeRuleId = includeRule.Id;
+                    _includeToProcess.Add(includeRuleId);
 
                     // Handle attach types
                     // Set that the include is attached (so that all types inside are attached
@@ -91,20 +92,18 @@ namespace SharpGen.Platform
                         // An include can be fully attached ( include rule is set to true)
                         // or partially attached (the include rule contains Attach for specific types)
                         // We need to know which includes are attached, if they are fully or partially
-                        if (!_includeIsAttached.ContainsKey(includeRule.Id))
-                            _includeIsAttached.Add(includeRule.Id, isIncludeFullyAttached);
+                        if (!_includeIsAttached.ContainsKey(includeRuleId))
+                            _includeIsAttached.Add(includeRuleId, isIncludeFullyAttached);
                         else if (isIncludeFullyAttached)
-                        {
-                            _includeIsAttached[includeRule.Id] = true;
-                        }
+                            _includeIsAttached[includeRuleId] = true;
 
                         // Attach types if any
                         if (includeRule.AttachTypes.Count > 0)
                         {
-                            if (!_includeAttachedTypes.TryGetValue(includeRule.Id, out HashSet<string> typesToAttach))
+                            if (!_includeAttachedTypes.TryGetValue(includeRuleId, out var typesToAttach))
                             {
                                 typesToAttach = new HashSet<string>();
-                                _includeAttachedTypes.Add(includeRule.Id, typesToAttach);
+                                _includeAttachedTypes.Add(includeRuleId, typesToAttach);
                             }
 
                             // For specific attach types, register them
@@ -219,7 +218,7 @@ namespace SharpGen.Platform
                 var file = xElement.AttributeValue("file");
                 if (file != null)
                 {
-                    if (!_mapFileToXElement.TryGetValue(file, out List<XElement> elementsInFile))
+                    if (!_mapFileToXElement.TryGetValue(file, out var elementsInFile))
                     {
                         elementsInFile = new List<XElement>();
                         _mapFileToXElement.Add(file, elementsInFile);
@@ -317,7 +316,7 @@ namespace SharpGen.Platform
         /// </summary>
         /// <param name="xElement">The gccxml <see cref="XElement"/> that contains C++ annotations/attributes.</param>
         /// <param name="cppElement">The C++ element to populate.</param>
-        private static void ParseAnnotations(XElement xElement, CppElement cppElement)
+        private void ParseAnnotations(XElement xElement, CppElement cppElement)
         {
             // Check that the xml contains the "attributes" attribute
             var attributes = xElement.AttributeValue("attributes");
@@ -359,23 +358,34 @@ namespace SharpGen.Platform
 
             // Parse attributes
             const string gccXmlAttribute = "annotate(";
+            var isPre = false;
             var isPost = false;
             var hasWritable = false;
+            var block = 0;
 
-            // Clang outputs attributes in reverse order
-            // TODO: Check if applies to all declarations
-            foreach (var item in attributes.Split(' ').Reverse())
+            foreach (var item in attributes.Split(' '))
             {
                 var newItem = item;
                 if (newItem.StartsWith(gccXmlAttribute))
                     newItem = newItem.Substring(gccXmlAttribute.Length);
 
-                if (newItem.StartsWith("SAL_pre"))
+                if (newItem.StartsWith("SAL_begin"))
                 {
+                    ++block;
+                }
+                else if (newItem.StartsWith("SAL_end"))
+                {
+                    if (block-- <= 0)
+                        Logger.Warning(LoggingCodes.SalAnnotationBlockMismatch, "Broken Clang/CastXML version");
+                }
+                else if (newItem.StartsWith("SAL_pre"))
+                {
+                    isPre = true;
                     isPost = false;
                 }
                 else if (newItem.StartsWith("SAL_post"))
                 {
+                    isPre = false;
                     isPost = true;
                 }
                 else if (isPost && newItem.StartsWith("SAL_valid"))
@@ -390,10 +400,7 @@ namespace SharpGen.Platform
                 {
                     if (newItem.StartsWith("SAL_writableTo"))
                     {
-                        // When changing something related to in/out SAL, check resulting attributes
-                        // for IInspectable::GetIids::iids (_Outptr_result_buffer_to_maybenull_)
-                        // Should be Out|Buffer|Optional
-                        if (!isPost) paramAttribute |= ParamAttribute.Out;
+                        if (isPre) paramAttribute |= ParamAttribute.Out;
                         hasWritable = true;
                     }
 
@@ -418,12 +425,16 @@ namespace SharpGen.Platform
                 }
             }
 
+            if (block != 0)
+                Logger.Warning(LoggingCodes.SalAnnotationBlockMismatch, "Broken Clang/CastXML version");
+
             // If no writable, than this is an In parameter
             if (!hasWritable)
-            {
                 paramAttribute |= ParamAttribute.In;
-            }
 
+            // When changing something related to in/out SAL, check resulting attributes
+            // for IInspectable::GetIids::iids (_Outptr_result_buffer_to_maybenull_)
+            // Should be Out|Buffer|Optional
 
             // Update CppElement based on its type
             if (cppElement is CppParameter param)
@@ -513,7 +524,7 @@ namespace SharpGen.Platform
             // Parse annotations
             ParseAnnotations(xElement, cppInterface);
 
-            int offsetMethodBase = offsetMethod;
+            var offsetMethodBase = offsetMethod;
 
             var methods = new List<CppMethod>();
 
@@ -549,16 +560,16 @@ namespace SharpGen.Platform
 
         private static void SetMethodsWindowsOffset(IEnumerable<CppMethod> nativeMethods, int vtableIndexStart)
         {
-            List<CppMethod> methods = new List<CppMethod>(nativeMethods);
+            var methods = new List<CppMethod>(nativeMethods);
             // The Visual C++ compiler breaks the rules of the COM ABI when overloaded methods are used.
             // It will group the overloads together in memory and lay them out in the reverse of their declaration order.
             // Since CastXML always lays them out in the order declared, we have to modify the order of the methods to match Visual C++.
-            for (int i = 0; i < methods.Count; i++)
+            for (var i = 0; i < methods.Count; i++)
             {
                 var name = methods[i].Name;
 
                 // Look for overloads of this function
-                for (int j = i + 1; j < methods.Count; j++)
+                for (var j = i + 1; j < methods.Count; j++)
                 {
                     var nextMethod = methods[j];
                     if (nextMethod.Name == name)
@@ -576,7 +587,7 @@ namespace SharpGen.Platform
                 }
             }
 
-            int methodOffset = vtableIndexStart;
+            var methodOffset = vtableIndexStart;
             foreach (var cppMethod in methods)
             {
                 cppMethod.WindowsOffset = methodOffset++;
@@ -763,7 +774,7 @@ namespace SharpGen.Platform
             {
                 var includeFrom = GetIncludeIdFromFileId(xElement.AttributeValue("file"));
 
-                if (!_mapIncludeToAnonymousEnumCount.TryGetValue(includeFrom, out int enumOffset))
+                if (!_mapIncludeToAnonymousEnumCount.TryGetValue(includeFrom, out var enumOffset))
                     _mapIncludeToAnonymousEnumCount.Add(includeFrom, enumOffset);
 
                 name = includeFrom.ToUpper() + "_ENUM_" + enumOffset;
@@ -779,9 +790,18 @@ namespace SharpGen.Platform
                 if (enumItemName.EndsWith(CppExtensionHeaderGenerator.EndTagCustomEnumItem))
                     enumItemName = enumItemName.Substring(0, enumItemName.Length - CppExtensionHeaderGenerator.EndTagCustomEnumItem.Length);
 
-                cppEnum.Add(new CppEnumItem(enumItemName, xEnumItems.AttributeValue("init")));
-
+                cppEnum.AddEnumItem(enumItemName, xEnumItems.AttributeValue("init"));
             }
+
+            if (ulong.TryParse(xElement.AttributeValue("size"), out var size))
+                cppEnum.UnderlyingType = size switch
+                {
+                    8 => "byte",
+                    16 => "short",
+                    64 => "long",
+                    _ => "int"
+                };
+
             return cppEnum;
         }
 
@@ -808,14 +828,16 @@ namespace SharpGen.Platform
             // CastXML outputs initialization expressions. Cast to proper type.
             var match = Regex.Match(value, @"\((?:\(.+\))?(.+)\)");
             if (match.Success)
-            {
-                value = $"unchecked(({typeName}){match.Groups[1].Value})";
-            }
+                value = match.Groups[1].Value;
 
             // Handle C++ floating point literals
-            value = value.Replace(".F", ".0F");
+#if NETCOREAPP2_0_OR_GREATER
+            value = value.Replace(".F", ".0F", StringComparison.OrdinalIgnoreCase);
+#else
+            value = Regex.Replace(value, @"\.F", ".0F", RegexOptions.IgnoreCase);
+#endif
 
-            return new CppConstant(name, value);
+            return new CppConstant(name, typeName, value);
         }
 
         /// <summary>
@@ -843,10 +865,10 @@ namespace SharpGen.Platform
                 return null;
 
             var values = new int[guidElements.Length];
-            for (int i = 0; i < guidElements.Length; i++)
+            for (var i = 0; i < guidElements.Length; i++)
             {
                 var guidElement = guidElements[i];
-                if (!long.TryParse(guidElement, out long value))
+                if (!long.TryParse(guidElement, out var value))
                     return null;
 
                 values[i] = unchecked((int)value);
@@ -870,7 +892,7 @@ namespace SharpGen.Platform
                     continue;
 
                 // Process only files attached (fully or partially) to an assembly/namespace
-                if (!_includeIsAttached.TryGetValue(includeId, out bool isIncludeFullyAttached))
+                if (!_includeIsAttached.TryGetValue(includeId, out var isIncludeFullyAttached))
                     continue;
 
                 // Log current include being processed
@@ -1166,11 +1188,11 @@ namespace SharpGen.Platform
             try
             {
                 if (!File.Exists(filePath))
-                    return "";
+                    return string.Empty;
             }
             catch (ArgumentException)
             {
-                return "";
+                return string.Empty;
             }
             return Path.GetFileNameWithoutExtension(filePath);
         }

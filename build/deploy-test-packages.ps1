@@ -1,28 +1,25 @@
 Param(
-    [Parameter(Mandatory = $true)]
-    [string] $PackedConfiguration
+    [Parameter(Mandatory = $true)][string] $PackedConfiguration,
+    [Parameter(Mandatory = $true)][string] $Project
 )
 
-$localPackagesFolder = "SdkTests/LocalPackages"
-$restorePackagesFolder = "SdkTests/RestoredPackages"
+$localPackagesFolder = "$Project/LocalPackages"
+$restorePackagesFolder = "$Project/RestoredPackages"
 $sdkPackages = "SharpGenTools.Sdk", "SharpGen.Runtime"
 
 if (!(Test-Path -Path $localPackagesFolder)) {
     mkdir $localPackagesFolder -ErrorAction Stop
 }
 
-Remove-Item $localPackagesFolder/*.nupkg -ErrorAction Stop
-
-foreach ($sdkPackage in $sdkPackages) {
-    Copy-Item $sdkPackage/bin/$PackedConfiguration/*.nupkg $localPackagesFolder -ErrorAction Stop
-}
-
 if (!(Test-Path -Path $restorePackagesFolder)) {
     mkdir $restorePackagesFolder -ErrorAction Stop
 }
 
+Remove-Item $localPackagesFolder/*.nupkg -ErrorAction Stop
+
 try {
     foreach ($sdkPackage in $sdkPackages) {
+        Copy-Item $sdkPackage/bin/$PackedConfiguration/*.nupkg $localPackagesFolder -ErrorAction Stop
         $restoreFolderName = $sdkPackage.ToLower()
         $restorePath = "$restorePackagesFolder/$restoreFolderName"
         if (Test-Path -Path $restorePath) {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using SharpGen.Generator;
 using SharpGen.Logging;
 using SharpGen.Transform;
 using Xunit;
@@ -19,6 +20,7 @@ namespace SharpGen.UnitTests
             serviceContainer.AddService<IDocumentationLinker, DocumentationLinker>();
             serviceContainer.AddService<GlobalNamespaceProvider>();
             serviceContainer.AddService(new TypeRegistry(Ioc));
+            serviceContainer.AddService<GeneratorConfig>();
             Ioc.ConfigureServices(serviceContainer);
         }
 

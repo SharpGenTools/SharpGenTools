@@ -4,7 +4,10 @@
 root = true
 
 [*]
-end_of_line = CRLF
+end_of_line = crlf
+
+# Microsoft .NET properties
+csharp_space_after_cast = true
 
 [*.cs]
 indent_style = space

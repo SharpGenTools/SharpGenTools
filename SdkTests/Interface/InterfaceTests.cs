@@ -35,12 +35,10 @@ namespace Interface
             {
                 var value = inst.Value;
                 Assert.True(Functions.CloneInstance(inst, out var cloned));
-                using(cloned)
-                {
-                    var clonedValue = cloned.Value;
-                    Assert.Equal(value.I, clonedValue.I);
-                    Assert.Equal(value.J, clonedValue.J);
-                }
+                var clonedValue = cloned.Value;
+                Assert.Equal(value.I, clonedValue.I);
+                Assert.Equal(value.J, clonedValue.J);
+                MemoryHelpers.Dispose(ref cloned);
             }
         }
         

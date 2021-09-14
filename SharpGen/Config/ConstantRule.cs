@@ -60,6 +60,18 @@ namespace SharpGen.Config
         [XmlText]
         public string Value { get; set; }
 
+        [XmlIgnore]
+        public bool? IsResultDescriptor { get; set; }
+
+        [XmlAttribute("result")]
+        public bool _IsResultDescriptor_
+        {
+            get => IsResultDescriptor.Value;
+            set => IsResultDescriptor = value;
+        }
+
+        public bool ShouldSerialize_IsResultDescriptor_() => IsResultDescriptor.HasValue;
+
         [ExcludeFromCodeCoverage]
         public override string ToString()
         {

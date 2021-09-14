@@ -58,9 +58,9 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(module, config);
 
-            Assert.Single(solution.EnumerateDescendants().OfType<CsInterface>());
+            Assert.Single(solution.EnumerateDescendants<CsInterface>());
 
-            var csIface = solution.EnumerateDescendants().OfType<CsInterface>().First();
+            var csIface = solution.EnumerateDescendants<CsInterface>().First();
 
             Assert.Single(csIface.Methods);
 
@@ -192,9 +192,9 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(module, config);
 
-            Assert.Single(solution.EnumerateDescendants().OfType<CsParameter>());
+            Assert.Single(solution.EnumerateDescendants<CsParameter>());
 
-            var param = solution.EnumerateDescendants().OfType<CsParameter>().First();
+            var param = solution.EnumerateDescendants<CsParameter>().First();
 
             Assert.IsType<CsInterface>(param.PublicType);
 
@@ -297,10 +297,10 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(module, config);
 
-            Assert.Empty(solution.EnumerateDescendants().OfType<CsParameter>());
-            Assert.Single(solution.EnumerateDescendants().OfType<CsReturnValue>());
+            Assert.Empty(solution.EnumerateDescendants<CsParameter>());
+            Assert.Single(solution.EnumerateDescendants<CsReturnValue>());
 
-            var returnValue = solution.EnumerateDescendants().OfType<CsReturnValue>().Single();
+            var returnValue = solution.EnumerateDescendants<CsReturnValue>().Single();
             Assert.True(returnValue.HasPointer);
             Assert.Equal(rootSig.Name, returnValue.PublicType.CppElementName);
 
@@ -436,11 +436,11 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(module, config);
 
-            var csBlob = solution.EnumerateDescendants(false).OfType<CsInterface>()
+            var csBlob = solution.EnumerateDescendants<CsInterface>(false)
                                  .SingleOrDefault(x => x.Name == blob.Name);
-            var csBlobEncoding = solution.EnumerateDescendants(false).OfType<CsInterface>()
+            var csBlobEncoding = solution.EnumerateDescendants<CsInterface>(false)
                                          .SingleOrDefault(x => x.Name == blobEncoding.Name);
-            var csUtils = solution.EnumerateDescendants(false).OfType<CsInterface>()
+            var csUtils = solution.EnumerateDescendants<CsInterface>(false)
                                   .SingleOrDefault(x => x.Name == iface.Name);
 
             Assert.NotNull(csBlob);
@@ -450,19 +450,19 @@ namespace SharpGen.UnitTests.Mapping
             Assert.Equal(blob.Guid, csBlob.Guid);
             Assert.Equal(blobEncoding.Guid, csBlobEncoding.Guid);
 
-            var method = csUtils.EnumerateDescendants().OfType<CsMethod>().SingleOrDefault();
+            var method = csUtils.EnumerateDescendants<CsMethod>().SingleOrDefault();
 
             Assert.NotNull(method);
             Assert.Equal(CppCallingConvention.StdCall, method.CppCallingConvention);
 
-            var methodParams = method.EnumerateDescendants().OfType<CsParameter>().ToArray();
+            var methodParams = method.EnumerateDescendants<CsParameter>().ToArray();
 
             Assert.Equal(4, methodParams.Length);
 
-            Assert.Equal("dataRef", methodParams[0].Name);
+            Assert.Equal("data", methodParams[0].Name);
             Assert.Equal("size", methodParams[1].Name);
             Assert.Equal("codePage", methodParams[2].Name);
-            Assert.Equal("blobEncodingRef", methodParams[3].Name);
+            Assert.Equal("blobEncoding", methodParams[3].Name);
 
             Assert.False(methodParams[0].IsOut);
             Assert.False(methodParams[1].IsOut);
@@ -580,17 +580,17 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(module, config);
 
-            var csUtils = solution.EnumerateDescendants(false).OfType<CsInterface>()
+            var csUtils = solution.EnumerateDescendants<CsInterface>(false)
                                   .SingleOrDefault(x => x.Name == iface.Name);
 
             Assert.NotNull(csUtils);
 
-            var method = csUtils.EnumerateDescendants().OfType<CsMethod>().SingleOrDefault();
+            var method = csUtils.EnumerateDescendants<CsMethod>().SingleOrDefault();
 
             Assert.NotNull(method);
             Assert.Equal(CppCallingConvention.StdCall, method.CppCallingConvention);
 
-            var methodParams = method.EnumerateDescendants().OfType<CsParameter>().ToArray();
+            var methodParams = method.EnumerateDescendants<CsParameter>().ToArray();
 
             Assert.Single(methodParams);
 

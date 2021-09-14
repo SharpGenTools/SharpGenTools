@@ -6,7 +6,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed partial class FieldCodeGenerator : MemberCodeGeneratorBase<CsField>
+    internal sealed partial class FieldCodeGenerator : MemberMultiCodeGeneratorBase<CsField>
     {
         private readonly bool explicitLayout;
 

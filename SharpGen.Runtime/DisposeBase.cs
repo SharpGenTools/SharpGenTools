@@ -1,31 +1,25 @@
 using System;
+using System.ComponentModel;
+#if !NETSTANDARD1_3
+using System.Runtime.ConstrainedExecution;
+#endif
 
 namespace SharpGen.Runtime
 {
     /// <summary>
     /// Base class for a <see cref="IDisposable"/> class.
     /// </summary>
-    public abstract class DisposeBase : IDisposable
+    public abstract partial class DisposeBase :
+#if !NETSTANDARD1_3
+        CriticalFinalizerObject,
+#endif
+        IEnlightenedDisposable, IDisposable
     {
-        /// <summary>
-        /// Occurs when this instance is starting to be disposed.
-        /// </summary>
-        public event EventHandler<EventArgs> Disposing;
-
-        /// <summary>
-        /// Occurs when this instance is fully disposed.
-        /// </summary>
-        public event EventHandler<EventArgs> Disposed;
-
         /// <summary>
         /// Releases unmanaged resources and performs other cleanup operations before the
         /// <see cref="DisposeBase"/> is reclaimed by garbage collection.
         /// </summary>
-        ~DisposeBase()
-        {
-            // Finalizer calls Dispose(false)
-            CheckAndDispose(false);
-        }
+        ~DisposeBase() => CheckAndDispose(false);
 
         /// <summary>
         /// Gets a value indicating whether this instance is disposed.
@@ -33,32 +27,37 @@ namespace SharpGen.Runtime
         /// <value>
         /// 	<c>true</c> if this instance is disposed; otherwise, <c>false</c>.
         /// </value>
-        public bool IsDisposed { get; private set; }
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
+        protected abstract bool IsDisposed { get; }
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
-        public void Dispose()
-        {
-            CheckAndDispose(true);
-        }
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
+#pragma warning disable CA1816
+        public void Dispose() => CheckAndDispose(true);
+#pragma warning restore CA1816
+
+        /// <inheritdoc />
+        void IEnlightenedDisposable.CheckAndDispose(bool disposing) => CheckAndDispose(disposing);
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         private void CheckAndDispose(bool disposing)
         {
-            if (!IsDisposed)
-            {
-                Disposing?.Invoke(this, DisposeEventArgs.Get(disposing));
+            if (IsDisposed)
+                return;
 
-                Dispose(disposing);
-                GC.SuppressFinalize(this);
+            InvokeDisposeEventHandler(disposing, DisposingEventLock, DisposingEventTable);
 
-                IsDisposed = true;
+            Dispose(disposing);
 
-                Disposed?.Invoke(this, DisposeEventArgs.Get(disposing));
-            }
+#pragma warning disable CA1816
+            GC.SuppressFinalize(this);
+#pragma warning restore CA1816
+
+            InvokeDisposeEventHandler(disposing, DisposedEventLock, DisposedEventTable);
         }
 
         /// <summary>

@@ -21,6 +21,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using SharpGen.Config;
 using SharpGen.CppModel;
@@ -42,22 +43,22 @@ namespace SharpGen.Model
             string regex,
             CppElementFinder.SelectionMode mode = CppElementFinder.SelectionMode.MatchedElement)
             where T : CppElement
-            => finder.Find<T>(BuildFullRegex(regex), mode);
+            => finder.Find<T>(BuildFindFullRegex(regex), mode);
 
         /// <summary>
         ///   Strips the regex. Removes ^ and $ at the end of the string
         /// </summary>
         /// <param name = "regex">The regex.</param>
         /// <returns></returns>
-        private static Regex BuildFullRegex(string regex)
+        internal static Regex BuildFindFullRegex(string regex)
         {
-            string friendlyRegex = regex;
-            // Remove ^ and $
-            if (friendlyRegex.StartsWith("^"))
-                friendlyRegex = friendlyRegex.Substring(1);
-            if (friendlyRegex.EndsWith("$"))
-                friendlyRegex = friendlyRegex.Substring(0, friendlyRegex.Length - 1);
-            return new Regex($"^{friendlyRegex}$");
+            StringBuilder sb = new(regex.Length + 2);
+            if (!regex.StartsWith("^"))
+                sb.Append('^');
+            sb.Append(regex);
+            if (!regex.EndsWith("$"))
+                sb.Append('$');
+            return new Regex(sb.ToString());
         }
 
         public static bool ExecuteRule<T>(this CppElementFinder finder, string regex, MappingRule rule)
@@ -73,7 +74,7 @@ namespace SharpGen.Model
                 regex = regex.Substring(1);
             }
 
-            var fullRegex = BuildFullRegex(regex);
+            var fullRegex = BuildFindFullRegex(regex);
 
             foreach (var item in finder.Find<T>(fullRegex, mode))
             {
@@ -98,7 +99,6 @@ namespace SharpGen.Model
         {
             var tag = element.Rule;
 
-            if (newRule.Assembly != null) tag.Assembly = newRule.Assembly;
             if (newRule.Namespace != null) tag.Namespace = newRule.Namespace;
             if (newRule.DefaultValue != null) tag.DefaultValue = newRule.DefaultValue;
             if (newRule.MethodCheckReturnType.HasValue) tag.MethodCheckReturnType = newRule.MethodCheckReturnType;
@@ -139,6 +139,8 @@ namespace SharpGen.Model
             if (newRule.AutoGenerateShadow != null) tag.AutoGenerateShadow = newRule.AutoGenerateShadow;
             if (newRule.AutoGenerateVtbl != null) tag.AutoGenerateVtbl = newRule.AutoGenerateVtbl;
             if (newRule.StaticShadowVtbl != null) tag.StaticShadowVtbl = newRule.StaticShadowVtbl;
+            if (newRule.AutoDisposePersistentProperties is { } autoDisposePersistentProperties)
+                tag.AutoDisposePersistentProperties = autoDisposePersistentProperties;
             if (newRule.ShadowName != null)
                 tag.ShadowName = RegexRename(patchRegex, element.FullName, newRule.ShadowName);
             if (newRule.VtblName != null) tag.VtblName = RegexRename(patchRegex, element.FullName, newRule.VtblName);
@@ -152,6 +154,7 @@ namespace SharpGen.Model
             if (newRule.Relation != null) tag.Relation = newRule.Relation;
             if (newRule.Hidden != null) tag.Hidden = newRule.Hidden;
             if (newRule.KeepPointers != null) tag.KeepPointers = newRule.KeepPointers;
+            if (newRule.StringMarshal is { } stringMarshal) tag.StringMarshal = stringMarshal;
         }
     }
 }

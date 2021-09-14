@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Collections.Generic;
 using SharpGen.Runtime.Diagnostics;
 
 namespace SharpGen.Runtime
@@ -27,6 +28,22 @@ namespace SharpGen.Runtime
     /// </summary>
     public static class Configuration
     {
+        internal static bool ObjectTrackerImmutable;
+        private static bool _enableObjectTracking;
+        private static bool _enableReleaseOnFinalizer;
+        private static bool _useThreadStaticObjectTracking;
+
+        private static void UpdateIfMutable<T>(ref T field, T newValue, bool immutable)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, newValue))
+                return;
+
+            if (immutable)
+                throw new SharpGenException("Configuration is immutable after the first use");
+
+            field = newValue;
+        }
+
         /// <summary>
         /// Enables or disables object tracking. Default is disabled (false).
         /// </summary>
@@ -35,30 +52,29 @@ namespace SharpGen.Runtime
         /// objects can be tracked using <see cref="ObjectTracker"/>. Using Object tracking has a significant
         /// impact on performance and should be used only while debugging.
         /// </remarks>
-        public static bool EnableObjectTracking = false;
+        public static bool EnableObjectTracking
+        {
+            get => _enableObjectTracking;
+            set => UpdateIfMutable(ref _enableObjectTracking, value, ObjectTrackerImmutable);
+        }
 
         /// <summary>
         /// Enables or disables release of <see cref="CppObject"/> on finalizer. Default is disabled (false).
         /// </summary>
-        public static bool EnableReleaseOnFinalizer = false;
-
-        /// <summary>
-        /// Enables or disables writing a warning via <see cref="System.Diagnostics.Trace"/> if a <see cref="CppObject"/> was disposed in the finalizer. Default is enabled (true).
-        /// </summary>
-        public static bool EnableTrackingReleaseOnFinalizer = true;
+        public static bool EnableReleaseOnFinalizer
+        {
+            get => _enableReleaseOnFinalizer;
+            set => UpdateIfMutable(ref _enableReleaseOnFinalizer, value, ObjectTrackerImmutable);
+        }
 
         /// <summary>
         /// By default all objects in the process are tracked.
         /// Use this property to track objects per thread.
         /// </summary>
-        public static bool UseThreadStaticObjectTracking = false;
-
-#if DEBUG
-        /// <summary>
-        /// Enables or disables object lifetime tracing. Default is disabled (false). Very verbose.
-        /// </summary>
-        public static bool EnableObjectLifetimeTracing = false;
-#endif
+        public static bool UseThreadStaticObjectTracking
+        {
+            get => _useThreadStaticObjectTracking;
+            set => UpdateIfMutable(ref _useThreadStaticObjectTracking, value, ObjectTrackerImmutable);
+        }
     }
 }
-

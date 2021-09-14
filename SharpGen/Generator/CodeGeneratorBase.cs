@@ -15,22 +15,26 @@ namespace SharpGen.Generator
     {
         private static readonly NameSyntax FieldOffsetName = ParseName("System.Runtime.InteropServices.FieldOffset");
 
-        protected GlobalNamespaceProvider GlobalNamespace => globalNamespace ??= ioc.GlobalNamespace;
-        protected Logger Logger => logger ??= ioc.Logger;
-        protected IGeneratorRegistry Generators => generators ??= ioc.Generators;
-        protected IDocumentationLinker DocumentationLinker => documentationLinker ??= ioc.DocumentationLinker;
-        protected ExternalDocCommentsReader ExternalDocReader => externalDocReader ??= ioc.ExternalDocReader;
+        protected GlobalNamespaceProvider GlobalNamespace => globalNamespace ??= Ioc.GlobalNamespace;
+        protected Logger Logger => logger ??= Ioc.Logger;
+        protected IGeneratorRegistry Generators => generators ??= Ioc.Generators;
+        protected IDocumentationLinker DocumentationLinker => documentationLinker ??= Ioc.DocumentationLinker;
+        protected ExternalDocCommentsReader ExternalDocReader => externalDocReader ??= Ioc.ExternalDocReader;
+
+        protected Ioc Ioc { get; }
 
         private GlobalNamespaceProvider globalNamespace;
         private Logger logger;
         private IGeneratorRegistry generators;
         private IDocumentationLinker documentationLinker;
         private ExternalDocCommentsReader externalDocReader;
-        private readonly Ioc ioc;
+
+        protected static readonly LiteralExpressionSyntax DefaultLiteral = MarshallerBase.DefaultLiteral;
+        protected static readonly LiteralExpressionSyntax NullLiteral = MarshallerBase.NullLiteral;
 
         protected CodeGeneratorBase(Ioc ioc)
         {
-            this.ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
+            Ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
         }
 
         protected IMarshaller GetMarshaller(CsMarshalBase csElement) => Generators.Marshalling.GetMarshaller(csElement);

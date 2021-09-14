@@ -137,9 +137,9 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(cppModel, config);
 
-            Assert.Single(solution.EnumerateDescendants().OfType<CsEnum>());
+            Assert.Single(solution.EnumerateDescendants<CsEnum>());
 
-            var csEnum = solution.EnumerateDescendants().OfType<CsEnum>().First();
+            var csEnum = solution.EnumerateDescendants<CsEnum>().First();
             Assert.Equal(TypeRegistry.ImportPrimitiveType(underlyingType), csEnum.UnderlyingType);
         }
     }

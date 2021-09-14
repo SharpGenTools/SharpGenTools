@@ -1,30 +1,30 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SharpGen.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using SharpGen.Model;
 
 namespace SharpGen.Generator
 {
     public interface IGeneratorRegistry
     {
-        IMultiCodeGenerator<CsVariable, MemberDeclarationSyntax> Constant { get; }
-        IMultiCodeGenerator<CsProperty, MemberDeclarationSyntax> Property { get; }
-        IMultiCodeGenerator<CsEnum, MemberDeclarationSyntax> Enum { get; }
-        IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax> NativeStruct { get; }
-        IMultiCodeGenerator<CsField, MemberDeclarationSyntax> ExplicitOffsetField { get; }
-        IMultiCodeGenerator<CsField, MemberDeclarationSyntax> AutoLayoutField { get; }
-        IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax> Struct { get; }
-        INativeCallCodeGenerator NativeInvocation { get; }
-        IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> Callable { get; }
-        IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax> Method { get; }
-        IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax> Function { get; }
-        IMultiCodeGenerator<CsInterface, MemberDeclarationSyntax> Interface { get; }
-        ICodeGenerator<CsInterface, MemberDeclarationSyntax> Shadow { get; }
-        ICodeGenerator<CsInterface, MemberDeclarationSyntax> Vtbl { get; }
-        IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> ShadowCallable { get; }
-        IMultiCodeGenerator<(CsCallable, InteropMethodSignature), StatementSyntax> ReverseCallableProlog { get; }
-        IMultiCodeGenerator<CsGroup, MemberDeclarationSyntax> Group { get; }
+        IMemberCodeGenerator<CsExpressionConstant> ExpressionConstant { get; }
+        IMemberCodeGenerator<CsGuidConstant> GuidConstant { get; }
+        IMemberCodeGenerator<CsResultConstant> ResultConstant { get; }
+        IStatementCodeGenerator<CsResultConstant> ResultRegistration { get; }
+        IMemberCodeGenerator<CsProperty> Property { get; }
+        IMemberCodeGenerator<CsEnum> Enum { get; }
+        IMemberCodeGenerator<CsStruct> NativeStruct { get; }
+        IMemberCodeGenerator<CsField> ExplicitOffsetField { get; }
+        IMemberCodeGenerator<CsField> AutoLayoutField { get; }
+        IMemberCodeGenerator<CsStruct> Struct { get; }
+        IStatementCodeGenerator<CsCallable> NativeInvocation { get; }
+        IMemberCodeGenerator<CsCallable> Callable { get; }
+        IMemberCodeGenerator<CsMethod> Method { get; }
+        IMemberCodeGenerator<CsFunction> Function { get; }
+        IMemberCodeGenerator<CsFunction> FunctionImport { get; }
+        IMemberCodeGenerator<CsInterface> Interface { get; }
+        IMemberCodeGenerator<CsInterface> Shadow { get; }
+        IMemberCodeGenerator<CsInterface> Vtbl { get; }
+        IMemberCodeGenerator<CsCallable> ShadowCallable { get; }
+        IStatementCodeGenerator<CsCallable> ReverseCallableProlog { get; }
+        IMemberCodeGenerator<CsGroup> Group { get; }
 
         MarshallingRegistry Marshalling { get; }
         GeneratorConfig Config { get; }

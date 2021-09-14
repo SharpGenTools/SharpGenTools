@@ -1,71 +1,67 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpGen.CppModel;
 using SharpGen.Generator.Marshallers;
 using SharpGen.Model;
-
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class ShadowCallbackGenerator : CodeGeneratorBase, IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax>
+    internal sealed class ShadowCallbackGenerator : MemberPlatformMultiCodeGeneratorBase<CsCallable>
     {
-        public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsCallable csElement)
+        private static readonly NameSyntax UnmanagedFunctionPointerAttributeName =
+            ParseName("System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute");
+
+        private static readonly NameSyntax UnmanagedCallersOnlyAttributeName =
+            ParseName("System.Runtime.InteropServices.UnmanagedCallersOnlyAttribute");
+
+        private static readonly NameSyntax CompilerServicesNamespace =
+            ParseName("System.Runtime.CompilerServices");
+
+        public override IEnumerable<PlatformDetectionType> GetPlatforms(CsCallable csElement) =>
+            csElement.InteropSignatures.Keys;
+
+        public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsCallable csElement,
+                                                                          PlatformDetectionType platform)
         {
-            foreach (var sig in csElement.InteropSignatures.Where(sig => (sig.Key & Generators.Config.Platforms) != 0))
-            {
-                yield return GenerateDelegateDeclaration(csElement, sig.Key, sig.Value);
-                yield return GenerateShadowCallback(csElement, sig.Key, sig.Value);
-            }
+            var sig = csElement.InteropSignatures[platform];
+            if (csElement is not CsMethod { IsFunctionPointerInVtbl: true })
+                yield return GenerateDelegateDeclaration(csElement, platform, sig);
+            yield return GenerateShadowCallback(csElement, platform, sig);
         }
 
-        private DelegateDeclarationSyntax GenerateDelegateDeclaration(CsCallable csElement, PlatformDetectionType platform, InteropMethodSignature sig)
-        {
-            return DelegateDeclaration(ParseTypeName(sig.ReturnType.TypeName), VtblGenerator.GetMethodDelegateName(csElement, platform))
-                .AddAttributeLists(
+        private static DelegateDeclarationSyntax GenerateDelegateDeclaration(CsCallable csElement,
+                                                                             PlatformDetectionType platform,
+                                                                             InteropMethodSignature sig) =>
+            DelegateDeclaration(sig.ReturnTypeSyntax, VtblGenerator.GetMethodDelegateName(csElement, platform))
+               .AddAttributeLists(
                     AttributeList(
                         SingletonSeparatedList(
-                            Attribute(
-                                ParseName("System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute"))
-                            .AddArgumentListArguments(
-                                AttributeArgument(
-                                    MemberAccessExpression(
-                                        SyntaxKind.SimpleMemberAccessExpression,
-                                        MemberAccessExpression(
-                                            SyntaxKind.SimpleMemberAccessExpression,
-                                            MemberAccessExpression(
-                                                SyntaxKind.SimpleMemberAccessExpression,
-                                                MemberAccessExpression(
-                                                    SyntaxKind.SimpleMemberAccessExpression,
-                                                    IdentifierName("System"),
-                                                    IdentifierName("Runtime")),
-                                                IdentifierName("InteropServices")),
-                                            IdentifierName("CallingConvention")),
-                                        IdentifierName(sig.CallingConvention.ToManagedCallingConventionName())))))))
-            .WithParameterList(
-                ParameterList(
-                    (csElement is CsMethod ?
-                        SingletonSeparatedList(
-                            Parameter(Identifier("thisObject"))
-                            .WithType(GeneratorHelpers.IntPtrType))
-                        : default)
-                    .AddRange(
-                        sig.ParameterTypes
-                            .Select(type =>
-                                Parameter(Identifier(type.Name))
-                                .WithType(type.InteropTypeSyntax))
-                        )))
-            .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)));
-        }
+                            Attribute(UnmanagedFunctionPointerAttributeName)
+                               .AddArgumentListArguments(
+                                    AttributeArgument(
+                                        ModelUtilities.GetManagedCallingConventionExpression(sig.CallingConvention))))))
+               .WithParameterList(GetNativeParameterList(csElement, sig))
+               .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)));
 
-        private static CatchClauseSyntax GenerateCatchClause(CsCallable csElement, SyntaxToken exceptionVariableIdentifier, params StatementSyntax[] statements)
+        private static ParameterListSyntax GetNativeParameterList(CsCallable csElement, InteropMethodSignature sig) =>
+            ParameterList(
+                (csElement is CsMethod
+                     ? SingletonSeparatedList(Parameter(Identifier("thisObject")).WithType(GeneratorHelpers.IntPtrType))
+                     : default)
+               .AddRange(
+                    sig.ParameterTypes
+                       .Select(type => Parameter(Identifier(type.Name)).WithType(type.InteropTypeSyntax))
+                )
+            );
+
+        private static CatchClauseSyntax GenerateCatchClause(SyntaxToken exceptionVariableIdentifier, params StatementSyntax[] statements)
         {
             StatementSyntaxList statementList = new()
             {
-                GenerateShadowCallbackStatement(csElement),
                 ExpressionStatement(
                     ConditionalAccessExpression(
                         ParenthesizedExpression(
@@ -90,73 +86,43 @@ namespace SharpGen.Generator
             statementList.AddRange(statements);
 
             return CatchClause()
-                  .WithBlock(Block())
                   .WithDeclaration(
                        CatchDeclaration(ParseTypeName("System.Exception"), exceptionVariableIdentifier)
                    )
                   .WithBlock(statementList.ToBlock());
         }
 
-        private static LocalDeclarationStatementSyntax GenerateShadowCallbackStatement(CsCallable csElement)
-        {
-            var parentName = IdentifierName(csElement.Parent.Name);
-
-            var callbackValue = MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                InvocationExpression(
-                    GenericName(Identifier("ToShadow"))
-                       .WithTypeArgumentList(
-                            TypeArgumentList(
-                                SingletonSeparatedList<TypeSyntax>(
-                                    IdentifierName(csElement.GetParent<CsInterface>().ShadowName)
+        private static StatementSyntax GenerateShadowCallbackStatement(CsCallable csElement) =>
+            LocalDeclarationStatement(
+                VariableDeclaration(
+                    GeneratorHelpers.VarIdentifierName,
+                    SingletonSeparatedList(
+                        VariableDeclarator(
+                            Identifier("@this"),
+                            default,
+                            EqualsValueClause(
+                                InvocationExpression(
+                                    GenericName(
+                                        Identifier("ToCallback"),
+                                        TypeArgumentList(
+                                            SingletonSeparatedList<TypeSyntax>(IdentifierName(csElement.Parent.Name))
+                                        )
+                                    ),
+                                    ArgumentList(SingletonSeparatedList(Argument(IdentifierName("thisObject"))))
                                 )
                             )
-                        ),
-                    ArgumentList(SingletonSeparatedList(Argument(IdentifierName("thisObject"))))
-                ),
-                IdentifierName("Callback")
-            );
-
-            return LocalDeclarationStatement(
-                VariableDeclaration(
-                    parentName,
-                    SingletonSeparatedList(
-                        VariableDeclarator(Identifier("@this"))
-                           .WithInitializer(
-                                EqualsValueClause(GeneratorHelpers.CastExpression(parentName, callbackValue))
-                            )
+                        )
                     )
                 )
             );
-        }
 
         private MethodDeclarationSyntax GenerateShadowCallback(CsCallable csElement, PlatformDetectionType platform, InteropMethodSignature sig)
         {
-            var interopReturnType = ParseTypeName(sig.ReturnType.TypeName);
+            var interopReturnType = sig.ReturnTypeSyntax;
 
-            var methodDecl = MethodDeclaration(
-                interopReturnType,
-                csElement.Name + GeneratorHelpers.GetPlatformSpecificSuffix(platform))
-                .WithModifiers(
-                    TokenList(
-                        Token(SyntaxKind.PrivateKeyword),
-                        Token(SyntaxKind.StaticKeyword),
-                        Token(SyntaxKind.UnsafeKeyword)));
+            var statements = NewStatementList;
 
-            if (csElement is CsMethod)
-                methodDecl = methodDecl.AddParameterListParameters(
-                    Parameter(Identifier("thisObject")).WithType(GeneratorHelpers.IntPtrType)
-                );
-
-            methodDecl = methodDecl.AddParameterListParameters(
-                sig.ParameterTypes
-                   .Select(type => Parameter(Identifier(type.Name)).WithType(type.InteropTypeSyntax))
-                   .ToArray()
-            );
-
-            StatementSyntaxList statements = new(Generators.Marshalling);
-
-            statements.AddRange(Generators.ReverseCallableProlog.GenerateCode((csElement, sig)));
+            statements.Add(csElement, platform, Generators.ReverseCallableProlog);
 
             statements.AddRange(
                 csElement.ReturnValue,
@@ -167,9 +133,6 @@ namespace SharpGen.Generator
                 csElement.Parameters,
                 static(marshaller, item) => marshaller.GenerateNativeToManagedExtendedProlog(item)
             );
-
-            if (csElement is CsMethod)
-                statements.Add(GenerateShadowCallbackStatement(csElement));
 
             statements.AddRange(
                 csElement.InRefInRefParameters,
@@ -283,24 +246,72 @@ namespace SharpGen.Generator
                 catchClauseStatements = new StatementSyntax[]
                 {
                     ReturnStatement(
-                        isForcedReturnBufferSig
-                            ? IdentifierName("returnSlot")
-                            : LiteralExpression(SyntaxKind.DefaultLiteralExpression, Token(SyntaxKind.DefaultKeyword))
+                        isForcedReturnBufferSig ? IdentifierName("returnSlot") : DefaultLiteral
                     )
                 };
             }
 
-            return methodDecl.WithBody(
-                Block(
-                    TryStatement()
-                       .WithBlock(statements.ToBlock())
-                       .WithCatches(
-                            SingletonList(
-                                GenerateCatchClause(csElement, exceptionVariableIdentifier, catchClauseStatements)
+            var fullBody = NewStatementList;
+
+            if (csElement is CsMethod)
+                fullBody.Add(GenerateShadowCallbackStatement(csElement));
+
+            fullBody.Add(
+                TryStatement()
+                   .WithBlock(statements.ToBlock())
+                   .WithCatches(
+                        SingletonList(
+                            GenerateCatchClause(exceptionVariableIdentifier, catchClauseStatements)
+                        )
+                    )
+            );
+
+            return MethodDeclaration(
+                       interopReturnType,
+                       csElement.Name + GeneratorHelpers.GetPlatformSpecificSuffix(platform)
+                   )
+                  .WithModifiers(
+                       TokenList(
+                           Token(SyntaxKind.PrivateKeyword), Token(SyntaxKind.StaticKeyword),
+                           Token(SyntaxKind.UnsafeKeyword)
+                       )
+                   )
+                  .WithParameterList(GetNativeParameterList(csElement, sig))
+                  .WithBody(fullBody.ToBlock())
+                  .WithAttributeLists(
+                       csElement is CsMethod { IsFunctionPointerInVtbl: true }
+                           ? SingletonList(
+                               AttributeList(
+                                   SingletonSeparatedList(
+                                       Attribute(
+                                           UnmanagedCallersOnlyAttributeName,
+                                           AttributeArgumentList(
+                                               SingletonSeparatedList(
+                                                   AttributeArgument(FnPtrCallConvs(sig.CallingConvention))
+                                                      .WithNameEquals(NameEquals("CallConvs"))
+                                               )
+                                           )
+                                       )
+                                   )
+                               )
+                           )
+                           : default
+                   );
+
+            static ExpressionSyntax FnPtrCallConvs(CppCallingConvention callingConvention) =>
+                ImplicitArrayCreationExpression(
+                    InitializerExpression(
+                        SyntaxKind.ArrayInitializerExpression,
+                        SingletonSeparatedList<ExpressionSyntax>(
+                            TypeOfExpression(
+                                QualifiedName(
+                                    CompilerServicesNamespace,
+                                    IdentifierName("CallConv" + callingConvention.ToCallConvShortName())
+                                )
                             )
                         )
-                )
-            );
+                    )
+                );
         }
 
         public ShadowCallbackGenerator(Ioc ioc) : base(ioc)

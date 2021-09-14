@@ -50,7 +50,7 @@ namespace SharpGen.UnitTests.Parsing
             var rootPath = new DirectoryInfo(Environment.CurrentDirectory);
             while (rootPath != null && !File.Exists(Path.Combine(rootPath.FullName, CastXmlDirectoryPath)))
                 rootPath = rootPath.Parent;
-            
+
             if (rootPath == null)
                 throw new InvalidOperationException("CastXML not found");
 

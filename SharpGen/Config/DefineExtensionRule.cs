@@ -73,6 +73,17 @@ namespace SharpGen.Config
         [XmlAttribute("primitive")]
         public bool _IsNativePrimitive_ { get => IsNativePrimitive.Value; set => IsNativePrimitive = value; } public bool ShouldSerialize_IsNativePrimitive_() => IsNativePrimitive != null;
 
+        [XmlIgnore] public bool? IsCallbackInterface { get; set; }
+
+        [XmlAttribute("callback")]
+        public bool _IsCallbackInterface_
+        {
+            get => IsCallbackInterface.Value;
+            set => IsCallbackInterface = value;
+        }
+
+        public bool ShouldSerialize_IsCallbackInterface_() => IsCallbackInterface != null;
+
         [ExcludeFromCodeCoverage]
         public override string ToString()
         {

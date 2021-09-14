@@ -18,12 +18,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System;
+using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace SharpGen.Runtime
 {
     /// <summary>
-    /// Shadow attribute used to associate a COM callbackable interface to its Shadow implementation.
+    /// Shadow attribute used to associate a C++ callbackable interface to its Shadow implementation.
     /// </summary>
     [AttributeUsage(AttributeTargets.Interface)]
     public sealed class ShadowAttribute : Attribute
@@ -41,23 +43,14 @@ namespace SharpGen.Runtime
         {
             Type = typeOfTheAssociatedShadow ?? throw new ArgumentNullException(nameof(typeOfTheAssociatedShadow));
 
-            if (!typeof(CppObjectShadow).GetTypeInfo().IsAssignableFrom(typeOfTheAssociatedShadow.GetTypeInfo()))
-                throw new ArgumentOutOfRangeException(
-                    nameof(typeOfTheAssociatedShadow),
-                    $"Shadows must inherit from {nameof(CppObjectShadow)}"
-                );
+            Debug.Assert(typeof(CppObjectShadow).GetTypeInfo().IsAssignableFrom(typeOfTheAssociatedShadow.GetTypeInfo()));
         }
 
-        /// <summary>
-        /// Get <see cref="ShadowAttribute"/> from type.
-        /// </summary>
-        /// <returns>The associated shadow attribute or null if no shadow attribute were found</returns>
-        public static ShadowAttribute Get(Type type) => type.GetTypeInfo().GetCustomAttribute<ShadowAttribute>();
-
-        /// <summary>
-        /// Checks if <see cref="ShadowAttribute"/> is present on the specified type.
-        /// </summary>
-        /// <returns>true if shadow attribute was found on the specified type</returns>
-        public static bool Has(Type type) => Get(type) != null;
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        internal static ShadowAttribute Get(Type type) => Get(type.GetTypeInfo());
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        internal static ShadowAttribute Get(TypeInfo type) => type.GetCustomAttribute<ShadowAttribute>();
+        internal static bool Has(Type type) => Get(type.GetTypeInfo()) != null;
+        internal static bool Has(TypeInfo type) => Get(type) != null;
     }
 }

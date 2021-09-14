@@ -23,7 +23,7 @@ namespace SharpGen.Config
         [XmlAttribute("default")]
         public string DefaultValue { get; set; }
 
-        [XmlIgnore] public bool? MethodCheckReturnType { get; set; } = true;
+        [XmlIgnore] public bool? MethodCheckReturnType { get; set; }
 
         [XmlAttribute("check")]
         public bool _MethodCheckReturnType_
@@ -362,6 +362,15 @@ namespace SharpGen.Config
             set => StaticShadowVtbl = value;
         }
 
+        [XmlIgnore] public bool? AutoDisposePersistentProperties { get; set; }
+
+        [XmlAttribute("dispose-persistent")]
+        public bool _AutoDisposePersistentProperties_
+        {
+            get => AutoDisposePersistentProperties.Value;
+            set => AutoDisposePersistentProperties = value;
+        }
+
         [XmlAttribute("shadow-name")] public string ShadowName { get; set; }
 
         [XmlAttribute("vtbl-name")] public string VtblName { get; set; }
@@ -472,6 +481,19 @@ namespace SharpGen.Config
             set => KeepPointers = value;
         }
 
+        /// <summary>
+        ///     General visibility for Methods
+        /// </summary>
+        [XmlIgnore]
+        public StringMarshalType? StringMarshal { get; set; }
+
+        [XmlAttribute("string-marshal")]
+        public StringMarshalType _StringMarshal_
+        {
+            get => StringMarshal.Value;
+            set => StringMarshal = value;
+        }
+
         public bool ShouldSerialize_MethodCheckReturnType_() => MethodCheckReturnType != null;
 
         public bool ShouldSerialize_AlwaysReturnHResult_() => AlwaysReturnHResult != null;
@@ -524,6 +546,8 @@ namespace SharpGen.Config
 
         public bool ShouldSerialize_StaticShadowVtbl_() => StaticShadowVtbl != null;
 
+        public bool ShouldSerialize_AutoDisposePersistentProperties_() => AutoDisposePersistentProperties != null;
+
         public bool ShouldSerialize_IsKeepImplementPublic_() => IsKeepImplementPublic != null;
 
         public bool ShouldSerialize_RawPtr_() => RawPtr != null;
@@ -535,5 +559,9 @@ namespace SharpGen.Config
         public bool ShouldSerialize_Hidden_() => Hidden != null;
 
         public bool ShouldSerialize_KeepPointers_() => KeepPointers != null;
+
+        public bool ShouldSerialize_StringMarshal_() => StringMarshal != null;
+
+        public bool ShouldSerializeLayoutOffsetTranslate() => LayoutOffsetTranslate != default;
     }
 }

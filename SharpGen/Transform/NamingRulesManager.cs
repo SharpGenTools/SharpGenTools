@@ -116,6 +116,8 @@ namespace SharpGen.Transform
         /// <param name="rootEnumName">Name of the root C++ enum.</param>
         /// <returns>The C# name of this enum item</returns>
         public string Rename(CppEnumItem cppEnumItem, string rootEnumName) =>
-            UnKeyword(RenameCore(cppEnumItem, rootEnumName));
+            UnKeyword(FixDigitName(RenameCore(cppEnumItem, rootEnumName), "Value"));
+
+        private static string FixDigitName(string name, string prefix) => char.IsDigit(name[0]) ? prefix + name : name;
     }
 }

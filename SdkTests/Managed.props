@@ -2,9 +2,7 @@
     <PropertyGroup>
         <Platforms>x86;x64</Platforms>
         <IsPackable>false</IsPackable>
-        <RestorePackagesPath>$(MSBuildThisFileDirectory)RestoredPackages/</RestorePackagesPath>
         <RestoreNoCache>true</RestoreNoCache>
-        <RestoreAdditionalProjectSources>$(MSBuildThisFileDirectory)LocalPackages</RestoreAdditionalProjectSources>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <SdkTestNative>$(MSBuildProjectName)</SdkTestNative>
         <SharpGenWaitForDebuggerAttach>false</SharpGenWaitForDebuggerAttach>
@@ -27,6 +25,8 @@
         <PackageReference Include="Xunit.SkippableFact"/>
 
         <SharpGenMapping Include="Mapping.xml"/>
+
+        <Compile Include="$(MSBuildThisFileDirectory)RuntimeConfigurationInitializer.cs"/>
     </ItemGroup>
 
     <Target Name="SharpGenSdkTestsSetDebuggerAttach" BeforeTargets="SharpGenExecute" Condition="'$(SdkTestsDebuggerAttach)' == 'true'">

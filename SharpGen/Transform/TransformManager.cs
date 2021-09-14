@@ -37,7 +37,7 @@ namespace SharpGen.Transform
         private TypeRegistry TypeRegistry => ioc.TypeRegistry;
         private Logger Logger => ioc.Logger;
         private NamespaceRegistry NamespaceRegistry { get; }
-        private readonly List<string> includesToProcess = new();
+        private readonly HashSet<string> includesToProcess = new(StringComparer.InvariantCultureIgnoreCase);
         private readonly ConstantManager constantManager;
         private readonly GroupRegistry groupRegistry = new();
         private readonly Ioc ioc;
@@ -131,8 +131,7 @@ namespace SharpGen.Transform
         /// <param name="includeId">The include id.</param>
         private void AddIncludeToProcess(string includeId)
         {
-            if (!includesToProcess.Contains(includeId))
-                includesToProcess.Add(includeId);
+            includesToProcess.Add(includeId);
         }
 
         /// <summary>
@@ -203,13 +202,12 @@ namespace SharpGen.Transform
                             1 => TypeRegistry.UInt8,
                             2 => TypeRegistry.Int16,
                             4 => TypeRegistry.Int32,
+                            8 => TypeRegistry.Int64,
                             _ => null
                         };
                     }
 
-                    var newEnum = new CsEnum(null, defineRule.Enum, underlyingType);
-
-                    defineType = newEnum;
+                    defineType = new CsEnum(null, defineRule.Enum, underlyingType);
                 }
                 else if (defineRule.Struct != null)
                 {
@@ -235,11 +233,13 @@ namespace SharpGen.Transform
                 }
                 else if (defineRule.Interface != null)
                 {
-                    var iface = new CsInterface(null, defineRule.Interface);
+                    CsInterface iface = new(null, defineRule.Interface);
 
-                    if (defineRule.ShadowName is {} shadowName)
+                    if (defineRule.IsCallbackInterface is { } isCallbackInterface)
+                        iface.IsCallback = isCallbackInterface;
+                    if (defineRule.ShadowName is { } shadowName)
                         iface.ShadowName = shadowName;
-                    if (defineRule.VtblName is {} vtblName)
+                    if (defineRule.VtblName is { } vtblName)
                         iface.VtblName = vtblName;
 
                     if (defineRule.NativeImplementation != null)
@@ -271,24 +271,25 @@ namespace SharpGen.Transform
             // Register defined Types from <extension> tag
             foreach (var extensionRule in file.Extension)
             {
-                if (extensionRule is CreateExtensionRule createRule)
+                switch (extensionRule)
                 {
-                    if (createRule.NewClass != null)
+                    case CreateExtensionRule { NewClass: { } newClass } createRule:
                     {
-                        var functionGroup = CreateCsGroup(file.Namespace, createRule.NewClass);
-                        if (createRule.Visibility.HasValue)
-                            functionGroup.Visibility = createRule.Visibility.Value;
+                        var functionGroup = CreateCsGroup(file.Namespace, newClass);
+                        if (createRule is { Visibility: { } visibility })
+                            functionGroup.Visibility = visibility;
+                        break;
                     }
-                    else
-                        Logger.Error(LoggingCodes.MissingElementInRule, "Invalid rule [{0}]. Requires class", createRule);
-                }
-                else if (extensionRule is ConstantRule constantRule)
-                {
-                    HandleConstantRule(elementFinder, constantRule, file.Namespace);
-                }
-                else if (extensionRule is ContextRule contextRule)
-                {
-                    HandleContextRule(elementFinder, file, contextRule);
+                    case CreateExtensionRule createRule:
+                        Logger.Error(LoggingCodes.MissingElementInRule, "Invalid rule [{0}]. Requires class",
+                                     createRule);
+                        break;
+                    case ConstantRule constantRule:
+                        HandleConstantRule(elementFinder, constantRule, file.Namespace);
+                        break;
+                    case ContextRule contextRule:
+                        HandleContextRule(elementFinder, file, contextRule);
+                        break;
                 }
             }
         }
@@ -298,27 +299,29 @@ namespace SharpGen.Transform
             // Add all includes file
             foreach (var includeRule in file.Includes)
             {
+                var includeRuleId = includeRule.Id;
                 if (includeRule.Attach.HasValue && includeRule.Attach.Value)
                 {
-                    AddIncludeToProcess(includeRule.Id);
-                    NamespaceRegistry.MapIncludeToNamespace(includeRule.Id, includeRule.Namespace ?? file.Namespace, includeRule.Output);
+                    AddIncludeToProcess(includeRuleId);
+                    NamespaceRegistry.MapIncludeToNamespace(includeRuleId, includeRule.Namespace ?? file.Namespace);
                 }
                 else
                 {
                     // include will be processed
                     if (includeRule.AttachTypes.Count > 0)
-                        AddIncludeToProcess(includeRule.Id);
+                        AddIncludeToProcess(includeRuleId);
 
                     foreach (var attachType in includeRule.AttachTypes)
-                        NamespaceRegistry.AttachTypeToNamespace($"^{attachType}$", includeRule.Namespace ?? file.Namespace, includeRule.Output);
+                        NamespaceRegistry.AttachTypeToNamespace($"^{attachType}$", includeRule.Namespace ?? file.Namespace);
                 }
             }
 
             // Add extensions if any
             if (file.Extension.Count > 0)
             {
-                AddIncludeToProcess(file.ExtensionId);
-                NamespaceRegistry.MapIncludeToNamespace(file.ExtensionId, file.Namespace, null);
+                var fileExtensionId = file.ExtensionId;
+                AddIncludeToProcess(fileExtensionId);
+                NamespaceRegistry.MapIncludeToNamespace(fileExtensionId, file.Namespace);
             }
         }
 
@@ -611,8 +614,7 @@ namespace SharpGen.Transform
         /// Handles the constant rule.
         /// </summary>
         /// <param name="constantRule">The constant rule.</param>
-        private void HandleConstantRule(CppElementFinder elementFinder, ConstantRule constantRule, string nameSpace)
-        {
+        private void HandleConstantRule(CppElementFinder elementFinder, ConstantRule constantRule, string nameSpace) =>
             constantManager.AddConstantFromMacroToCSharpType(
                 elementFinder,
                 constantRule.Macro ?? constantRule.Guid,
@@ -621,8 +623,9 @@ namespace SharpGen.Transform
                 constantRule.Name,
                 constantRule.Value,
                 constantRule.Visibility,
-                nameSpace);
-        }
+                nameSpace,
+                constantRule.IsResultDescriptor ?? false
+            );
 
 
         public (IEnumerable<BindRule> bindings, IEnumerable<DefineExtensionRule> defines) GenerateTypeBindingsForConsumers()
@@ -665,7 +668,8 @@ namespace SharpGen.Transform
                             Interface = csInterface.QualifiedName,
                             NativeImplementation = csInterface.NativeImplementation?.QualifiedName,
                             ShadowName = csInterface.ShadowName,
-                            VtblName = csInterface.VtblName
+                            VtblName = csInterface.VtblName,
+                            IsCallbackInterface = csInterface.IsCallback
                         };
                         break;
                 }

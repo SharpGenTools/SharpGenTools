@@ -9,16 +9,15 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class NativeInvocationCodeGenerator : CodeGeneratorBase, INativeCallCodeGenerator
+    internal sealed class NativeInvocationCodeGenerator : ExpressionPlatformSingleCodeGeneratorBase<CsCallable>
     {
-        private static readonly TypeSyntax TripleVoidPtr = PointerType(PointerType(GeneratorHelpers.VoidPtrType));
-        private static readonly IdentifierNameSyntax NativePointerIdentifierName = IdentifierName("NativePointer");
+        private static readonly ArgumentSyntax NativePointerArgument = Argument(IdentifierName("NativePointer"));
 
-        private IEnumerable<(ArgumentSyntax Argument, TypeSyntax Type)> IterateNativeArguments(CsCallable callable,
+        private IEnumerable<(ArgumentSyntax Argument, TypeSyntax Type)> IterateNativeArguments(bool isMethod,
                                                                                                InteropMethodSignature interopSig)
         {
-            if (callable is CsMethod)
-                yield return (Argument(NativePointerIdentifierName), GeneratorHelpers.IntPtrType);
+            if (isMethod)
+                yield return (NativePointerArgument, GeneratorHelpers.IntPtrType);
 
             (ArgumentSyntax, TypeSyntax) ParameterSelector(InteropMethodSignatureParameter param)
             {
@@ -30,42 +29,18 @@ namespace SharpGen.Generator
                 yield return ParameterSelector(parameter);
         }
 
-        public ExpressionSyntax GenerateCall(CsCallable callable, PlatformDetectionType platform,
-                                             InteropMethodSignature interopSig)
+        public override IEnumerable<PlatformDetectionType> GetPlatforms(CsCallable csElement) =>
+            csElement.InteropSignatures.Keys;
+
+        protected override ExpressionSyntax Generate(CsCallable callable, PlatformDetectionType platform)
         {
-            var arguments = IterateNativeArguments(callable, interopSig).ToArray();
+            var interopSig = callable.InteropSignatures[platform];
+            var interopReturnType = interopSig.ReturnTypeSyntax;
+            var arguments = IterateNativeArguments(callable is CsMethod, interopSig).ToArray();
 
-            ElementAccessExpressionSyntax vtblAccess = null;
-
-            if (callable is CsMethod method)
+            var vtblAccess = callable switch
             {
-                var windowsOffsetExpression =
-                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(method.WindowsOffset));
-                var nonWindowsOffsetExpression =
-                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(method.Offset));
-
-                ExpressionSyntax vtableOffsetExpression;
-                if ((platform & PlatformDetectionType.Any) == PlatformDetectionType.Any &&
-                    method.Offset != method.WindowsOffset)
-                {
-                    vtableOffsetExpression = ConditionalExpression(
-                        MemberAccessExpression(
-                            SyntaxKind.SimpleMemberAccessExpression,
-                            GlobalNamespace.GetTypeNameSyntax(WellKnownName.PlatformDetection),
-                            IdentifierName("Is" + nameof(PlatformDetectionType.Windows))),
-                        windowsOffsetExpression,
-                        nonWindowsOffsetExpression);
-                }
-                else if ((platform & PlatformDetectionType.Windows) != 0)
-                {
-                    vtableOffsetExpression = windowsOffsetExpression;
-                }
-                else
-                {
-                    vtableOffsetExpression = nonWindowsOffsetExpression;
-                }
-
-                vtblAccess = ElementAccessExpression(
+                CsMethod method => ElementAccessExpression(
                     ThisExpression(),
                     BracketedArgumentList(
                         SingletonSeparatedList(
@@ -76,18 +51,19 @@ namespace SharpGen.Generator
                                         ThisExpression(),
                                         IdentifierName($"{callable.Name}__vtbl_index")
                                     )
-                                    : vtableOffsetExpression
+                                    : method.VTableOffsetExpression(platform)
                             )
                         )
                     )
-                );
-            }
+                ),
+                _ => null
+            };
 
             ExpressionSyntax FnPtrCall()
             {
                 var fnptrParameters = arguments
                                      .Select(x => x.Type)
-                                     .Append(ParseTypeName(interopSig.ReturnType.TypeName))
+                                     .Append(interopReturnType)
                                      .Select(FunctionPointerParameter);
 
                 return GeneratorHelpers.CastExpression(
@@ -122,18 +98,17 @@ namespace SharpGen.Generator
                 ArgumentList(SeparatedList(arguments.Select(x => x.Argument)))
             );
 
-            if (interopSig.CastToNativeLong)
-                call = CastExpression(GlobalNamespace.GetTypeNameSyntax(WellKnownName.NativeLong), call);
-
-            if (interopSig.CastToNativeULong)
-                call = CastExpression(GlobalNamespace.GetTypeNameSyntax(WellKnownName.NativeULong), call);
-
             if (interopSig.ForcedReturnBufferSig || !callable.HasReturnType)
                 return call;
 
+            var generatesMarshalVariable = GetMarshaller(callable.ReturnValue).GeneratesMarshalVariable(callable.ReturnValue);
+            var publicTypeSyntax = ReverseCallablePrologCodeGenerator.GetPublicType(callable.ReturnValue);
+            if (callable.HasReturnTypeValue && !generatesMarshalVariable && !publicTypeSyntax.IsEquivalentTo(interopSig.ReturnTypeSyntax))
+                call = CastExpression(publicTypeSyntax, call);
+
             return AssignmentExpression(
                 SyntaxKind.SimpleAssignmentExpression,
-                GetMarshaller(callable.ReturnValue).GeneratesMarshalVariable(callable.ReturnValue)
+                generatesMarshalVariable
                     ? MarshallerBase.GetMarshalStorageLocation(callable.ReturnValue)
                     : IdentifierName(callable.ReturnValue.Name),
                 call

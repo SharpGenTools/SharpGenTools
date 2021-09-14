@@ -10,34 +10,10 @@ namespace SharpGen.Generator.Marshallers
         public override bool CanMarshal(CsMarshalBase csElement) => csElement.IsArray && csElement.IsInterface;
 
         public override StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame) =>
-            GenerateNullCheckIfNeeded(
+            LoopThroughArrayParameter(
                 csElement,
-                ExpressionStatement(
-                    InvocationExpression(
-                        MemberAccessExpression(
-                            SyntaxKind.SimpleMemberAccessExpression,
-                            GlobalNamespace.GetTypeNameSyntax(WellKnownName.MarshallingHelpers),
-                            GenericName(Identifier("ConvertToPointerArray"))
-                               .WithTypeArgumentList(
-                                    TypeArgumentList(
-                                        SingletonSeparatedList<TypeSyntax>(
-                                            IdentifierName(csElement.PublicType.QualifiedName)
-                                        )
-                                    )
-                                )
-                        ),
-                        ArgumentList(
-                            SeparatedList(
-                                new[]
-                                {
-                                    // Span<IntPtr> pointers, ReadOnlySpan<TCallback> interfaces
-                                    Argument(GetMarshalStorageLocation(csElement)),
-                                    Argument(IdentifierName(csElement.Name))
-                                }
-                            )
-                        )
-                    )
-                )
+                (publicElement, marshalElement) =>
+                    MarshalInterfaceInstanceToNative(csElement, publicElement, marshalElement)
             );
 
         public override StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame) =>

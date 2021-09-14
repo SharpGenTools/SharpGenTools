@@ -56,21 +56,29 @@ namespace SharpGen.Transform
                 return cSharpType;
             }
 
-            var transformedTypeName = type.FullName;
+            return ImportNonPrimitiveType(type);
+        }
 
-            if (transformedTypeName == null)
+        /// <summary>
+        /// Imports a defined C# type by name.
+        /// </summary>
+        /// <param name = "type">.NET type.</param>
+        /// <returns>The C# type base</returns>
+        internal CsTypeBase ImportNonPrimitiveType(Type type)
+        {
+            var typeName = type.FullName;
+
+            if (typeName == null)
             {
-                Logger.Warning(LoggingCodes.TypeNotDefined, "Type [{0}] has null {1}", typeName, nameof(type.FullName));
-                cSharpType = new CsUndefinedType(typeName);
-                DefineTypeImpl(cSharpType, typeName);
-                return cSharpType;
+                Logger.Warning(LoggingCodes.TypeNotDefined, "Passed type has null {1}", nameof(type.FullName));
+                return new CsUndefinedType(null);
             }
 
-            if (_mapDefinedCSharpType.TryGetValue(transformedTypeName, out cSharpType))
+            if (_mapDefinedCSharpType.TryGetValue(typeName, out var cSharpType))
                 return cSharpType;
 
-            cSharpType = new CsFundamentalType(type, transformedTypeName);
-            DefineTypeImpl(cSharpType, transformedTypeName);
+            cSharpType = new CsFundamentalType(type, typeName);
+            DefineTypeImpl(cSharpType, typeName);
             return cSharpType;
         }
 

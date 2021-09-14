@@ -7,18 +7,26 @@ namespace SharpGen.Generator.Marshallers
 {
     internal sealed class LengthRelationMarshaller : MarshallerBase, IRelationMarshaller
     {
-        public StatementSyntax GenerateManagedToNative(CsMarshalBase publicElement, CsMarshalBase relatedElement) =>
-            ExpressionStatement(
+        public StatementSyntax GenerateManagedToNative(CsMarshalBase publicElement, CsMarshalBase relatedElement)
+        {
+            var lengthExpression = GeneratorHelpers.LengthExpression(IdentifierName(publicElement.Name));
+            return ExpressionStatement(
                 AssignmentExpression(
                     SyntaxKind.SimpleAssignmentExpression,
                     IdentifierName(relatedElement.Name),
                     GenerateNullCheckIfNeeded(
                         publicElement,
-                        GeneratorHelpers.LengthExpression(IdentifierName(publicElement.Name)),
+                        relatedElement is CsMarshalCallableBase lengthStorage
+                            ? GeneratorHelpers.CastExpression(
+                                ReverseCallablePrologCodeGenerator.GetPublicType(lengthStorage),
+                                lengthExpression
+                            )
+                            : lengthExpression,
                         DefaultLiteral
                     )
                 )
             );
+        }
 
         public static StatementSyntax GenerateNativeToManaged(CsMarshalBase publicElement,
                                                               CsMarshalBase relatedElement) => ExpressionStatement(

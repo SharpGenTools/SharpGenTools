@@ -18,25 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System;
-
 namespace SharpGen.Runtime
 {
     /// <summary>
-    /// Use this interface to tag a class that is called by an unmanaged
-    /// object. A <see cref="ICallbackable"/> class must dispose the <see cref="Shadow"/>
-    /// on dispose.
+    /// Use this interface to tag a class that is called by an unmanaged object.
     /// </summary>
-    public interface ICallbackable : IDisposable
+    public interface ICallbackable
     {
-        /// <summary>
-        /// Gets or sets the unmanaged shadow callback.
-        /// </summary>
-        /// <value>The unmanaged shadow callback.</value>
-        /// <remarks>
-        /// This property is set whenever this instance has an unmanaged shadow callback
-        /// registered. This callback must be disposed when disposing this instance. 
-        /// </remarks>
-        ShadowContainer Shadow { get; }
     }
 }

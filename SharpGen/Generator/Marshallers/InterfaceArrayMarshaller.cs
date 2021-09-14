@@ -23,16 +23,10 @@ namespace SharpGen.Generator.Marshallers
             Enumerable.Empty<StatementSyntax>();
 
         public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement) => Argument(
-            GeneratorHelpers.CastExpression(
-                VoidPtrType,
-                BinaryExpression(
-                    SyntaxKind.CoalesceExpression,
-                    ConditionalAccessExpression(
-                        IdentifierName(csElement.Name),
-                        MemberBindingExpression(IdentifierName("NativePointer"))
-                    ),
-                    IntPtrZero
-                )
+            MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                IdentifierName(csElement.Name),
+                IdentifierName("NativePointer")
             )
         );
 

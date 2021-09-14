@@ -77,6 +77,7 @@ namespace SharpGen
         public GlobalNamespaceProvider GlobalNamespace => GetRequiredService<GlobalNamespaceProvider>();
         public IGeneratorRegistry Generators => GetRequiredService<IGeneratorRegistry>();
         public ExternalDocCommentsReader ExternalDocReader => GetRequiredService<ExternalDocCommentsReader>();
+        public GeneratorConfig GeneratorConfig => GetRequiredService<GeneratorConfig>();
 
         /// <summary>
         /// Initializes the shared <see cref="IServiceProvider"/> instance.

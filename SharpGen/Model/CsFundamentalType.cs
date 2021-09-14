@@ -42,6 +42,11 @@ namespace SharpGen.Model
                          || type == typeof(sbyte)
                          || type == typeof(ulong);
 
+            IsFloatingPointType = type == typeof(float)
+                               || type == typeof(double);
+
+            IsGuid = type == typeof(Guid);
+
             // We need to ensure that we always return 8 (64-bit) even when running the generator on x64.
             Size = IsPointerSize ? 8 : SizeOf(type);
             AlignmentCore = IsPointerSize ? null : GetAlignment(type) ?? base.AlignmentCore;
@@ -50,6 +55,10 @@ namespace SharpGen.Model
         internal readonly PrimitiveTypeIdentity? PrimitiveTypeIdentity;
         public override uint Size { get; }
         protected override uint? AlignmentCore { get; }
+
+        public override bool IsBlittable => IsIntegerType || IsPointer || IsFloatingPointType || IsGuid
+                                         || PrimitiveTypeIdentity is { Type: PrimitiveTypeCode.Void };
+
         public bool IsValueType { get; }
         public bool IsPrimitive { get; }
         public bool IsIntPtr { get; }
@@ -58,7 +67,9 @@ namespace SharpGen.Model
         public bool IsTypedPointer { get; }
         public bool IsString { get; }
         public bool IsIntegerType { get; }
+        public bool IsFloatingPointType { get; }
         public bool IsPointerSize => IsPointer || IsString;
+        public bool IsGuid { get; }
 
         private static uint SizeOf(Type type)
         {

@@ -39,15 +39,19 @@ namespace SharpGen.Runtime
         /// </summary>
         protected abstract CppObjectVtbl Vtbl { get; }
 
+        static CppObjectShadow()
+        {
+            Debug.Assert(Marshal.SizeOf(typeof(CppObjectNative)) == CppObjectNative.Size);
+            Debug.Assert(sizeof(CppObjectNative) == CppObjectNative.Size);
+        }
+
         /// <summary>
         /// Initializes the specified shadow instance from a vtbl and a callback.
         /// </summary>
         /// <param name="callbackInstance">The callback.</param>
-        public virtual void Initialize(ICallbackable callbackInstance)
+        public void Initialize(ICallbackable callbackInstance)
         {
             Callback = callbackInstance;
-
-            Debug.Assert(Marshal.SizeOf(typeof(CppObjectNative)) == CppObjectNative.Size);
 
             // Allocate ptr to vtbl + ptr to callback together
             var nativePointer = Marshal.AllocHGlobal(CppObjectNative.Size);
@@ -61,8 +65,6 @@ namespace SharpGen.Runtime
 
         protected override void DisposeCore(IntPtr nativePointer, bool disposing)
         {
-            Callback = null;
-
             // Free the GCHandle
             ((CppObjectNative*) nativePointer)->Shadow.Free();
 
@@ -72,8 +74,19 @@ namespace SharpGen.Runtime
 
         protected internal static T ToShadow<T>(IntPtr thisPtr) where T : CppObjectShadow
         {
-            var target = ((CppObjectNative*) thisPtr)->Shadow.Target;
+            var handle = ((CppObjectNative*) thisPtr)->Shadow;
+            Debug.Assert(handle.IsAllocated);
+            var target = handle.Target;
             return (T) target;
+        }
+
+        protected internal static T ToCallback<T>(IntPtr thisPtr) where T : ICallbackable
+        {
+            var handle = ((CppObjectNative*) thisPtr)->Shadow;
+            Debug.Assert(handle.IsAllocated);
+            var target = (CppObjectShadow) handle.Target;
+            Debug.Assert(target is not null);
+            return (T) target.Callback;
         }
 
         private ref struct CppObjectNative

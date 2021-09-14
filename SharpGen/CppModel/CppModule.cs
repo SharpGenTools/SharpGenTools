@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -32,7 +33,7 @@ namespace SharpGen.CppModel
         public IEnumerable<CppInclude> Includes => Iterate<CppInclude>();
 
         public CppInclude FindInclude(string includeName) =>
-            Includes.FirstOrDefault(include => include.Name == includeName);
+            Includes.FirstOrDefault(include => string.Equals(include.Name, includeName, StringComparison.InvariantCultureIgnoreCase));
 
         public CppModule(string name) : base(name)
         {

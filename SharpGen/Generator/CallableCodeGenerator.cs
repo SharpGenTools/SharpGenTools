@@ -8,9 +8,9 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class CallableCodeGenerator : MemberCodeGeneratorBase<CsCallable>
+    internal sealed class CallableCodeGenerator : MemberSingleCodeGeneratorBase<CsCallable>
     {
-        public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsCallable csElement)
+        public override MemberDeclarationSyntax GenerateCode(CsCallable csElement)
         {
             // method signature
             var parameters = csElement.PublicParameters.Select(
@@ -35,13 +35,12 @@ namespace SharpGen.Generator
 
             if (csElement.SignatureOnly)
             {
-                yield return methodDeclaration
+                return methodDeclaration
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken))
                     .WithModifiers(TokenList());
-                yield break;
             }
 
-            StatementSyntaxList statements = new(Generators.Marshalling);
+            var statements = NewStatementList;
 
             foreach (var param in csElement.Parameters)
             {
@@ -110,14 +109,12 @@ namespace SharpGen.Generator
                 .Select(param => GetMarshaller(param).GeneratePin(param))
                 .Where(stmt => stmt != null).ToList();
 
-            var callStmt = GeneratorHelpers.GetPlatformSpecificStatements(
-                GlobalNamespace, Generators.Config, csElement.InteropSignatures.Keys,
-                platform => ExpressionStatement(
-                    Generators.NativeInvocation.GenerateCall(
-                        csElement, platform, csElement.InteropSignatures[platform]
-                    )
-                )
-            );
+            StatementSyntax callStmt;
+            {
+                var callStmtList = NewStatementList;
+                callStmtList.Add(csElement, Generators.NativeInvocation);
+                callStmt = callStmtList.ToStatement();
+            }
 
             var fixedStatement = fixedStatements.FirstOrDefault()?.WithStatement(callStmt);
             foreach (var statement in fixedStatements.Skip(1))
@@ -145,11 +142,12 @@ namespace SharpGen.Generator
 
             if (csElement.IsReturnTypeResult && csElement.CheckReturnType)
             {
-                statements.Add(ExpressionStatement(
+                statements.Add(
                     InvocationExpression(
                         MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                         IdentifierName(csElement.ReturnValue.Name),
-                        IdentifierName("CheckError")))));
+                        IdentifierName("CheckError")))
+                    );
             }
 
             // Return
@@ -158,22 +156,16 @@ namespace SharpGen.Generator
                 statements.Add(ReturnStatement(IdentifierName(csElement.ReturnName)));
             }
 
-            yield return methodDeclaration.WithBody(statements.ToBlock());
+            return methodDeclaration.WithBody(statements.ToBlock());
         }
 
-        private static StatementSyntax GenerateManagedHiddenMarshallableProlog(CsMarshalCallableBase csElement)
-        {
-            var elementType = ParseTypeName(csElement.PublicType.QualifiedName);
-
-            return LocalDeclarationStatement(
+        private static StatementSyntax GenerateManagedHiddenMarshallableProlog(CsMarshalCallableBase csElement) =>
+            LocalDeclarationStatement(
                 VariableDeclaration(
-                    csElement.IsArray
-                        ? ArrayType(elementType, SingletonList(ArrayRankSpecifier()))
-                        : elementType,
+                    ReverseCallablePrologCodeGenerator.GetPublicType(csElement),
                     SingletonSeparatedList(VariableDeclarator(csElement.Name))
                 )
             );
-        }
 
         private static bool ValidRelationInScenario(MarshallableRelation relation) =>
             relation is ConstantValueRelation or LengthRelation;

@@ -37,20 +37,19 @@ namespace SharpGen.Model
     [DebuggerDisplay("Name: {" + nameof(Name) + "}")]
     public abstract class CsBase
     {
+        internal const string DefaultNoDescription = "No documentation.";
         private ObservableCollection<CsBase> _items;
         private string _cppElementName;
         private string description;
+        private Visibility? _visibility;
 
         protected CsBase(CppElement cppElement, string name)
         {
             CppElement = cppElement;
             Name = name;
 
-            if (cppElement == null)
-                return;
-
-            var tag = cppElement.Rule;
-            Visibility = tag.Visibility ?? Visibility;
+            if (cppElement is { Rule: { Visibility: { } visibility } })
+                Visibility = visibility;
         }
 
         private void ItemsChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -167,9 +166,15 @@ namespace SharpGen.Model
         /// Gets or sets the <see cref="Visibility"/> of this element. Default is public.
         /// </summary>
         /// <value>The visibility.</value>
-        public Visibility Visibility { get; set; } = Visibility.Public;
+        public Visibility Visibility
+        {
+            get => _visibility ?? DefaultVisibility;
+            set => _visibility = value;
+        }
 
         public SyntaxTokenList VisibilityTokenList => ModelUtilities.VisibilityToTokenList(Visibility);
+
+        protected virtual Visibility DefaultVisibility => Visibility.Public;
 
         /// <summary>
         /// Gets the full qualified name of this type.
@@ -215,7 +220,7 @@ namespace SharpGen.Model
             set => description = value;
         }
 
-        protected virtual string DefaultDescription => "No documentation.";
+        protected virtual string DefaultDescription => DefaultNoDescription;
 
         /// <summary>
         /// Gets or sets the remarks documentation.

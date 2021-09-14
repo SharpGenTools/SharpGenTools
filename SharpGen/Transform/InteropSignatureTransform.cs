@@ -7,71 +7,34 @@ namespace SharpGen.Transform
 {
     internal sealed class InteropSignatureTransform : IInteropSignatureTransform
     {
-        public class SignatureInteropTypeOverride
-        {
-            public SignatureInteropTypeOverride(CsFundamentalType newType, InteropMethodSignatureFlags? setFlags = null)
-            {
-                NewType = newType ?? throw new ArgumentNullException(nameof(newType));
-
-                if (setFlags.HasValue)
-                    SetFlags = setFlags.Value;
-            }
-
-            public InteropType NewType { get; }
-            public InteropMethodSignatureFlags SetFlags { get; } = InteropMethodSignatureFlags.None;
-
-            public static implicit operator SignatureInteropTypeOverride(CsFundamentalType input) => new(input);
-        }
-
         private GlobalNamespaceProvider Provider => ioc.GlobalNamespace;
         private Logger Logger => ioc.Logger;
 
-        private readonly Dictionary<string, SignatureInteropTypeOverride> returnTypeOverrides;
-        private readonly Dictionary<string, SignatureInteropTypeOverride> windowsOnlyReturnTypeOverrides;
-        private readonly Dictionary<string, SignatureInteropTypeOverride> systemvOnlyReturnTypeOverrides;
+        private readonly Dictionary<string, InteropType> returnTypeOverrides;
+        private readonly Dictionary<string, InteropType> windowsOnlyReturnTypeOverrides;
+        private readonly Dictionary<string, InteropType> systemvOnlyReturnTypeOverrides;
         private readonly Ioc ioc;
 
         public InteropSignatureTransform(Ioc ioc)
         {
             this.ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
 
-            returnTypeOverrides = new Dictionary<string, SignatureInteropTypeOverride>
+            returnTypeOverrides = new Dictionary<string, InteropType>
             {
-                {
-                    Provider.GetTypeName(WellKnownName.Result),
-                    TypeRegistry.Int32
-                },
-                {
-                    Provider.GetTypeName(WellKnownName.PointerSize),
-                    TypeRegistry.VoidPtr
-                }
+                [Provider.GetTypeName(WellKnownName.Result)] = TypeRegistry.Int32,
+                [Provider.GetTypeName(WellKnownName.PointerSize)] = TypeRegistry.VoidPtr
             };
 
-            const InteropMethodSignatureFlags castToNativeLong = InteropMethodSignatureFlags.CastToNativeLong;
-            const InteropMethodSignatureFlags castToNativeULong = InteropMethodSignatureFlags.CastToNativeULong;
-
-            windowsOnlyReturnTypeOverrides = new Dictionary<string, SignatureInteropTypeOverride>
+            windowsOnlyReturnTypeOverrides = new Dictionary<string, InteropType>
             {
-                {
-                    Provider.GetTypeName(WellKnownName.NativeLong),
-                    new SignatureInteropTypeOverride(TypeRegistry.Int32, castToNativeLong)
-                },
-                {
-                    Provider.GetTypeName(WellKnownName.NativeULong),
-                    new SignatureInteropTypeOverride(TypeRegistry.UInt32, castToNativeULong)
-                }
+                [Provider.GetTypeName(WellKnownName.NativeLong)] = TypeRegistry.Int32,
+                [Provider.GetTypeName(WellKnownName.NativeULong)] = TypeRegistry.UInt32
             };
 
-            systemvOnlyReturnTypeOverrides = new Dictionary<string, SignatureInteropTypeOverride>
+            systemvOnlyReturnTypeOverrides = new Dictionary<string, InteropType>
             {
-                {
-                    Provider.GetTypeName(WellKnownName.NativeLong),
-                    new SignatureInteropTypeOverride(TypeRegistry.IntPtr, castToNativeLong)
-                },
-                {
-                    Provider.GetTypeName(WellKnownName.NativeULong),
-                    new SignatureInteropTypeOverride(TypeRegistry.UIntPtr, castToNativeULong)
-                }
+                [Provider.GetTypeName(WellKnownName.NativeLong)] = TypeRegistry.IntPtr,
+                [Provider.GetTypeName(WellKnownName.NativeULong)] = TypeRegistry.UIntPtr
             };
         }
 
@@ -157,9 +120,9 @@ namespace SharpGen.Transform
         {
             foreach (var param in callable.Parameters)
             {
-                var interopType = GetInteropTypeForParameter(param);
+                var interopType = CoerceToBlittable(GetInteropTypeForParameter(param));
 
-                if (interopType == null)
+                if (interopType is null)
                 {
                     Logger.Error(LoggingCodes.InvalidMethodParameterType, "Invalid parameter {0} for method {1}",
                                  param.PublicType.QualifiedName, callable.CppElement);
@@ -176,47 +139,40 @@ namespace SharpGen.Transform
                                                  InteropMethodSignature cSharpInteropCalliSignature,
                                                  PlatformDetectionType platform)
         {
-            InteropMethodSignatureFlags flags = default;
+            var returnType = CoerceToBlittable(GetInteropTypeForReturnValue(callable.ReturnValue, platform));
 
-            var returnType = GetInteropTypeForReturnValue(callable.ReturnValue, platform, ref flags);
-
-            if (returnType == null)
+            if (returnType is null)
             {
                 Logger.Error(LoggingCodes.InvalidMethodReturnType, "Invalid return type {0} for method {1}",
                              callable.ReturnValue.PublicType.QualifiedName, callable.CppElement);
                 returnType = callable.ReturnValue.PublicType.QualifiedName;
             }
 
-            if (flags != default)
-                cSharpInteropCalliSignature.Flags |= flags;
-
             cSharpInteropCalliSignature.ReturnType = returnType;
         }
 
-        private InteropType GetInteropTypeForReturnValue(CsReturnValue returnValue,
-                                                         PlatformDetectionType platform,
-                                                         ref InteropMethodSignatureFlags flags)
-        {
-            var platformSpecificReturnTypeOverrides = (platform & PlatformDetectionType.Windows) != 0
-                                                          ? windowsOnlyReturnTypeOverrides
-                                                          : systemvOnlyReturnTypeOverrides;
+        private InteropType CoerceToBlittable(InteropType type) =>
+            ioc.GeneratorConfig.UseFunctionPointersInVtbl && type is { TypeName: "char" } ? "ushort" : type;
 
+        private InteropType GetInteropTypeForReturnValue(CsReturnValue returnValue, PlatformDetectionType platform)
+        {
             // Handle Return Type parameter
             // MarshalType.Type == null, then check that it is a structure
             if (returnValue.PublicType is CsStruct or CsEnum)
             {
                 var returnQualifiedName = returnValue.PublicType.QualifiedName;
+                var platformSpecificReturnTypeOverrides = (platform & PlatformDetectionType.Windows) != 0
+                                                              ? windowsOnlyReturnTypeOverrides
+                                                              : systemvOnlyReturnTypeOverrides;
 
                 if (returnTypeOverrides.TryGetValue(returnQualifiedName, out var interopType))
                 {
-                    flags |= interopType.SetFlags;
-                    return interopType.NewType;
+                    return interopType;
                 }
 
                 if (platformSpecificReturnTypeOverrides.TryGetValue(returnQualifiedName, out interopType))
                 {
-                    flags |= interopType.SetFlags;
-                    return interopType.NewType;
+                    return interopType;
                 }
 
                 return returnValue.HasNativeValueType

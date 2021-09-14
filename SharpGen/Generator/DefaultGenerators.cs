@@ -1,13 +1,15 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SharpGen.Model;
+﻿using SharpGen.Model;
 
 namespace SharpGen.Generator
 {
     public sealed class DefaultGenerators : IGeneratorRegistry
     {
-        public DefaultGenerators(GeneratorConfig config, Ioc ioc)
+        public DefaultGenerators(Ioc ioc)
         {
-            Constant = new ConstantCodeGenerator(ioc);
+            ExpressionConstant = new ExpressionConstantCodeGenerator(ioc);
+            GuidConstant = new GuidConstantCodeGenerator(ioc);
+            ResultConstant = new ResultConstantCodeGenerator(ioc);
+            ResultRegistration = new ResultRegistrationCodeGenerator(ioc);
             Property = new PropertyCodeGenerator(ioc);
             Enum = new EnumCodeGenerator(ioc);
             ExplicitOffsetField = new FieldCodeGenerator(ioc, true);
@@ -18,6 +20,7 @@ namespace SharpGen.Generator
             Callable = new CallableCodeGenerator(ioc);
             Method = new MethodCodeGenerator(ioc);
             Function = new FunctionCodeGenerator(ioc);
+            FunctionImport = new FunctionImportCodeGenerator(ioc);
             Interface = new InterfaceCodeGenerator(ioc);
             Group = new GroupCodeGenerator(ioc);
             ShadowCallable = new ShadowCallbackGenerator(ioc);
@@ -25,29 +28,32 @@ namespace SharpGen.Generator
             Vtbl = new VtblGenerator(ioc);
             Shadow = new ShadowGenerator(ioc);
             Marshalling = new MarshallingRegistry(ioc);
-            Config = config;
+            Config = ioc.GeneratorConfig;
         }
 
-        public IMultiCodeGenerator<CsVariable, MemberDeclarationSyntax> Constant { get; }
-        public IMultiCodeGenerator<CsProperty, MemberDeclarationSyntax> Property { get; }
-        public IMultiCodeGenerator<CsEnum, MemberDeclarationSyntax> Enum { get; }
-        public IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax> NativeStruct { get; }
-        public IMultiCodeGenerator<CsField, MemberDeclarationSyntax> ExplicitOffsetField { get; }
-        public IMultiCodeGenerator<CsField, MemberDeclarationSyntax> AutoLayoutField { get; }
-        public IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax> Struct { get; }
-        public INativeCallCodeGenerator NativeInvocation { get; }
-        public IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> Callable { get; }
-        public IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax> Method { get; }
-        public IMultiCodeGenerator<CsFunction, MemberDeclarationSyntax> Function { get; }
-        public IMultiCodeGenerator<CsInterface, MemberDeclarationSyntax> Interface { get; }
-        public IMultiCodeGenerator<CsGroup, MemberDeclarationSyntax> Group { get; }
-        public ICodeGenerator<CsInterface, MemberDeclarationSyntax> Shadow { get; }
-        public ICodeGenerator<CsInterface, MemberDeclarationSyntax> Vtbl { get; }
-        public IMultiCodeGenerator<CsCallable, MemberDeclarationSyntax> ShadowCallable { get; }
-        public IMultiCodeGenerator<(CsCallable, InteropMethodSignature), StatementSyntax> ReverseCallableProlog { get; }
+        public IMemberCodeGenerator<CsExpressionConstant> ExpressionConstant { get; }
+        public IMemberCodeGenerator<CsGuidConstant> GuidConstant { get; }
+        public IMemberCodeGenerator<CsResultConstant> ResultConstant { get; }
+        public IStatementCodeGenerator<CsResultConstant> ResultRegistration { get; }
+        public IMemberCodeGenerator<CsProperty> Property { get; }
+        public IMemberCodeGenerator<CsEnum> Enum { get; }
+        public IMemberCodeGenerator<CsStruct> NativeStruct { get; }
+        public IMemberCodeGenerator<CsField> ExplicitOffsetField { get; }
+        public IMemberCodeGenerator<CsField> AutoLayoutField { get; }
+        public IMemberCodeGenerator<CsStruct> Struct { get; }
+        public IStatementCodeGenerator<CsCallable> NativeInvocation { get; }
+        public IMemberCodeGenerator<CsCallable> Callable { get; }
+        public IMemberCodeGenerator<CsMethod> Method { get; }
+        public IMemberCodeGenerator<CsFunction> Function { get; }
+        public IMemberCodeGenerator<CsFunction> FunctionImport { get; }
+        public IMemberCodeGenerator<CsInterface> Interface { get; }
+        public IMemberCodeGenerator<CsInterface> Shadow { get; }
+        public IMemberCodeGenerator<CsInterface> Vtbl { get; }
+        public IMemberCodeGenerator<CsCallable> ShadowCallable { get; }
+        public IStatementCodeGenerator<CsCallable> ReverseCallableProlog { get; }
+        public IMemberCodeGenerator<CsGroup> Group { get; }
 
         public MarshallingRegistry Marshalling { get; }
-
         public GeneratorConfig Config { get; }
     }
 }

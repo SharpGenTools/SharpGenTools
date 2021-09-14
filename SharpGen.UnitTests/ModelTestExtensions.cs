@@ -13,16 +13,10 @@ namespace SharpGen.UnitTests
         public static IEnumerable<T> Find<T>(this CppElement element, string path) where T : CppElement =>
             new CppElementFinder(element).Find<T>(path);
 
-        public static IEnumerable<CsBase> EnumerateDescendants(this CsBase element, bool withAdditionalItems = true)
-        {
-            yield return element;
+        public static CsBase[] EnumerateDescendants(this CsBase element, bool withAdditionalItems = true) =>
+            ModelUtilities.EnumerateDescendants(element, withAdditionalItems).ToArray();
 
-            IEnumerable<CsBase> items = element.Items;
-            if (withAdditionalItems)
-                items = items.Concat(element.AdditionalItems);
-
-            foreach (var descendant in items.SelectMany(x => EnumerateDescendants(x, withAdditionalItems)))
-                yield return descendant;
-        }
+        public static T[] EnumerateDescendants<T>(this CsBase element, bool withAdditionalItems = true)
+            where T : CsBase => ModelUtilities.EnumerateDescendants<T>(element, withAdditionalItems).ToArray();
     }
 }

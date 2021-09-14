@@ -1,33 +1,31 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
+﻿using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
-using SharpGen.Transform;
-
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class StructCodeGenerator : MemberCodeGeneratorBase<CsStruct>
+    internal sealed class StructCodeGenerator : MemberSingleCodeGeneratorBase<CsStruct>
     {
-        public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsStruct csElement)
+        public StructCodeGenerator(Ioc ioc) : base(ioc)
         {
-            var innerStructs = csElement.InnerStructs.SelectMany(GenerateCode);
+        }
 
-            var constants = csElement.Variables.SelectMany(var => Generators.Constant.GenerateCode(var));
+        public override MemberDeclarationSyntax GenerateCode(CsStruct csElement)
+        {
+            var list = NewMemberList;
+            list.AddRange(csElement.InnerStructs, Generators.Struct);
+            list.AddRange(csElement.ExpressionConstants, Generators.ExpressionConstant);
+            list.AddRange(csElement.GuidConstants, Generators.GuidConstant);
+            list.AddRange(csElement.ResultConstants, Generators.ResultConstant);
 
-            var fields = csElement.PublicFields.SelectMany(field =>
-            {
-                var explicitLayout = !csElement.HasMarshalType && csElement.ExplicitLayout;
-                var generator = explicitLayout ? Generators.ExplicitOffsetField : Generators.AutoLayoutField;
-                return generator.GenerateCode(field);
-            });
+            var explicitLayout = !csElement.HasMarshalType && csElement.ExplicitLayout;
+            var generator = explicitLayout ? Generators.ExplicitOffsetField : Generators.AutoLayoutField;
 
-            var marshallingStructAndConversions = csElement.HasMarshalType && !csElement.HasCustomMarshal
-                                                      ? Generators.NativeStruct.GenerateCode(csElement)
-                                                      : Enumerable.Empty<MemberDeclarationSyntax>();
+            list.AddRange(csElement.PublicFields, generator);
+
+            if (csElement.HasMarshalType && !csElement.HasCustomMarshal)
+                list.Add(csElement, Generators.NativeStruct);
 
             var attributeList = !csElement.HasMarshalType
                                     ? SingletonList(NativeStructCodeGenerator.GenerateStructLayoutAttribute(csElement))
@@ -35,9 +33,6 @@ namespace SharpGen.Generator
 
             var modifierTokenList = csElement.VisibilityTokenList.Add(Token(SyntaxKind.PartialKeyword));
             var identifier = Identifier(csElement.Name);
-            var memberList = List(
-                innerStructs.Concat(constants).Concat(fields).Concat(marshallingStructAndConversions)
-            );
 
             MemberDeclarationSyntax declaration = csElement.GenerateAsClass
                                                       ? ClassDeclaration(
@@ -47,7 +42,7 @@ namespace SharpGen.Generator
                                                           default,
                                                           default,
                                                           default,
-                                                          memberList
+                                                          List(list)
                                                       )
                                                       : StructDeclaration(
                                                           attributeList,
@@ -56,14 +51,10 @@ namespace SharpGen.Generator
                                                           default,
                                                           default,
                                                           default,
-                                                          memberList
+                                                          List(list)
                                                       );
 
-            yield return AddDocumentationTrivia(declaration, csElement);
-        }
-
-        public StructCodeGenerator(Ioc ioc) : base(ioc)
-        {
+            return AddDocumentationTrivia(declaration, csElement);
         }
     }
 }

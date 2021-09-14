@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <config id="SharpGen.Runtime" xmlns="urn:SharpGen.Config">
+
   <extension>
     <define struct="SharpGen.Runtime.Result" sizeof="4" primitive="true" />
     <define struct="SharpGen.Runtime.FunctionCallback" sizeof="8" primitive="true" />
@@ -7,6 +8,9 @@
     <define struct="SharpGen.Runtime.NativeLong" sizeof="8" primitive="true" />
     <define struct="SharpGen.Runtime.NativeULong" sizeof="8" primitive="true" />
     <define struct="SharpGen.Runtime.RawBool" sizeof="4" />
+
+    <define interface="SharpGen.Runtime.IUnknown" native="SharpGen.Runtime.ComObject" shadow="SharpGen.Runtime.ComObjectShadow" vtbl="SharpGen.Runtime.ComObjectVtbl" />
+    <define interface="SharpGen.Runtime.IInspectable" native="SharpGen.Runtime.WinRTObject" shadow="SharpGen.Runtime.InspectableShadow" vtbl="SharpGen.Runtime.InspectableVtbl" />
   </extension>
 
   <bindings>
@@ -30,6 +34,9 @@
     <bind from="bool" to="bool" marshal="byte" />
     <bind from="__function__stdcall" to="SharpGen.Runtime.FunctionCallback" />
     <bind from="GUID" to="System.Guid" />
+    <bind from="HSTRING" to="System.IntPtr" />
+    <bind from="IUnknown" to="SharpGen.Runtime.IUnknown" />
+    <bind from="IInspectable" to="SharpGen.Runtime.IInspectable" />
   </bindings>
 
   <!-- global doc mappings -->

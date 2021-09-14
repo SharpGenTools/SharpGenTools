@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -10,7 +11,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class InterfaceCodeGenerator : MemberCodeGeneratorBase<CsInterface>
+    internal sealed class InterfaceCodeGenerator : MemberMultiCodeGeneratorBase<CsInterface>
     {
         private static readonly XmlTextSyntax XmlDocStartSyntax = XmlText(
             XmlTextLiteral(TriviaList(DocumentationCommentExterior("///")), " ", " ", TriviaList())
@@ -20,6 +21,81 @@ namespace SharpGen.Generator
         private static readonly XmlNameSyntax XmlDocSummaryName = XmlName(Identifier("summary"));
         private static readonly XmlElementStartTagSyntax XmlDocSummaryStartSyntax = XmlElementStartTag(XmlDocSummaryName);
         private static readonly XmlElementEndTagSyntax XmlDocSummaryEndSyntax = XmlElementEndTag(XmlDocSummaryName);
+
+        private static readonly SyntaxTokenList DisposeCoreModifierList = TokenList(
+            Token(
+                TriviaList(
+                    Trivia(
+                        DocumentationCommentTrivia(
+                            SyntaxKind.SingleLineDocumentationCommentTrivia,
+                            List(
+                                new XmlNodeSyntax[]
+                                {
+                                    XmlDocStartSyntax,
+                                    XmlEmptyElement("inheritdoc"),
+                                    XmlDocEndSyntax
+                                }
+                            )
+                        )
+                    )
+                ),
+                SyntaxKind.ProtectedKeyword,
+                TriviaList()
+            ),
+            Token(SyntaxKind.OverrideKeyword)
+        );
+
+        private static readonly ParameterListSyntax DisposeCoreParameterList = ParameterList(
+            SeparatedList(
+                new[]
+                {
+                    Parameter(Identifier("nativePointer")).WithType(GeneratorHelpers.IntPtrType),
+                    Parameter(Identifier("disposing")).WithType(PredefinedType(Token(SyntaxKind.BoolKeyword)))
+                }
+            )
+        );
+
+        private static readonly ParameterListSyntax NativePointerUpdatedParameterList = ParameterList(
+            SeparatedList(
+                new[]
+                {
+                    Parameter(Identifier("oldNativePointer")).WithType(GeneratorHelpers.IntPtrType)
+                }
+            )
+        );
+
+        private static readonly SyntaxToken DisposeCoreIdentifier = Identifier("DisposeCore");
+        private static readonly SyntaxToken NativePointerUpdatedIdentifier = Identifier("NativePointerUpdated");
+
+        private static readonly ExpressionStatementSyntax BaseDisposeCoreCallStatement = ExpressionStatement(
+            InvocationExpression(
+                MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    BaseExpression(), IdentifierName(DisposeCoreIdentifier)
+                ),
+                ArgumentList(
+                    SeparatedList(
+                        new[]
+                        {
+                            Argument(IdentifierName("nativePointer")),
+                            Argument(IdentifierName("disposing"))
+                        }
+                    )
+                )
+            )
+        );
+
+        private static readonly IdentifierNameSyntax OldNativePointerIdentifierName = IdentifierName("oldNativePointer");
+
+        private static readonly ExpressionStatementSyntax BaseNativePointerUpdatedCallStatement = ExpressionStatement(
+            InvocationExpression(
+                MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    BaseExpression(), IdentifierName(NativePointerUpdatedIdentifier)
+                ),
+                ArgumentList(SingletonSeparatedList(Argument(OldNativePointerIdentifierName)))
+            )
+        );
 
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsInterface csElement)
         {
@@ -47,7 +123,7 @@ namespace SharpGen.Generator
                 }
             }
 
-            var members = new List<MemberDeclarationSyntax>();
+            var members = NewMemberList;
 
             var nativePtr = Identifier("nativePtr");
 
@@ -95,7 +171,7 @@ namespace SharpGen.Generator
                                 IdentifierName(nativePtr),
                                 GeneratorHelpers.IntPtrZero
                             ),
-                            LiteralExpression(SyntaxKind.NullLiteralExpression),
+                            NullLiteral,
                             ObjectCreationExpression(IdentifierName(csElement.Name))
                                .WithArgumentList(
                                     ArgumentList(SingletonSeparatedList(Argument(IdentifierName(nativePtr))))
@@ -103,7 +179,9 @@ namespace SharpGen.Generator
                     .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
             }
 
-            members.AddRange(csElement.Variables.SelectMany(var => Generators.Constant.GenerateCode(var)));
+            members.AddRange(csElement.ExpressionConstants, Generators.ExpressionConstant);
+            members.AddRange(csElement.GuidConstants, Generators.GuidConstant);
+            members.AddRange(csElement.ResultConstants, Generators.ResultConstant);
 
             if (csElement.HasInnerInterfaces)
             {
@@ -128,7 +206,7 @@ namespace SharpGen.Generator
                 members.Add(
                     MethodDeclaration(
                             PredefinedType(Token(SyntaxKind.VoidKeyword)),
-                            Identifier("NativePointerUpdated")
+                            NativePointerUpdatedIdentifier
                         )
                        .WithModifiers(TokenList(Token(SyntaxKind.ProtectedKeyword), Token(SyntaxKind.OverrideKeyword)))
                        .WithParameterList(
@@ -174,17 +252,70 @@ namespace SharpGen.Generator
 
             if (!csElement.IsCallback)
             {
-                members.AddRange(csElement.Properties.SelectMany(prop => Generators.Property.GenerateCode(prop)));
+                members.AddRange(csElement.Properties, Generators.Property);
+
+                if (csElement.AutoDisposePersistentProperties && csElement.Properties.Any(x => x.IsDisposeBlockNeeded))
+                {
+                    StatementSyntaxList nativePointerUpdated = new(), nativePointerUpdatedConditional = new();
+
+                    IEnumerable<CsProperty> GetDisposableProperties() =>
+                        csElement.Properties.Where(x => x.IsDisposeBlockNeeded);
+
+                    StatementSyntax GetDisposeInvocation(CsProperty x, params ArgumentSyntax[] args) =>
+                        ExpressionStatement(
+                            InvocationExpression(
+                                MemberAccessExpression(
+                                    SyntaxKind.SimpleMemberAccessExpression,
+                                    GlobalNamespace.GetTypeNameSyntax(WellKnownName.MemoryHelpers),
+                                    GenericName(Identifier("Dispose"))
+                                       .WithTypeArgumentList(
+                                            TypeArgumentList(
+                                                SingletonSeparatedList(
+                                                    ParseTypeName(x.PublicType.QualifiedName)
+                                                )
+                                            )
+                                        )
+                                ),
+                                ArgumentList(SeparatedList(args))
+                            )
+                        );
+
+                    nativePointerUpdated.Add(BaseNativePointerUpdatedCallStatement);
+                    nativePointerUpdatedConditional.AddRange(
+                        GetDisposableProperties(),
+                        x => GetDisposeInvocation(
+                            x,
+                            Argument(IdentifierName(x.PersistentFieldIdentifier))
+                               .WithRefKindKeyword(Token(SyntaxKind.RefKeyword)),
+                            Argument(LiteralExpression(SyntaxKind.TrueLiteralExpression))
+                        )
+                    );
+                    nativePointerUpdated.Add(
+                        IfStatement(
+                            BinaryExpression(
+                                SyntaxKind.NotEqualsExpression,
+                                OldNativePointerIdentifierName, GeneratorHelpers.IntPtrZero
+                            ),
+                            nativePointerUpdatedConditional.ToStatement()
+                        )
+                    );
+
+                    members.Add(
+                        MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), NativePointerUpdatedIdentifier)
+                           .WithModifiers(DisposeCoreModifierList)
+                           .WithParameterList(NativePointerUpdatedParameterList)
+                           .WithBody(nativePointerUpdated.ToBlock())
+                    );
+                }
             }
 
-            foreach (var method in csElement.Methods)
-            {
-                members.AddRange(Generators.Method.GenerateCode(method));
-            }
+            members.AddRange(csElement.Methods, Generators.Method);
+
+            var resultList = NewMemberList;
 
             if (csElement.IsCallback && csElement.AutoGenerateShadow)
             {
-                yield return Generators.Shadow.GenerateCode(csElement);
+                resultList.Add(csElement, Generators.Shadow);
                 var shadowAttribute = Attribute(GlobalNamespace.GetTypeNameSyntax(WellKnownName.ShadowAttribute))
                     .AddArgumentListArguments(AttributeArgument(TypeOfExpression(ParseTypeName(csElement.ShadowName))));
                 attributes = attributes?.AddAttributes(shadowAttribute) ?? AttributeList(SingletonSeparatedList(shadowAttribute));
@@ -205,7 +336,8 @@ namespace SharpGen.Generator
                                                           default, baseList, default, List(members)
                                                       );
 
-            yield return AddDocumentationTrivia(declaration, csElement);
+            resultList.Add(AddDocumentationTrivia(declaration, csElement));
+            return resultList;
         }
 
 
@@ -215,7 +347,7 @@ namespace SharpGen.Generator
                 MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                 ThisExpression(),
                 IdentifierName(csInterface.PropertyAccessName)),
-                LiteralExpression(SyntaxKind.NullLiteralExpression)),
+                NullLiteral),
                 ExpressionStatement(
                     AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                         MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,

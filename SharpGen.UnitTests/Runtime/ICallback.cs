@@ -24,7 +24,9 @@ namespace SharpGen.UnitTests.Runtime
         {
             public CallbackVbtl(int numberOfCallbackMethods) : base(numberOfCallbackMethods + 1)
             {
+#pragma warning disable 618
                 AddMethod(new IncrementDelegate(IncrementImpl), 0);
+#pragma warning restore 618
             }
 
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -32,9 +34,7 @@ namespace SharpGen.UnitTests.Runtime
 
             private static int IncrementImpl(IntPtr thisObj, int param)
             {
-                var shadow = ToShadow<CallbackShadow>(thisObj);
-                var callback = (ICallback)shadow.Callback;
-                return callback.Increment(param);
+                return ToCallback<ICallback>(thisObj).Increment(param);
             }
         }
 
@@ -53,7 +53,9 @@ namespace SharpGen.UnitTests.Runtime
         {
             public Callback2Vbtl(int numberOfCallbackMethods) : base(numberOfCallbackMethods + 1)
             {
+#pragma warning disable 618
                 AddMethod(new DecrementDelegate(DecrementImpl), 1);
+#pragma warning restore 618
             }
 
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -61,9 +63,7 @@ namespace SharpGen.UnitTests.Runtime
 
             private static int DecrementImpl(IntPtr thisObj, int param)
             {
-                var shadow = ToShadow<CallbackShadow>(thisObj);
-                var callback = (ICallback)shadow.Callback;
-                return callback.Increment(param);
+                return ToCallback<ICallback>(thisObj).Increment(param);
             }
         }
 

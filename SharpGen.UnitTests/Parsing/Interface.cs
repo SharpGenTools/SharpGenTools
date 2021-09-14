@@ -178,9 +178,7 @@ namespace SharpGen.UnitTests.Parsing
 
             Assert.Equal(0, parameterized.WindowsOffset);
             Assert.Equal(2, parameterized.Offset);
-
         }
-
 
         [Fact]
         public void DefaultMethodCallingConventionIsThisCall()

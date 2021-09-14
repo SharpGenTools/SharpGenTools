@@ -4,9 +4,10 @@
   <Import Project="Sdk.props" Sdk="Microsoft.Build.CentralPackageVersions" />
 
   <PropertyGroup>
-    <TargetFrameworks>net472;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net472;net5.0</TargetFrameworks>
     <PackageId>SharpGenTools.Sdk</PackageId>
     <NoPackageAnalysis>true</NoPackageAnalysis>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
 
     <PackageType>MSBuildSdk</PackageType>
     <SharpGenSdkPackage>true</SharpGenSdkPackage>
@@ -32,13 +33,17 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Build.Utilities.Core" />
-    <PackageReference Include="Microsoft.Bcl.HashCode" />
+    <PackageReference Include="Microsoft.Bcl.HashCode" Condition="'$(TargetFramework)' == 'net472'" />
     <PackageReference Include="Polly.Contrib.WaitAndRetry" />
-    <PackageReference Include="Nullable" />
+    <PackageReference Include="Nullable" Condition="'$(TargetFramework)' == 'net472'" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SharpGen.Platform\SharpGen.Platform.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="SourceGeneratorUtilities.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -48,6 +53,7 @@
     <Content Include="Sdk.targets" PackagePath="Sdk" />
     <Content Include="SharpGenTools.Sdk.props" PackagePath="build;buildMultiTargeting" />
     <Content Include="SharpGenTools.Sdk.targets" PackagePath="build;buildMultiTargeting" />
+    <Content Include="SourceGeneratorUtilities.cs" PackagePath="Sdk" />
   </ItemGroup>
 
   <Target Name="SharpGenWriteVersionProps" BeforeTargets="_GetPackageFiles;GenerateNuspec" Outputs="@(SdkVersionProps)">

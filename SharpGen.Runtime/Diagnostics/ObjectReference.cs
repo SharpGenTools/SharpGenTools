@@ -19,15 +19,22 @@
 // THE SOFTWARE.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace SharpGen.Runtime.Diagnostics
 {
     /// <summary>
-    /// Contains information about a tracked COM object.
+    /// Contains information about a tracked native object.
     /// </summary>
-    public class ObjectReference
+    [SuppressMessage("ReSharper", "ConvertToAutoProperty")]
+    public readonly struct ObjectReference : IEquatable<ObjectReference>
     {
+        // .NET Native has issues with <...> in property backing fields in structs
+        private readonly DateTime _creationTime;
+        private readonly WeakReference<CppObject> _reference;
+        private readonly string _stackTrace;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ObjectReference"/> class.
         /// </summary>
@@ -36,50 +43,43 @@ namespace SharpGen.Runtime.Diagnostics
         /// <param name="stackTrace">The stack trace.</param>
         public ObjectReference(DateTime creationTime, CppObject cppObject, string stackTrace)
         {
-            CreationTime = creationTime;
+            _creationTime = creationTime;
             // Creates a long weak reference to the CppObject
-            Object = new WeakReference(cppObject, true);
-            StackTrace = stackTrace;
+            _reference = new WeakReference<CppObject>(cppObject, true);
+            _stackTrace = stackTrace;
         }
 
         /// <summary>
         /// Gets the time the object was created.
         /// </summary>
         /// <value>The creation time.</value>
-        public DateTime CreationTime { get; }
+        public DateTime CreationTime => _creationTime;
 
         /// <summary>
         /// Gets a weak reference to the tracked object.
         /// </summary>
-        /// <value>The weak reference to the tracked object.</value>
-        public WeakReference Object { get; }
+        public WeakReference<CppObject> Object => _reference;
 
         /// <summary>
         /// Gets the stack trace when the track object was created.
         /// </summary>
         /// <value>The stack trace.</value>
-        public string StackTrace { get; }
+        public string StackTrace => _stackTrace;
 
-        /// <summary>
-        /// Gets a value indicating whether the tracked object is alive.
-        /// </summary>
-        /// <value><c>true</c> if tracked object is alive; otherwise, <c>false</c>.</value>
-        public bool IsAlive => Object.IsAlive;
+        public bool Equals(ObjectReference other) => Equals(Object, other.Object);
+        public override bool Equals(object obj) => obj is ObjectReference other && Equals(other);
+        public override int GetHashCode() => Object != null ? Object.GetHashCode() : 0;
+        public static bool operator ==(ObjectReference left, ObjectReference right) => left.Equals(right);
+        public static bool operator !=(ObjectReference left, ObjectReference right) => !left.Equals(right);
 
-        /// <summary>
-        /// Returns a <see cref="System.String"/> that represents this instance.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="System.String"/> that represents this instance.
-        /// </returns>
-        public override string ToString() => Object.Target switch
-        {
-            CppObject cppObject => string.Format(
-                CultureInfo.InvariantCulture,
-                "Active C++ Object: [0x{0:X}] Class: [{1}] Time [{2}] Stack:\r\n{3}\r\n",
-                cppObject.NativePointer.ToInt64(), cppObject.GetType().FullName, CreationTime, StackTrace
-            ),
-            _ => string.Empty
-        };
+        public override string ToString() => Object.TryGetTarget(out var target)
+                                                 ? string.Format(
+                                                     CultureInfo.InvariantCulture,
+                                                     "Active C++ Object: [{0}] Class: [{1}] Time [{2}] Stack:\r\n{3}\r\n",
+                                                     Utilities.FormatPointer(target.NativePointer),
+                                                     target.GetType().FullName,
+                                                     CreationTime, StackTrace
+                                                 )
+                                                 : string.Empty;
     }
 }

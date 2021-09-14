@@ -18,9 +18,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace SharpGen.Runtime
@@ -29,25 +33,41 @@ namespace SharpGen.Runtime
     /// Result structure.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
+    [SuppressMessage("ReSharper", "ConvertToAutoProperty")]
     public readonly partial struct Result : IEquatable<Result>
     {
+        // .NET Native has issues with <...> in property backing fields in structs
+        private readonly int _code;
+
         /// <summary>
         /// Gets the HRESULT error code.
         /// </summary>
         /// <value>The HRESULT error code.</value>
-        public int Code { get; }
+        public int Code => _code;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Result"/> struct.
+        ///     Initializes a new instance of the <see cref="Result" /> struct.
         /// </summary>
         /// <param name="code">The HRESULT error code.</param>
-        public Result(int code) => Code = code;
+        public Result(int code) => _code = code;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Result"/> struct.
+        ///     Initializes a new instance of the <see cref="Result" /> struct.
         /// </summary>
         /// <param name="code">The HRESULT error code.</param>
-        public Result(uint code) => Code = unchecked((int)code);
+        public Result(uint code) => _code = unchecked((int) code);
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="Result" /> struct.
+        /// </summary>
+        /// <param name="code">The HRESULT error code.</param>
+        public Result(long code) => _code = unchecked((int) code);
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="Result" /> struct.
+        /// </summary>
+        /// <param name="code">The HRESULT error code.</param>
+        public Result(ulong code) => _code = unchecked((int) code);
 
         /// <summary>
         /// Gets a value indicating whether this <see cref="Result"/> is success.
@@ -61,85 +81,22 @@ namespace SharpGen.Runtime
         /// <value><c>true</c> if failure; otherwise, <c>false</c>.</value>
         public bool Failure => Code < 0;
 
-        /// <summary>
-        /// Performs an implicit conversion from <see cref="Result"/> to <see cref="System.Int32"/>.
-        /// </summary>
-        /// <param name="result">The result.</param>
-        /// <returns>The result of the conversion.</returns>
         public static explicit operator int(Result result) => result.Code;
-
-        /// <summary>
-        /// Performs an implicit conversion from <see cref="Result"/> to <see cref="System.UInt32"/>.
-        /// </summary>
-        /// <param name="result">The result.</param>
-        /// <returns>The result of the conversion.</returns>
         public static explicit operator uint(Result result) => unchecked((uint)result.Code);
-
-        /// <summary>
-        /// Performs an implicit conversion from <see cref="System.Int32"/> to <see cref="Result"/>.
-        /// </summary>
-        /// <param name="result">The result.</param>
-        /// <returns>The result of the conversion.</returns>
         public static implicit operator Result(int result) => new(result);
-
-        /// <summary>
-        /// Performs an implicit conversion from <see cref="System.UInt32"/> to <see cref="Result"/>.
-        /// </summary>
-        /// <param name="result">The result.</param>
-        /// <returns>The result of the conversion.</returns>
         public static implicit operator Result(uint result) => new(result);
 
-        /// <summary>
-        /// Indicates whether the current object is equal to another object of the same type.
-        /// </summary>
-        /// <param name="other">An object to compare with this object.</param>
-        /// <returns>
-        /// true if the current object is equal to the <paramref name="other" /> parameter; otherwise, false.
-        /// </returns>
         public bool Equals(Result other) => Code == other.Code;
-
-        /// <summary>
-        /// Determines whether the specified <see cref="System.Object"/> is equal to this instance.
-        /// </summary>
-        /// <param name="obj">The <see cref="System.Object"/> to compare with this instance.</param>
-        /// <returns>
-        /// 	<c>true</c> if the specified <see cref="System.Object"/> is equal to this instance; otherwise, <c>false</c>.
-        /// </returns>
-        public override bool Equals(object obj) => obj is Result res && Equals(res);
-
-        /// <summary>
-        /// Returns a hash code for this instance.
-        /// </summary>
-        /// <returns>
-        /// A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table. 
-        /// </returns>
+        public override bool Equals(object? obj) => obj is Result res && Equals(res);
         public override int GetHashCode() => Code;
-
-        /// <summary>
-        /// Implements the operator ==.
-        /// </summary>
-        /// <param name="left">The left.</param>
-        /// <param name="right">The right.</param>
-        /// <returns>The result of the operator.</returns>
         public static bool operator ==(Result left, Result right) => left.Code == right.Code;
-
-        /// <summary>
-        /// Implements the operator !=.
-        /// </summary>
-        /// <param name="left">The left.</param>
-        /// <param name="right">The right.</param>
-        /// <returns>The result of the operator.</returns>
         public static bool operator !=(Result left, Result right) => left.Code != right.Code;
-
-        /// <summary>
-        /// Returns a <see cref="System.String"/> that represents this instance.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="System.String"/> that represents this instance.
-        /// </returns>
         public override string ToString() => $"Result: {Code}";
 
+        [DoesNotReturn]
         private void ThrowFailureException() => throw new SharpGenException(this);
+
+#nullable restore
 
         /// <summary>
         /// Checks the error.
@@ -193,11 +150,43 @@ namespace SharpGen.Runtime
                 ThrowFailureException();
         }
 
+#nullable enable
+
         /// <summary>
         /// Gets a <see cref="Result"/> from an <see cref="Exception"/>.
         /// </summary>
         /// <param name="ex">The exception</param>
         /// <returns>The associated result code</returns>
         public static Result GetResultFromException(Exception ex) => new(ex.HResult);
+
+        public string Module => ResultDescriptor.Find(Code).Module;
+        public string NativeApiCode => ResultDescriptor.Find(Code).NativeApiCode;
+        public string ApiCode => ResultDescriptor.Find(Code).ApiCode;
+        public string Description => ResultDescriptor.Find(Code).Description;
+
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        public static void Register(Result result, string? module = null, string? nativeApiCode = null,
+                                    string? apiCode = null, string? description = null) =>
+            ResultDescriptor.Register(result.Code, module, nativeApiCode, apiCode, description);
+
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        public static void Register(int result, string? module = null, string? nativeApiCode = null,
+                                    string? apiCode = null, string? description = null) =>
+            ResultDescriptor.Register(result, module, nativeApiCode, apiCode, description);
+
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        public static void Register(uint result, string? module = null, string? nativeApiCode = null,
+                                    string? apiCode = null, string? description = null) =>
+            ResultDescriptor.Register(result, module, nativeApiCode, apiCode, description);
+
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        public static void Register(long result, string? module = null, string? nativeApiCode = null,
+                                    string? apiCode = null, string? description = null) =>
+            ResultDescriptor.Register(unchecked((int) result), module, nativeApiCode, apiCode, description);
+
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        public static void Register(ulong result, string? module = null, string? nativeApiCode = null,
+                                    string? apiCode = null, string? description = null) =>
+            ResultDescriptor.Register(unchecked((int) result), module, nativeApiCode, apiCode, description);
     }
 }

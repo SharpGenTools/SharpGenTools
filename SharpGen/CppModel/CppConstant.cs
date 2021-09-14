@@ -25,8 +25,13 @@ namespace SharpGen.CppModel
     /// </summary>
     public sealed class CppConstant : CppElement
     {
-        public CppConstant(string name, string value) : base(name) => Value = value;
+        public CppConstant(string name, string typeName, string value) : base(name)
+        {
+            TypeName = typeName;
+            Value = value;
+        }
 
         public string Value { get; }
+        public string TypeName { get; }
     }
 }

@@ -42,6 +42,8 @@ namespace SharpGen.Model
             }
         }
 
+        public abstract bool IsBlittable { get; }
+
         protected CsTypeBase(CppElement cppElement, string name) : base(cppElement, name)
         {
         }

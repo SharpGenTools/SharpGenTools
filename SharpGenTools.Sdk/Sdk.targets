@@ -1,7 +1,4 @@
 ﻿<Project>
-  <PropertyGroup>
-    <MSBuildAllProjects Condition="'$(MSBuildToolsVersion)' != 'Current'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
-  </PropertyGroup>
 
   <Choose>
     <When Condition="'$(SharpGenIntermediateDir)' == ''">
@@ -52,7 +49,7 @@
   </Choose>
 
   <PropertyGroup Condition="'$(SharpGenSdkAssemblyFrameworkIdentifier)' == ''">
-    <SharpGenSdkAssemblyFrameworkIdentifier Condition="'$(MSBuildRuntimeType)' == 'Core'">netcoreapp2.1</SharpGenSdkAssemblyFrameworkIdentifier>
+    <SharpGenSdkAssemblyFrameworkIdentifier Condition="'$(MSBuildRuntimeType)' == 'Core'">net5.0</SharpGenSdkAssemblyFrameworkIdentifier>
     <SharpGenSdkAssemblyFrameworkIdentifier Condition="'$(MSBuildRuntimeType)' != 'Core'">net472</SharpGenSdkAssemblyFrameworkIdentifier>
   </PropertyGroup>
 
@@ -234,12 +231,14 @@
                   Macros="$(SharpGenMacros)"
                   OutputPath="$(SharpGenIntermediateDir)"
                   Platforms="@(SharpGenPlatforms)"
-                  SilenceMissingDocumentationErrorIdentifierPatterns="@(SharpGenSilenceMissingDocumentationErrorIdentifierPatterns)" />
+                  SilenceMissingDocumentationErrorIdentifierPatterns="@(SharpGenSilenceMissingDocumentationErrorIdentifierPatterns)"
+                  UseFunctionPointersInVtbl="$(SharpGenUseFunctionPointersInVtbl)" />
 
     <!-- MSBuild will include these items even when target is considered up-to-date. -->
     <!-- Added bonus: these don't show up in IDE file tree (no clutter) -->
     <ItemGroup>
       <Compile Include="@(GeneratedCSharpFiles)" />
+      <Compile Include="$(MSBuildThisFileDirectory)SourceGeneratorUtilities.cs" />
     </ItemGroup>
   </Target>
 
@@ -249,6 +248,11 @@
       <SharpGenPlatforms Include="Windows" Condition="$(RuntimeIdentifier.StartsWith('win'))" />
       <SharpGenPlatforms Include="ItaniumSystemV" Condition="!$(RuntimeIdentifier.StartsWith('win'))" />
     </ItemGroup>
+
+    <PropertyGroup Condition="'$(SharpGenUseFunctionPointersInVtbl)' == ''">
+      <SharpGenUseFunctionPointersInVtbl Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' and '$(_TargetFrameworkVersionWithoutV)' >= '5.0'">true</SharpGenUseFunctionPointersInVtbl>
+      <SharpGenUseFunctionPointersInVtbl Condition="'$(SharpGenUseFunctionPointersInVtbl)' == ''">false</SharpGenUseFunctionPointersInVtbl>
+    </PropertyGroup>
 
     <ReadLinesFromFile Condition="Exists('@(SharpGenInputsCache)')"
                        File="@(SharpGenInputsCache)">
@@ -272,7 +276,8 @@
                             OutputPath="$(SharpGenIntermediateDir)"
                             Platforms="@(SharpGenPlatforms)"
                             PropertyCache="@(SharpGenPropertyCache)"
-                            SilenceMissingDocumentationErrorIdentifierPatterns="@(SharpGenSilenceMissingDocumentationErrorIdentifierPatterns)" />
+                            SilenceMissingDocumentationErrorIdentifierPatterns="@(SharpGenSilenceMissingDocumentationErrorIdentifierPatterns)"
+                            UseFunctionPointersInVtbl="$(SharpGenUseFunctionPointersInVtbl)" />
   </Target>
 
   <Target Name="GenerateConsumerBindMappingFile"
