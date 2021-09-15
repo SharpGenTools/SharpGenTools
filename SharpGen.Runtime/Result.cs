@@ -31,23 +31,24 @@ namespace SharpGen.Runtime
     [StructLayout(LayoutKind.Sequential)]
     public readonly partial struct Result : IEquatable<Result>
     {
+        private readonly int _code;
+
         /// <summary>
         /// Gets the HRESULT error code.
         /// </summary>
         /// <value>The HRESULT error code.</value>
-        public int Code { get; }
+        public int Code { get => _code; }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Result"/> struct.
+        /// </summary>
+        /// <param name="code">The HRESULT error code.</param>
+        public Result(int code) => _code = code;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Result"/> struct.
         /// </summary>
         /// <param name="code">The HRESULT error code.</param>
-        public Result(int code) => Code = code;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Result"/> struct.
-        /// </summary>
-        /// <param name="code">The HRESULT error code.</param>
-        public Result(uint code) => Code = unchecked((int)code);
+        public Result(uint code) => _code = unchecked((int)code);
 
         /// <summary>
         /// Gets a value indicating whether this <see cref="Result"/> is success.
