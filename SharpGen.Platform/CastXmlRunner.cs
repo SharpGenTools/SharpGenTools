@@ -156,6 +156,7 @@ namespace SharpGen.Platform
         private IEnumerable<string> GetCastXmlArgs()
         {
             return AdditionalArguments.Append("--castxml-gccxml")
+                                      .Append("-m32")
                                       .Append("-x c++")
                                       .Append("-Wmacro-redefined")
                                       .Append("-Wno-invalid-token-paste")

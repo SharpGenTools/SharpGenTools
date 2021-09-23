@@ -20,6 +20,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Xml.Serialization;
 
@@ -40,7 +41,7 @@ namespace SharpGen.Config
         /// </summary>
         /// <value>The id.</value>
         [XmlIgnore]
-        public string Id { get { return Path.GetFileNameWithoutExtension(File); } }
+        public string Id => Path.GetFileNameWithoutExtension(File);
 
         /// <summary>
         /// Gets or sets the file to be included.
@@ -61,7 +62,12 @@ namespace SharpGen.Config
         /// </summary>
         /// <value>The output.</value>
         [XmlAttribute("output")]
-        public string Output { get; set; }
+        [Obsolete, SuppressMessage("ReSharper", "ValueParameterNotUsed")]
+        public string Output
+        {
+            get => string.Empty;
+            set {}
+        }
 
         /// <summary>
         /// Gets or sets the file must be attached for mapping to the current Namespace/Assembly

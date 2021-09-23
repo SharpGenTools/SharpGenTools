@@ -1,60 +1,99 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SharpGen.Generator.Marshallers;
 using SharpGen.Model;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class StatementSyntaxList : IReadOnlyList<StatementSyntax>, ICollection<StatementSyntax>,
-                                                ICollection
+    internal sealed class StatementSyntaxList : SyntaxListBase<StatementSyntax, StatementSyntaxList>
     {
-        private readonly List<StatementSyntax> listImplementation = new(8);
-        private readonly MarshallingRegistry registry;
-
-        private MarshallingRegistry Registry =>
-            registry ?? throw new Exception($"{nameof(MarshallingRegistry)} is required");
-
-        public StatementSyntaxList(MarshallingRegistry registry = null) => this.registry = registry;
-
-        public void Add(StatementSyntax item)
+#nullable enable
+        public StatementSyntaxList(Ioc? ioc = null) : base(ioc)
         {
-            if (item == null)
-                return;
-
-            listImplementation.Add(item);
         }
 
-        public void AddRange(IEnumerable<StatementSyntax> collection)
-        {
-            if (collection == null)
-                return;
+        protected override StatementSyntaxList New => new(ioc);
 
-            listImplementation.AddRange(collection.Where(x => x != null));
+        protected override StatementSyntax? Coerce<T>(T? value) where T : class => value switch
+        {
+            null => null,
+            StatementSyntax statement => statement,
+            ExpressionSyntax expression => ExpressionStatement(expression),
+            StatementSyntaxList statementList => statementList.ToStatement(),
+            IEnumerable<StatementSyntax> statementList => From(statementList).ToStatement(),
+            IEnumerable<ExpressionSyntax> statementList => From(statementList).ToStatement(),
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
+        };
+
+        protected override IEnumerable<StatementSyntax> GetPlatformSpecificValue<TResult>(
+            IEnumerable<PlatformDetectionType> types, Func<PlatformDetectionType, TResult> syntaxBuilder
+        ) where TResult : class => new[]
+        {
+            GeneratorHelpers.GetPlatformSpecificStatements(
+                GlobalNamespace, Config, types,
+                platform => Coerce(syntaxBuilder(platform))
+            )
+        };
+
+        protected override IEnumerable<StatementSyntax> GetPlatformSpecificValue<TResult>(
+            IEnumerable<PlatformDetectionType> types, Func<PlatformDetectionType, IEnumerable<TResult>> syntaxBuilder
+        ) where TResult : class => new[]
+        {
+            GeneratorHelpers.GetPlatformSpecificStatements(
+                GlobalNamespace, Config, types,
+                platform => Coerce(syntaxBuilder(platform))
+            )
+        };
+
+#nullable restore
+
+        public void Add<T>(T source, IStatementCodeGenerator<T> generator) where T : CsBase
+        {
+            if (TryAdd<T, StatementSyntax, IStatementCodeGenerator<T>>(source, generator))
+                return;
+            if (TryAdd<T, ExpressionSyntax, IStatementCodeGenerator<T>>(source, generator))
+                return;
+            throw new ArgumentOutOfRangeException(nameof(generator));
         }
 
-        public void AddRange<T>(T source, Func<IMarshaller, T, IEnumerable<StatementSyntax>> transform)
-            where T : CsMarshalBase => AddRange(transform(Registry.GetMarshaller(source), source));
+        [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
+        public void AddRange<T>(IEnumerable<T> source, IStatementCodeGenerator<T> generator) where T : CsBase
+        {
+            if (TryAdd<T, StatementSyntax, IStatementCodeGenerator<T>>(source, generator))
+                return;
+            if (TryAdd<T, ExpressionSyntax, IStatementCodeGenerator<T>>(source, generator))
+                return;
+            throw new ArgumentOutOfRangeException(nameof(generator));
+        }
 
-        public void AddRange<T>(IEnumerable<T> source, Func<IMarshaller, T, IEnumerable<StatementSyntax>> transform)
-            where T : CsMarshalBase => AddRange(source.SelectMany(x => transform(Registry.GetMarshaller(x), x)));
+        public void Add<T>(T source, PlatformDetectionType platform, IStatementCodeGenerator<T> generator) where T : CsBase
+        {
+            if (TryAddPlatformFixed<T, StatementSyntax, IStatementCodeGenerator<T>>(source, platform, generator))
+                return;
+            if (TryAddGeneric<T, StatementSyntax, IStatementCodeGenerator<T>>(source, generator))
+                return;
+            if (TryAddPlatformFixed<T, ExpressionSyntax, IStatementCodeGenerator<T>>(source, platform, generator))
+                return;
+            if (TryAddGeneric<T, ExpressionSyntax, IStatementCodeGenerator<T>>(source, generator))
+                return;
+            throw new ArgumentOutOfRangeException(nameof(generator));
+        }
 
-        public void Add<T>(T source, Func<IMarshaller, T, StatementSyntax> transform)
-            where T : CsMarshalBase => Add(transform(Registry.GetMarshaller(source), source));
-
-        public void AddRange<T>(IEnumerable<T> source, Func<IMarshaller, T, StatementSyntax> transform)
-            where T : CsMarshalBase => AddRange(source.Select(x => transform(Registry.GetMarshaller(x), x)));
-
-        public void Add<T>(T source, Func<T, StatementSyntax> transform) => Add(transform(source));
-
-        public void AddRange<T>(IEnumerable<T> source, Func<T, StatementSyntax> transform) =>
-            AddRange(source.Select(transform));
-
-        public void AddRange<T>(IEnumerable<T> source, Func<T, IEnumerable<StatementSyntax>> transform) =>
-            AddRange(source.SelectMany(transform));
+        [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
+        public void AddRange<T>(IEnumerable<T> source, PlatformDetectionType platform, IStatementCodeGenerator<T> generator) where T : CsBase
+        {
+            if (TryAddPlatformFixed<T, StatementSyntax, IStatementCodeGenerator<T>>(source, platform, generator))
+                return;
+            if (TryAddGeneric<T, StatementSyntax, IStatementCodeGenerator<T>>(source, generator))
+                return;
+            if (TryAddPlatformFixed<T, ExpressionSyntax, IStatementCodeGenerator<T>>(source, platform, generator))
+                return;
+            if (TryAddGeneric<T, ExpressionSyntax, IStatementCodeGenerator<T>>(source, generator))
+                return;
+            throw new ArgumentOutOfRangeException(nameof(generator));
+        }
 
         public BlockSyntax ToBlock()
         {
@@ -64,19 +103,5 @@ namespace SharpGen.Generator
 
         public StatementSyntax ToStatement() => Count == 1 ? this[0] : Block(this);
 
-        public IEnumerator<StatementSyntax> GetEnumerator() => listImplementation.GetEnumerator();
-        IEnumerator IEnumerable.GetEnumerator() => listImplementation.GetEnumerator();
-        public void Clear() => listImplementation.Clear();
-        public bool Contains(StatementSyntax item) => listImplementation.Contains(item);
-        public void CopyTo(StatementSyntax[] array, int arrayIndex) => listImplementation.CopyTo(array, arrayIndex);
-        public void CopyTo(Array array, int index) => ((ICollection) listImplementation).CopyTo(array, index);
-        public bool Remove(StatementSyntax item) => listImplementation.Remove(item);
-        public int Count => listImplementation.Count;
-        public bool IsSynchronized => false;
-        public object SyncRoot => listImplementation;
-        public bool IsReadOnly => false;
-        public int IndexOf(StatementSyntax item) => listImplementation.IndexOf(item);
-        public void RemoveAt(int index) => listImplementation.RemoveAt(index);
-        public StatementSyntax this[int index] => listImplementation[index];
     }
 }

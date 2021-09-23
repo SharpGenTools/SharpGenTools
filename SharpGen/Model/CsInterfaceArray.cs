@@ -33,6 +33,8 @@ namespace SharpGen.Model
         private CsInterface BaseElement { get; }
 
         private string InterfaceArrayTypeName { get; }
+
+        public override bool IsBlittable => false;
     }
 }
 

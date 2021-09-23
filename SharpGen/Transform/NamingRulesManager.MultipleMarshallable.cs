@@ -27,18 +27,12 @@ namespace SharpGen.Transform
 
         private delegate string PostprocessName<in T>(T element, string name, bool isFinal) where T : CppMarshallable;
 
-        private static string PostprocessFieldName(CppField element, string name, bool isFinal)
-        {
-            if (char.IsDigit(name[0]))
-                name = "Field" + name;
-
-            return UnKeyword(name);
-        }
+        private static string PostprocessFieldName(CppField element, string name, bool isFinal) =>
+            UnKeyword(FixDigitName(name, "Field"));
 
         private static string PostprocessParameterName(CppParameter element, string name, bool isFinal)
         {
-            if (char.IsDigit(name[0]))
-                name = "arg" + name;
+            name = FixDigitName(name, "arg");
 
             if (!isFinal && !char.IsLower(name[0]))
                 name = char.ToLower(name[0]) + name.Substring(1);

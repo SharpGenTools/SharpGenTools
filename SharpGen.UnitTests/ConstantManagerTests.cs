@@ -21,15 +21,15 @@ namespace SharpGen.UnitTests
         public void CanAddConstantFromCppConstant()
         {
             var value = "1";
-            var macro = new CppConstant("Macro", value);
+            var macro = new CppConstant("Macro", "int", value);
             var csTypeName = "MyClass";
             var constantName = "Constant";
-            constantManager.AddConstantFromMacroToCSharpType(new CppElementFinder(macro), "Macro", csTypeName, "int", constantName, "$1", null, "namespace");
+            constantManager.AddConstantFromMacroToCSharpType(new CppElementFinder(macro), "Macro", csTypeName, "int", constantName, "$1", null, "namespace", false);
             var csStructure = new CsStruct(null, csTypeName);
             constantManager.AttachConstants(csStructure);
 
             Assert.Single(csStructure.Items);
-            var variable = (CsVariable)csStructure.Items.First();
+            var variable = (CsExpressionConstant)csStructure.Items.First();
 
             Assert.Equal(value, variable.Value);
             Assert.Equal(constantName, variable.Name);
@@ -42,12 +42,30 @@ namespace SharpGen.UnitTests
             var macro = new CppGuid("Macro", guid);
             var csTypeName = "MyClass";
             var constantName = "Constant";
-            constantManager.AddConstantFromMacroToCSharpType(new CppElementFinder(macro), "Macro", csTypeName, "int", constantName, "$1", null, "namespace");
+            constantManager.AddConstantFromMacroToCSharpType(new CppElementFinder(macro), "Macro", csTypeName, "System.Guid", constantName, "$1", null, "namespace", false);
             var csStructure = new CsStruct(null, csTypeName);
             constantManager.AttachConstants(csStructure);
 
             Assert.Single(csStructure.Items);
-            var variable = (CsVariable)csStructure.Items.First();
+            var variable = (CsGuidConstant)csStructure.Items.First();
+
+            Assert.Equal(guid, variable.Value);
+            Assert.Equal(constantName, variable.Name);
+        }
+
+        [Fact]
+        public void CanAddConstantFromGuidAndFallback()
+        {
+            var guid = Guid.NewGuid();
+            var macro = new CppGuid("Macro", guid);
+            var csTypeName = "MyClass";
+            var constantName = "Constant";
+            constantManager.AddConstantFromMacroToCSharpType(new CppElementFinder(macro), "Macro", csTypeName, "int", constantName, "$1", null, "namespace", false);
+            var csStructure = new CsStruct(null, csTypeName);
+            constantManager.AttachConstants(csStructure);
+
+            Assert.Single(csStructure.Items);
+            var variable = (CsExpressionConstant)csStructure.Items.First();
 
             Assert.Equal(guid.ToString(), variable.Value);
             Assert.Equal(constantName, variable.Name);

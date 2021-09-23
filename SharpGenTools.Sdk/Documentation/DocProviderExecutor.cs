@@ -252,7 +252,7 @@ namespace SharpGenTools.Sdk.Documentation
             // TODO: fix properties docs (they extract doc data from methods on attach to interface)
             await Task.WhenAll(
                 cppInterface.Methods.Select(CallableSelector)
-                            .Concat(cppInterface.Variables.Select(VariableSelector))
+                            .Concat(cppInterface.Items.OfType<CsConstantBase>().Select(VariableSelector))
                             .Append(DocumentElement(docProvider, cache, cppInterface, context, false, null))
             );
         }
@@ -268,7 +268,7 @@ namespace SharpGenTools.Sdk.Documentation
 
             await Task.WhenAll(
                 cppInterface.Functions.Select(CallableSelector)
-                            .Concat(cppInterface.Variables.Select(VariableSelector))
+                            .Concat(cppInterface.Items.OfType<CsConstantBase>().Select(VariableSelector))
                             .Append(DocumentElement(docProvider, cache, cppInterface, context, false, null))
             );
         }

@@ -7,22 +7,17 @@ using System.Runtime.InteropServices;
 namespace SharpGen.Runtime
 {
     [DebuggerTypeProxy(typeof(CppObjectVtblDebugView))]
-    public class CppObjectVtbl
+    public abstract class CppObjectVtbl
     {
-        // We need to store the original delegate instances, because Marshal.GetFunctionPointerForDelegate
-        // doesn't create GC roots for the source delegates.
-        private readonly Delegate[] delegates;
-        private uint vtblMaxIndex;
-
         /// <summary>
         /// Default Constructor.
         /// </summary>
         /// <param name="numberOfCallbackMethods">number of methods to allocate in the VTBL</param>
-        public CppObjectVtbl(int numberOfCallbackMethods)
+        protected CppObjectVtbl(int numberOfCallbackMethods)
         {
             // Allocate ptr to vtbl
             Pointer = Marshal.AllocHGlobal(IntPtr.Size * numberOfCallbackMethods);
-            delegates = new Delegate[numberOfCallbackMethods];
+            Count = (uint) numberOfCallbackMethods;
         }
 
         /// <summary>
@@ -35,7 +30,8 @@ namespace SharpGen.Runtime
         /// </summary>
         /// <param name="method">the managed delegate method</param>
         /// <param name="index">the index in the vtable for this method.</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        [Obsolete("Use uint overload."), EditorBrowsable(EditorBrowsableState.Advanced)]
         protected void AddMethod(Delegate method, int index) => AddMethod(method, (uint) index);
 
         /// <summary>
@@ -45,11 +41,12 @@ namespace SharpGen.Runtime
         /// <param name="index">the index in the vtable for this method.</param>
         protected unsafe void AddMethod(Delegate method, uint index)
         {
-            if (index > vtblMaxIndex)
-                vtblMaxIndex = index;
+            CheckIndex(index);
 
-            delegates[index] = method;
-            *((IntPtr*) Pointer + index) = Marshal.GetFunctionPointerForDelegate(method);
+            ((IntPtr*) Pointer)[index] = Marshal.GetFunctionPointerForDelegate(method);
+
+            // Marshal.GetFunctionPointerForDelegate doesn't create GC roots for the source delegates.
+            GCHandle.Alloc(method);
         }
 
         /// <summary>
@@ -59,25 +56,31 @@ namespace SharpGen.Runtime
         /// <param name="index">the index in the vtable for this method.</param>
         protected unsafe void AddMethod(void* method, uint index)
         {
-            if (index > vtblMaxIndex)
-                vtblMaxIndex = index;
+            CheckIndex(index);
 
-            delegates[index] = null;
-            *((void**) Pointer + index) = method;
+            ((void**) Pointer)[index] = method;
         }
 
-        /// <summary>
-        /// Add a method supported by this interface at the current end of the vtable. This method is typically called from inherited constructor.
-        /// </summary>
-        /// <param name="method">the managed delegate method</param>
-        [Obsolete("Use AddMethod(Delegate,int) to explicitly specify the index of the delegate in the vtable.")]
-        [EditorBrowsable(EditorBrowsableState.Advanced)]
-        protected void AddMethod(Delegate method) => AddMethod(method, vtblMaxIndex + 1);
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        private void CheckIndex(uint index)
+        {
+            if (index < Count) return;
+            throw new IndexOutOfRangeException(
+                $"{GetType().Name}{{{nameof(Pointer)}={Utilities.FormatPointer(Pointer)}, {nameof(Count)}={Count}}}[{index}]"
+            );
+        }
 
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
         protected static T ToShadow<T>(IntPtr thisPtr) where T : CppObjectShadow =>
             CppObjectShadow.ToShadow<T>(thisPtr);
 
-        public override string ToString() => $"0x{Pointer.ToInt64():X} @ Count={delegates.Length}";
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        protected static TCallback ToCallback<TCallback>(IntPtr thisPtr) where TCallback : ICallbackable =>
+            CppObjectShadow.ToCallback<TCallback>(thisPtr);
+
+        public override string ToString() => $"{Utilities.FormatPointer(Pointer)} @ Count={Count}";
+
+        private uint Count { get; }
 
         protected sealed class CppObjectVtblDebugView
         {
@@ -86,29 +89,28 @@ namespace SharpGen.Runtime
             public CppObjectVtblDebugView(CppObjectVtbl vtbl) => this.vtbl = vtbl;
 
             [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-            public unsafe object[] Items
+            public unsafe FunctionPointerItem[] Items
             {
                 get
                 {
-                    var delegates = vtbl.delegates;
-                    var vtblPointer = vtbl.Pointer;
-                    var length = delegates.Length;
-                    var items = new object[length];
+                    var vtblPointer = (IntPtr*) vtbl.Pointer;
+                    var count = vtbl.Count;
+                    var items = new FunctionPointerItem[count];
 
-                    for (uint i = 0; i < length; i++)
-                        items[i] = delegates[i] ?? (object) new FunctionPointerItem(*((IntPtr*) vtblPointer + i));
+                    for (uint i = 0; i < count; i++)
+                        items[i] = new FunctionPointerItem(vtblPointer[i]);
 
                     return items;
                 }
             }
 
-            private readonly struct FunctionPointerItem
+            public readonly struct FunctionPointerItem
             {
-                private readonly IntPtr pointer;
+                private readonly string value;
 
-                public FunctionPointerItem(IntPtr pointer) => this.pointer = pointer;
+                public FunctionPointerItem(IntPtr pointer) => value = Utilities.FormatPointer(pointer);
 
-                public override string ToString() => $"0x{pointer.ToInt64():X}";
+                public override string ToString() => value;
             }
         }
     }

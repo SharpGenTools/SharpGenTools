@@ -30,74 +30,20 @@ namespace SharpGen.Runtime
 {
     /// <summary>
     /// The ShadowContainer is the main container used to keep references to all native COM/C++ callbacks.
-    /// It is stored in the property <see cref="ICallbackable.Shadow"/>.
+    /// It is stored in the property <see cref="CallbackBase.Shadow"/>.
     /// </summary>
-    public sealed class ShadowContainer : DisposeBase
+    internal sealed class ShadowContainer : DisposeBase
     {
         private static readonly Dictionary<Type, List<Type>> TypeToShadowTypes = new();
         private readonly IDictionary<Guid, CppObjectShadow> guidToShadow;
         private readonly IntPtr guidPtr;
         private readonly IntPtr[] guids;
-#if DEBUG
-        private readonly string callbackTypeName;
-#endif
 
         public IntPtr[] Guids => guids;
 
-        public ShadowContainer(ICallbackable callbackable)
+        public unsafe ShadowContainer(ICallbackable callbackable)
         {
-#if DEBUG
-            callbackTypeName = callbackable.GetType().Name;
-#endif
             guidToShadow = new Dictionary<Guid, CppObjectShadow>();
-            var guidList = BuildGuidList(callbackable, guidToShadow);
-            AllocateGuidsTable(guidList, out guids, out guidPtr);
-#if DEBUG
-            TraceAllocation(RuntimeHelpers.GetHashCode(callbackable));
-#endif
-        }
-
-        public ShadowContainer(IReadOnlyList<Guid> guidList, IDictionary<Guid, CppObjectShadow> guidToShadow)
-        {
-#if DEBUG
-            callbackTypeName = "UNSPECIFIED";
-#endif
-            this.guidToShadow = guidToShadow;
-            AllocateGuidsTable(guidList, out guids, out guidPtr);
-#if DEBUG
-            TraceAllocation(0);
-#endif
-        }
-
-#if DEBUG
-        private void TraceAllocation(int parentId)
-        {
-            if (!Configuration.EnableObjectLifetimeTracing)
-                return;
-
-            Debug.WriteLine($"{GetType().Name}<{callbackTypeName}>[{guidPtr.ToInt64():X}]::new({parentId:X})");
-        }
-#endif
-
-        private static unsafe void AllocateGuidsTable(IReadOnlyList<Guid> guidList,
-                                                      out IntPtr[] guids, out IntPtr guidsPtr)
-        {
-            var guidCount = guidList.Count;
-
-            guids = new IntPtr[guidCount];
-            guidsPtr = Marshal.AllocHGlobal(Unsafe.SizeOf<Guid>() * guidCount);
-
-            var pGuid = (Guid*) guidsPtr;
-            for (var i = 0; i < guidCount; i++)
-            {
-                pGuid[i] = guidList[i];
-                // Store the pointer
-                guids[i] = new IntPtr(pGuid + i);
-            }
-        }
-
-        public static IReadOnlyList<Guid> BuildGuidList(ICallbackable callbackable, IDictionary<Guid, CppObjectShadow> guidToShadow)
-        {
             List<Guid> guidList = new();
 
             // Associate all shadows with their interfaces.
@@ -136,7 +82,18 @@ namespace SharpGen.Runtime
                 }
             }
 
-            return guidList;
+            var guidCount = guidList.Count;
+
+            guids = new IntPtr[guidCount];
+            guidPtr = Marshal.AllocHGlobal(Unsafe.SizeOf<Guid>() * guidCount);
+
+            var pGuid = (Guid*) guidPtr;
+            for (var i = 0; i < guidCount; i++)
+            {
+                pGuid[i] = ((IReadOnlyList<Guid>) guidList)[i];
+                // Store the pointer
+                guids[i] = new IntPtr(pGuid + i);
+            }
         }
 
         /// <summary>
@@ -193,20 +150,13 @@ namespace SharpGen.Runtime
             guidToShadow.TryGetValue(guidType, out var shadow);
             return shadow;
         }
-        
+
+        protected override bool IsDisposed => guidPtr == IntPtr.Zero;
+
         protected override void Dispose(bool disposing)
         {
             if (!disposing)
                 return;
-
-            Debug.Assert(guidPtr != IntPtr.Zero);
-
-#if DEBUG
-            if (Configuration.EnableObjectLifetimeTracing)
-                Debug.WriteLine(
-                    $"{GetType().Name}<{callbackTypeName}>[{guidPtr.ToInt64():X}]::{nameof(Dispose)}"
-                );
-#endif
 
             foreach (var comObjectCallbackNative in guidToShadow.Values)
                 comObjectCallbackNative.Dispose();

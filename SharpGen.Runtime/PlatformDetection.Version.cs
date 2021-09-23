@@ -1,7 +1,7 @@
 #nullable enable
 
 using System;
-#if NETSTANDARD1_1 || NETSTANDARD1_3
+#if NETSTANDARD1_3
 using System.Runtime.InteropServices;
 using System.Threading;
 #endif
@@ -10,7 +10,7 @@ namespace SharpGen.Runtime
 {
     public static partial class PlatformDetection
     {
-#if NETSTANDARD1_1 || NETSTANDARD1_3
+#if NETSTANDARD1_3
         private static Version? _osVersion;
 
         public static Version OSVersion

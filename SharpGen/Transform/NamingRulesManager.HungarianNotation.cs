@@ -9,19 +9,34 @@ namespace SharpGen.Transform
     {
         private readonly List<HungarianNotationPrefix> _hungarianNotation = new()
         {
-            new HungarianNotationPrefix("pp", HungarianOutPrefixSelector, "Out", "ref", "pointer", "array"),
-            new HungarianNotationPrefix("p", HungarianRefPrefixSelector, "Ref", "Pointer", "Array", "out"),
-            new HungarianNotationPrefix("lp", HungarianRefPrefixSelector, "Ref", "Pointer", "Array", "out"),
-            new HungarianNotationPrefix("u", HungarianIntegerPrefixSelector, string.Empty),
-            new HungarianNotationPrefix("ul", HungarianIntegerPrefixSelector, string.Empty),
-            new HungarianNotationPrefix("dw", HungarianIntegerPrefixSelector, string.Empty),
-            new HungarianNotationPrefix("fn", HungarianFunctionPrefixSelector, "Function", "delegate"),
-            new HungarianNotationPrefix("pfn", HungarianFunctionPrefixSelector, "Function", "delegate"),
-            new HungarianNotationPrefix("f", HungarianIntegerPrefixSelector, "Flag", "enable"),
-            new HungarianNotationPrefix("cb", HungarianIntegerPrefixSelector, "ByteCount", "size", "length"),
+            new HungarianNotationPrefix("pp", HungarianOutPrefixSelector, "Out", "Ref", "Pointer", "Array"),
+            new HungarianNotationPrefix("p", HungarianRefPrefixSelector, "Ref", "Pointer", "Array", "Out"),
+            new HungarianNotationPrefix("lp", HungarianRefPrefixSelector, "Ref", "Pointer", "Array", "Out"),
+            new HungarianNotationPrefix("pv", HungarianRefPrefixSelector, "Ref", "Pointer", "Array", "Out"),
+            new HungarianNotationPrefix("b", HungarianIntegerPrefixSelector),
+            new HungarianNotationPrefix("u", HungarianIntegerPrefixSelector),
+            new HungarianNotationPrefix("n", HungarianIntegerPrefixSelector, string.Empty, "Count", "Int"),
+            new HungarianNotationPrefix("i", HungarianIntegerPrefixSelector, string.Empty, "Index", "Int"),
+            new HungarianNotationPrefix("ul", HungarianIntegerPrefixSelector),
+            new HungarianNotationPrefix("us", HungarianIntegerPrefixSelector),
+            new HungarianNotationPrefix("l", HungarianIntegerPrefixSelector),
+            new HungarianNotationPrefix("w", HungarianIntegerPrefixSelector),
+            new HungarianNotationPrefix("dw", HungarianIntegerPrefixSelector),
+            new HungarianNotationPrefix("qw", HungarianIntegerPrefixSelector),
+            new HungarianNotationPrefix("fn", HungarianFunctionPrefixSelector, "Function", "Delegate"),
+            new HungarianNotationPrefix("pfn", HungarianFunctionPrefixSelector, "Function", "Delegate"),
+            new HungarianNotationPrefix("lpfn", HungarianFunctionPrefixSelector, "Function", "Delegate"),
+            new HungarianNotationPrefix("f", HungarianIntegerPrefixSelector, "Flag", "Enable", "Float"),
+            new HungarianNotationPrefix("cb", HungarianIntegerPrefixSelector, "ByteCount", "Size", "Length"),
             new HungarianNotationPrefix("h", HungarianFunctionPrefixSelector, "Handle"),
-            new HungarianNotationPrefix("str", HungarianStringPrefixSelector, "String"),
-            new HungarianNotationPrefix("wsz", HungarianStringPrefixSelector, "String"),
+            new HungarianNotationPrefix("str", HungarianStringPrefixSelector, "String", "Text"),
+            new HungarianNotationPrefix("bstr", HungarianStringPrefixSelector, "String", "Text"),
+            new HungarianNotationPrefix("pbstr", HungarianStringPrefixSelector, "String", "Text"),
+            new HungarianNotationPrefix("wsz", HungarianStringPrefixSelector, "String", "Text"),
+            new HungarianNotationPrefix("pstr", HungarianStringPrefixSelector, "String", "Text"),
+            new HungarianNotationPrefix("pwsz", HungarianStringPrefixSelector, "String", "Text"),
+            new HungarianNotationPrefix("wcs", HungarianStringPrefixSelector, "String", "Text"),
+            new HungarianNotationPrefix("pwcs", HungarianStringPrefixSelector, "String", "Text"),
         };
 
         private static int HungarianOutPrefixSelector(CppMarshallable x) => x is CppParameter {HasPointer: true}
@@ -80,18 +95,35 @@ namespace SharpGen.Transform
                     return false;
 
                 var index = Selector(marshallable);
-                if (index < 0 || index >= SuffixVariants.Length)
+                if (index < 0)
                     return false;
 
                 var content = name.Substring(Prefix.Length);
                 var contentLower = content.ToLowerInvariant();
-                var suffixedVariant = content + SuffixVariants[index];
 
-                bool SuffixPredicate(string x) => contentLower.Contains(x) || originalNameLower.Contains(x);
+                string SuffixWith(string suffix) => content + suffix;
+                bool SuffixPredicate(string x) => !contentLower.Contains(x) && !originalNameLower.Contains(x);
 
-                variants = LowerSuffixVariants.Any(SuffixPredicate)
-                               ? new[] {content, suffixedVariant}
-                               : new[] {suffixedVariant, content};
+                IEnumerable<string> preferredSuffixedVariants, secondarySuffixedVariants;
+                switch (SuffixVariants.Length)
+                {
+                    case > 0 when index >= SuffixVariants.Length:
+                        return false;
+                    case > 0:
+                        preferredSuffixedVariants = new[] { SuffixVariants[index] }
+                                                   .Where(SuffixPredicate).Select(SuffixWith);
+                        secondarySuffixedVariants = SuffixVariants.Take(index)
+                                                                  .Concat(SuffixVariants.Skip(index + 1))
+                                                                  .Where(SuffixPredicate)
+                                                                  .Select(SuffixWith);
+                        break;
+                    default:
+                        preferredSuffixedVariants = secondarySuffixedVariants = Enumerable.Empty<string>();
+                        break;
+                }
+
+                variants = new[] { content }.Concat(preferredSuffixedVariants).Concat(secondarySuffixedVariants)
+                                            .ToArray();
 
                 return true;
             }

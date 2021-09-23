@@ -69,9 +69,9 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(module, config);
 
-            Assert.Single(solution.EnumerateDescendants().OfType<CsGroup>());
+            Assert.Single(solution.EnumerateDescendants<CsGroup>());
 
-            var group = solution.EnumerateDescendants().OfType<CsGroup>().First();
+            var group = solution.EnumerateDescendants<CsGroup>().First();
             Assert.Equal("Functions", group.Name);
 
             Assert.Single(group.Functions);
@@ -135,9 +135,9 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(module, config);
 
-            Assert.Single(solution.EnumerateDescendants().OfType<CsInterface>());
+            Assert.Single(solution.EnumerateDescendants<CsInterface>());
 
-            var csIface = solution.EnumerateDescendants().OfType<CsInterface>().First();
+            var csIface = solution.EnumerateDescendants<CsInterface>().First();
 
             Assert.Single(csIface.Methods);
 
@@ -199,9 +199,9 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(module, config);
 
-            Assert.Single(solution.EnumerateDescendants().OfType<CsInterface>());
+            Assert.Single(solution.EnumerateDescendants<CsInterface>());
 
-            var csIface = solution.EnumerateDescendants().OfType<CsInterface>().First();
+            var csIface = solution.EnumerateDescendants<CsInterface>().First();
 
             Assert.Single(csIface.Methods);
 

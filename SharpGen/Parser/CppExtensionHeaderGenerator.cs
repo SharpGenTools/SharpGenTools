@@ -70,19 +70,12 @@ namespace SharpGen.Parser
         /// </summary>
         /// <param name="rule">The macro rule.</param>
         /// <returns>A C++ declaration string</returns>
-        private string CreateCppFromMacro(CppElementFinder finder, ConfigBaseRule rule)
+        private string CreateCppFromMacro(CppElementFinder finder, ConfigBaseRule rule) => rule switch
         {
-            if (rule is CreateCppExtensionRule createExtension)
-            {
-                return CreateEnumFromMacro(finder, createExtension);
-            }
-
-            if (rule is ConstantRule constant)
-            {
-                return CreateVariableFromMacro(finder, constant);
-            }
-            return "";
-        }
+            CreateCppExtensionRule createExtension => CreateEnumFromMacro(finder, createExtension),
+            ConstantRule constant => CreateVariableFromMacro(finder, constant),
+            _ => string.Empty
+        };
 
         /// <summary>
         /// Creates a C++ enum declaration from a macro rule.
@@ -131,7 +124,7 @@ namespace SharpGen.Parser
                 // Only add the macro once (could have multiple identical macro in different includes)
                 if (!_variableMacrosDefined.ContainsKey(macroName))
                 {
-                    builder.AppendFormat("extern \"C\" {0} {1} = {3}{2};\n", cstRule.CppType ?? cstRule.Type, macroName, macroDef.Name, cstRule.CppCast ?? "");
+                    builder.AppendFormat("extern \"C\" {0} {1} = {3}{2};\n", cstRule.CppType ?? cstRule.Type, macroName, macroDef.Name, cstRule.CppCast ?? string.Empty);
                     _variableMacrosDefined.Add(macroName, macroDef.Name);
                 }
             }

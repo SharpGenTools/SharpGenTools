@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
 
 namespace SharpGen.Transform
 {
-    public class ConstantManager
+    public sealed class ConstantManager
     {
-        private readonly Dictionary<string, List<CsVariable>> _mapConstantToCSharpType = new();
+        private readonly Dictionary<string, List<CsConstantBase>> _mapConstantToCSharpType = new();
         private readonly Ioc ioc;
 
         public ConstantManager(NamingRulesManager namingRules, Ioc ioc)
@@ -24,80 +26,99 @@ namespace SharpGen.Transform
         /// <summary>
         /// Adds a list of constant gathered from macros/guids to a C# type.
         /// </summary>
-        /// <param name="elementFinder">The C++ module to search.</param>
-        /// <param name="macroRegexp">The macro regexp.</param>
-        /// <param name="fullNameCSharpType">Full type of the name C sharp.</param>
-        /// <param name="type">The type.</param>
-        /// <param name="fieldName">Name of the field.</param>
-        /// <param name="valueMap">The value map.</param>
-        /// <param name="visibility">The visibility.</param>
-        /// <param name="nameSpace">The current namespace.</param>
-        public void AddConstantFromMacroToCSharpType(CppElementFinder elementFinder, string macroRegexp, string fullNameCSharpType, string type, string fieldName, string valueMap,
-                                                     Visibility? visibility, string nameSpace)
+        public void AddConstantFromMacroToCSharpType(CppElementFinder elementFinder, string macroRegexp,
+                                                     string fullNameCSharpType, string type, string fieldName,
+                                                     string valueMap, Visibility? visibility, string nameSpace,
+                                                     bool isResultDescriptor)
         {
-            var constantDefinitions = elementFinder.Find<CppConstant>(macroRegexp);
-            var regex = new Regex(macroRegexp);
+            var elementRegex = CppElementExtensions.BuildFindFullRegex(macroRegexp);
 
-            // $0: Name of the C++ macro
-            // $1: Value of the C++ macro
-            // $2: Name of the C#
-            // $3: Name of current namespace
-            if (valueMap != null)
+            string ValueMapFactory()
             {
-                valueMap = valueMap.Replace("{", "{{");
-                valueMap = valueMap.Replace("}", "}}");
-                valueMap = valueMap.Replace("$0", "{0}");
-                valueMap = valueMap.Replace("$1", "{1}");
-                valueMap = valueMap.Replace("$2", "{2}");
-                valueMap = valueMap.Replace("$3", "{3}");
+                // $0: Name of the C++ macro
+                // $1: Value of the C++ macro
+                // $2: Name of the C#
+                // $3: Name of current namespace
+                StringBuilder sb = new(valueMap, valueMap.Length * 3 / 2);
+                sb.Replace("{", "{{");
+                sb.Replace("}", "}}");
+                sb.Replace("$0", "{0}");
+                sb.Replace("$1", "{1}");
+                sb.Replace("$2", "{2}");
+                sb.Replace("$3", "{3}");
+                return sb.ToString();
             }
 
-            foreach (var macroDef in constantDefinitions)
-            {
-                var finalFieldName = fieldName == null ?
-                    macroDef.Name
-                    : NamingRules.ConvertToPascalCase(
-                        regex.Replace(macroDef.Name, fieldName),
-                        NamingFlags.Default);
-                var finalValue = valueMap == null ?
-                    macroDef.Value
-                    : string.Format(valueMap, macroDef.Name, macroDef.Value, finalFieldName, nameSpace);
+            Lazy<string> valueMapProcessed = valueMap is null ? null : new(ValueMapFactory, LazyThreadSafetyMode.None);
 
-                var constant = AddConstantToCSharpType(macroDef, fullNameCSharpType, type, finalFieldName, finalValue);
-                constant.Visibility = visibility ?? Visibility.Public | Visibility.Const;
+            foreach (var macroDef in elementFinder.Find<CppConstant>(elementRegex))
+            {
+                AddConstant(
+                    macroDef,
+                    isResultDescriptor
+                        ? name => new CsResultConstant(macroDef, name, macroDef.Value, nameSpace)
+                        : name => new CsExpressionConstant(macroDef, name, FindType(macroDef),
+                                                           MapValue(macroDef, name, macroDef.Value))
+                );
             }
 
-            var guidDefinitions = elementFinder.Find<CppGuid>(macroRegexp);
-            foreach (var guidDef in guidDefinitions)
+            foreach (var guidDef in elementFinder.Find<CppGuid>(elementRegex))
             {
-                var finalFieldName = fieldName == null ?
-                    guidDef.Name
-                    : NamingRules.ConvertToPascalCase(
-                        regex.Replace(guidDef.Name, fieldName),
-                        NamingFlags.Default);
-                var finalValue = valueMap == null ?
-                    guidDef.Guid.ToString()
-                    : string.Format(valueMap, guidDef.Name, guidDef.Guid.ToString(), finalFieldName, nameSpace);
-
-                var constant = AddConstantToCSharpType(guidDef, fullNameCSharpType, type, finalFieldName, finalValue);
-                constant.Visibility = visibility ?? Visibility.Public | Visibility.Static | Visibility.Readonly;
+                var constantType = string.IsNullOrEmpty(type)
+                               ? ioc.TypeRegistry.ImportNonPrimitiveType(typeof(Guid))
+                               : ioc.TypeRegistry.ImportType(type);
+                AddConstant(
+                    guidDef,
+                    constantType is CsFundamentalType {IsGuid: true}
+                        ? name => new CsGuidConstant(guidDef, name, guidDef.Guid)
+                        : name => new CsExpressionConstant(guidDef, name, constantType,
+                                                           MapValue(guidDef, name, guidDef.Guid.ToString()))
+                );
             }
+
+            void AddConstant(CppElement cppDef, ConstantCreatorDelegate creator)
+            {
+                var finalFieldName = fieldName == null
+                                         ? cppDef.Name
+                                         : NamingRules.ConvertToPascalCase(
+                                             Regex.Replace(cppDef.Name, macroRegexp, fieldName),
+                                             NamingFlags.Default
+                                         );
+
+                var constant = AddConstantToCSharpType(
+                    cppDef, fullNameCSharpType, finalFieldName, creator
+                );
+
+                if (visibility is { } visibilityValue)
+                    constant.Visibility = visibilityValue;
+            }
+
+            string MapValue(CppElement cppDef, string finalFieldName, string value) =>
+                valueMap is null
+                    ? value
+                    : string.Format(valueMapProcessed!.Value, cppDef.Name, value, finalFieldName, nameSpace);
+
+            CsTypeBase FindType(CppConstant constant) => ioc.TypeRegistry.ImportType(
+                string.IsNullOrEmpty(type) ? constant.TypeName : type
+            );
         }
+
+        private delegate CsConstantBase ConstantCreatorDelegate(string csName);
 
         /// <summary>
         /// Adds a specific C++ constant name/value to a C# type.
         /// </summary>
         /// <param name="cppElement">The C++ element to get the constant from.</param>
         /// <param name="csClassName">Name of the C# class to receive this constant.</param>
-        /// <param name="typeName">The type name of the C# constant</param>
         /// <param name="fieldName">Name of the field.</param>
-        /// <param name="value">The value of this constant.</param>
+        /// <param name="creator"></param>
         /// <returns>The C# variable declared.</returns>
-        private CsVariable AddConstantToCSharpType(CppElement cppElement, string csClassName, string typeName, string fieldName, string value)
+        private CsConstantBase AddConstantToCSharpType(CppElement cppElement, string csClassName,
+                                                       string fieldName, ConstantCreatorDelegate creator)
         {
-            if (!_mapConstantToCSharpType.TryGetValue(csClassName, out List<CsVariable> constantDefinitions))
+            if (!_mapConstantToCSharpType.TryGetValue(csClassName, out var constantDefinitions))
             {
-                constantDefinitions = new List<CsVariable>();
+                constantDefinitions = new();
                 _mapConstantToCSharpType.Add(csClassName, constantDefinitions);
             }
 
@@ -108,7 +129,7 @@ namespace SharpGen.Transform
                     return constantDefinition;
             }
 
-            var constantToAdd = new CsVariable(cppElement, typeName, fieldName, value);
+            var constantToAdd = creator(fieldName);
             constantDefinitions.Add(constantToAdd);
 
             DocumentationLinker.AddOrUpdateDocLink(cppElement.Name, constantToAdd.QualifiedName);

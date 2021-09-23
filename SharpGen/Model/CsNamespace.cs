@@ -40,12 +40,6 @@ namespace SharpGen.Model
         public override string QualifiedName => Name;
 
         /// <summary>
-        /// Gets or sets the output directory for generated files for this namespace.
-        /// </summary>
-        /// <value>The output directory.</value>
-        public string OutputDirectory { get; set; }
-
-        /// <summary>
         /// Gets all declared enums from this namespace.
         /// </summary>
         /// <value>The enums.</value>

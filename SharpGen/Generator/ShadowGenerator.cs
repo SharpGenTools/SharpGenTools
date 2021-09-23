@@ -8,9 +8,9 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class ShadowGenerator : CodeGeneratorBase, ICodeGenerator<CsInterface, MemberDeclarationSyntax>
+    internal sealed class ShadowGenerator : MemberSingleCodeGeneratorBase<CsInterface>
     {
-        public MemberDeclarationSyntax GenerateCode(CsInterface csElement)
+        public override MemberDeclarationSyntax GenerateCode(CsInterface csElement)
         {
             var shadowClassName = csElement.ShadowName.Split('.').Last();
 
@@ -35,10 +35,10 @@ namespace SharpGen.Generator
                                )
                               .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
 
-            List<MemberDeclarationSyntax> members = new();
+            var members = NewMemberList;
 
             if (csElement.AutoGenerateVtbl)
-                members.Add(Generators.Vtbl.GenerateCode(csElement));
+                members.Add(csElement, Generators.Vtbl);
 
             if (csElement.StaticShadowVtbl)
             {

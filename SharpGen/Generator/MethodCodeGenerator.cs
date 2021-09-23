@@ -6,48 +6,38 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class MethodCodeGenerator : CodeGeneratorBase, IMultiCodeGenerator<CsMethod, MemberDeclarationSyntax>
+    internal sealed class MethodCodeGenerator : MemberMultiCodeGeneratorBase<CsMethod>
     {
-        public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsMethod csElement)
+        public MethodCodeGenerator(Ioc ioc) : base(ioc)
         {
+        }
+
+        public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsMethod csElement)
+        {
+            var list = NewMemberList;
             if (csElement.CustomVtbl)
-            {
-                var defaultOffset = csElement.Offset;
-
-                if ((Generators.Config.Platforms & PlatformDetectionType.Windows) != 0)
-                {
-                    // Use the Windows offset for the default offset in the custom vtable when the Windows platform is requested for compat reasons.
-                    defaultOffset = csElement.WindowsOffset;
-                }
-
-                yield return FieldDeclaration(
-                    default,
-                    TokenList(Token(SyntaxKind.PrivateKeyword)),
-                    VariableDeclaration(
-                        PredefinedType(Token(SyntaxKind.IntKeyword)),
-                        SingletonSeparatedList(
-                            VariableDeclarator(
-                                Identifier($"{csElement.Name}__vtbl_index"),
-                                null,
-                                EqualsValueClause(
-                                    LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(defaultOffset))
+                list.Add(
+                    FieldDeclaration(
+                        default,
+                        TokenList(Token(SyntaxKind.PrivateKeyword)),
+                        VariableDeclaration(
+                            PredefinedType(Token(SyntaxKind.UIntKeyword)),
+                            SingletonSeparatedList(
+                                VariableDeclarator(
+                                    Identifier($"{csElement.Name}__vtbl_index"),
+                                    null,
+                                    EqualsValueClause(csElement.VTableOffsetExpression(Generators.Config.Platforms))
                                 )
                             )
                         )
                     )
                 );
-            }
 
             // If not hidden, generate body
-            if (csElement.Hidden)
-                yield break;
+            if (!csElement.Hidden)
+                list.Add(csElement, Generators.Callable);
 
-            foreach (var member in Generators.Callable.GenerateCode(csElement))
-                yield return member;
-        }
-
-        public MethodCodeGenerator(Ioc ioc) : base(ioc)
-        {
+            return list;
         }
     }
 }

@@ -118,7 +118,7 @@ namespace SharpGen.Model
             var paramRule = cppParameter.Rule;
 
             usedAsReturn = paramRule.ParameterUsedAsReturnType ?? UsedAsReturn;
-            DefaultValue = paramRule.DefaultValue ?? DefaultValue;
+            DefaultValue = paramRule.DefaultValue;
 
             if (HasFlag(paramAttribute, ParamAttribute.Buffer))
                 IsArray = true;

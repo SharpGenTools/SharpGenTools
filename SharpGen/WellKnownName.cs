@@ -68,5 +68,10 @@ namespace SharpGen
         ///     Helper class for marshalling interface/class types
         /// </summary>
         MarshallingHelpers,
+
+        /// <summary>
+        ///     Windows Runtime immutable string handle
+        /// </summary>
+        WinRTString,
     }
 }

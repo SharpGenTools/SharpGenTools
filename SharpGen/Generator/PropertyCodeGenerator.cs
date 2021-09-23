@@ -3,135 +3,137 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
-using SharpGen.Transform;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class PropertyCodeGenerator : MemberCodeGeneratorBase<CsProperty>
+    internal sealed class PropertyCodeGenerator : MemberMultiCodeGeneratorBase<CsProperty>
     {
         public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsProperty csElement)
         {
             var accessors = new List<AccessorDeclarationSyntax>();
+            var elementType = ParseTypeName(csElement.PublicType.QualifiedName);
+            var isPersistent = csElement.IsPersistent;
 
-            if (csElement.IsPropertyParam)
+            SyntaxToken fieldName;
+            IdentifierNameSyntax fieldIdentifier;
+            if (isPersistent)
             {
-                if (csElement.Getter != null)
-                {
-                    if (csElement.IsPersistent)
-                    {
-                        if (csElement.IsValueType)
-                        {
-                            accessors.Add(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                                .WithBody(Block(
-                                    IfStatement(
-                                        BinaryExpression(SyntaxKind.EqualsExpression,
-                                            IdentifierName($"{csElement.Name}__"),
-                                            LiteralExpression(SyntaxKind.NullLiteralExpression)),
-                                        Block(
-                                            LocalDeclarationStatement(
-                                                VariableDeclaration(
-                                                    ParseTypeName(csElement.PublicType.QualifiedName))
-                                                .WithVariables(
-                                                    SingletonSeparatedList(
-                                                        VariableDeclarator(Identifier("temp"))))),
-                                            ExpressionStatement(
-                                                InvocationExpression(IdentifierName(csElement.Getter.Name))
-                                                .WithArgumentList(
-                                                    ArgumentList(
-                                                        SingletonSeparatedList(
-                                                            Argument(IdentifierName("temp"))
-                                                            .WithRefOrOutKeyword(
-                                                                Token(SyntaxKind.OutKeyword)))))),
-                                            ExpressionStatement(
-                                                AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                                                    IdentifierName($"{csElement.Name}__"),
-                                                    IdentifierName("temp"))))),
-                                    ReturnStatement(
-                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            ThisExpression(),
-                                            IdentifierName($"{csElement.Name}__")),
-                                        IdentifierName("Value")))
-                                )));
-                        }
-                        else
-                        {
-                            accessors.Add(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                                .WithBody(Block(
-                                    IfStatement(BinaryExpression(SyntaxKind.EqualsExpression,
-                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            ThisExpression(),
-                                            IdentifierName($"{csElement.Name}__")),
-                                        LiteralExpression(SyntaxKind.NullLiteralExpression)),
-                                        ExpressionStatement(
-                                            InvocationExpression(IdentifierName(csElement.Getter.Name))
-                                                .WithArgumentList(
-                                                    ArgumentList(
-                                                        SingletonSeparatedList(
-                                                            Argument(IdentifierName($"{csElement.Name}__"))
-                                                            .WithRefOrOutKeyword(Token(SyntaxKind.OutKeyword))))))),
-                                    ReturnStatement(
-                                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                            ThisExpression(),
-                                            IdentifierName($"{csElement.Name}__")))
-                                    )));
-                        }
-                    }
-                    else
-                    {
-                        accessors.Add(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                            .WithBody(Block(
-                                ExpressionStatement(
-                                    InvocationExpression(ParseExpression(csElement.Getter.Name))
-                                    .WithArgumentList(
-                                        ArgumentList(
-                                            SingletonSeparatedList(
-                                                Argument(
-                                                    DeclarationExpression(
-                                                        IdentifierName("var"),
-                                                        SingleVariableDesignation(
-                                                            Identifier("__output__"))))
-                                                .WithRefOrOutKeyword(
-                                                    Token(SyntaxKind.OutKeyword)))))),
-                                ReturnStatement(IdentifierName("__output__")))));
-                    }
-                }
+                fieldName = csElement.PersistentFieldIdentifier;
+                fieldIdentifier = IdentifierName(fieldName);
             }
             else
             {
-                if (csElement.Getter != null)
+                fieldName = default;
+                fieldIdentifier = null;
+            }
+
+            if (csElement.Getter != null)
+            {
+                var getterName = IdentifierName(csElement.Getter.Name);
+                if (csElement.IsPropertyParam)
                 {
-                    if (csElement.IsPersistent)
+                    StatementSyntaxList body = new();
+                    if (isPersistent)
                     {
-                        ExpressionSyntax initializer = BinaryExpression(SyntaxKind.CoalesceExpression,
-                                IdentifierName($"{csElement.Name}__"),
-                                ParenthesizedExpression(
-                                    AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
-                                        IdentifierName($"{csElement.Name}__"),
-                                        InvocationExpression(ParseExpression(csElement.Getter.Name)))));
-                        
                         if (csElement.IsValueType)
                         {
-                            initializer = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                                ParenthesizedExpression(initializer),
-                                IdentifierName("Value"));
+                            body.Add(
+                                IfStatement(
+                                    BinaryExpression(SyntaxKind.EqualsExpression,
+                                                     fieldIdentifier,
+                                                     NullLiteral),
+                                    Block(
+                                        LocalDeclarationStatement(
+                                            VariableDeclaration(elementType)
+                                               .WithVariables(
+                                                    SingletonSeparatedList(
+                                                        VariableDeclarator(Identifier("temp"))))),
+                                        ExpressionStatement(
+                                            InvocationExpression(getterName)
+                                               .WithArgumentList(
+                                                    ArgumentList(
+                                                        SingletonSeparatedList(
+                                                            Argument(IdentifierName("temp"))
+                                                               .WithRefOrOutKeyword(
+                                                                    Token(SyntaxKind.OutKeyword)))))),
+                                        ExpressionStatement(
+                                            AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
+                                                                 fieldIdentifier,
+                                                                 IdentifierName("temp")))))
+                            );
+                            body.Add(ReturnStatement(
+                                         MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                                                MemberAccessExpression(
+                                                                    SyntaxKind.SimpleMemberAccessExpression,
+                                                                    ThisExpression(),
+                                                                    fieldIdentifier),
+                                                                IdentifierName("Value"))));
                         }
-
-                        accessors.Add(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                           .WithExpressionBody(ArrowExpressionClause(initializer))
-                            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
+                        else
+                        {
+                            body.Add(
+                                IfStatement(BinaryExpression(SyntaxKind.EqualsExpression,
+                                                             MemberAccessExpression(
+                                                                 SyntaxKind.SimpleMemberAccessExpression,
+                                                                 ThisExpression(),
+                                                                 fieldIdentifier),
+                                                             NullLiteral),
+                                            ExpressionStatement(
+                                                InvocationExpression(getterName)
+                                                   .WithArgumentList(
+                                                        ArgumentList(
+                                                            SingletonSeparatedList(
+                                                                Argument(fieldIdentifier)
+                                                                   .WithRefOrOutKeyword(
+                                                                        Token(SyntaxKind.OutKeyword))))))));
+                            body.Add(ReturnStatement(
+                                         MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                                                ThisExpression(),
+                                                                fieldIdentifier)));
+                        }
                     }
                     else
                     {
-                        accessors.Add(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                           .WithExpressionBody(ArrowExpressionClause(
-                               InvocationExpression(ParseExpression(csElement.Getter.Name))))
-                            .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
-                    } 
+                        var output = Identifier("__output__");
+                        body.Add(
+                            ExpressionStatement(
+                                InvocationExpression(
+                                    getterName,
+                                    ArgumentList(
+                                        SingletonSeparatedList(
+                                            Argument(
+                                                    DeclarationExpression(
+                                                        IdentifierName("var"),
+                                                        SingleVariableDesignation(output)))
+                                               .WithRefOrOutKeyword(
+                                                    Token(SyntaxKind.OutKeyword))))
+                                )
+                            )
+                        );
+                        body.Add(ReturnStatement(IdentifierName(output)));
+                    }
+
+                    accessors.Add(
+                        AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithBody(body.ToBlock())
+                    );
+                }
+                else
+                {
+                    ExpressionSyntax initializer = isPersistent
+                                                       ? AssignmentExpression(
+                                                           SyntaxKind.CoalesceAssignmentExpression,
+                                                           fieldIdentifier,
+                                                           InvocationExpression(getterName)
+                                                       )
+                                                       : InvocationExpression(getterName);
+
+                    accessors.Add(AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                                 .WithExpressionBody(ArrowExpressionClause(initializer))
+                                 .WithSemicolonToken(Token(SyntaxKind.SemicolonToken)));
                 }
             }
-            
+
             if (csElement.Setter != null)
             {
                 var paramByRef = GetMarshaller(csElement.Setter.Parameters[0])
@@ -151,21 +153,21 @@ namespace SharpGen.Generator
             }
 
             yield return AddDocumentationTrivia(
-                PropertyDeclaration(ParseTypeName(csElement.PublicType.QualifiedName), Identifier(csElement.Name))
+                PropertyDeclaration(elementType, Identifier(csElement.Name))
                    .WithModifiers(csElement.VisibilityTokenList)
                    .WithAccessorList(AccessorList(List(accessors))),
                 csElement
             );
 
-            if (csElement.IsPersistent)
+            if (isPersistent)
             {
                 yield return FieldDeclaration(
                     VariableDeclaration(
                         csElement.IsValueType
-                            ? NullableType(ParseTypeName(csElement.PublicType.QualifiedName))
-                            : ParseTypeName(csElement.PublicType.QualifiedName)
+                            ? NullableType(elementType)
+                            : elementType
                         )
-                    .WithVariables(SingletonSeparatedList(VariableDeclarator(Identifier($"{csElement.Name}__")))))
+                    .WithVariables(SingletonSeparatedList(VariableDeclarator(fieldName))))
                     .WithModifiers(TokenList(Token(SyntaxKind.ProtectedKeyword), Token(SyntaxKind.InternalKeyword)));
             }
         }

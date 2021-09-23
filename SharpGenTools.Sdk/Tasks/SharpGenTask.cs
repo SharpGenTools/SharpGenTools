@@ -158,6 +158,14 @@ namespace SharpGenTools.Sdk.Tasks
                 }
             }
 
+            serviceContainer.AddService(
+                new GeneratorConfig
+                {
+                    Platforms = ConfigPlatforms,
+                    UseFunctionPointersInVtbl = UseFunctionPointersInVtbl
+                }
+            );
+
             // Run the main mapping process
             TransformManager transformer = new(
                 namingRules,
@@ -288,47 +296,43 @@ namespace SharpGenTools.Sdk.Tasks
                 documentationFiles.Add(file.ItemSpec, xml);
             }
 
-            PlatformDetectionType platformMask = 0;
-
-            foreach (var platform in Platforms)
-            {
-                if (!Enum.TryParse<PlatformDetectionType>(platform.ItemSpec, out var parsedPlatform))
-                {
-                    SharpGenLogger.Warning(
-                        LoggingCodes.InvalidPlatformDetectionType,
-                        "The platform type {0} is an unknown platform to SharpGenTools. Falling back to Any platform detection.",
-                        platform
-                    );
-                    platformMask = PlatformDetectionType.Any;
-                }
-                else
-                {
-                    platformMask |= parsedPlatform;
-                }
-            }
-
-            if (platformMask == 0)
-                platformMask = PlatformDetectionType.Any;
-
             if (AbortExecution)
                 return false;
 
             serviceContainer.AddService(new ExternalDocCommentsReader(documentationFiles));
-
-            serviceContainer.AddService<IGeneratorRegistry>(
-                new DefaultGenerators(
-                    new GeneratorConfig
-                    {
-                        Platforms = platformMask
-                    },
-                    ioc
-                )
-            );
+            serviceContainer.AddService<IGeneratorRegistry>(new DefaultGenerators(ioc));
 
             RoslynGenerator generator = new();
             generator.Run(solution, GeneratedCodeFolder, ioc);
 
             return !SharpGenLogger.HasErrors;
+        }
+
+        private PlatformDetectionType ConfigPlatforms
+        {
+            get
+            {
+                PlatformDetectionType platformMask = 0;
+
+                foreach (var platform in Platforms)
+                {
+                    if (!Enum.TryParse<PlatformDetectionType>(platform.ItemSpec, out var parsedPlatform))
+                    {
+                        SharpGenLogger.Warning(
+                            LoggingCodes.InvalidPlatformDetectionType,
+                            "The platform type {0} is an unknown platform to SharpGenTools. Falling back to Any platform detection.",
+                            platform
+                        );
+                        platformMask = PlatformDetectionType.Any;
+                    }
+                    else
+                    {
+                        platformMask |= parsedPlatform;
+                    }
+                }
+
+                return platformMask == 0 ? PlatformDetectionType.Any : platformMask;
+            }
         }
 
         private void GenerateConfigForConsumers(ConfigFile consumerConfig)

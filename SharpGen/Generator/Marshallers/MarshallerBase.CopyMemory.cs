@@ -60,17 +60,20 @@ namespace SharpGen.Generator.Marshallers
 
                 bool CheckKinds(params SyntaxKind[] kinds) => kinds.Any(x => predefinedType.IsKind(x));
 
-                if (CheckKinds(SyntaxKind.ByteKeyword, SyntaxKind.SByteKeyword))
+                if (CheckKinds(SyntaxKind.ByteKeyword, SyntaxKind.SByteKeyword, SyntaxKind.BoolKeyword))
                     return LiteralSizeOf(1);
 
                 if (CheckKinds(SyntaxKind.ShortKeyword, SyntaxKind.UShortKeyword))
                     return LiteralSizeOf(2);
 
-                if (CheckKinds(SyntaxKind.IntKeyword, SyntaxKind.UIntKeyword))
+                if (CheckKinds(SyntaxKind.IntKeyword, SyntaxKind.UIntKeyword, SyntaxKind.FloatKeyword))
                     return LiteralSizeOf(4);
 
-                if (CheckKinds(SyntaxKind.LongKeyword, SyntaxKind.ULongKeyword))
+                if (CheckKinds(SyntaxKind.LongKeyword, SyntaxKind.ULongKeyword, SyntaxKind.DoubleKeyword))
                     return LiteralSizeOf(8);
+
+                if (CheckKinds(SyntaxKind.DecimalKeyword))
+                    return LiteralSizeOf(16);
             }
 
             ExpressionSyntax value = elementType switch

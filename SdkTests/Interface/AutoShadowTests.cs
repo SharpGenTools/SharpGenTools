@@ -123,10 +123,8 @@ namespace Interface
             using (SetupTests(false, out var nativeView, out _))
             {
                 var test = nativeView.CloneInstance();
-                using (test)
-                {
-                    Assert.Equal(1, test.Add(0, 1));
-                }
+                Assert.Equal(1, test.Add(0, 1));
+                MemoryHelpers.Dispose(ref test);
             }
         }
 

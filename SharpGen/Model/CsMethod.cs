@@ -18,10 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Collections.Generic;
 using System.Linq;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.CppModel;
 using SharpGen.Transform;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Model
 {
@@ -56,6 +58,53 @@ namespace SharpGen.Model
         public bool IsPersistent { get; }
         public int Offset { get; }
         public int WindowsOffset { get; }
+
+        public ExpressionSyntax VTableOffsetExpression(PlatformDetectionType platform)
+        {
+            uint windowsOffset = (uint) WindowsOffset, offset = (uint) Offset;
+            var windowsOffsetExpression =
+                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(windowsOffset));
+            var nonWindowsOffsetExpression =
+                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(offset));
+
+            if ((platform & PlatformDetectionType.Any) == PlatformDetectionType.Any && offset != windowsOffset)
+                return ConditionalExpression(
+                    MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        Ioc.GlobalNamespace.GetTypeNameSyntax(WellKnownName.PlatformDetection),
+                        IdentifierName("Is" + nameof(PlatformDetectionType.Windows))
+                    ),
+                    windowsOffsetExpression, nonWindowsOffsetExpression
+                );
+
+            // Use the Windows offset for the default offset in the vtable when the Windows platform is requested for compat reasons.
+            return (platform & PlatformDetectionType.Windows) != 0
+                       ? windowsOffsetExpression
+                       : nonWindowsOffsetExpression;
+        }
+
+        public bool IsFunctionPointerInVtbl
+        {
+            get
+            {
+                static bool IsBlittable(CsMarshalCallableBase x)
+                {
+                    var marshalType = x.MarshalType;
+
+                    if (marshalType is { IsBlittable: true })
+                        return true;
+
+                    return !x.IsArray && !x.HasPointer && !x.IsString && marshalType is CsFundamentalType
+                    {
+                        PrimitiveTypeIdentity: { Type: PrimitiveTypeCode.Char, PointerCount: 0 }
+                    };
+                }
+
+                return Ioc.GeneratorConfig.UseFunctionPointersInVtbl
+                    && Parameters.All(IsBlittable)
+                    && IsBlittable(ReturnValue);
+            }
+        }
 
         public bool IsPublicVisibilityForced(CsInterface parentInterface)
         {

@@ -41,6 +41,23 @@ namespace SharpGen
             [BuiltinType.Math] = SyntaxFactory.ParseName("System.Math"),
             [BuiltinType.Unsafe] = SyntaxFactory.ParseName("System.Runtime.CompilerServices.Unsafe"),
             [BuiltinType.Span] = SyntaxFactory.ParseName("System.Span"),
+            [BuiltinType.GCHandle] = SyntaxFactory.ParseName("System.Runtime.InteropServices.GCHandle"),
+            [BuiltinType.Delegate] = SyntaxFactory.ParseName("System.Delegate"),
+            [BuiltinType.FlagsAttribute] = SyntaxFactory.ParseName("System.FlagsAttribute"),
+            [BuiltinType.GC] = SyntaxFactory.ParseName("System.GC"),
+            [BuiltinType.IntPtr] = SyntaxFactory.ParseName("System.IntPtr"),
+            [BuiltinType.UIntPtr] = SyntaxFactory.ParseName("System.UIntPtr"),
+            [BuiltinType.GuidAttribute] = SyntaxFactory.ParseName("System.Runtime.InteropServices.GuidAttribute"),
+            [BuiltinType.StructLayoutAttribute] =
+                SyntaxFactory.ParseName("System.Runtime.InteropServices.StructLayoutAttribute"),
+            [BuiltinType.PlatformNotSupportedException] =
+                SyntaxFactory.ParseName("System.PlatformNotSupportedException"),
+            [BuiltinType.UnmanagedFunctionPointerAttribute] =
+                SyntaxFactory.ParseName("System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute"),
+            [BuiltinType.UnmanagedCallersOnlyAttribute] =
+                SyntaxFactory.ParseName("System.Runtime.InteropServices.UnmanagedCallersOnlyAttribute"),
+            [BuiltinType.Guid] = SyntaxFactory.ParseName("System.Guid"),
+            // TODO: use these!
         };
 
         private readonly Dictionary<BuiltinType, string> builtInOverrides = new();
@@ -51,7 +68,11 @@ namespace SharpGen
                                                              : WellKnownDefaultName(name);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static string WellKnownDefaultName(WellKnownName name) => "SharpGen.Runtime." + name;
+        private static string WellKnownDefaultName(WellKnownName name) => name switch
+        {
+            WellKnownName.WinRTString => "SharpGen.Runtime.Win32.WinRTString",
+            _ => "SharpGen.Runtime." + name
+        };
 
         public NameSyntax GetTypeNameSyntax(WellKnownName name)
         {

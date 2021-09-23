@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Sdk Name="Microsoft.DotNet.PackageValidation" />
+  <Sdk Name="Microsoft.Build.CentralPackageVersions" />
+  <Sdk Name="SharpGenTools.Sdk" Version="$(Version)" />
+
+  <PropertyGroup>
+    <!--
+      net5.0 for function pointers codegen
+      netstandard2.0 for small dependency tree
+      net45 to have small dependency tree for all .NET Framework versions
+      netstandard1.3 is the lowest supported version (except .NET Framework)
+    -->
+    <TargetFrameworks>net5.0;netstandard2.0;net45;netstandard1.3</TargetFrameworks>
+    <RootNamespace>SharpGen.Runtime</RootNamespace>
+    <Description>C# COM Interop classes for use with SharpGenTools generated libraries</Description>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CoreCompileDependsOn>$(CoreCompileDependsOn);SharpGenSetRoslynGeneratedPath</CoreCompileDependsOn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <RestoreNoCache>true</RestoreNoCache>
+    <SharpGenWaitForDebuggerAttach>false</SharpGenWaitForDebuggerAttach>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="LocalPackages/**/*;RestoredPackages/**/*" />
+    <Content Remove="LocalPackages/**/*;RestoredPackages/**/*" />
+    <Compile Remove="LocalPackages/**/*;RestoredPackages/**/*" />
+  </ItemGroup>
+
+  <Target Name="SharpGenSetRoslynGeneratedPath">
+    <PropertyGroup>
+      <CompilerGeneratedFilesOutputPath>$(IntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="SharpGenComRuntimeSetDebuggerAttach" BeforeTargets="SharpGenExecute" Condition="'$(ComRuntimeDebuggerAttach)' == 'true'">
+    <PropertyGroup>
+      <SharpGenWaitForDebuggerAttach>true</SharpGenWaitForDebuggerAttach>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="SharpGenComRuntimeClearDebuggerAttach" AfterTargets="SharpGenExecute" Condition="'$(ComRuntimeDebuggerAttach)' == 'true'">
+    <PropertyGroup>
+      <SharpGenWaitForDebuggerAttach>false</SharpGenWaitForDebuggerAttach>
+    </PropertyGroup>
+  </Target>
+
+  <ItemGroup>
+    <SharpGenMapping Include="Mapping.xml" />
+  </ItemGroup>
+
+</Project>

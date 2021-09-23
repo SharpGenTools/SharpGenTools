@@ -51,30 +51,8 @@ namespace SharpGen.Generator.Marshallers
         }
 
         public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame) =>
-            ExpressionStatement(
-                AssignmentExpression(
-                    SyntaxKind.SimpleAssignmentExpression,
-                    GetMarshalStorageLocation(csElement),
-                    InvocationExpression(
-                        MemberAccessExpression(
-                            SyntaxKind.SimpleMemberAccessExpression,
-                            GlobalNamespace.GetTypeNameSyntax(WellKnownName.MarshallingHelpers),
-                            GenericName(Identifier("ToCallbackPtr"))
-                               .WithTypeArgumentList(
-                                    TypeArgumentList(
-                                        SingletonSeparatedList<TypeSyntax>(
-                                            IdentifierName(csElement.PublicType.QualifiedName)
-                                        )
-                                    )
-                                )
-                        ),
-                        ArgumentList(
-                            SingletonSeparatedList(
-                                Argument(IdentifierName(csElement.Name))
-                            )
-                        )
-                    )
-                )
+            MarshalInterfaceInstanceToNative(
+                csElement, IdentifierName(csElement.Name), GetMarshalStorageLocation(csElement)
             );
 
         public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)

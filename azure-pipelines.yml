@@ -42,15 +42,12 @@ stages:
           displayName: 'Get Release Name (if this is a tag-triggered build)'
           env:
             SourceBranch : '$(Build.SourceBranch)'
-        - pwsh: dotnet tool restore
+        - pwsh: |
+            $env:MSBuildEnableWorkloadResolver=$false
+            dotnet tool restore
           displayName: 'Restore .NET tools'
         - pwsh: ./build.ps1 -Configuration $(Config)
-          displayName: 'Build SharpGenTools'
-          env:
-            ReleaseTag: '$(ReleaseVersion)'
-            BuildNumber: '$(buildNumber)'
-        - pwsh: ./test.ps1 -Configuration $(Config)
-          displayName: 'Run Tests'
+          displayName: 'Build and test'
           env:
             ReleaseTag: '$(ReleaseVersion)'
             BuildNumber: '$(buildNumber)'
@@ -74,7 +71,7 @@ stages:
           condition: eq(variables['Config'], 'Release')
           displayName: 'Copy NuGet packages to Artifact staging directory'
           inputs:
-            contents: 'Sharp*/**/Sharp*@(.nupkg|.snupkg)'
+            contents: 'Sharp*/bin/Release/Sharp*@(.nupkg|.snupkg)'
             targetFolder: '$(Build.ArtifactStagingDirectory)'
             flattenFolders: true
         - task: PublishBuildArtifacts@1

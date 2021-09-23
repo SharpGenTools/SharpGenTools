@@ -30,35 +30,38 @@ namespace SharpGen.Runtime
     public abstract class CallbackBase : DisposeBase, ICallbackable
     {
         private int refCount = 1;
+        private bool _isDisposed;
+
+        protected override bool IsDisposed => _isDisposed;
 
         /// <inheritdoc />
-        protected override void Dispose(bool disposing)
+        protected sealed override void Dispose(bool disposing)
         {
+            DisposeCore(disposing);
+
             if (disposing)
-            {
                 Release();
-            }
+
+            // Good idea would be to get rid of the _isDisposed field and use refCount <= 0 condition instead.
+            // That's a dangerous change not to be made lightly.
+            _isDisposed = true;
+        }
+
+        /// <summary>
+        /// Releases unmanaged and - optionally - managed resources
+        /// </summary>
+        /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+        protected virtual void DisposeCore(bool disposing)
+        {
         }
 
         public uint AddRef()
         {
-#if DEBUG
-            if (Configuration.EnableObjectLifetimeTracing)
-                Debug.WriteLine(
-                    $"{GetType().Name}[{RuntimeHelpers.GetHashCode(this):X}:{Volatile.Read(ref refCount)}]::{nameof(AddRef)}"
-                );
-#endif
             return (uint) Interlocked.Increment(ref refCount);
         }
 
         public uint Release()
         {
-#if DEBUG
-            if (Configuration.EnableObjectLifetimeTracing)
-                Debug.WriteLine(
-                    $"{GetType().Name}[{RuntimeHelpers.GetHashCode(this):X}:{Volatile.Read(ref refCount)}]::{nameof(Release)}"
-                );
-#endif
             var newRefCount = Interlocked.Decrement(ref refCount);
             if (newRefCount == 0)
             {
@@ -68,10 +71,13 @@ namespace SharpGen.Runtime
             return (uint) newRefCount;
         }
 
+        public override string ToString() =>
+            $"{GetType().Name}[{RuntimeHelpers.GetHashCode(this):X}:{Volatile.Read(ref refCount)}]";
+
         private ShadowContainer shadow;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        ShadowContainer ICallbackable.Shadow
+        internal ShadowContainer Shadow
         {
             get
             {

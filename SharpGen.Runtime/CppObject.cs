@@ -28,58 +28,46 @@ using SharpGen.Runtime.Diagnostics;
 namespace SharpGen.Runtime
 {
     /// <summary>
-    /// Root class for all Cpp interop object.
+    /// Root class for all native interop objects.
     /// </summary>
-    public class CppObject : DisposeBase, ICallbackable
+    public class CppObject : DisposeBase, ICallbackable, IEquatable<CppObject>
     {
-        /// <summary>
-        /// Logs a warning of a possible memory leak when <see cref="Configuration.EnableObjectTracking" /> is enabled.
-        /// Default uses <see cref="System.Diagnostics.Debug"/>.
-        /// </summary>
-        public static Action<string> LogMemoryLeakWarning = DefaultMemoryLeakWarningLogger;
-
-        private static void DefaultMemoryLeakWarningLogger(string warning)
-        {
-            Debug.WriteLine(warning);
-        }
-
         /// <summary>
         /// The native pointer
         /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private IntPtr _nativePointer;
 
-#if !NETSTANDARD1_1
         private static readonly ConditionalWeakTable<CppObject, object> TagTable = new();
-#else
-        private object tag;
-#endif
 
         /// <summary>
         /// Gets or sets a custom user tag object to associate with this instance.
         /// </summary>
         /// <value>The tag object.</value>
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
         public object Tag
         {
-#if !NETSTANDARD1_1
             get => TagTable.TryGetValue(this, out var tag) ? tag : null;
             set => TagTable.Add(this, value);
-#else
-            get => tag;
-            set => tag = value;
-#endif
         }
 
         /// <summary>
         ///   Default constructor.
         /// </summary>
-        /// <param name = "pointer">Pointer to Cpp Object</param>
+        /// <param name = "pointer">Pointer to C++ object</param>
         public CppObject(IntPtr pointer)
         {
-            NativePointer = pointer;
-#if DEBUG
-            if (Configuration.EnableObjectLifetimeTracing)
-                Debug.WriteLine($"{GetType().Name}[{NativePointer.ToInt64():X}]::new()");
-#endif
+            _nativePointer = pointer;
+            if (ObjectTrackerReadOnlyConfiguration.IsEnabled)
+                ObjectTracker.Track(this, pointer);
+        }
+
+        /// <summary>
+        ///   Default constructor.
+        /// </summary>
+        /// <param name = "pointer">Pointer to C++ object</param>
+        public unsafe CppObject(UIntPtr pointer) : this(new IntPtr(pointer.ToPointer()))
+        {
         }
 
         /// <summary>
@@ -87,10 +75,6 @@ namespace SharpGen.Runtime
         /// </summary>
         protected CppObject()
         {
-#if DEBUG
-            if (Configuration.EnableObjectLifetimeTracing)
-                Debug.WriteLine($"{GetType().Name}[0]::new()");
-#endif
         }
 
         /// <summary>
@@ -98,19 +82,22 @@ namespace SharpGen.Runtime
         /// </summary>
         public IntPtr NativePointer
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#if !NETSTANDARD1_1
+            [MethodImpl(Utilities.MethodAggressiveOptimization)]
             get => _nativePointer;
-#else
-            get => Volatile.Read(ref _nativePointer);
-#endif
             set
             {
                 var oldNativePointer = Interlocked.Exchange(ref _nativePointer, value);
-                if (oldNativePointer != value)
-                    NativePointerUpdated(oldNativePointer);
+                if (oldNativePointer == value)
+                    return;
+
+                if (ObjectTrackerReadOnlyConfiguration.IsEnabled)
+                    ObjectTracker.MigrateNativePointer(this, oldNativePointer, value);
+
+                NativePointerUpdated(oldNativePointer);
             }
         }
+
+        public override string ToString() => Utilities.FormatPointer(NativePointer);
 
         public static explicit operator IntPtr(CppObject cppObject) => cppObject?.NativePointer ?? IntPtr.Zero;
 
@@ -119,74 +106,85 @@ namespace SharpGen.Runtime
         /// </summary>
         protected virtual void NativePointerUpdated(IntPtr oldNativePointer)
         {
-            if (!Configuration.EnableObjectTracking)
-                return;
-
-#if DEBUG
-            if (Configuration.EnableObjectLifetimeTracing)
-                Debug.WriteLine(
-                    $"{GetType().Name}[{oldNativePointer.ToInt64():X}]::{nameof(NativePointerUpdated)} ({NativePointer.ToInt64():X})"
-                );
-#endif
-
-            ObjectTracker.MigrateNativePointer(this, oldNativePointer, NativePointer);
         }
 
         protected unsafe void* this[int index]
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(Utilities.MethodAggressiveOptimization)]
+#if DEBUG
+            get
+            {
+                Debug.Assert(!IsDisposed);
+                return (*(void***) _nativePointer)[index];
+            }
+#else
             get => (*(void***) _nativePointer)[index];
+#endif
         }
 
         protected unsafe void* this[uint index]
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(Utilities.MethodAggressiveOptimization)]
+#if DEBUG
+            get
+            {
+                Debug.Assert(!IsDisposed);
+                return (*(void***) _nativePointer)[index];
+            }
+#else
             get => (*(void***) _nativePointer)[index];
+#endif
         }
 
         protected unsafe void* this[nint index]
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(Utilities.MethodAggressiveOptimization)]
+#if DEBUG
+            get
+            {
+                Debug.Assert(!IsDisposed);
+                return (*(void***) _nativePointer)[index];
+            }
+#else
             get => (*(void***) _nativePointer)[index];
+#endif
         }
 
         protected unsafe void* this[nuint index]
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(Utilities.MethodAggressiveOptimization)]
+#if DEBUG
+            get
+            {
+                Debug.Assert(!IsDisposed);
+                return (*(void***) _nativePointer)[index];
+            }
+#else
             get => (*(void***) _nativePointer)[index];
+#endif
         }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        protected override bool IsDisposed => NativePointer == IntPtr.Zero;
 
         protected sealed override void Dispose(bool disposing)
         {
             var nativePointer = NativePointer;
-            if (nativePointer == IntPtr.Zero)
-                return;
-
-            var isObjectTrackingEnabled = Configuration.EnableObjectTracking;
-
-            // If object is disposed by the finalizer, emits a warning
-            if (!disposing && isObjectTrackingEnabled && Configuration.EnableTrackingReleaseOnFinalizer && !Configuration.EnableReleaseOnFinalizer)
-            {
-                var objectReference = ObjectTracker.Find(this, nativePointer);
-                LogMemoryLeakWarning?.Invoke(
-                    $"Warning: Live CppObject released on finalizer [0x{nativePointer.ToInt64():X}], potential memory leak: {objectReference}"
-                );
-            }
-
-#if DEBUG
-            if (Configuration.EnableObjectLifetimeTracing)
-                Debug.WriteLine(
-                    $"{GetType().Name}[{nativePointer.ToInt64():X}]::{nameof(Dispose)}"
-                );
-#endif
 
             DisposeCore(nativePointer, disposing);
 
-            if (isObjectTrackingEnabled)
+            if (ObjectTrackerReadOnlyConfiguration.IsEnabled)
                 ObjectTracker.Untrack(this, nativePointer);
 
             // Set pointer to null (using protected members in order to avoid callbacks).
+#if DEBUG
+            var oldNativePointer = Interlocked.Exchange(ref _nativePointer, IntPtr.Zero);
+            Debug.Assert(oldNativePointer == nativePointer);
+#else
             Interlocked.Exchange(ref _nativePointer, IntPtr.Zero);
+#endif
+
+            NativePointerUpdated(nativePointer);
         }
 
         /// <summary>
@@ -198,26 +196,17 @@ namespace SharpGen.Runtime
         {
         }
 
-        [Obsolete("Use " + nameof(MarshallingHelpers) + "." + nameof(MarshallingHelpers.FromPointer) + " instead")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static T FromPointer<T>(IntPtr cppObjectPtr) where T : CppObject =>
-            MarshallingHelpers.FromPointer<T>(cppObjectPtr);
+        public bool Equals(CppObject other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            return ReferenceEquals(this, other) || _nativePointer.Equals(other._nativePointer);
+        }
 
-        [Obsolete("Use " + nameof(MarshallingHelpers) + "." + nameof(MarshallingHelpers.ToCallbackPtr) + " instead")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static IntPtr ToCallbackPtr<TCallback>(ICallbackable callback) where TCallback : ICallbackable =>
-            MarshallingHelpers.ToCallbackPtr<TCallback>(callback);
+        public override bool Equals(object obj) =>
+            ReferenceEquals(this, obj) || obj is CppObject other && _nativePointer.Equals(other._nativePointer);
 
-        [Obsolete("Use " + nameof(MarshallingHelpers) + "." + nameof(MarshallingHelpers.ToCallbackPtr) + " instead")]
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static IntPtr ToCallbackPtr<TCallback>(CppObject obj) where TCallback : ICallbackable =>
-            MarshallingHelpers.ToCallbackPtr<TCallback>(obj);
-
-        /// <summary>
-        /// Implements <see cref="ICallbackable"/> but it cannot not be set.
-        /// This is only used to support for interop with unmanaged callback.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        ShadowContainer ICallbackable.Shadow => throw new InvalidOperationException("Invalid access to Callback. This is used internally.");
+        public override int GetHashCode() => _nativePointer.GetHashCode();
+        public static bool operator ==(CppObject left, CppObject right) => Equals(left, right);
+        public static bool operator !=(CppObject left, CppObject right) => !Equals(left, right);
     }
 }

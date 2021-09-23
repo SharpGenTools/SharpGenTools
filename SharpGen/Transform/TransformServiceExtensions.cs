@@ -23,19 +23,21 @@ namespace SharpGen.Transform
             if (externalCommentsPath == null)
             {
                 var description = element.Description;
-                var remarks = element.Remarks;
+                if (description != CsBase.DefaultNoDescription)
+                {
+                    description = RegexSpaceBegin.Replace(description, "$1");
 
-                description = RegexSpaceBegin.Replace(description, "$1");
+                    description = RegexLink.Replace(description, aggregator.ReplaceCRefReferences);
+                    // evaluator => "<see cref=\"$1\"/>"
 
-                description = RegexLink.Replace(description, aggregator.ReplaceCRefReferences);
-                // evaluator => "<see cref=\"$1\"/>"
-
-                docItems.Add("<summary>");
-                docItems.AddRange(description.Split('\n'));
-                docItems.Add("</summary>");
+                    docItems.Add("<summary>");
+                    docItems.AddRange(description.Split('\n'));
+                    docItems.Add("</summary>");
+                }
 
                 element.FillDocItems(docItems, aggregator);
 
+                var remarks = element.Remarks;
                 if (!string.IsNullOrEmpty(remarks))
                 {
                     remarks = RegexSpaceBegin.Replace(remarks, "$1");
@@ -63,10 +65,13 @@ namespace SharpGen.Transform
 
             return docItems;
         }
-        
+
         public static string GetSingleDoc(this IDocumentationLinker aggregator, CsBase element)
         {
             var description = element.Description;
+
+            if (string.IsNullOrEmpty(description) || description == CsBase.DefaultNoDescription)
+                return description;
 
             if (RegexLinkStart.Match(description).Success)
                 description = RegexLinkStart.Replace(description, "$1");

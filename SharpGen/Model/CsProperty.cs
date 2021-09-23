@@ -19,6 +19,8 @@
 // THE SOFTWARE.
 
 using System.Text.RegularExpressions;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using SharpGen.CppModel;
 
 namespace SharpGen.Model
@@ -59,6 +61,10 @@ namespace SharpGen.Model
             }
             set => base.Description = value;
         }
+
+        public bool IsDisposeBlockNeeded => IsPersistent && Getter != null && !IsPrimitive;
+
+        public SyntaxToken PersistentFieldIdentifier => SyntaxFactory.Identifier($"{Name}__");
 
         public override string DocUnmanagedName =>
             FormatDocUnmanagedName(Getter?.DocUnmanagedName, Setter?.DocUnmanagedName);

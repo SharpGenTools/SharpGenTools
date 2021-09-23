@@ -41,14 +41,14 @@ namespace SharpGen.Runtime
     public static class StringHelpers
     {
         /// <summary>
-        /// Converts a pointer to a null-terminating string up to maxLength characters to a .Net string.
+        /// Converts a pointer to a null-terminating string up to maxLength characters to a .NET string.
         /// </summary>
         /// <param name="pointer">The pointer to an ANSI null string.</param>
         /// <param name="maxLength">Maximum length of the string.</param>
         /// <returns>The converted string.</returns>
         public static string PtrToStringAnsi(IntPtr pointer, int maxLength)
         {
-            string managedString = Marshal.PtrToStringAnsi(pointer); // copy null-terminating unmanaged text from pointer to a managed string
+            var managedString = Marshal.PtrToStringAnsi(pointer);
             if (managedString != null && managedString.Length > maxLength)
                 managedString = managedString.Substring(0, maxLength);
 
@@ -56,14 +56,29 @@ namespace SharpGen.Runtime
         }
 
         /// <summary>
-        /// Converts a pointer to a null-terminating string up to maxLength characters to a .Net string.
+        /// Converts a pointer to a null-terminating string up to maxLength characters to a .NET string.
         /// </summary>
         /// <param name="pointer">The pointer to an Unicode null string.</param>
         /// <param name="maxLength">Maximum length of the string.</param>
         /// <returns>The converted string.</returns>
         public static string PtrToStringUni(IntPtr pointer, int maxLength)
         {
-            string managedString = Marshal.PtrToStringUni(pointer); // copy null-terminating unmanaged text from pointer to a managed string
+            var managedString = Marshal.PtrToStringUni(pointer);
+            if (managedString != null && managedString.Length > maxLength)
+                managedString = managedString.Substring(0, maxLength);
+
+            return managedString;
+        }
+
+        /// <summary>
+        /// Converts a pointer to a BSTR data type string up to maxLength characters to a .NET string.
+        /// </summary>
+        /// <param name="pointer">The pointer to a BSTR string.</param>
+        /// <param name="maxLength">Maximum length of the string.</param>
+        /// <returns>The converted string.</returns>
+        public static string PtrToStringBSTR(IntPtr pointer, int maxLength)
+        {
+            var managedString = Marshal.PtrToStringBSTR(pointer);
             if (managedString != null && managedString.Length > maxLength)
                 managedString = managedString.Substring(0, maxLength);
 

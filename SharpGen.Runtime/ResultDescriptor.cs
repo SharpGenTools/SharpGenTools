@@ -18,21 +18,52 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Reflection;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace SharpGen.Runtime
 {
     /// <summary>
     /// Descriptor used to provide detailed message for a particular <see cref="Result"/>.
     /// </summary>
-    public sealed class ResultDescriptor
+    [SuppressMessage("ReSharper", "ConvertToAutoProperty")]
+    internal readonly struct ResultDescriptor : IEquatable<ResultDescriptor>
     {
-        private static readonly ConcurrentDictionary<Result, ResultDescriptor> Descriptors = new();
+        private static readonly ConcurrentDictionary<int, ResultDescriptor> Descriptors = new();
+        // .NET Native has issues with <...> in property backing fields in structs
+        private readonly Result _result;
+        private readonly string? _module;
+        private readonly string? _nativeApiCode;
+        private readonly string? _apiCode;
+        private readonly string? _description;
         private const string UnknownText = "Unknown";
+
+        static ResultDescriptor()
+        {
+            const string generalModule = "General";
+
+            Register(Result.Abort, generalModule, "E_ABORT", "Operation aborted");
+            Register(Result.AccessDenied, generalModule, "E_ACCESSDENIED", "General access denied error");
+            Register(Result.Fail, generalModule, "E_FAIL", "Unspecified error");
+            Register(Result.Handle, generalModule, "E_HANDLE", "Invalid handle");
+            Register(Result.InvalidArg, generalModule, "E_INVALIDARG", "Invalid arguments");
+            Register(Result.NoInterface, generalModule, "E_NOINTERFACE", "No such interface supported");
+            Register(Result.NotImplemented, generalModule, "E_NOTIMPL", "Not implemented");
+            Register(Result.OutOfMemory, generalModule, "E_OUTOFMEMORY", "Out of memory");
+            Register(Result.InvalidPointer, generalModule, "E_POINTER", "Invalid pointer");
+            Register(Result.UnexpectedFailure, generalModule, "E_UNEXPECTED", "Catastrophic failure");
+            Register(Result.WaitAbandoned, generalModule, "WAIT_ABANDONED", "WaitAbandoned");
+            Register(Result.WaitTimeout, generalModule, "WAIT_TIMEOUT", "WaitTimeout");
+            Register(Result.Pending, generalModule, "E_PENDING", "Pending");
+            Register(Result.InsufficientBuffer, generalModule, "E_NOT_SUFFICIENT_BUFFER", "Insufficient buffer");
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ResultDescriptor"/> class.
@@ -41,183 +72,117 @@ namespace SharpGen.Runtime
         /// <param name="module">The module (ex: SharpDX.Direct2D1).</param>
         /// <param name="apiCode">The API code (ex: D2D1_ERR_...).</param>
         /// <param name="description">The description of the result code if any.</param>
-        public ResultDescriptor(Result code, string module, string nativeApiCode, string apiCode, string description = null)
+        private ResultDescriptor(Result code, string? module = null, string? nativeApiCode = null, string? apiCode = null, string? description = null)
         {
-            Result = code;
-            Module = module;
-            NativeApiCode = nativeApiCode;
-            ApiCode = apiCode;
-            Description = description ?? GetDescriptionFromResultCode(Code) ?? UnknownText;
-
-            Descriptors.TryAdd(code, this);
+            _result = code;
+            _module = module;
+            _nativeApiCode = nativeApiCode;
+            _apiCode = apiCode;
+            _description = description ?? GetDescriptionFromResultCode(code.Code);
         }
 
-        /// <summary>
-        /// Gets the result.
-        /// </summary>
-        public Result Result { get; }
-
-        /// <summary>
-        /// Gets the HRESULT error code.
-        /// </summary>
-        /// <value>The HRESULT error code.</value>
-        public int Code => Result.Code;
-
-        /// <summary>
-        /// Gets the module
-        /// </summary>
-        public string Module { get; }
-
-        /// <summary>
-        /// Gets the native API code
-        /// </summary>
-        public string NativeApiCode { get;  }
-
-        /// <summary>
-        /// Gets the API code
-        /// </summary>
-        public string ApiCode { get; }
-
-        /// <summary>
-        /// Gets the description of the result code if any.
-        /// </summary>
-        public string Description { get; }
-
-        /// <summary>
-        /// Determines whether the specified <see cref="ResultDescriptor"/> is equal to this instance.
-        /// </summary>
-        /// <param name="other">The <see cref="ResultDescriptor"/> to compare with this instance.</param>
-        /// <returns>
-        ///   <c>true</c> if the specified <see cref="ResultDescriptor"/> is equal to this instance; otherwise, <c>false</c>.
-        /// </returns>
-        public bool Equals(ResultDescriptor other)
-        {
-            if (ReferenceEquals(null, other))
-                return false;
-            if (ReferenceEquals(this, other))
-                return true;
-            return other.Result.Equals(this.Result);
-        }
-
-        /// <summary>
-        /// Determines whether the specified <see cref="System.Object"/> is equal to this instance.
-        /// </summary>
-        /// <param name="obj">The <see cref="System.Object"/> to compare with this instance.</param>
-        /// <returns>
-        ///   <c>true</c> if the specified <see cref="System.Object"/> is equal to this instance; otherwise, <c>false</c>.
-        /// </returns>
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj))
-                return false;
-            if (ReferenceEquals(this, obj))
-                return true;
-            if (obj is ResultDescriptor descriptor)
-                return Equals(descriptor);
-            return false;
-        }
+        public Result Result => _result;
+        private int Code => Result.Code;
+        public string Module => _module ?? UnknownText;
+        public string NativeApiCode => _nativeApiCode ?? UnknownText;
+        public string ApiCode => _apiCode ?? UnknownText;
+        public string Description => _description ?? UnknownText;
 
         /// <inheritdoc/>
-        public override int GetHashCode()
+        public override string ToString()
         {
-            return Result.GetHashCode();
-        }
-
-        /// <inheritdoc/>
-        public override string ToString() =>
-            $"HRESULT: [0x{Result.Code:X}], Module: [{Module}], ApiCode: [{NativeApiCode}/{ApiCode}], Message: {Description}";
-
-        /// <summary>
-        /// Performs an implicit conversion from <see cref="ResultDescriptor"/> to <see cref="SharpDX.Result"/>.
-        /// </summary>
-        /// <param name="result">The result.</param>
-        /// <returns>
-        /// The result of the conversion.
-        /// </returns>
-        public static implicit operator Result(ResultDescriptor result)
-        {
-            return result.Result;
-        }
-
-        /// <summary>
-        /// Performs an implicit conversion from <see cref="SharpDX.ResultDescriptor"/> to <see cref="System.Int32"/>.
-        /// </summary>
-        /// <param name="result">The result.</param>
-        /// <returns>The result of the conversion.</returns>
-        public static explicit operator int(ResultDescriptor result)
-        {
-            return result.Result.Code;
-        }
-
-        /// <summary>
-        /// Performs an implicit conversion from <see cref="SharpDX.ResultDescriptor"/> to <see cref="System.UInt32"/>.
-        /// </summary>
-        /// <param name="result">The result.</param>
-        /// <returns>The result of the conversion.</returns>
-        public static explicit operator uint(ResultDescriptor result)
-        {
-            return unchecked((uint)result.Result.Code);
-        }
-
-        /// <summary>
-        /// Implements the operator ==.
-        /// </summary>
-        /// <param name="left">The left.</param>
-        /// <param name="right">The right.</param>
-        /// <returns>The result of the operator.</returns>
-        public static bool operator ==(ResultDescriptor left, Result right)
-        {
-            if (left == null)
-                return false;
-            return left.Result.Code == right.Code;
-        }
-
-        /// <summary>
-        /// Implements the operator !=.
-        /// </summary>
-        /// <param name="left">The left.</param>
-        /// <param name="right">The right.</param>
-        /// <returns>The result of the operator.</returns>
-        public static bool operator !=(ResultDescriptor left, Result right)
-        {
-            if (left == null)
-                return false;
-            return left.Result.Code != right.Code;
-        }
-
-        /// <summary>
-        /// Finds the specified result descriptor.
-        /// </summary>
-        /// <param name="result">The result code.</param>
-        /// <returns>A descriptor for the specified result</returns>
-        public static ResultDescriptor Find(Result result)
-        {
-            if (!Descriptors.TryGetValue(result, out var descriptor))
+            List<FormattableString> items = new(4)
             {
-                descriptor = new ResultDescriptor(result, UnknownText, UnknownText, UnknownText);
+                $"HRESULT: [0x{Result.Code:X}]"
+            };
+
+            if (_module is {Length: >0} module)
+                items.Add($"Module: [{module}]");
+
+            var nativeApiCode = _nativeApiCode;
+            var apiCode = _apiCode;
+            var hasApiCode = apiCode is { Length: >0 };
+            switch (nativeApiCode is { Length: >0 })
+            {
+                case true when hasApiCode:
+                    items.Add($"ApiCode: [{nativeApiCode}/{apiCode}]");
+                    break;
+                case true:
+                    items.Add($"ApiCode: [{nativeApiCode}]");
+                    break;
+                case false when hasApiCode:
+                    items.Add($"ApiCode: [{apiCode}]");
+                    break;
+                case false:
+                    break;
             }
 
-            return descriptor;
+            if (_description is {Length: >0} description)
+                items.Add($"Message: [{description}]");
+
+            StringBuilder builder = new(256);
+
+            foreach (var item in items)
+            {
+                if (builder.Length != 0)
+                    builder.Append(", ");
+                builder.AppendFormat(item.Format, item.GetArguments());
+            }
+
+            return builder.ToString();
         }
 
-        private static string GetDescriptionFromResultCode(int resultCode)
+        public bool Equals(ResultDescriptor other) => Result.Equals(other.Result);
+        public override bool Equals(object? obj) => obj is ResultDescriptor other && Result.Equals(other.Result);
+        public override int GetHashCode() => Result.GetHashCode();
+        public static bool operator ==(ResultDescriptor left, ResultDescriptor right) => left.Equals(right);
+        public static bool operator !=(ResultDescriptor left, ResultDescriptor right) => !left.Equals(right);
+
+        public static implicit operator Result(ResultDescriptor result) => result.Result;
+        public static explicit operator int(ResultDescriptor result) => result.Result.Code;
+        public static explicit operator uint(ResultDescriptor result) => unchecked((uint)result.Result.Code);
+
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        public static ResultDescriptor Find(Result result) => Find(result.Code);
+
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        public static ResultDescriptor Find(int result) =>
+            Descriptors.GetOrAdd(result, static result => new(result));
+
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        public static void Register(Result result, string? module = null, string? nativeApiCode = null,
+                                    string? apiCode = null, string? description = null) =>
+            Register(result.Code, module, nativeApiCode, apiCode, description);
+
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        public static void Register(int result, string? module = null, string? nativeApiCode = null,
+                                    string? apiCode = null, string? description = null) =>
+            Descriptors[result] = new(result, module, nativeApiCode, apiCode, description);
+
+        private static string? GetDescriptionFromResultCode(int resultCode)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 const int FORMAT_MESSAGE_ALLOCATE_BUFFER = 0x00000100;
                 const int FORMAT_MESSAGE_IGNORE_INSERTS = 0x00000200;
                 const int FORMAT_MESSAGE_FROM_SYSTEM = 0x00001000;
+                const int flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+                                  FORMAT_MESSAGE_IGNORE_INSERTS;
 
                 var buffer = IntPtr.Zero;
-                FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, IntPtr.Zero, resultCode, 0, ref buffer, 0, IntPtr.Zero);
+                if (FormatMessage(flags, IntPtr.Zero, resultCode, 0, ref buffer, 0, IntPtr.Zero) == 0)
+                    return null;
+
                 var description = Marshal.PtrToStringUni(buffer);
                 Marshal.FreeHGlobal(buffer);
-                return description; 
+                return description?.Length > 0 ? description : null;
             }
+
             return null;
         }
 
-        [DllImport("kernel32.dll", EntryPoint = "FormatMessageW")]
-        private static extern uint FormatMessageW(int dwFlags, IntPtr lpSource, int dwMessageId, int dwLanguageId, ref IntPtr lpBuffer, int nSize, IntPtr Arguments);
+        [DllImport("kernel32.dll", EntryPoint = "FormatMessageW", CharSet = CharSet.Unicode, SetLastError = true, BestFitMapping = true, ExactSpelling = true)]
+        private static extern uint FormatMessage(int dwFlags, IntPtr lpSource, int dwMessageId, int dwLanguageId,
+                                                 ref IntPtr lpBuffer, int nSize, IntPtr arguments);
     }
 }

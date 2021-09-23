@@ -22,7 +22,7 @@ using SharpGen.CppModel;
 
 namespace SharpGen.Model
 {
-    public class CsEnumItem : CsBase
+    public sealed class CsEnumItem : CsBase
     {
         public CsEnumItem(CppEnumItem cppElement, string name, string value) : base(cppElement, name)
         {

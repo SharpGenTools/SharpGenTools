@@ -1,9 +1,11 @@
 ﻿namespace SharpGen.Model
 {
-    public class CsUndefinedType : CsTypeBase
+    public sealed class CsUndefinedType : CsTypeBase
     {
         public CsUndefinedType(string name) : base(null, name)
         {
         }
+
+        public override bool IsBlittable => false;
     }
 }

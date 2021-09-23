@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
@@ -8,10 +7,14 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal abstract class MemberCodeGeneratorBase<T> : CodeGeneratorBase, IMultiCodeGenerator<T, MemberDeclarationSyntax>
-        where T : CsBase
+    internal abstract class MemberCodeGeneratorBase<T> : CodeGeneratorBase, IMemberCodeGenerator<T> where T : CsBase
     {
-        public abstract IEnumerable<MemberDeclarationSyntax> GenerateCode(T csElement);
+        protected MemberCodeGeneratorBase(Ioc ioc) : base(ioc)
+        {
+        }
+
+        protected StatementSyntaxList NewStatementList => new(Ioc);
+        protected MemberSyntaxList NewMemberList => new(Ioc);
 
         private SyntaxTriviaList GenerateDocumentationTrivia(CsBase csElement)
         {
@@ -25,13 +28,7 @@ namespace SharpGen.Generator
             return ParseLeadingTrivia(builder.ToString());
         }
 
-        protected TMember AddDocumentationTrivia<TMember>(TMember member, CsBase csElement) where TMember : MemberDeclarationSyntax
-        {
-            return member.WithLeadingTrivia(GenerateDocumentationTrivia(csElement));
-        }
-
-        protected MemberCodeGeneratorBase(Ioc ioc) : base(ioc)
-        {
-        }
+        protected TMember AddDocumentationTrivia<TMember>(TMember member, CsBase csElement)
+            where TMember : MemberDeclarationSyntax => member.WithLeadingTrivia(GenerateDocumentationTrivia(csElement));
     }
 }

@@ -26,7 +26,7 @@ namespace SharpGen.Model
     /// <summary>
     /// An assembly container for namespaces.
     /// </summary>
-    public class CsAssembly : CsBase
+    public sealed class CsAssembly : CsBase
     {
         public CsAssembly() : base(null, null)
         {

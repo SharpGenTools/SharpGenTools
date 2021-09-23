@@ -25,7 +25,7 @@ namespace SharpGen.Model
     /// <summary>
     ///   Struct field
     /// </summary>
-    public class CsField : CsMarshalBase
+    public sealed class CsField : CsMarshalBase
     {
         public int BitMask { get; set; }
         public int BitOffset { get; set; }

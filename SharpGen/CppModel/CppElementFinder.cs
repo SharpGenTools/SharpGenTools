@@ -20,7 +20,7 @@ namespace SharpGen.CppModel
 
         private CppElement Root { get; }
 
-        private List<string> CurrentContexts { get; } = new();
+        private HashSet<string> CurrentContexts { get; } = new(StringComparer.InvariantCultureIgnoreCase);
 
         private void AddContext(string contextName)
         {
@@ -55,7 +55,7 @@ namespace SharpGen.CppModel
                 _ => throw new ArgumentException("Invalid selection mode.", nameof(mode))
             };
 
-            if (path != null && selectedElement is T cppElement && regex.Match(path).Success)
+            if (path != null && selectedElement is T cppElement && regex.IsMatch(path))
             {
                 yield return cppElement;
             }

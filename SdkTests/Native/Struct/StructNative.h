@@ -147,6 +147,31 @@ typedef enum D2D1_DEVICE_CONTEXT_OPTIONS
     D2D1_DEVICE_CONTEXT_OPTIONS_FORCE_DWORD = 0xffffffff
 } D2D1_DEVICE_CONTEXT_OPTIONS;
 
+enum CrShutterSpeedSet : unsigned int
+{
+	CrShutterSpeed_Bulb = 0x00000000,
+	CrShutterSpeed_Nothing = 0xFFFFFFFF,
+};
+
+enum CrBatteryLevel : unsigned int
+{
+	CrBatteryLevel_PreEndBattery = 0x00000001,
+	CrBatteryLevel_1_4,
+	CrBatteryLevel_2_4,
+	CrBatteryLevel_3_4,
+	CrBatteryLevel_4_4,
+	CrBatteryLevel_1_3,
+	CrBatteryLevel_2_3,
+	CrBatteryLevel_3_3,
+	CrBatteryLevel_USBPowerSupply = 0x00010000,
+	CrBatteryLevel_PreEnd_PowerSupply,
+	CrBatteryLevel_1_4_PowerSupply,
+	CrBatteryLevel_2_4_PowerSupply,
+	CrBatteryLevel_3_4_PowerSupply,
+	CrBatteryLevel_4_4_PowerSupply,
+	CrBatteryLevel_Fake = 0xFFFFFFFD,
+};
+
 static_assert(sizeof(wchar_t) == 2, "Wide character isn't wide.");
 
 STRUCTLIB_FUNC(SimpleStruct) GetSimpleStruct();

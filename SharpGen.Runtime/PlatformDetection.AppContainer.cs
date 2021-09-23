@@ -68,22 +68,14 @@ namespace SharpGen.Runtime
 
             if (safeTokenHandle == null || safeTokenHandle.IsInvalid)
             {
-#if NETSTANDARD1_1
-                throw new SecurityException($"{nameof(HasAppContainerToken)}: Win32 HRESULT 0x{hr:X8}");
-#else
                 throw new SecurityException(new Win32Exception(hr).Message);
-#endif
             }
 
             if (!GetTokenInformation(safeTokenHandle, TOKEN_INFORMATION_CLASS.TokenIsAppContainer,
                                      new IntPtr(dwIsAppContainerPtr), sizeof(int), out _))
             {
                 hr = Marshal.GetHRForLastWin32Error();
-#if NETSTANDARD1_1
-                throw new SecurityException($"{nameof(HasAppContainerToken)}: Win32 HRESULT 0x{hr:X8}");
-#else
                 throw new Win32Exception(new Win32Exception(hr).Message);
-#endif
             }
 
             return *dwIsAppContainerPtr != 0;

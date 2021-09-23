@@ -35,8 +35,8 @@ namespace SharpGen.Parser
         private static readonly Regex MatchDefine = new(@"^\s*#define\s+([a-zA-Z_][\w_]*)\s+(.*)", RegexOptions.Compiled);
         private readonly ICastXmlRunner _gccxml;
         private Dictionary<string, string> _currentMacros;
-        private readonly Dictionary<string, Dictionary<string, string>> _mapIncludeToMacros = new();
-        private readonly List<string> _includedFiles = new();
+        private readonly Dictionary<string, Dictionary<string, string>> _mapIncludeToMacros = new(StringComparer.InvariantCultureIgnoreCase);
+        private readonly HashSet<string> _includedFiles = new(StringComparer.InvariantCultureIgnoreCase);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MacroManager"/> class.

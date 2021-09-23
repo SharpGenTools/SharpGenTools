@@ -31,6 +31,7 @@ namespace SharpGen.Model
 
         public override uint Size => UnderlyingType.Size;
         protected override uint? AlignmentCore => UnderlyingType.Alignment;
+        public override bool IsBlittable => UnderlyingType.IsBlittable;
 
         public bool IsFlag { get; }
 

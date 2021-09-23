@@ -10,7 +10,7 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator
 {
-    internal sealed class NativeStructCodeGenerator : CodeGeneratorBase, IMultiCodeGenerator<CsStruct, MemberDeclarationSyntax>
+    internal sealed class NativeStructCodeGenerator : MemberMultiCodeGeneratorBase<CsStruct>
     {
         private static readonly NameSyntax StructLayoutAttributeName = ParseName("System.Runtime.InteropServices.StructLayoutAttribute");
         private const string StructLayoutKindName = "System.Runtime.InteropServices.LayoutKind.";
@@ -23,7 +23,7 @@ namespace SharpGen.Generator
             ParseName("System.Runtime.InteropServices.CharSet.Unicode")
         ).WithNameEquals(NameEquals(IdentifierName("CharSet")));
 
-        public IEnumerable<MemberDeclarationSyntax> GenerateCode(CsStruct csStruct)
+        public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsStruct csStruct)
         {
             yield return StructDeclaration("__Native")
                         .WithModifiers(TokenList(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.PartialKeyword)))
@@ -190,7 +190,7 @@ namespace SharpGen.Generator
                                                                  Func<T, StatementSyntax> transform)
             where T : CsMarshalBase
         {
-            StatementSyntaxList list = new(Generators.Marshalling);
+            var list = NewStatementList;
             list.AddRange(source, transform);
             return GenerateMarshalMethod(name, list);
         }
@@ -199,7 +199,7 @@ namespace SharpGen.Generator
                                                                  Func<T, IEnumerable<StatementSyntax>> transform)
             where T : CsMarshalBase
         {
-            StatementSyntaxList list = new(Generators.Marshalling);
+            var list = NewStatementList;
             list.AddRange(source, transform);
             return GenerateMarshalMethod(name, list);
         }

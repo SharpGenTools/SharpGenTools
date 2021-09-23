@@ -23,11 +23,11 @@ namespace SharpGen.Generator.Marshallers
         protected static readonly SyntaxToken LengthIdentifier = Identifier("__length");
         protected static readonly IdentifierNameSyntax LengthIdentifierName = IdentifierName(LengthIdentifier);
 
-        protected static readonly LiteralExpressionSyntax DefaultLiteral = LiteralExpression(
+        protected internal static readonly LiteralExpressionSyntax DefaultLiteral = LiteralExpression(
             SyntaxKind.DefaultLiteralExpression
         );
 
-        protected static readonly LiteralExpressionSyntax NullLiteral = LiteralExpression(
+        protected internal static readonly LiteralExpressionSyntax NullLiteral = LiteralExpression(
             SyntaxKind.NullLiteralExpression
         );
 
@@ -86,28 +86,26 @@ namespace SharpGen.Generator.Marshallers
 
             return GenerateNullCheckIfNeeded(
                 marshallable,
-                ForStatement(loopBodyFactory(element, nativeElement))
-                   .WithDeclaration(
-                        VariableDeclaration(
-                            TypeInt32,
-                            SeparatedList(
-                                new[]
-                                {
-                                    VariableDeclarator(indexVariable, default, EqualsValueClause(ZeroLiteral)),
-                                    VariableDeclarator(
-                                        LengthIdentifier, default,
-                                        EqualsValueClause(GeneratorHelpers.LengthExpression(arrayIdentifier))
-                                    )
-                                }
-                            )))
-                   .WithCondition(
-                        BinaryExpression(SyntaxKind.LessThanExpression, indexVariableName, LengthIdentifierName)
-                    )
-                   .WithIncrementors(
-                        SingletonSeparatedList<ExpressionSyntax>(
-                            PrefixUnaryExpression(
-                                SyntaxKind.PreIncrementExpression,
-                                indexVariableName)))
+                ForStatement(
+                    VariableDeclaration(
+                        TypeInt32,
+                        SeparatedList(
+                            new[]
+                            {
+                                VariableDeclarator(indexVariable, default, EqualsValueClause(ZeroLiteral)),
+                                VariableDeclarator(
+                                    LengthIdentifier, default,
+                                    EqualsValueClause(GeneratorHelpers.LengthExpression(arrayIdentifier))
+                                )
+                            }
+                        )),
+                    default,
+                    BinaryExpression(SyntaxKind.LessThanExpression, indexVariableName, LengthIdentifierName),
+                    SingletonSeparatedList<ExpressionSyntax>(
+                        PrefixUnaryExpression(SyntaxKind.PreIncrementExpression, indexVariableName)
+                    ),
+                    loopBodyFactory(element, nativeElement)
+                )
             );
         }
 
@@ -258,6 +256,39 @@ namespace SharpGen.Generator.Marshallers
                         )
                     )
                 }
+            );
+
+        protected ExpressionStatementSyntax MarshalInterfaceInstanceToNative(CsMarshalBase csElement,
+                                                                             ExpressionSyntax publicElement,
+                                                                             ExpressionSyntax marshalElement) =>
+            ExpressionStatement(
+                AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    marshalElement,
+                    csElement.PublicType is CsInterface { IsCallback: false }
+                        ? BinaryExpression(
+                            SyntaxKind.CoalesceExpression,
+                            ConditionalAccessExpression(
+                                publicElement, MemberBindingExpression(IdentifierName("NativePointer"))
+                            ),
+                            IntPtrZero
+                        )
+                        : InvocationExpression(
+                            MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                GlobalNamespace.GetTypeNameSyntax(WellKnownName.MarshallingHelpers),
+                                GenericName(
+                                    Identifier("ToCallbackPtr"),
+                                    TypeArgumentList(
+                                        SingletonSeparatedList<TypeSyntax>(
+                                            IdentifierName(csElement.PublicType.QualifiedName)
+                                        )
+                                    )
+                                )
+                            ),
+                            ArgumentList(SingletonSeparatedList(Argument(publicElement)))
+                        )
+                )
             );
 
         protected static ArgumentSyntax GenerateManagedValueTypeArgument(CsParameter csElement)

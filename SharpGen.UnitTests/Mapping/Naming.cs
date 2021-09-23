@@ -57,7 +57,7 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(module, config);
 
-            Assert.Single(solution.EnumerateDescendants().OfType<CsStruct>().Where(element => element.Name == "MyStruct"));
+            Assert.Single(solution.EnumerateDescendants<CsStruct>().Where(element => element.Name == "MyStruct"));
         }
 
         [Fact]
@@ -104,7 +104,7 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(module, config);
 
-            var csStruct = solution.EnumerateDescendants().OfType<CsStruct>().First(element => element.Name == "Test");
+            var csStruct = solution.EnumerateDescendants<CsStruct>().First(element => element.Name == "Test");
 
             Assert.Single(csStruct.Fields.Where(field => field.Name == "MyField"));
         }
@@ -141,7 +141,7 @@ namespace SharpGen.UnitTests.Mapping
 
             var (solution, _) = MapModel(module, config);
 
-            Assert.Single(solution.EnumerateDescendants().OfType<CsStruct>().Where(element => element.Name == "TestDescription"));
+            Assert.Single(solution.EnumerateDescendants<CsStruct>().Where(element => element.Name == "TestDescription"));
 
         }
     }

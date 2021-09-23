@@ -69,6 +69,10 @@ namespace SharpGen.Logging
 
         public const string VisualStudioDiscoveryError = "SG0032";
 
+        public const string EnumItemLiteralOutOfRange = "SG0033";
+
+        public const string SalAnnotationBlockMismatch = "SG0034";
+
         public const string CastXmlError = "CX0001";
 
         public const string CastXmlWarning = "CX0002";

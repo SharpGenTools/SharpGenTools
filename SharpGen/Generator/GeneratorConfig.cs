@@ -2,8 +2,9 @@
 
 namespace SharpGen.Generator
 {
-    public class GeneratorConfig
+    public sealed class GeneratorConfig
     {
         public PlatformDetectionType Platforms { get; set; } = PlatformDetectionType.Any;
+        public bool UseFunctionPointersInVtbl { get; set; }
     }
 }
