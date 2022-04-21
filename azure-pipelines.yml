@@ -16,7 +16,7 @@ stages:
   jobs:
     - job: SharpGenTools_Windows
       pool:
-        vmImage: 'windows-2019'
+        vmImage: 'windows-2022'
       strategy:
         matrix:
           Debug:
@@ -87,7 +87,7 @@ stages:
     - job: MyGet_Deploy
       condition: not(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
       pool:
-        vmImage: 'windows-2019'
+        vmImage: 'windows-2022'
       steps:
         - checkout: none
         - task: DownloadBuildArtifacts@0
@@ -104,7 +104,7 @@ stages:
     - job: NuGet_Deploy
       condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
       pool:
-        vmImage: 'windows-2019'
+        vmImage: 'windows-2022'
       steps:
         - checkout: none
         - task: DownloadBuildArtifacts@0
