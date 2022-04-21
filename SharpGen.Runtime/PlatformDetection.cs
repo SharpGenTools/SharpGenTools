@@ -4,48 +4,47 @@
 
 using System.Runtime.InteropServices;
 
-namespace SharpGen.Runtime
+namespace SharpGen.Runtime;
+
+public static partial class PlatformDetection
 {
-    public static partial class PlatformDetection
+    private const string NtDll = "ntdll.dll";
+    private const string Advapi32 = "advapi32.dll";
+    private const string Kernel32 = "kernel32.dll";
+
+    private static volatile bool _isAppContainerProcess;
+    private static volatile bool _isAppContainerProcessInitialized;
+
+    public static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+    public static readonly bool IsItaniumSystemV = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
+                                                   RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+
+    public static bool IsAppContainerProcess
     {
-        private const string NtDll = "ntdll.dll";
-        private const string Advapi32 = "advapi32.dll";
-        private const string Kernel32 = "kernel32.dll";
-
-        private static volatile bool _isAppContainerProcess;
-        private static volatile bool _isAppContainerProcessInitialized;
-
-        public static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-
-        public static readonly bool IsItaniumSystemV = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
-                                                       RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-
-        public static bool IsAppContainerProcess
+        get
         {
-            get
+            if (!_isAppContainerProcessInitialized)
             {
-                if (!_isAppContainerProcessInitialized)
+                if (IsWindows)
                 {
-                    if (IsWindows)
-                    {
-                        var osVersion = OSVersion;
+                    var osVersion = OSVersion;
 
-                        if (osVersion.Major < 6 || osVersion.Major == 6 && osVersion.Minor <= 1)
-                            // Windows 7 or older.
-                            _isAppContainerProcess = false;
-                        else
-                            _isAppContainerProcess = HasAppContainerToken();
-                    }
-                    else
-                    {
+                    if (osVersion.Major < 6 || osVersion.Major == 6 && osVersion.Minor <= 1)
+                        // Windows 7 or older.
                         _isAppContainerProcess = false;
-                    }
-
-                    _isAppContainerProcessInitialized = true;
+                    else
+                        _isAppContainerProcess = HasAppContainerToken();
+                }
+                else
+                {
+                    _isAppContainerProcess = false;
                 }
 
-                return _isAppContainerProcess;
+                _isAppContainerProcessInitialized = true;
             }
+
+            return _isAppContainerProcess;
         }
     }
 }

@@ -20,15 +20,14 @@
 
 using SharpGen.CppModel;
 
-namespace SharpGen.Model
-{
-    public sealed class CsEnumItem : CsBase
-    {
-        public CsEnumItem(CppEnumItem cppElement, string name, string value) : base(cppElement, name)
-        {
-            Value = value;
-        }
+namespace SharpGen.Model;
 
-        public string Value { get; }
+public sealed class CsEnumItem : CsBase
+{
+    public CsEnumItem(CppEnumItem cppElement, string name, string value) : base(cppElement, name)
+    {
+        Value = value;
     }
+
+    public string Value { get; }
 }

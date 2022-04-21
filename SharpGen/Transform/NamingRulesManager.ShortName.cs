@@ -2,47 +2,46 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace SharpGen.Transform
-{
-    public sealed partial class NamingRulesManager
-    {
-        private readonly List<ShortNameMapper> _expandShortName = new();
+namespace SharpGen.Transform;
 
-        /// <summary>
-        /// Adds the short name rule.
-        /// </summary>
-        /// <param name="regexShortName">Short name of the regex.</param>
-        /// <param name="expandedName">Name of the expanded.</param>
-        public void AddShortNameRule(string regexShortName, string expandedName)
+public sealed partial class NamingRulesManager
+{
+    private readonly List<ShortNameMapper> _expandShortName = new();
+
+    /// <summary>
+    /// Adds the short name rule.
+    /// </summary>
+    /// <param name="regexShortName">Short name of the regex.</param>
+    /// <param name="expandedName">Name of the expanded.</param>
+    public void AddShortNameRule(string regexShortName, string expandedName)
+    {
+        _expandShortName.Add(new ShortNameMapper(regexShortName, expandedName));
+        _expandShortName.Sort();
+    }
+
+    private class ShortNameMapper : IComparable<ShortNameMapper>, IComparable
+    {
+        public ShortNameMapper(string regex, string replace)
         {
-            _expandShortName.Add(new ShortNameMapper(regexShortName, expandedName));
-            _expandShortName.Sort();
+            Regex = new Regex("^" + regex);
+            Replace = replace;
+            HasRegexReplace = replace.Contains("$");
         }
 
-        private class ShortNameMapper : IComparable<ShortNameMapper>, IComparable
+        public readonly Regex Regex;
+
+        public readonly string Replace;
+
+        public readonly bool HasRegexReplace;
+
+        public int CompareTo(ShortNameMapper other)
         {
-            public ShortNameMapper(string regex, string replace)
-            {
-                Regex = new Regex("^" + regex);
-                Replace = replace;
-                HasRegexReplace = replace.Contains("$");
-            }
+            return -Regex.ToString().Length.CompareTo((int) other.Regex.ToString().Length);
+        }
 
-            public readonly Regex Regex;
-
-            public readonly string Replace;
-
-            public readonly bool HasRegexReplace;
-
-            public int CompareTo(ShortNameMapper other)
-            {
-                return -Regex.ToString().Length.CompareTo((int) other.Regex.ToString().Length);
-            }
-
-            public int CompareTo(object obj)
-            {
-                return obj is ShortNameMapper mapper ? CompareTo(mapper) : throw new InvalidOperationException();
-            }
+        public int CompareTo(object obj)
+        {
+            return obj is ShortNameMapper mapper ? CompareTo(mapper) : throw new InvalidOperationException();
         }
     }
 }

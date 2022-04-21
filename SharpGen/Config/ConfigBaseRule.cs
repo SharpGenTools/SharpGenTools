@@ -21,28 +21,27 @@ using System.Linq;
 using System.Reflection;
 using System.Xml.Serialization;
 
-namespace SharpGen.Config
+namespace SharpGen.Config;
+
+/// <summary>
+/// Abstract Rule base class for all rules in <see cref="ConfigFile"/>.
+/// </summary>
+public abstract class ConfigBaseRule
 {
     /// <summary>
-    /// Abstract Rule base class for all rules in <see cref="ConfigFile"/>.
+    /// Returns a <see cref="System.String"/> that represents this instance.
     /// </summary>
-    public abstract class ConfigBaseRule
+    /// <returns>
+    /// A <see cref="System.String"/> that represents this instance.
+    /// </returns>
+    [ExcludeFromCodeCoverage]
+    public override string ToString()
     {
-        /// <summary>
-        /// Returns a <see cref="System.String"/> that represents this instance.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="System.String"/> that represents this instance.
-        /// </returns>
-        [ExcludeFromCodeCoverage]
-        public override string ToString()
-        {
-            // Print the names of this rule using the XmlTypeAttribute name if present.
-            var xmlTypeAttribute = GetType().GetTypeInfo().GetCustomAttributes<XmlTypeAttribute>(true).FirstOrDefault();
-            string name = GetType().Name;
-            if (xmlTypeAttribute != null)
-                name = xmlTypeAttribute.TypeName;
-            return name;
-        }
+        // Print the names of this rule using the XmlTypeAttribute name if present.
+        var xmlTypeAttribute = GetType().GetTypeInfo().GetCustomAttributes<XmlTypeAttribute>(true).FirstOrDefault();
+        string name = GetType().Name;
+        if (xmlTypeAttribute != null)
+            name = xmlTypeAttribute.TypeName;
+        return name;
     }
 }

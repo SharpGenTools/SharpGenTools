@@ -17,21 +17,20 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-namespace SharpGen.Logging
+namespace SharpGen.Logging;
+
+/// <summary>
+/// Interface to notify progress.
+/// </summary>
+public interface IProgressReport
 {
     /// <summary>
-    /// Interface to notify progress.
+    /// Notify progress.
     /// </summary>
-    public interface IProgressReport
-    {
-        /// <summary>
-        /// Notify progress.
-        /// </summary>
-        /// <param name="level">The level 0-100.</param>
-        /// <param name="message">The message to notify.</param>
-        /// <returns>true if the process is aborted; false otherwise</returns>
-        bool ProgressStatus(int level, string message);
+    /// <param name="level">The level 0-100.</param>
+    /// <param name="message">The message to notify.</param>
+    /// <returns>true if the process is aborted; false otherwise</returns>
+    bool ProgressStatus(int level, string message);
 
-        void FatalExit(string message);
-    }
+    void FatalExit(string message);
 }

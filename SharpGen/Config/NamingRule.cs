@@ -18,21 +18,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace SharpGen.Config
-{
-    /// <summary>
-    /// Base class for NamingRules.
-    /// </summary>
-    public abstract class NamingRule : KeyValue
-    {
-        [ExcludeFromCodeCoverage(Reason = "For XML Serialization")]
-        protected NamingRule()
-        {
-        }
+namespace SharpGen.Config;
 
-        protected  NamingRule(string name, string value)
-            : base(name, value)
-        {
-        }
+/// <summary>
+/// Base class for NamingRules.
+/// </summary>
+public abstract class NamingRule : KeyValue
+{
+    [ExcludeFromCodeCoverage(Reason = "For XML Serialization")]
+    protected NamingRule()
+    {
+    }
+
+    protected  NamingRule(string name, string value)
+        : base(name, value)
+    {
     }
 }

@@ -5,59 +5,58 @@ using SharpGen.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace SharpGen.UnitTests.Parsing
+namespace SharpGen.UnitTests.Parsing;
+
+public class GeneralParsing : ParsingTestBase
 {
-    public class GeneralParsing : ParsingTestBase
+    public GeneralParsing(ITestOutputHelper outputHelper) : base(outputHelper)
     {
-        public GeneralParsing(ITestOutputHelper outputHelper) : base(outputHelper)
-        {
-        }
+    }
 
-        [Fact]
-        public void InvalidCppErrorsLogger()
+    [Fact]
+    public void InvalidCppErrorsLogger()
+    {
+        var config = new ConfigFile
         {
-            var config = new ConfigFile
+            Id = nameof(InvalidCppErrorsLogger),
+            Namespace = nameof(InvalidCppErrorsLogger),
+            IncludeDirs = { GetTestFileIncludeRule() },
+            Includes =
             {
-                Id = nameof(InvalidCppErrorsLogger),
-                Namespace = nameof(InvalidCppErrorsLogger),
-                IncludeDirs = { GetTestFileIncludeRule() },
-                Includes =
-                {
-                    CreateCppFile("invalid", "struct Test { InvalidType test; };")
-                }
-            };
-
-            using (LoggerMessageCountEnvironment(3, LogLevel.Error))
-            using (LoggerCodeRequiredEnvironment(LoggingCodes.CastXmlError))
-            {
-                ParseCpp(config);
+                CreateCppFile("invalid", "struct Test { InvalidType test; };")
             }
-        }
+        };
 
-        [Fact]
-        public void PartialAttachOnlyAddsAttachedTypesToModel()
+        using (LoggerMessageCountEnvironment(3, LogLevel.Error))
+        using (LoggerCodeRequiredEnvironment(LoggingCodes.CastXmlError))
         {
+            ParseCpp(config);
+        }
+    }
 
-            var config = new ConfigFile
+    [Fact]
+    public void PartialAttachOnlyAddsAttachedTypesToModel()
+    {
+
+        var config = new ConfigFile
+        {
+            Id = nameof(InvalidCppErrorsLogger),
+            Namespace = nameof(InvalidCppErrorsLogger),
+            IncludeDirs = { GetTestFileIncludeRule() },
+            Includes =
             {
-                Id = nameof(InvalidCppErrorsLogger),
-                Namespace = nameof(InvalidCppErrorsLogger),
-                IncludeDirs = { GetTestFileIncludeRule() },
-                Includes =
-                {
-                    CreateCppFile("invalid", @"
+                CreateCppFile("invalid", @"
                         struct Test {};
                         struct UnAttached {};
                         enum UnAttached2 { Element1 };
                     ", new List<string>{ "Test" })
-                }
-            };
+            }
+        };
 
-            var model = ParseCpp(config);
+        var model = ParseCpp(config);
 
-            Assert.NotNull(model.FindFirst<CppStruct>("Test"));
-            Assert.Null(model.FindFirst<CppStruct>("UnAttached"));
-            Assert.Null(model.FindFirst<CppEnum>("UnAttached2"));
-        }
+        Assert.NotNull(model.FindFirst<CppStruct>("Test"));
+        Assert.Null(model.FindFirst<CppStruct>("UnAttached"));
+        Assert.Null(model.FindFirst<CppEnum>("UnAttached2"));
     }
 }

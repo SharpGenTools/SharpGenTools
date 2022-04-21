@@ -1,9 +1,8 @@
 using System;
 
-namespace SharpGen.Runtime
+namespace SharpGen.Runtime;
+
+public interface IExceptionCallback
 {
-    public interface IExceptionCallback
-    {
-        void RaiseException(Exception e);
-    }
+    void RaiseException(Exception e);
 }

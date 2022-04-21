@@ -22,80 +22,79 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
-namespace SharpGen.Runtime
+namespace SharpGen.Runtime;
+
+/// <summary>
+/// Base class for all callback objects written in managed code.
+/// </summary>
+public abstract class CallbackBase : DisposeBase, ICallbackable
 {
-    /// <summary>
-    /// Base class for all callback objects written in managed code.
-    /// </summary>
-    public abstract class CallbackBase : DisposeBase, ICallbackable
+    private int refCount = 1;
+    private bool _isDisposed;
+
+    protected override bool IsDisposed => _isDisposed;
+
+    /// <inheritdoc />
+    protected sealed override void Dispose(bool disposing)
     {
-        private int refCount = 1;
-        private bool _isDisposed;
+        DisposeCore(disposing);
 
-        protected override bool IsDisposed => _isDisposed;
+        if (disposing)
+            Release();
 
-        /// <inheritdoc />
-        protected sealed override void Dispose(bool disposing)
+        // Good idea would be to get rid of the _isDisposed field and use refCount <= 0 condition instead.
+        // That's a dangerous change not to be made lightly.
+        _isDisposed = true;
+    }
+
+    /// <summary>
+    /// Releases unmanaged and - optionally - managed resources
+    /// </summary>
+    /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+    protected virtual void DisposeCore(bool disposing)
+    {
+    }
+
+    public uint AddRef()
+    {
+        return (uint) Interlocked.Increment(ref refCount);
+    }
+
+    public uint Release()
+    {
+        var newRefCount = Interlocked.Decrement(ref refCount);
+        if (newRefCount == 0)
         {
-            DisposeCore(disposing);
-
-            if (disposing)
-                Release();
-
-            // Good idea would be to get rid of the _isDisposed field and use refCount <= 0 condition instead.
-            // That's a dangerous change not to be made lightly.
-            _isDisposed = true;
+            // Dispose native resources
+            Interlocked.Exchange(ref shadow, null)?.Dispose();
         }
+        return (uint) newRefCount;
+    }
 
-        /// <summary>
-        /// Releases unmanaged and - optionally - managed resources
-        /// </summary>
-        /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
-        protected virtual void DisposeCore(bool disposing)
+    public override string ToString() =>
+        $"{GetType().Name}[{RuntimeHelpers.GetHashCode(this):X}:{Volatile.Read(ref refCount)}]";
+
+    private ShadowContainer shadow;
+
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    internal ShadowContainer Shadow
+    {
+        get
         {
-        }
-
-        public uint AddRef()
-        {
-            return (uint) Interlocked.Increment(ref refCount);
-        }
-
-        public uint Release()
-        {
-            var newRefCount = Interlocked.Decrement(ref refCount);
-            if (newRefCount == 0)
-            {
-                // Dispose native resources
-                Interlocked.Exchange(ref shadow, null)?.Dispose();
-            }
-            return (uint) newRefCount;
-        }
-
-        public override string ToString() =>
-            $"{GetType().Name}[{RuntimeHelpers.GetHashCode(this):X}:{Volatile.Read(ref refCount)}]";
-
-        private ShadowContainer shadow;
-
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        internal ShadowContainer Shadow
-        {
-            get
-            {
-                var oldValue = Volatile.Read(ref shadow);
-                if (oldValue != null)
-                    return oldValue;
-
-                ShadowContainer value = new(this);
-
-                // Only set the shadow container if it is not already set.
-                oldValue = Interlocked.CompareExchange(ref shadow, value, null);
-                if (oldValue == null)
-                    return value;
-
-                // shadow remains set to an already initialized oldValue
-                value.Dispose();
+            var oldValue = Volatile.Read(ref shadow);
+            if (oldValue != null)
                 return oldValue;
-            }
+
+            ShadowContainer value = new(this);
+
+            // Only set the shadow container if it is not already set.
+            oldValue = Interlocked.CompareExchange(ref shadow, value, null);
+            if (oldValue == null)
+                return value;
+
+            // shadow remains set to an already initialized oldValue
+            value.Dispose();
+            return oldValue;
         }
     }
 }

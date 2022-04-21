@@ -20,62 +20,61 @@
 
 using SharpGen.Config;
 
-namespace SharpGen.CppModel
+namespace SharpGen.CppModel;
+
+/// <summary>
+///   Base class for all C++ element.
+/// </summary>
+public abstract class CppElement
 {
-    /// <summary>
-    ///   Base class for all C++ element.
-    /// </summary>
-    public abstract class CppElement
+    private MappingRule rule;
+
+    protected CppElement(string name)
     {
-        private MappingRule rule;
+        Name = name;
+    }
 
-        protected CppElement(string name)
-        {
-            Name = name;
-        }
-
-        public string Name { get; }
+    public string Name { get; }
 
 #nullable enable
-        public CppContainer? Parent { get; internal set; }
+    public CppContainer? Parent { get; internal set; }
 
-        public MappingRule Rule => rule ??= new MappingRule();
+    public MappingRule Rule => rule ??= new MappingRule();
 
-        public CppInclude? ParentInclude
+    public CppInclude? ParentInclude
+    {
+        get
         {
-            get
-            {
-                var cppInclude = Parent;
-                while (cppInclude is { } and not CppInclude)
-                    cppInclude = cppInclude.Parent;
-                return cppInclude as CppInclude;
-            }
+            var cppInclude = Parent;
+            while (cppInclude is { } and not CppInclude)
+                cppInclude = cppInclude.Parent;
+            return cppInclude as CppInclude;
         }
+    }
 
-        public void RemoveFromParent()
-        {
-            var parent = Parent;
-            if (parent == null)
-                return;
+    public void RemoveFromParent()
+    {
+        var parent = Parent;
+        if (parent == null)
+            return;
 
-            parent.RemoveChild(this);
+        parent.RemoveChild(this);
 
-            Parent = null;
-        }
+        Parent = null;
+    }
 #nullable restore
 
-        private protected virtual string Path => Parent != null ? Parent.FullName : string.Empty;
+    private protected virtual string Path => Parent != null ? Parent.FullName : string.Empty;
 
-        public virtual string FullName
+    public virtual string FullName
+    {
+        get
         {
-            get
-            {
-                var path = Path;
-                return string.IsNullOrEmpty(path) ? Name : path + "::" + Name;
-            }
+            var path = Path;
+            return string.IsNullOrEmpty(path) ? Name : path + "::" + Name;
         }
-
-        [ExcludeFromCodeCoverage]
-        public override string ToString() => GetType().Name + " [" + Name + "]";
     }
+
+    [ExcludeFromCodeCoverage]
+    public override string ToString() => GetType().Name + " [" + Name + "]";
 }

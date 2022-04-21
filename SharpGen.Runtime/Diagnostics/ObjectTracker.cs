@@ -23,227 +23,226 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 
-namespace SharpGen.Runtime.Diagnostics
+namespace SharpGen.Runtime.Diagnostics;
+
+using ObjectReferenceDictionary = Dictionary<IntPtr, List<ObjectReference>>;
+
+/// <summary>
+/// Track all allocated objects.
+/// </summary>
+public static class ObjectTracker
 {
-    using ObjectReferenceDictionary = Dictionary<IntPtr, List<ObjectReference>>;
+    private static ObjectReferenceDictionary _processGlobalObjectReferences;
+    private static readonly ThreadLocal<ObjectReferenceDictionary> ThreadStaticObjectReferences = new(static () => new ObjectReferenceDictionary(), false);
 
     /// <summary>
-    /// Track all allocated objects.
+    /// Occurs when a CppObject is tracked.
     /// </summary>
-    public static class ObjectTracker
+    public static event Action<CppObject> Tracked;
+
+    /// <summary>
+    /// Occurs when a CppObject is untracked.
+    /// </summary>
+    public static event Action<CppObject> UnTracked;
+
+    private static ObjectReferenceDictionary ObjectReferences =>
+        ObjectTrackerReadOnlyConfiguration.IsObjectTrackingThreadStatic
+            ? ThreadStaticObjectReferences.Value
+            : _processGlobalObjectReferences ??= new();
+
+    /// <summary>
+    /// Tracks the specified native object.
+    /// </summary>
+    /// <param name="cppObject">The native object.</param>
+    public static void Track(CppObject cppObject)
     {
-        private static ObjectReferenceDictionary _processGlobalObjectReferences;
-        private static readonly ThreadLocal<ObjectReferenceDictionary> ThreadStaticObjectReferences = new(static () => new ObjectReferenceDictionary(), false);
+        if (cppObject is null)
+            return;
 
-        /// <summary>
-        /// Occurs when a CppObject is tracked.
-        /// </summary>
-        public static event Action<CppObject> Tracked;
+        var nativePointer = cppObject.NativePointer;
 
-        /// <summary>
-        /// Occurs when a CppObject is untracked.
-        /// </summary>
-        public static event Action<CppObject> UnTracked;
+        Track(cppObject, nativePointer);
+    }
 
-        private static ObjectReferenceDictionary ObjectReferences =>
-            ObjectTrackerReadOnlyConfiguration.IsObjectTrackingThreadStatic
-                ? ThreadStaticObjectReferences.Value
-                : _processGlobalObjectReferences ??= new();
+    internal static void Track(CppObject cppObject, IntPtr nativePointer)
+    {
+        if (nativePointer == IntPtr.Zero)
+            return;
 
-        /// <summary>
-        /// Tracks the specified native object.
-        /// </summary>
-        /// <param name="cppObject">The native object.</param>
-        public static void Track(CppObject cppObject)
+        var objectReferences = ObjectReferences;
+
+        lock (objectReferences)
+            TrackImpl(cppObject, nativePointer, objectReferences);
+
+        // Fire an event.
+        Tracked?.Invoke(cppObject);
+    }
+
+    private static void TrackImpl(CppObject cppObject, IntPtr nativePointer, ObjectReferenceDictionary objectReferences)
+    {
+        if (!objectReferences.TryGetValue(nativePointer, out var referenceList))
         {
-            if (cppObject is null)
-                return;
-
-            var nativePointer = cppObject.NativePointer;
-
-            Track(cppObject, nativePointer);
+            referenceList = new List<ObjectReference>();
+            objectReferences.Add(nativePointer, referenceList);
         }
 
-        internal static void Track(CppObject cppObject, IntPtr nativePointer)
+        referenceList.Add(new ObjectReference(DateTime.Now, cppObject, Environment.StackTrace));
+    }
+
+    /// <summary>
+    /// Finds a list of object reference from a specified C++ object pointer.
+    /// </summary>
+    /// <param name="objPtr">The C++ object pointer.</param>
+    /// <returns>A list of object reference</returns>
+    public static List<ObjectReference> Find(IntPtr objPtr)
+    {
+        var objectReferences = ObjectReferences;
+        lock (objectReferences)
         {
-            if (nativePointer == IntPtr.Zero)
-                return;
-
-            var objectReferences = ObjectReferences;
-
-            lock (objectReferences)
-                TrackImpl(cppObject, nativePointer, objectReferences);
-
-            // Fire an event.
-            Tracked?.Invoke(cppObject);
+            // Object is already tracked
+            if (objectReferences.TryGetValue(objPtr, out var referenceList))
+                return new List<ObjectReference>(referenceList);
         }
 
-        private static void TrackImpl(CppObject cppObject, IntPtr nativePointer, ObjectReferenceDictionary objectReferences)
+        return new List<ObjectReference>();
+    }
+
+    /// <summary>
+    /// Untracks the specified native object.
+    /// </summary>
+    /// <param name="cppObject">The native object.</param>
+    public static void UnTrack(CppObject cppObject)
+    {
+        if (cppObject is null)
+            return;
+
+        var nativePointer = cppObject.NativePointer;
+
+        Untrack(cppObject, nativePointer);
+    }
+
+    internal static void Untrack(CppObject cppObject, IntPtr nativePointer)
+    {
+        if (nativePointer == IntPtr.Zero)
+            return;
+
+        var objectReferences = ObjectReferences;
+
+        bool foundTracked;
+        lock (objectReferences)
         {
-            if (!objectReferences.TryGetValue(nativePointer, out var referenceList))
+            foundTracked = UntrackImpl(cppObject, nativePointer, objectReferences);
+        }
+
+        if (foundTracked)
+        {
+            // Fire an event
+            UnTracked?.Invoke(cppObject);
+        }
+    }
+
+    private static bool UntrackImpl(CppObject cppObject, IntPtr nativePointer, ObjectReferenceDictionary objectReferences)
+    {
+        var foundTracked = objectReferences.TryGetValue(nativePointer, out var referenceList);
+        if (!foundTracked)
+            return false;
+
+        // Object is tracked, remove from reference list
+        for (var i = referenceList.Count - 1; i >= 0; --i)
+        {
+            var objectReference = referenceList[i].Object;
+            if (!objectReference.TryGetTarget(out var target) || ReferenceEquals(target, cppObject))
+                referenceList.RemoveAt(i);
+        }
+
+        // Remove empty list
+        if (referenceList.Count == 0)
+            objectReferences.Remove(nativePointer);
+
+        return true;
+    }
+
+    internal static void MigrateNativePointer(CppObject cppObject, IntPtr oldNativePointer, IntPtr newNativePointer)
+    {
+        if (cppObject is null)
+            return;
+
+        var hasOldNativePointer = oldNativePointer != IntPtr.Zero;
+        var hasNewNativePointer = newNativePointer != IntPtr.Zero;
+
+        if (!hasOldNativePointer && !hasNewNativePointer)
+            return;
+
+        var objectReferences = ObjectReferences;
+
+        lock (objectReferences)
+        {
+            if (hasOldNativePointer)
+                UntrackImpl(cppObject, oldNativePointer, objectReferences);
+            if (hasNewNativePointer)
+                TrackImpl(cppObject, newNativePointer, objectReferences);
+        }
+    }
+
+    /// <summary>
+    /// Reports all COM object that are active and not yet disposed.
+    /// </summary>
+    public static List<ObjectReference> FindActiveObjects()
+    {
+        List<ObjectReference> activeObjects;
+        var objectReferences = ObjectReferences;
+        lock (objectReferences)
+        {
+            activeObjects = new(objectReferences.Count);
+            foreach (var referenceList in objectReferences.Values)
             {
-                referenceList = new List<ObjectReference>();
-                objectReferences.Add(nativePointer, referenceList);
-            }
-
-            referenceList.Add(new ObjectReference(DateTime.Now, cppObject, Environment.StackTrace));
-        }
-
-        /// <summary>
-        /// Finds a list of object reference from a specified C++ object pointer.
-        /// </summary>
-        /// <param name="objPtr">The C++ object pointer.</param>
-        /// <returns>A list of object reference</returns>
-        public static List<ObjectReference> Find(IntPtr objPtr)
-        {
-            var objectReferences = ObjectReferences;
-            lock (objectReferences)
-            {
-                // Object is already tracked
-                if (objectReferences.TryGetValue(objPtr, out var referenceList))
-                    return new List<ObjectReference>(referenceList);
-            }
-
-            return new List<ObjectReference>();
-        }
-
-        /// <summary>
-        /// Untracks the specified native object.
-        /// </summary>
-        /// <param name="cppObject">The native object.</param>
-        public static void UnTrack(CppObject cppObject)
-        {
-            if (cppObject is null)
-                return;
-
-            var nativePointer = cppObject.NativePointer;
-
-            Untrack(cppObject, nativePointer);
-        }
-
-        internal static void Untrack(CppObject cppObject, IntPtr nativePointer)
-        {
-            if (nativePointer == IntPtr.Zero)
-                return;
-
-            var objectReferences = ObjectReferences;
-
-            bool foundTracked;
-            lock (objectReferences)
-            {
-                foundTracked = UntrackImpl(cppObject, nativePointer, objectReferences);
-            }
-
-            if (foundTracked)
-            {
-                // Fire an event
-                UnTracked?.Invoke(cppObject);
-            }
-        }
-
-        private static bool UntrackImpl(CppObject cppObject, IntPtr nativePointer, ObjectReferenceDictionary objectReferences)
-        {
-            var foundTracked = objectReferences.TryGetValue(nativePointer, out var referenceList);
-            if (!foundTracked)
-                return false;
-
-            // Object is tracked, remove from reference list
-            for (var i = referenceList.Count - 1; i >= 0; --i)
-            {
-                var objectReference = referenceList[i].Object;
-                if (!objectReference.TryGetTarget(out var target) || ReferenceEquals(target, cppObject))
-                    referenceList.RemoveAt(i);
-            }
-
-            // Remove empty list
-            if (referenceList.Count == 0)
-                objectReferences.Remove(nativePointer);
-
-            return true;
-        }
-
-        internal static void MigrateNativePointer(CppObject cppObject, IntPtr oldNativePointer, IntPtr newNativePointer)
-        {
-            if (cppObject is null)
-                return;
-
-            var hasOldNativePointer = oldNativePointer != IntPtr.Zero;
-            var hasNewNativePointer = newNativePointer != IntPtr.Zero;
-
-            if (!hasOldNativePointer && !hasNewNativePointer)
-                return;
-
-            var objectReferences = ObjectReferences;
-
-            lock (objectReferences)
-            {
-                if (hasOldNativePointer)
-                    UntrackImpl(cppObject, oldNativePointer, objectReferences);
-                if (hasNewNativePointer)
-                    TrackImpl(cppObject, newNativePointer, objectReferences);
-            }
-        }
-
-        /// <summary>
-        /// Reports all COM object that are active and not yet disposed.
-        /// </summary>
-        public static List<ObjectReference> FindActiveObjects()
-        {
-            List<ObjectReference> activeObjects;
-            var objectReferences = ObjectReferences;
-            lock (objectReferences)
-            {
-                activeObjects = new(objectReferences.Count);
-                foreach (var referenceList in objectReferences.Values)
+                foreach (var objectReference in referenceList)
                 {
-                    foreach (var objectReference in referenceList)
-                    {
-                        if (objectReference.Object.TryGetTarget(out _))
-                            activeObjects.Add(objectReference);
-                    }
+                    if (objectReference.Object.TryGetTarget(out _))
+                        activeObjects.Add(objectReference);
                 }
             }
-            return activeObjects;
         }
+        return activeObjects;
+    }
 
-        /// <summary>
-        /// Reports all C++ objects that are active and not yet disposed.
-        /// </summary>
-        public static string ReportActiveObjects()
+    /// <summary>
+    /// Reports all C++ objects that are active and not yet disposed.
+    /// </summary>
+    public static string ReportActiveObjects()
+    {
+        var text = new StringBuilder();
+        var count = 0;
+        var countPerType = new Dictionary<string, int>();
+
+        foreach (var findActiveObject in FindActiveObjects())
         {
-            var text = new StringBuilder();
-            var count = 0;
-            var countPerType = new Dictionary<string, int>();
+            var findActiveObjectStr = findActiveObject.ToString();
+            if (string.IsNullOrEmpty(findActiveObjectStr))
+                continue;
 
-            foreach (var findActiveObject in FindActiveObjects())
-            {
-                var findActiveObjectStr = findActiveObject.ToString();
-                if (string.IsNullOrEmpty(findActiveObjectStr))
-                    continue;
+            text.AppendFormat("[{0}]: {1}", count++, findActiveObjectStr);
 
-                text.AppendFormat("[{0}]: {1}", count++, findActiveObjectStr);
+            if (!findActiveObject.Object.TryGetTarget(out var target))
+                continue;
 
-                if (!findActiveObject.Object.TryGetTarget(out var target))
-                    continue;
-
-                var targetType = target.GetType().Name;
-                countPerType[targetType] = countPerType.TryGetValue(targetType, out var typeCount)
-                                               ? typeCount + 1
-                                               : 1;
-            }
-
-            var keys = new List<string>(countPerType.Keys);
-            keys.Sort();
-
-            text.AppendLine();
-            text.AppendLine("Count per Type:");
-            foreach (var key in keys)
-            {
-                text.AppendFormat("{0} : {1}", key, countPerType[key]);
-                text.AppendLine();
-            }
-
-            return text.ToString();
+            var targetType = target.GetType().Name;
+            countPerType[targetType] = countPerType.TryGetValue(targetType, out var typeCount)
+                                           ? typeCount + 1
+                                           : 1;
         }
+
+        var keys = new List<string>(countPerType.Keys);
+        keys.Sort();
+
+        text.AppendLine();
+        text.AppendLine("Count per Type:");
+        foreach (var key in keys)
+        {
+            text.AppendFormat("{0} : {1}", key, countPerType[key]);
+            text.AppendLine();
+        }
+
+        return text.ToString();
     }
 }

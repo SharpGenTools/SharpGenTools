@@ -18,16 +18,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace SharpGen.Runtime
+namespace SharpGen.Runtime;
+
+/// <summary>
+/// IInspectable used for a C# callback object exposed as WinRT Component.
+/// </summary>
+/// <msdn-id>br205821</msdn-id>
+/// <unamanaged>IInspectable</unamanaged>
+/// <unmanaged-short>IInspectable</unmanaged-short>
+[ExcludeFromTypeList]
+public partial interface IInspectable
 {
-    /// <summary>
-    /// IInspectable used for a C# callback object exposed as WinRT Component.
-    /// </summary>
-    /// <msdn-id>br205821</msdn-id>
-    /// <unamanaged>IInspectable</unamanaged>
-    /// <unmanaged-short>IInspectable</unmanaged-short>
-    [ExcludeFromTypeList]
-    public partial interface IInspectable
-    {
-    }
 }

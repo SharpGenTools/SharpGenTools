@@ -18,44 +18,43 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace SharpGen.Logging
+namespace SharpGen.Logging;
+
+/// <summary>
+/// Source code location of a logging message.
+/// </summary>
+public class LogLocation
 {
+    public static readonly LogLocation EmptyLocation = new LogLocation(string.Empty, 1, 1);
+
     /// <summary>
-    /// Source code location of a logging message.
+    /// Initializes a new instance of the <see cref="LogLocation"/> class.
     /// </summary>
-    public class LogLocation
+    /// <param name="filePath">The file path.</param>
+    /// <param name="line">The line.</param>
+    /// <param name="column">The column.</param>
+    public LogLocation(string filePath, int line, int column)
     {
-        public static readonly LogLocation EmptyLocation = new LogLocation(string.Empty, 1, 1);
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="LogLocation"/> class.
-        /// </summary>
-        /// <param name="filePath">The file path.</param>
-        /// <param name="line">The line.</param>
-        /// <param name="column">The column.</param>
-        public LogLocation(string filePath, int line, int column)
-        {
-            File = filePath;
-            Line = line;
-            Column = column;
-        }
-
-        /// <summary>
-        /// Gets the file location.
-        /// </summary>
-        /// <value>The file location.</value>
-        public string File { get; private set; }
-
-        /// <summary>
-        /// Gets the line inside the file.
-        /// </summary>
-        /// <value>The line.</value>
-        public int Line { get; private set; }
-
-        /// <summary>
-        /// Gets the column inside the line of the file.
-        /// </summary>
-        /// <value>The column.</value>
-        public int Column { get; private set; }
+        File = filePath;
+        Line = line;
+        Column = column;
     }
+
+    /// <summary>
+    /// Gets the file location.
+    /// </summary>
+    /// <value>The file location.</value>
+    public string File { get; private set; }
+
+    /// <summary>
+    /// Gets the line inside the file.
+    /// </summary>
+    /// <value>The line.</value>
+    public int Line { get; private set; }
+
+    /// <summary>
+    /// Gets the column inside the line of the file.
+    /// </summary>
+    /// <value>The column.</value>
+    public int Column { get; private set; }
 }

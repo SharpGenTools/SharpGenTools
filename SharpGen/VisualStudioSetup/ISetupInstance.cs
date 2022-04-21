@@ -1,15 +1,14 @@
 ﻿
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
 using FILETIME = System.Runtime.InteropServices.ComTypes.FILETIME;
 
-namespace SharpGen.VisualStudioSetup
+namespace SharpGen.VisualStudioSetup;
+
+[Guid("B41463C3-8866-43B5-BC33-2B0676F7F42E")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+[ComImport]
+public interface ISetupInstance
 {
-  [Guid("B41463C3-8866-43B5-BC33-2B0676F7F42E")]
-  [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-  [ComImport]
-  public interface ISetupInstance
-  {
     [return: MarshalAs(UnmanagedType.BStr)]
     string GetInstanceId();
         
@@ -32,5 +31,4 @@ namespace SharpGen.VisualStudioSetup
 
     [return: MarshalAs(UnmanagedType.BStr)]
     string ResolvePath([MarshalAs(UnmanagedType.LPWStr), In] string pwszRelativePath = null);
-  }
 }

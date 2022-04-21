@@ -24,109 +24,108 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Xml.Serialization;
 
-namespace SharpGen.Config
+namespace SharpGen.Config;
+
+/// <summary>
+/// An Include directive
+/// </summary>
+public class IncludeRule
 {
-    /// <summary>
-    /// An Include directive
-    /// </summary>
-    public class IncludeRule
+    public IncludeRule()
     {
-        public IncludeRule()
-        {
-            AttachTypes = new List<string>();
-        }
+        AttachTypes = new List<string>();
+    }
 
-        /// <summary>
-        /// Gets or sets the id.
-        /// </summary>
-        /// <value>The id.</value>
-        [XmlIgnore]
-        public string Id => Path.GetFileNameWithoutExtension(File);
+    /// <summary>
+    /// Gets or sets the id.
+    /// </summary>
+    /// <value>The id.</value>
+    [XmlIgnore]
+    public string Id => Path.GetFileNameWithoutExtension(File);
 
-        /// <summary>
-        /// Gets or sets the file to be included.
-        /// </summary>
-        /// <value>The file.</value>
-        [XmlAttribute("file")]
-        public string File { get; set; }
+    /// <summary>
+    /// Gets or sets the file to be included.
+    /// </summary>
+    /// <value>The file.</value>
+    [XmlAttribute("file")]
+    public string File { get; set; }
 
-        /// <summary>
-        /// Gets or sets the namespace.
-        /// </summary>
-        /// <value>The namespace.</value>
-        [XmlAttribute("namespace")]
-        public string Namespace { get; set; }
+    /// <summary>
+    /// Gets or sets the namespace.
+    /// </summary>
+    /// <value>The namespace.</value>
+    [XmlAttribute("namespace")]
+    public string Namespace { get; set; }
 
-        /// <summary>
-        /// Gets or sets the output.
-        /// </summary>
-        /// <value>The output.</value>
-        [XmlAttribute("output")]
-        [Obsolete, SuppressMessage("ReSharper", "ValueParameterNotUsed")]
-        public string Output
-        {
-            get => string.Empty;
-            set {}
-        }
+    /// <summary>
+    /// Gets or sets the output.
+    /// </summary>
+    /// <value>The output.</value>
+    [XmlAttribute("output")]
+    [Obsolete, SuppressMessage("ReSharper", "ValueParameterNotUsed")]
+    public string Output
+    {
+        get => string.Empty;
+        set {}
+    }
 
-        /// <summary>
-        /// Gets or sets the file must be attached for mapping to the current Namespace/Assembly
-        /// </summary>
-        /// <value>The attach.</value>
-        [XmlIgnore]
-        public bool? Attach { get; set; }
+    /// <summary>
+    /// Gets or sets the file must be attached for mapping to the current Namespace/Assembly
+    /// </summary>
+    /// <value>The attach.</value>
+    [XmlIgnore]
+    public bool? Attach { get; set; }
 
-        /// <summary>
-        /// Internal method to serialize nullable <c cref="Attach"/> property.
-        /// </summary>
-        /// <value><c>true</c> if [_ attach_]; otherwise, <c>false</c>.</value>
-        [XmlAttribute("attach")]
-        public bool _Attach_
-        {
-            get { return Attach.Value; }
-            set { Attach = value; }
-        }
+    /// <summary>
+    /// Internal method to serialize nullable <c cref="Attach"/> property.
+    /// </summary>
+    /// <value><c>true</c> if [_ attach_]; otherwise, <c>false</c>.</value>
+    [XmlAttribute("attach")]
+    public bool _Attach_
+    {
+        get { return Attach.Value; }
+        set { Attach = value; }
+    }
 
-        /// <summary>
-        /// Should Attach be serialized?
-        /// </summary>
-        /// <returns><c>true</c> if Attach property has a value; otherwise, <c>false</c></returns>
-        public bool ShouldSerialize_Attach_()
-        {
-            return Attach != null;
-        }
+    /// <summary>
+    /// Should Attach be serialized?
+    /// </summary>
+    /// <returns><c>true</c> if Attach property has a value; otherwise, <c>false</c></returns>
+    public bool ShouldSerialize_Attach_()
+    {
+        return Attach != null;
+    }
 
-        /// <summary>
-        /// Gets or sets the pre-include-code to insert before performing the include.
-        /// </summary>
-        /// <value>The pre.</value>
-        [XmlElement("pre")]
-        public string Pre { get; set; }
+    /// <summary>
+    /// Gets or sets the pre-include-code to insert before performing the include.
+    /// </summary>
+    /// <value>The pre.</value>
+    [XmlElement("pre")]
+    public string Pre { get; set; }
 
-        /// <summary>
-        /// Gets or sets the post-include-code to insert after performing the include.
-        /// </summary>
-        /// <value>The post.</value>
-        [XmlElement("post")]
-        public string Post{ get; set; }
+    /// <summary>
+    /// Gets or sets the post-include-code to insert after performing the include.
+    /// </summary>
+    /// <value>The post.</value>
+    [XmlElement("post")]
+    public string Post{ get; set; }
 
-        /// <summary>
-        /// Gets or sets single types to attach.
-        /// </summary>
-        /// <value>The post.</value>
-        [XmlElement("attach")]
-        public List<string> AttachTypes{ get; set; }
+    /// <summary>
+    /// Gets or sets single types to attach.
+    /// </summary>
+    /// <value>The post.</value>
+    [XmlElement("attach")]
+    public List<string> AttachTypes{ get; set; }
 
-        /// <summary>
-        /// Returns a <see cref="System.String"/> that represents this instance.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="System.String"/> that represents this instance.
-        /// </returns>
-        [ExcludeFromCodeCoverage]
-        public override string ToString()
-        {
-            return string.Format(System.Globalization.CultureInfo.InvariantCulture, "include: {0}", File);
-        }
+    /// <summary>
+    /// Returns a <see cref="System.String"/> that represents this instance.
+    /// </summary>
+    /// <returns>
+    /// A <see cref="System.String"/> that represents this instance.
+    /// </returns>
+    [ExcludeFromCodeCoverage]
+    public override string ToString()
+    {
+        return string.Format(System.Globalization.CultureInfo.InvariantCulture, "include: {0}", File);
     }
 }

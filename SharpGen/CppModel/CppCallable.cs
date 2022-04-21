@@ -2,73 +2,72 @@
 using System.Linq;
 using System.Text;
 
-namespace SharpGen.CppModel
+namespace SharpGen.CppModel;
+
+public abstract class CppCallable : CppContainer
 {
-    public abstract class CppCallable : CppContainer
+    protected virtual CppCallingConvention DefaultCallingConvention => CppCallingConvention.CDecl;
+
+    public CppReturnValue ReturnValue { get; set; }
+
+    private CppCallingConvention callingConvention;
+
+    public CppCallingConvention CallingConvention
     {
-        protected virtual CppCallingConvention DefaultCallingConvention => CppCallingConvention.CDecl;
+        get => callingConvention == CppCallingConvention.Unknown
+                   ? callingConvention = DefaultCallingConvention
+                   : callingConvention;
+        set => callingConvention = value;
+    }
 
-        public CppReturnValue ReturnValue { get; set; }
+    public IEnumerable<CppParameter> Parameters => Iterate<CppParameter>();
 
-        private CppCallingConvention callingConvention;
+    protected internal override IEnumerable<CppElement> AllItems => Iterate<CppElement>().Append(ReturnValue);
 
-        public CppCallingConvention CallingConvention
+    public override string ToString()
+    {
+        var builder = new StringBuilder();
+        builder.Append(ReturnValue);
+        builder.Append(' ');
+        if (Parent is CppInterface)
         {
-            get => callingConvention == CppCallingConvention.Unknown
-                       ? callingConvention = DefaultCallingConvention
-                       : callingConvention;
-            set => callingConvention = value;
+            builder.Append(Parent.Name);
+            builder.Append("::");
         }
 
-        public IEnumerable<CppParameter> Parameters => Iterate<CppParameter>();
+        builder.Append(Name);
+        builder.Append('(');
 
-        protected internal override IEnumerable<CppElement> AllItems => Iterate<CppElement>().Append(ReturnValue);
-
-        public override string ToString()
+        uint i = 0;
+        foreach (var cppParameter in Parameters)
         {
-            var builder = new StringBuilder();
-            builder.Append(ReturnValue);
-            builder.Append(' ');
-            if (Parent is CppInterface)
+            if (i != 0)
             {
-                builder.Append(Parent.Name);
-                builder.Append("::");
+                builder.Append(", ");
             }
 
-            builder.Append(Name);
-            builder.Append('(');
-
-            uint i = 0;
-            foreach (var cppParameter in Parameters)
-            {
-                if (i != 0)
-                {
-                    builder.Append(", ");
-                }
-
-                builder.Append(cppParameter);
-                i++;
-            }
-
-            builder.Append(')');
-            return builder.ToString();
+            builder.Append(cppParameter);
+            i++;
         }
 
-        public string ToShortString()
+        builder.Append(')');
+        return builder.ToString();
+    }
+
+    public string ToShortString()
+    {
+        var builder = new StringBuilder();
+        if (Parent is CppInterface)
         {
-            var builder = new StringBuilder();
-            if (Parent is CppInterface)
-            {
-                builder.Append(Parent.Name);
-                builder.Append("::");
-            }
-
-            builder.Append(Name);
-            return builder.ToString();
+            builder.Append(Parent.Name);
+            builder.Append("::");
         }
 
-        protected CppCallable(string name) : base(name)
-        {
-        }
+        builder.Append(Name);
+        return builder.ToString();
+    }
+
+    protected CppCallable(string name) : base(name)
+    {
     }
 }

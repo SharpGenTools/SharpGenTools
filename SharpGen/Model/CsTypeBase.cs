@@ -21,34 +21,33 @@
 using System;
 using SharpGen.CppModel;
 
-namespace SharpGen.Model
+namespace SharpGen.Model;
+
+public abstract class CsTypeBase : CsBase
 {
-    public abstract class CsTypeBase : CsBase
+    public virtual uint Size => 0;
+
+    protected virtual uint? AlignmentCore => 4;
+
+    public uint? Alignment
     {
-        public virtual uint Size => 0;
-
-        protected virtual uint? AlignmentCore => 4;
-
-        public uint? Alignment
+        get
         {
-            get
+            return AlignmentCore switch
             {
-                return AlignmentCore switch
-                {
-                    null => null,
-                    var alignment and >= 1 => alignment,
-                    _ => throw new InvalidOperationException("Type alignment is expected to be >= 1")
-                };
-            }
+                null => null,
+                var alignment and >= 1 => alignment,
+                _ => throw new InvalidOperationException("Type alignment is expected to be >= 1")
+            };
         }
-
-        public abstract bool IsBlittable { get; }
-
-        protected CsTypeBase(CppElement cppElement, string name) : base(cppElement, name)
-        {
-        }
-
-        public bool IsWellKnownType(GlobalNamespaceProvider globalNamespace, WellKnownName name) =>
-            QualifiedName == globalNamespace.GetTypeName(name);
     }
+
+    public abstract bool IsBlittable { get; }
+
+    protected CsTypeBase(CppElement cppElement, string name) : base(cppElement, name)
+    {
+    }
+
+    public bool IsWellKnownType(GlobalNamespaceProvider globalNamespace, WellKnownName name) =>
+        QualifiedName == globalNamespace.GetTypeName(name);
 }

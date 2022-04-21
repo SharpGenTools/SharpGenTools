@@ -18,13 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace SharpGen.Model
+namespace SharpGen.Model;
+
+public enum CsParameterAttribute
 {
-    public enum CsParameterAttribute
-    {
-        In,
-        Out,
-        Ref,
-        RefIn
-    }
+    In,
+    Out,
+    Ref,
+    RefIn
 }

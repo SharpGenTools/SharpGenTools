@@ -1,9 +1,8 @@
-﻿namespace SharpGen.CppModel
+﻿namespace SharpGen.CppModel;
+
+public sealed class CppReturnValue : CppMarshallable
 {
-    public sealed class CppReturnValue : CppMarshallable
+    public CppReturnValue() : base(null)
     {
-        public CppReturnValue() : base(null)
-        {
-        }
     }
 }

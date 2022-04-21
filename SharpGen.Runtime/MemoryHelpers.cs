@@ -19,308 +19,295 @@
 // THE SOFTWARE.
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Runtime.InteropServices;
-using System.Security;
-using System.Text;
-using System.Threading;
-
-using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace SharpGen.Runtime
+namespace SharpGen.Runtime;
+
+/// <summary>
+/// Utility class.
+/// </summary>
+public static partial class MemoryHelpers
 {
     /// <summary>
-    /// Utility class.
+    /// Native memcpy.
     /// </summary>
-    public static partial class MemoryHelpers
+    /// <param name="dest">The destination memory location.</param>
+    /// <param name="src">The source memory location.</param>
+    /// <param name="sizeInBytesToCopy">The byte count.</param>
+    [MethodImpl(Utilities.MethodAggressiveOptimization)]
+    public static unsafe void CopyMemory(IntPtr dest, IntPtr src, int sizeInBytesToCopy) =>
+        Unsafe.CopyBlockUnaligned((void*) dest, (void*) src, (uint) sizeInBytesToCopy);
+
+    /// <summary>
+    /// Native memcpy.
+    /// </summary>
+    /// <param name="dest">The destination memory location.</param>
+    /// <param name="src">The source memory location.</param>
+    /// <param name="sizeInBytesToCopy">The byte count.</param>
+    [MethodImpl(Utilities.MethodAggressiveOptimization)]
+    public static unsafe void CopyMemory(IntPtr dest, IntPtr src, uint sizeInBytesToCopy) =>
+        Unsafe.CopyBlockUnaligned((void*) dest, (void*) src, sizeInBytesToCopy);
+
+    /// <summary>
+    /// Native memcpy.
+    /// </summary>
+    /// <param name="dest">The destination memory location.</param>
+    /// <param name="src">The source memory location.</param>
+    [MethodImpl(Utilities.MethodAggressiveOptimization)]
+    public static unsafe void CopyMemory<T>(IntPtr dest, ReadOnlySpan<T> src) where T : struct =>
+        src.CopyTo(new Span<T>((void*) dest, src.Length));
+
+    /// <summary>
+    /// Native memcpy.
+    /// </summary>
+    /// <param name="dest">The destination memory location.</param>
+    /// <param name="src">The source memory location.</param>
+    /// <param name="sizeInBytesToCopy">The byte count.</param>
+    [MethodImpl(Utilities.MethodAggressiveOptimization)]
+    public static unsafe void CopyMemory(void* dest, void* src, int sizeInBytesToCopy) =>
+        Unsafe.CopyBlockUnaligned(dest, src, (uint) sizeInBytesToCopy);
+
+    /// <summary>
+    /// Native memcpy.
+    /// </summary>
+    /// <param name="dest">The destination memory location.</param>
+    /// <param name="src">The source memory location.</param>
+    /// <param name="sizeInBytesToCopy">The byte count.</param>
+    [MethodImpl(Utilities.MethodAggressiveOptimization)]
+    public static unsafe void CopyMemory(void* dest, void* src, uint sizeInBytesToCopy) =>
+        Unsafe.CopyBlockUnaligned(dest, src, sizeInBytesToCopy);
+
+    /// <summary>
+    /// Native memcpy.
+    /// </summary>
+    /// <param name="dest">The destination memory location.</param>
+    /// <param name="src">The source memory location.</param>
+    [MethodImpl(Utilities.MethodAggressiveOptimization)]
+    public static unsafe void CopyMemory<T>(void* dest, ReadOnlySpan<T> src) where T : struct =>
+        src.CopyTo(new Span<T>(dest, src.Length));
+
+    /// <summary>
+    /// Clears the memory.
+    /// </summary>
+    /// <param name="dest">The address of the start of the memory block to initialize.</param>
+    /// <param name="value">The value to initialize the block to.</param>
+    /// <param name="sizeInBytesToClear">The byte count.</param>
+    [MethodImpl(Utilities.MethodAggressiveOptimization)]
+    public static unsafe void ClearMemory(IntPtr dest, byte value, int sizeInBytesToClear) =>
+        Unsafe.InitBlockUnaligned(ref *(byte*) dest, value, (uint) sizeInBytesToClear);
+
+    /// <summary>
+    /// Clears the memory.
+    /// </summary>
+    /// <param name="dest">The address of the start of the memory block to initialize.</param>
+    /// <param name="value">The value to initialize the block to.</param>
+    /// <param name="sizeInBytesToClear">The byte count.</param>
+    [MethodImpl(Utilities.MethodAggressiveOptimization)]
+    public static unsafe void ClearMemory(IntPtr dest, byte value, uint sizeInBytesToClear) =>
+        Unsafe.InitBlockUnaligned(ref *(byte*) dest, value, sizeInBytesToClear);
+
+    /// <summary>
+    /// Clears the memory.
+    /// </summary>
+    /// <param name="dest">The address of the start of the memory block to initialize.</param>
+    /// <param name="sizeInBytesToClear">The byte count.</param>
+    [MethodImpl(Utilities.MethodAggressiveOptimization)]
+    public static void ClearMemory(IntPtr dest, int sizeInBytesToClear) =>
+        ClearMemory(dest, 0, (uint) sizeInBytesToClear);
+
+    /// <summary>
+    /// Clears the memory.
+    /// </summary>
+    /// <param name="dest">The address of the start of the memory block to initialize.</param>
+    /// <param name="sizeInBytesToClear">The byte count.</param>
+    [MethodImpl(Utilities.MethodAggressiveOptimization)]
+    public static void ClearMemory(IntPtr dest, uint sizeInBytesToClear) =>
+        ClearMemory(dest, 0, sizeInBytesToClear);
+
+    /// <summary>
+    /// Reads the specified array T[] data from a memory location.
+    /// </summary>
+    /// <typeparam name="T">Type of a data to read.</typeparam>
+    /// <param name="source">Memory location to read from.</param>
+    /// <param name="data">The data write to.</param>
+    /// <param name="offset">The offset in the array to write to.</param>
+    /// <param name="count">The number of T element to read from the memory location.</param>
+    /// <returns>source pointer + sizeof(T) * count</returns>
+    public static IntPtr Read<T>(IntPtr source, T[] data, int offset, int count) where T : unmanaged =>
+        Read(source, new ReadOnlySpan<T>(data).Slice(offset), count);
+
+    /// <summary>
+    /// Reads the block of data from a memory location.
+    /// </summary>
+    /// <param name="source">Memory location to read from.</param>
+    /// <param name="data">The target data pointer.</param>
+    /// <param name="sizeInBytes">The byte count to read from the memory location.</param>
+    /// <returns>source pointer + sizeInBytes</returns>
+    public static unsafe IntPtr Read(IntPtr source, void* data, int sizeInBytes)
     {
-        /// <summary>
-        /// Native memcpy.
-        /// </summary>
-        /// <param name="dest">The destination memory location.</param>
-        /// <param name="src">The source memory location.</param>
-        /// <param name="sizeInBytesToCopy">The byte count.</param>
-        [MethodImpl(Utilities.MethodAggressiveOptimization)]
-        public static unsafe void CopyMemory(IntPtr dest, IntPtr src, int sizeInBytesToCopy) =>
-            Unsafe.CopyBlockUnaligned((void*) dest, (void*) src, (uint) sizeInBytesToCopy);
+        Unsafe.CopyBlockUnaligned(data, (void*) source, (uint) sizeInBytes);
+        return source + sizeInBytes;
+    }
 
-        /// <summary>
-        /// Native memcpy.
-        /// </summary>
-        /// <param name="dest">The destination memory location.</param>
-        /// <param name="src">The source memory location.</param>
-        /// <param name="sizeInBytesToCopy">The byte count.</param>
-        [MethodImpl(Utilities.MethodAggressiveOptimization)]
-        public static unsafe void CopyMemory(IntPtr dest, IntPtr src, uint sizeInBytesToCopy) =>
-            Unsafe.CopyBlockUnaligned((void*) dest, (void*) src, sizeInBytesToCopy);
+    /// <summary>
+    /// Writes the block of data to a memory location.
+    /// </summary>
+    /// <param name="destination">Memory location to write to.</param>
+    /// <param name="data">The span of T data to write.</param>
+    /// <param name="sizeInBytes">The byte count to write to the memory location.</param>
+    /// <returns>destination pointer + sizeInBytes</returns>
+    public static unsafe IntPtr Write(IntPtr destination, void* data, int sizeInBytes)
+    {
+        Unsafe.CopyBlockUnaligned((void*) destination, data, (uint) sizeInBytes);
+        return destination + sizeInBytes;
+    }
 
-        /// <summary>
-        /// Native memcpy.
-        /// </summary>
-        /// <param name="dest">The destination memory location.</param>
-        /// <param name="src">The source memory location.</param>
-        [MethodImpl(Utilities.MethodAggressiveOptimization)]
-        public static unsafe void CopyMemory<T>(IntPtr dest, ReadOnlySpan<T> src) where T : struct =>
-            src.CopyTo(new Span<T>((void*) dest, src.Length));
+    /// <summary>
+    /// Reads the specified array data from a memory location.
+    /// </summary>
+    /// <typeparam name="T">Type of a data to read.</typeparam>
+    /// <param name="source">Memory location to read from.</param>
+    /// <param name="data">The data span to write to.</param>
+    /// <param name="count">The number of T element to read from the memory location.</param>
+    /// <returns>source pointer + sizeof(T) * count</returns>
+    public static unsafe IntPtr Read<T>(IntPtr source, ReadOnlySpan<T> data, int count) where T : unmanaged
+    {
+        fixed (void* dataPtr = data)
+            return Read(source, dataPtr, count * sizeof(T));
+    }
 
-        /// <summary>
-        /// Native memcpy.
-        /// </summary>
-        /// <param name="dest">The destination memory location.</param>
-        /// <param name="src">The source memory location.</param>
-        /// <param name="sizeInBytesToCopy">The byte count.</param>
-        [MethodImpl(Utilities.MethodAggressiveOptimization)]
-        public static unsafe void CopyMemory(void* dest, void* src, int sizeInBytesToCopy) =>
-            Unsafe.CopyBlockUnaligned(dest, src, (uint) sizeInBytesToCopy);
+    /// <summary>
+    /// Writes the specified array T[] data to a memory location.
+    /// </summary>
+    /// <typeparam name="T">Type of a data to write.</typeparam>
+    /// <param name="destination">Memory location to write to.</param>
+    /// <param name="data">The span of T data to write.</param>
+    /// <param name="count">The number of T element to write to the memory location.</param>
+    /// <returns>destination pointer + sizeof(T) * count</returns>
+    public static unsafe IntPtr Write<T>(IntPtr destination, Span<T> data, int count) where T : unmanaged
+    {
+        fixed (void* dataPtr = data)
+            return Write(destination, dataPtr, count * sizeof(T));
+    }
 
-        /// <summary>
-        /// Native memcpy.
-        /// </summary>
-        /// <param name="dest">The destination memory location.</param>
-        /// <param name="src">The source memory location.</param>
-        /// <param name="sizeInBytesToCopy">The byte count.</param>
-        [MethodImpl(Utilities.MethodAggressiveOptimization)]
-        public static unsafe void CopyMemory(void* dest, void* src, uint sizeInBytesToCopy) =>
-            Unsafe.CopyBlockUnaligned(dest, src, sizeInBytesToCopy);
+    /// <summary>
+    /// Reads the data of specified type from a memory location.
+    /// </summary>
+    /// <typeparam name="T">Type of a data to read.</typeparam>
+    /// <param name="source">Memory location to read from.</param>
+    /// <param name="data">The T to read to.</param>
+    /// <returns>source pointer + sizeof(T)</returns>
+    public static unsafe IntPtr Read<T>(IntPtr source, ref T data) where T : unmanaged
+    {
+        fixed (void* dataPtr = &data)
+            return Read(source, dataPtr, sizeof(T));
+    }
 
-        /// <summary>
-        /// Native memcpy.
-        /// </summary>
-        /// <param name="dest">The destination memory location.</param>
-        /// <param name="src">The source memory location.</param>
-        [MethodImpl(Utilities.MethodAggressiveOptimization)]
-        public static unsafe void CopyMemory<T>(void* dest, ReadOnlySpan<T> src) where T : struct =>
-            src.CopyTo(new Span<T>(dest, src.Length));
+    /// <summary>
+    /// Reads the data of specified type from a memory location.
+    /// </summary>
+    /// <typeparam name="T">Type of a data to read.</typeparam>
+    /// <param name="source">Memory location to read from.</param>
+    /// <returns>The T value read from the pointer.</returns>
+    public static unsafe T Read<T>(IntPtr source) where T : unmanaged
+    {
+        T data = default;
+        Read(source, &data, sizeof(T));
+        return data;
+    }
 
-        /// <summary>
-        /// Clears the memory.
-        /// </summary>
-        /// <param name="dest">The address of the start of the memory block to initialize.</param>
-        /// <param name="value">The value to initialize the block to.</param>
-        /// <param name="sizeInBytesToClear">The byte count.</param>
-        [MethodImpl(Utilities.MethodAggressiveOptimization)]
-        public static unsafe void ClearMemory(IntPtr dest, byte value, int sizeInBytesToClear) =>
-            Unsafe.InitBlockUnaligned(ref *(byte*) dest, value, (uint) sizeInBytesToClear);
+    /// <summary>
+    /// Writes the specified array T data to a memory location.
+    /// </summary>
+    /// <typeparam name="T">Type of a data to write.</typeparam>
+    /// <param name="destination">Memory location to write to.</param>
+    /// <param name="data">The data structure to write.</param>
+    /// <returns>destination pointer + sizeof(T)</returns>
+    public static unsafe IntPtr Write<T>(IntPtr destination, ref T data) where T : unmanaged
+    {
+        fixed (void* dataPtr = &data)
+            return Write(destination, dataPtr, sizeof(T));
+    }
 
-        /// <summary>
-        /// Clears the memory.
-        /// </summary>
-        /// <param name="dest">The address of the start of the memory block to initialize.</param>
-        /// <param name="value">The value to initialize the block to.</param>
-        /// <param name="sizeInBytesToClear">The byte count.</param>
-        [MethodImpl(Utilities.MethodAggressiveOptimization)]
-        public static unsafe void ClearMemory(IntPtr dest, byte value, uint sizeInBytesToClear) =>
-            Unsafe.InitBlockUnaligned(ref *(byte*) dest, value, sizeInBytesToClear);
+    /// <summary>
+    /// Writes the specified array T data to a memory location.
+    /// </summary>
+    /// <typeparam name="T">Type of a data to write.</typeparam>
+    /// <param name="destination">Memory location to write to.</param>
+    /// <param name="data">The data structure to write.</param>
+    /// <returns>destination pointer + sizeof(T)</returns>
+    public static unsafe IntPtr Write<T>(IntPtr destination, T data) where T : unmanaged =>
+        Write(destination, &data, sizeof(T));
 
-        /// <summary>
-        /// Clears the memory.
-        /// </summary>
-        /// <param name="dest">The address of the start of the memory block to initialize.</param>
-        /// <param name="sizeInBytesToClear">The byte count.</param>
-        [MethodImpl(Utilities.MethodAggressiveOptimization)]
-        public static void ClearMemory(IntPtr dest, int sizeInBytesToClear) =>
-            ClearMemory(dest, 0, (uint) sizeInBytesToClear);
+    /// <summary>
+    /// Determines whether the specified memory pointer is aligned in memory.
+    /// </summary>
+    /// <param name="memoryPtr">The memory pointer.</param>
+    /// <param name="align">The align.</param>
+    /// <returns><c>true</c> if the specified memory pointer is aligned in memory; otherwise, <c>false</c>.</returns>
+    [MethodImpl(Utilities.MethodAggressiveOptimization)]
+    public static bool IsMemoryAligned(nint memoryPtr, uint align = 16) =>
+        (memoryPtr & (align - 1)) == 0;
 
-        /// <summary>
-        /// Clears the memory.
-        /// </summary>
-        /// <param name="dest">The address of the start of the memory block to initialize.</param>
-        /// <param name="sizeInBytesToClear">The byte count.</param>
-        [MethodImpl(Utilities.MethodAggressiveOptimization)]
-        public static void ClearMemory(IntPtr dest, uint sizeInBytesToClear) =>
-            ClearMemory(dest, 0, sizeInBytesToClear);
+    /// <summary>
+    /// Determines whether the specified memory pointer is aligned in memory.
+    /// </summary>
+    /// <param name="memoryPtr">The memory pointer.</param>
+    /// <param name="align">The align.</param>
+    /// <returns><c>true</c> if the specified memory pointer is aligned in memory; otherwise, <c>false</c>.</returns>
+    [MethodImpl(Utilities.MethodAggressiveOptimization)]
+    public static bool IsMemoryAligned(nuint memoryPtr, uint align = 16) =>
+        (memoryPtr & (align - 1)) == 0;
 
-        /// <summary>
-        /// Reads the specified array T[] data from a memory location.
-        /// </summary>
-        /// <typeparam name="T">Type of a data to read.</typeparam>
-        /// <param name="source">Memory location to read from.</param>
-        /// <param name="data">The data write to.</param>
-        /// <param name="offset">The offset in the array to write to.</param>
-        /// <param name="count">The number of T element to read from the memory location.</param>
-        /// <returns>source pointer + sizeof(T) * count</returns>
-        public static IntPtr Read<T>(IntPtr source, T[] data, int offset, int count) where T : unmanaged =>
-            Read(source, new ReadOnlySpan<T>(data).Slice(offset), count);
+    /// <summary>
+    /// Determines whether the specified memory pointer is aligned in memory.
+    /// </summary>
+    /// <param name="memoryPtr">The memory pointer.</param>
+    /// <param name="align">The align.</param>
+    /// <returns><c>true</c> if the specified memory pointer is aligned in memory; otherwise, <c>false</c>.</returns>
+    [MethodImpl(Utilities.MethodAggressiveOptimization)]
+    public static unsafe bool IsMemoryAligned(void* memoryPtr, uint align = 16) =>
+        IsMemoryAligned((nuint) memoryPtr, align);
 
-        /// <summary>
-        /// Reads the block of data from a memory location.
-        /// </summary>
-        /// <param name="source">Memory location to read from.</param>
-        /// <param name="data">The target data pointer.</param>
-        /// <param name="sizeInBytes">The byte count to read from the memory location.</param>
-        /// <returns>source pointer + sizeInBytes</returns>
-        public static unsafe IntPtr Read(IntPtr source, void* data, int sizeInBytes)
+    public static void Dispose<T>(ref T? value, bool disposing = true) where T : struct
+    {
+        switch (value)
         {
-            Unsafe.CopyBlockUnaligned(data, (void*) source, (uint) sizeInBytes);
-            return source + sizeInBytes;
+            case null:
+                return;
+            case IEnlightenedDisposable disposable:
+                value = null;
+                disposable.CheckAndDispose(disposing);
+                return;
+            case IDisposable disposable:
+                value = null;
+                if (disposing)
+                    disposable.Dispose();
+                return;
+            default:
+                value = null;
+                return;
         }
+    }
 
-        /// <summary>
-        /// Writes the block of data to a memory location.
-        /// </summary>
-        /// <param name="destination">Memory location to write to.</param>
-        /// <param name="data">The span of T data to write.</param>
-        /// <param name="sizeInBytes">The byte count to write to the memory location.</param>
-        /// <returns>destination pointer + sizeInBytes</returns>
-        public static unsafe IntPtr Write(IntPtr destination, void* data, int sizeInBytes)
+    public static void Dispose<T>(ref T value, bool disposing = true) where T : class
+    {
+        switch (value)
         {
-            Unsafe.CopyBlockUnaligned((void*) destination, data, (uint) sizeInBytes);
-            return destination + sizeInBytes;
-        }
-
-        /// <summary>
-        /// Reads the specified array data from a memory location.
-        /// </summary>
-        /// <typeparam name="T">Type of a data to read.</typeparam>
-        /// <param name="source">Memory location to read from.</param>
-        /// <param name="data">The data span to write to.</param>
-        /// <param name="count">The number of T element to read from the memory location.</param>
-        /// <returns>source pointer + sizeof(T) * count</returns>
-        public static unsafe IntPtr Read<T>(IntPtr source, ReadOnlySpan<T> data, int count) where T : unmanaged
-        {
-            fixed (void* dataPtr = data)
-                return Read(source, dataPtr, count * sizeof(T));
-        }
-
-        /// <summary>
-        /// Writes the specified array T[] data to a memory location.
-        /// </summary>
-        /// <typeparam name="T">Type of a data to write.</typeparam>
-        /// <param name="destination">Memory location to write to.</param>
-        /// <param name="data">The span of T data to write.</param>
-        /// <param name="count">The number of T element to write to the memory location.</param>
-        /// <returns>destination pointer + sizeof(T) * count</returns>
-        public static unsafe IntPtr Write<T>(IntPtr destination, Span<T> data, int count) where T : unmanaged
-        {
-            fixed (void* dataPtr = data)
-                return Write(destination, dataPtr, count * sizeof(T));
-        }
-
-        /// <summary>
-        /// Reads the data of specified type from a memory location.
-        /// </summary>
-        /// <typeparam name="T">Type of a data to read.</typeparam>
-        /// <param name="source">Memory location to read from.</param>
-        /// <param name="data">The T to read to.</param>
-        /// <returns>source pointer + sizeof(T)</returns>
-        public static unsafe IntPtr Read<T>(IntPtr source, ref T data) where T : unmanaged
-        {
-            fixed (void* dataPtr = &data)
-                return Read(source, dataPtr, sizeof(T));
-        }
-
-        /// <summary>
-        /// Reads the data of specified type from a memory location.
-        /// </summary>
-        /// <typeparam name="T">Type of a data to read.</typeparam>
-        /// <param name="source">Memory location to read from.</param>
-        /// <returns>The T value read from the pointer.</returns>
-        public static unsafe T Read<T>(IntPtr source) where T : unmanaged
-        {
-            T data = default;
-            Read(source, &data, sizeof(T));
-            return data;
-        }
-
-        /// <summary>
-        /// Writes the specified array T data to a memory location.
-        /// </summary>
-        /// <typeparam name="T">Type of a data to write.</typeparam>
-        /// <param name="destination">Memory location to write to.</param>
-        /// <param name="data">The data structure to write.</param>
-        /// <returns>destination pointer + sizeof(T)</returns>
-        public static unsafe IntPtr Write<T>(IntPtr destination, ref T data) where T : unmanaged
-        {
-            fixed (void* dataPtr = &data)
-                return Write(destination, dataPtr, sizeof(T));
-        }
-
-        /// <summary>
-        /// Writes the specified array T data to a memory location.
-        /// </summary>
-        /// <typeparam name="T">Type of a data to write.</typeparam>
-        /// <param name="destination">Memory location to write to.</param>
-        /// <param name="data">The data structure to write.</param>
-        /// <returns>destination pointer + sizeof(T)</returns>
-        public static unsafe IntPtr Write<T>(IntPtr destination, T data) where T : unmanaged =>
-            Write(destination, &data, sizeof(T));
-
-        /// <summary>
-        /// Determines whether the specified memory pointer is aligned in memory.
-        /// </summary>
-        /// <param name="memoryPtr">The memory pointer.</param>
-        /// <param name="align">The align.</param>
-        /// <returns><c>true</c> if the specified memory pointer is aligned in memory; otherwise, <c>false</c>.</returns>
-        [MethodImpl(Utilities.MethodAggressiveOptimization)]
-        public static bool IsMemoryAligned(nint memoryPtr, uint align = 16) =>
-            (memoryPtr & (align - 1)) == 0;
-
-        /// <summary>
-        /// Determines whether the specified memory pointer is aligned in memory.
-        /// </summary>
-        /// <param name="memoryPtr">The memory pointer.</param>
-        /// <param name="align">The align.</param>
-        /// <returns><c>true</c> if the specified memory pointer is aligned in memory; otherwise, <c>false</c>.</returns>
-        [MethodImpl(Utilities.MethodAggressiveOptimization)]
-        public static bool IsMemoryAligned(nuint memoryPtr, uint align = 16) =>
-            (memoryPtr & (align - 1)) == 0;
-
-        /// <summary>
-        /// Determines whether the specified memory pointer is aligned in memory.
-        /// </summary>
-        /// <param name="memoryPtr">The memory pointer.</param>
-        /// <param name="align">The align.</param>
-        /// <returns><c>true</c> if the specified memory pointer is aligned in memory; otherwise, <c>false</c>.</returns>
-        [MethodImpl(Utilities.MethodAggressiveOptimization)]
-        public static unsafe bool IsMemoryAligned(void* memoryPtr, uint align = 16) =>
-            IsMemoryAligned((nuint) memoryPtr, align);
-
-        public static void Dispose<T>(ref T? value, bool disposing = true) where T : struct
-        {
-            switch (value)
-            {
-                case null:
-                    return;
-                case IEnlightenedDisposable disposable:
-                    value = null;
-                    disposable.CheckAndDispose(disposing);
-                    return;
-                case IDisposable disposable:
-                    value = null;
-                    if (disposing)
-                        disposable.Dispose();
-                    return;
-                default:
-                    value = null;
-                    return;
-            }
-        }
-
-        public static void Dispose<T>(ref T value, bool disposing = true) where T : class
-        {
-            switch (value)
-            {
-                case null:
-                    return;
-                case IEnlightenedDisposable disposable:
-                    value = null;
-                    disposable.CheckAndDispose(disposing);
-                    return;
-                case IDisposable disposable:
-                    value = null;
-                    if (disposing)
-                        disposable.Dispose();
-                    return;
-                default:
-                    value = null;
-                    return;
-            }
+            case null:
+                return;
+            case IEnlightenedDisposable disposable:
+                value = null;
+                disposable.CheckAndDispose(disposing);
+                return;
+            case IDisposable disposable:
+                value = null;
+                if (disposing)
+                    disposable.Dispose();
+                return;
+            default:
+                value = null;
+                return;
         }
     }
 }

@@ -8,314 +8,313 @@ using SharpGen.Generator.Marshallers;
 using SharpGen.Model;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-namespace SharpGen.Generator
+namespace SharpGen.Generator;
+
+internal sealed class ShadowCallbackGenerator : MemberPlatformMultiCodeGeneratorBase<CsCallable>
 {
-    internal sealed class ShadowCallbackGenerator : MemberPlatformMultiCodeGeneratorBase<CsCallable>
+    private static readonly NameSyntax UnmanagedFunctionPointerAttributeName =
+        ParseName("System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute");
+
+    private static readonly NameSyntax UnmanagedCallersOnlyAttributeName =
+        ParseName("System.Runtime.InteropServices.UnmanagedCallersOnlyAttribute");
+
+    private static readonly NameSyntax CompilerServicesNamespace =
+        ParseName("System.Runtime.CompilerServices");
+
+    public override IEnumerable<PlatformDetectionType> GetPlatforms(CsCallable csElement) =>
+        csElement.InteropSignatures.Keys;
+
+    public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsCallable csElement,
+                                                                      PlatformDetectionType platform)
     {
-        private static readonly NameSyntax UnmanagedFunctionPointerAttributeName =
-            ParseName("System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute");
+        var sig = csElement.InteropSignatures[platform];
+        if (csElement is not CsMethod { IsFunctionPointerInVtbl: true })
+            yield return GenerateDelegateDeclaration(csElement, platform, sig);
+        yield return GenerateShadowCallback(csElement, platform, sig);
+    }
 
-        private static readonly NameSyntax UnmanagedCallersOnlyAttributeName =
-            ParseName("System.Runtime.InteropServices.UnmanagedCallersOnlyAttribute");
+    private static DelegateDeclarationSyntax GenerateDelegateDeclaration(CsCallable csElement,
+                                                                         PlatformDetectionType platform,
+                                                                         InteropMethodSignature sig) =>
+        DelegateDeclaration(sig.ReturnTypeSyntax, VtblGenerator.GetMethodDelegateName(csElement, platform))
+           .AddAttributeLists(
+                AttributeList(
+                    SingletonSeparatedList(
+                        Attribute(UnmanagedFunctionPointerAttributeName)
+                           .AddArgumentListArguments(
+                                AttributeArgument(
+                                    ModelUtilities.GetManagedCallingConventionExpression(sig.CallingConvention))))))
+           .WithParameterList(GetNativeParameterList(csElement, sig))
+           .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)));
 
-        private static readonly NameSyntax CompilerServicesNamespace =
-            ParseName("System.Runtime.CompilerServices");
+    private static ParameterListSyntax GetNativeParameterList(CsCallable csElement, InteropMethodSignature sig) =>
+        ParameterList(
+            (csElement is CsMethod
+                 ? SingletonSeparatedList(Parameter(Identifier("thisObject")).WithType(GeneratorHelpers.IntPtrType))
+                 : default)
+           .AddRange(
+                sig.ParameterTypes
+                   .Select(type => Parameter(Identifier(type.Name)).WithType(type.InteropTypeSyntax))
+            )
+        );
 
-        public override IEnumerable<PlatformDetectionType> GetPlatforms(CsCallable csElement) =>
-            csElement.InteropSignatures.Keys;
-
-        public override IEnumerable<MemberDeclarationSyntax> GenerateCode(CsCallable csElement,
-                                                                          PlatformDetectionType platform)
+    private static CatchClauseSyntax GenerateCatchClause(SyntaxToken exceptionVariableIdentifier, params StatementSyntax[] statements)
+    {
+        StatementSyntaxList statementList = new()
         {
-            var sig = csElement.InteropSignatures[platform];
-            if (csElement is not CsMethod { IsFunctionPointerInVtbl: true })
-                yield return GenerateDelegateDeclaration(csElement, platform, sig);
-            yield return GenerateShadowCallback(csElement, platform, sig);
+            ExpressionStatement(
+                ConditionalAccessExpression(
+                    ParenthesizedExpression(
+                        BinaryExpression(
+                            SyntaxKind.AsExpression,
+                            IdentifierName(@"@this"),
+                            IdentifierName("SharpGen.Runtime.IExceptionCallback")
+                        )
+                    ),
+                    InvocationExpression(
+                        MemberBindingExpression(IdentifierName("RaiseException")),
+                        ArgumentList(
+                            SingletonSeparatedList(
+                                Argument(IdentifierName(exceptionVariableIdentifier))
+                            )
+                        )
+                    )
+                )
+            )
+        };
+
+        statementList.AddRange(statements);
+
+        return CatchClause()
+              .WithDeclaration(
+                   CatchDeclaration(ParseTypeName("System.Exception"), exceptionVariableIdentifier)
+               )
+              .WithBlock(statementList.ToBlock());
+    }
+
+    private static StatementSyntax GenerateShadowCallbackStatement(CsCallable csElement) =>
+        LocalDeclarationStatement(
+            VariableDeclaration(
+                GeneratorHelpers.VarIdentifierName,
+                SingletonSeparatedList(
+                    VariableDeclarator(
+                        Identifier("@this"),
+                        default,
+                        EqualsValueClause(
+                            InvocationExpression(
+                                GenericName(
+                                    Identifier("ToCallback"),
+                                    TypeArgumentList(
+                                        SingletonSeparatedList<TypeSyntax>(IdentifierName(csElement.Parent.Name))
+                                    )
+                                ),
+                                ArgumentList(SingletonSeparatedList(Argument(IdentifierName("thisObject"))))
+                            )
+                        )
+                    )
+                )
+            )
+        );
+
+    private MethodDeclarationSyntax GenerateShadowCallback(CsCallable csElement, PlatformDetectionType platform, InteropMethodSignature sig)
+    {
+        var interopReturnType = sig.ReturnTypeSyntax;
+
+        var statements = NewStatementList;
+
+        statements.Add(csElement, platform, Generators.ReverseCallableProlog);
+
+        statements.AddRange(
+            csElement.ReturnValue,
+            static(marshaller, item) => marshaller.GenerateNativeToManagedExtendedProlog(item)
+        );
+
+        statements.AddRange(
+            csElement.Parameters,
+            static(marshaller, item) => marshaller.GenerateNativeToManagedExtendedProlog(item)
+        );
+
+        statements.AddRange(
+            csElement.InRefInRefParameters,
+            static(marshaller, item) => marshaller.GenerateNativeToManaged(item, false)
+        );
+
+        var managedArguments = csElement.PublicParameters
+                                        .Select(param => GetMarshaller(param).GenerateManagedArgument(param))
+                                        .ToList();
+
+        ExpressionSyntax callableName = csElement is CsFunction
+                                            ? IdentifierName(csElement.Name)
+                                            : MemberAccessExpression(
+                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                IdentifierName("@this"),
+                                                IdentifierName(csElement.Name)
+                                            );
+
+        var invocation = InvocationExpression(callableName, ArgumentList(SeparatedList(managedArguments)));
+
+        var returnValueNeedsMarshalling = GetMarshaller(csElement.ReturnValue).GeneratesMarshalVariable(csElement.ReturnValue);
+
+        if (!csElement.HasReturnStatement)
+        {
+            statements.Add(ExpressionStatement(invocation));
         }
+        else
+        {
+            var publicReturnValue = csElement.ActualReturnValue;
 
-        private static DelegateDeclarationSyntax GenerateDelegateDeclaration(CsCallable csElement,
-                                                                             PlatformDetectionType platform,
-                                                                             InteropMethodSignature sig) =>
-            DelegateDeclaration(sig.ReturnTypeSyntax, VtblGenerator.GetMethodDelegateName(csElement, platform))
-               .AddAttributeLists(
-                    AttributeList(
-                        SingletonSeparatedList(
-                            Attribute(UnmanagedFunctionPointerAttributeName)
-                               .AddArgumentListArguments(
-                                    AttributeArgument(
-                                        ModelUtilities.GetManagedCallingConventionExpression(sig.CallingConvention))))))
-               .WithParameterList(GetNativeParameterList(csElement, sig))
-               .WithModifiers(TokenList(Token(SyntaxKind.PrivateKeyword)));
-
-        private static ParameterListSyntax GetNativeParameterList(CsCallable csElement, InteropMethodSignature sig) =>
-            ParameterList(
-                (csElement is CsMethod
-                     ? SingletonSeparatedList(Parameter(Identifier("thisObject")).WithType(GeneratorHelpers.IntPtrType))
-                     : default)
-               .AddRange(
-                    sig.ParameterTypes
-                       .Select(type => Parameter(Identifier(type.Name)).WithType(type.InteropTypeSyntax))
+            statements.Add(
+                ExpressionStatement(
+                    AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression,
+                        IdentifierName(publicReturnValue.Name),
+                        invocation
+                    )
                 )
             );
 
-        private static CatchClauseSyntax GenerateCatchClause(SyntaxToken exceptionVariableIdentifier, params StatementSyntax[] statements)
+            if (returnValueNeedsMarshalling && publicReturnValue is CsReturnValue)
+                statements.Add(
+                    publicReturnValue,
+                    static(marshaller, item) => marshaller.GenerateManagedToNative(item, false)
+                );
+        }
+
+        statements.AddRange(
+            csElement.LocalManagedReferenceParameters,
+            static(marshaller, item) => marshaller.GenerateManagedToNative(item, false)
+        );
+
+        var isForcedReturnBufferSig = sig.ForcedReturnBufferSig;
+
+        var nativeReturnLocation = returnValueNeedsMarshalling
+                                       ? MarshallerBase.GetMarshalStorageLocation(csElement.ReturnValue)
+                                       : IdentifierName(csElement.ReturnValue.Name);
+
+        if (csElement.HasReturnTypeValue && !csElement.HasReturnTypeParameter && (returnValueNeedsMarshalling || isForcedReturnBufferSig || !ReverseCallablePrologCodeGenerator.GetPublicType(csElement.ReturnValue).IsEquivalentTo(interopReturnType)))
+            nativeReturnLocation = GeneratorHelpers.CastExpression(interopReturnType, nativeReturnLocation);
+
+        if (csElement.HasReturnTypeValue)
+            statements.Add(
+                ReturnStatement(
+                    isForcedReturnBufferSig
+                        ? IdentifierName("returnSlot")
+                        : nativeReturnLocation
+                )
+            );
+
+        var exceptionVariableIdentifier = Identifier("__exception__");
+
+        StatementSyntax[] catchClauseStatements = null;
+
+        if (csElement.IsReturnTypeResult)
         {
-            StatementSyntaxList statementList = new()
+            catchClauseStatements = new StatementSyntax[]
             {
-                ExpressionStatement(
-                    ConditionalAccessExpression(
-                        ParenthesizedExpression(
-                            BinaryExpression(
-                                SyntaxKind.AsExpression,
-                                IdentifierName(@"@this"),
-                                IdentifierName("SharpGen.Runtime.IExceptionCallback")
+                ReturnStatement(
+                    MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        InvocationExpression(
+                            MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                GlobalNamespace.GetTypeNameSyntax(WellKnownName.Result),
+                                IdentifierName("GetResultFromException")
+                            ),
+                            ArgumentList(
+                                SingletonSeparatedList(Argument(IdentifierName(exceptionVariableIdentifier)))
                             )
                         ),
-                        InvocationExpression(
-                            MemberBindingExpression(IdentifierName("RaiseException")),
-                            ArgumentList(
-                                SingletonSeparatedList(
-                                    Argument(IdentifierName(exceptionVariableIdentifier))
-                                )
-                            )
-                        )
+                        IdentifierName("Code")
                     )
                 )
             };
 
-            statementList.AddRange(statements);
-
-            return CatchClause()
-                  .WithDeclaration(
-                       CatchDeclaration(ParseTypeName("System.Exception"), exceptionVariableIdentifier)
-                   )
-                  .WithBlock(statementList.ToBlock());
+            if (csElement.IsReturnTypeHidden && !csElement.ForceReturnType)
+            {
+                statements.Add(ReturnStatement(
+                                   MemberAccessExpression(
+                                       SyntaxKind.SimpleMemberAccessExpression,
+                                       MemberAccessExpression(
+                                           SyntaxKind.SimpleMemberAccessExpression,
+                                           GlobalNamespace.GetTypeNameSyntax(WellKnownName.Result),
+                                           IdentifierName("Ok")),
+                                       IdentifierName("Code"))));
+            }
+        }
+        else if (csElement.HasReturnType)
+        {
+            catchClauseStatements = new StatementSyntax[]
+            {
+                ReturnStatement(
+                    isForcedReturnBufferSig ? IdentifierName("returnSlot") : DefaultLiteral
+                )
+            };
         }
 
-        private static StatementSyntax GenerateShadowCallbackStatement(CsCallable csElement) =>
-            LocalDeclarationStatement(
-                VariableDeclaration(
-                    GeneratorHelpers.VarIdentifierName,
-                    SingletonSeparatedList(
-                        VariableDeclarator(
-                            Identifier("@this"),
-                            default,
-                            EqualsValueClause(
-                                InvocationExpression(
-                                    GenericName(
-                                        Identifier("ToCallback"),
-                                        TypeArgumentList(
-                                            SingletonSeparatedList<TypeSyntax>(IdentifierName(csElement.Parent.Name))
-                                        )
-                                    ),
-                                    ArgumentList(SingletonSeparatedList(Argument(IdentifierName("thisObject"))))
-                                )
-                            )
-                        )
+        var fullBody = NewStatementList;
+
+        if (csElement is CsMethod)
+            fullBody.Add(GenerateShadowCallbackStatement(csElement));
+
+        fullBody.Add(
+            TryStatement()
+               .WithBlock(statements.ToBlock())
+               .WithCatches(
+                    SingletonList(
+                        GenerateCatchClause(exceptionVariableIdentifier, catchClauseStatements)
                     )
                 )
-            );
+        );
 
-        private MethodDeclarationSyntax GenerateShadowCallback(CsCallable csElement, PlatformDetectionType platform, InteropMethodSignature sig)
-        {
-            var interopReturnType = sig.ReturnTypeSyntax;
-
-            var statements = NewStatementList;
-
-            statements.Add(csElement, platform, Generators.ReverseCallableProlog);
-
-            statements.AddRange(
-                csElement.ReturnValue,
-                static(marshaller, item) => marshaller.GenerateNativeToManagedExtendedProlog(item)
-            );
-
-            statements.AddRange(
-                csElement.Parameters,
-                static(marshaller, item) => marshaller.GenerateNativeToManagedExtendedProlog(item)
-            );
-
-            statements.AddRange(
-                csElement.InRefInRefParameters,
-                static(marshaller, item) => marshaller.GenerateNativeToManaged(item, false)
-            );
-
-            var managedArguments = csElement.PublicParameters
-                .Select(param => GetMarshaller(param).GenerateManagedArgument(param))
-                .ToList();
-
-            ExpressionSyntax callableName = csElement is CsFunction
-                                                ? IdentifierName(csElement.Name)
-                                                : MemberAccessExpression(
-                                                    SyntaxKind.SimpleMemberAccessExpression,
-                                                    IdentifierName("@this"),
-                                                    IdentifierName(csElement.Name)
-                                                );
-
-            var invocation = InvocationExpression(callableName, ArgumentList(SeparatedList(managedArguments)));
-
-            var returnValueNeedsMarshalling = GetMarshaller(csElement.ReturnValue).GeneratesMarshalVariable(csElement.ReturnValue);
-
-            if (!csElement.HasReturnStatement)
-            {
-                statements.Add(ExpressionStatement(invocation));
-            }
-            else
-            {
-                var publicReturnValue = csElement.ActualReturnValue;
-
-                statements.Add(
-                    ExpressionStatement(
-                        AssignmentExpression(
-                            SyntaxKind.SimpleAssignmentExpression,
-                            IdentifierName(publicReturnValue.Name),
-                            invocation
-                        )
-                    )
-                );
-
-                if (returnValueNeedsMarshalling && publicReturnValue is CsReturnValue)
-                    statements.Add(
-                        publicReturnValue,
-                        static(marshaller, item) => marshaller.GenerateManagedToNative(item, false)
-                    );
-            }
-
-            statements.AddRange(
-                csElement.LocalManagedReferenceParameters,
-                static(marshaller, item) => marshaller.GenerateManagedToNative(item, false)
-            );
-
-            var isForcedReturnBufferSig = sig.ForcedReturnBufferSig;
-
-            var nativeReturnLocation = returnValueNeedsMarshalling
-                                           ? MarshallerBase.GetMarshalStorageLocation(csElement.ReturnValue)
-                                           : IdentifierName(csElement.ReturnValue.Name);
-
-            if (csElement.HasReturnTypeValue && !csElement.HasReturnTypeParameter && (returnValueNeedsMarshalling || isForcedReturnBufferSig || !ReverseCallablePrologCodeGenerator.GetPublicType(csElement.ReturnValue).IsEquivalentTo(interopReturnType)))
-                nativeReturnLocation = GeneratorHelpers.CastExpression(interopReturnType, nativeReturnLocation);
-
-            if (csElement.HasReturnTypeValue)
-                statements.Add(
-                    ReturnStatement(
-                        isForcedReturnBufferSig
-                            ? IdentifierName("returnSlot")
-                            : nativeReturnLocation
-                    )
-                );
-
-            var exceptionVariableIdentifier = Identifier("__exception__");
-
-            StatementSyntax[] catchClauseStatements = null;
-
-            if (csElement.IsReturnTypeResult)
-            {
-                catchClauseStatements = new StatementSyntax[]
-                {
-                    ReturnStatement(
-                        MemberAccessExpression(
-                            SyntaxKind.SimpleMemberAccessExpression,
-                            InvocationExpression(
-                                MemberAccessExpression(
-                                    SyntaxKind.SimpleMemberAccessExpression,
-                                    GlobalNamespace.GetTypeNameSyntax(WellKnownName.Result),
-                                    IdentifierName("GetResultFromException")
-                                ),
-                                ArgumentList(
-                                    SingletonSeparatedList(Argument(IdentifierName(exceptionVariableIdentifier)))
-                                )
-                            ),
-                            IdentifierName("Code")
-                        )
-                    )
-                };
-
-                if (csElement.IsReturnTypeHidden && !csElement.ForceReturnType)
-                {
-                    statements.Add(ReturnStatement(
-                            MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                MemberAccessExpression(
-                                    SyntaxKind.SimpleMemberAccessExpression,
-                                    GlobalNamespace.GetTypeNameSyntax(WellKnownName.Result),
-                                    IdentifierName("Ok")),
-                                IdentifierName("Code"))));
-                }
-            }
-            else if (csElement.HasReturnType)
-            {
-                catchClauseStatements = new StatementSyntax[]
-                {
-                    ReturnStatement(
-                        isForcedReturnBufferSig ? IdentifierName("returnSlot") : DefaultLiteral
-                    )
-                };
-            }
-
-            var fullBody = NewStatementList;
-
-            if (csElement is CsMethod)
-                fullBody.Add(GenerateShadowCallbackStatement(csElement));
-
-            fullBody.Add(
-                TryStatement()
-                   .WithBlock(statements.ToBlock())
-                   .WithCatches(
-                        SingletonList(
-                            GenerateCatchClause(exceptionVariableIdentifier, catchClauseStatements)
-                        )
-                    )
-            );
-
-            return MethodDeclaration(
-                       interopReturnType,
-                       csElement.Name + GeneratorHelpers.GetPlatformSpecificSuffix(platform)
+        return MethodDeclaration(
+                   interopReturnType,
+                   csElement.Name + GeneratorHelpers.GetPlatformSpecificSuffix(platform)
+               )
+              .WithModifiers(
+                   TokenList(
+                       Token(SyntaxKind.PrivateKeyword), Token(SyntaxKind.StaticKeyword),
+                       Token(SyntaxKind.UnsafeKeyword)
                    )
-                  .WithModifiers(
-                       TokenList(
-                           Token(SyntaxKind.PrivateKeyword), Token(SyntaxKind.StaticKeyword),
-                           Token(SyntaxKind.UnsafeKeyword)
-                       )
-                   )
-                  .WithParameterList(GetNativeParameterList(csElement, sig))
-                  .WithBody(fullBody.ToBlock())
-                  .WithAttributeLists(
-                       csElement is CsMethod { IsFunctionPointerInVtbl: true }
-                           ? SingletonList(
-                               AttributeList(
-                                   SingletonSeparatedList(
-                                       Attribute(
-                                           UnmanagedCallersOnlyAttributeName,
-                                           AttributeArgumentList(
-                                               SingletonSeparatedList(
-                                                   AttributeArgument(FnPtrCallConvs(sig.CallingConvention))
-                                                      .WithNameEquals(NameEquals("CallConvs"))
-                                               )
+               )
+              .WithParameterList(GetNativeParameterList(csElement, sig))
+              .WithBody(fullBody.ToBlock())
+              .WithAttributeLists(
+                   csElement is CsMethod { IsFunctionPointerInVtbl: true }
+                       ? SingletonList(
+                           AttributeList(
+                               SingletonSeparatedList(
+                                   Attribute(
+                                       UnmanagedCallersOnlyAttributeName,
+                                       AttributeArgumentList(
+                                           SingletonSeparatedList(
+                                               AttributeArgument(FnPtrCallConvs(sig.CallingConvention))
+                                                  .WithNameEquals(NameEquals("CallConvs"))
                                            )
                                        )
                                    )
                                )
                            )
-                           : default
-                   );
+                       )
+                       : default
+               );
 
-            static ExpressionSyntax FnPtrCallConvs(CppCallingConvention callingConvention) =>
-                ImplicitArrayCreationExpression(
-                    InitializerExpression(
-                        SyntaxKind.ArrayInitializerExpression,
-                        SingletonSeparatedList<ExpressionSyntax>(
-                            TypeOfExpression(
-                                QualifiedName(
-                                    CompilerServicesNamespace,
-                                    IdentifierName("CallConv" + callingConvention.ToCallConvShortName())
-                                )
+        static ExpressionSyntax FnPtrCallConvs(CppCallingConvention callingConvention) =>
+            ImplicitArrayCreationExpression(
+                InitializerExpression(
+                    SyntaxKind.ArrayInitializerExpression,
+                    SingletonSeparatedList<ExpressionSyntax>(
+                        TypeOfExpression(
+                            QualifiedName(
+                                CompilerServicesNamespace,
+                                IdentifierName("CallConv" + callingConvention.ToCallConvShortName())
                             )
                         )
                     )
-                );
-        }
+                )
+            );
+    }
 
-        public ShadowCallbackGenerator(Ioc ioc) : base(ioc)
-        {
-        }
+    public ShadowCallbackGenerator(Ioc ioc) : base(ioc)
+    {
     }
 }

@@ -17,28 +17,27 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-namespace SharpGen.Logging
+namespace SharpGen.Logging;
+
+/// <summary>
+/// Logging level.
+/// </summary>
+public enum LogLevel
 {
     /// <summary>
-    /// Logging level.
+    /// Logging information.
     /// </summary>
-    public enum LogLevel
-    {
-        /// <summary>
-        /// Logging information.
-        /// </summary>
-        Info,
-        /// <summary>
-        /// Logging Warning.
-        /// </summary>
-        Warning,
-        /// <summary>
-        /// Logging Error.
-        /// </summary>
-        Error,
-        /// <summary>
-        /// Logging Fatal.
-        /// </summary>
-        Fatal        
-    }
+    Info,
+    /// <summary>
+    /// Logging Warning.
+    /// </summary>
+    Warning,
+    /// <summary>
+    /// Logging Error.
+    /// </summary>
+    Error,
+    /// <summary>
+    /// Logging Fatal.
+    /// </summary>
+    Fatal        
 }

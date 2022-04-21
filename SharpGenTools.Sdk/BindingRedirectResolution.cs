@@ -1,19 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Text;
 
-namespace SharpGenTools.Sdk
+namespace SharpGenTools.Sdk;
+
+internal static class BindingRedirectResolution
 {
-    internal static class BindingRedirectResolution
+    public static void Enable()
     {
-        public static void Enable()
-        {
-        }
+    }
 
-        static BindingRedirectResolution()
-        {
+    static BindingRedirectResolution()
+    {
 #if NETFRAMEWORK
             AppDomain.CurrentDomain.AssemblyResolve += (s, args) =>
             {
@@ -38,6 +36,5 @@ namespace SharpGenTools.Sdk
                 return null;
             };
 #endif
-        }
     }
 }

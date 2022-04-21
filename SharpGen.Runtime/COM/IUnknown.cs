@@ -18,13 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace SharpGen.Runtime
+namespace SharpGen.Runtime;
+
+/// <summary>
+/// Base interface for Component Object Model (COM).
+/// </summary>
+[ExcludeFromTypeList]
+public partial interface IUnknown
 {
-    /// <summary>
-    /// Base interface for Component Object Model (COM).
-    /// </summary>
-    [ExcludeFromTypeList]
-    public partial interface IUnknown
-    {
-    }
 }

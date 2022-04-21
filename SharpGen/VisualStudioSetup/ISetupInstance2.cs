@@ -1,16 +1,15 @@
 ﻿using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
 using FILETIME = System.Runtime.InteropServices.ComTypes.FILETIME;
 
 #pragma warning disable 0618
 
-namespace SharpGen.VisualStudioSetup
+namespace SharpGen.VisualStudioSetup;
+
+[Guid("89143C9A-05AF-49B0-B717-72E218A2185C")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+[ComImport]
+public interface ISetupInstance2 : ISetupInstance
 {
-  [Guid("89143C9A-05AF-49B0-B717-72E218A2185C")]
-  [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-  [ComImport]
-  public interface ISetupInstance2 : ISetupInstance
-  {
     [return: MarshalAs(UnmanagedType.BStr)]
     new string GetInstanceId();
         
@@ -57,5 +56,4 @@ namespace SharpGen.VisualStudioSetup
 
     [return: MarshalAs(UnmanagedType.BStr)]
     string GetEnginePath();
-  }
 }

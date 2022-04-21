@@ -22,35 +22,34 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace SharpGen.Runtime
+namespace SharpGen.Runtime;
+
+/// <summary>
+/// Shadow attribute used to associate a C++ callbackable interface to its Shadow implementation.
+/// </summary>
+[AttributeUsage(AttributeTargets.Interface)]
+public sealed class ShadowAttribute : Attribute
 {
     /// <summary>
-    /// Shadow attribute used to associate a C++ callbackable interface to its Shadow implementation.
+    /// Type of the associated shadow
     /// </summary>
-    [AttributeUsage(AttributeTargets.Interface)]
-    public sealed class ShadowAttribute : Attribute
+    public Type Type { get; }
+
+    /// <summary>
+    /// Initializes a new instance of <see cref="ShadowAttribute"/> class.
+    /// </summary>
+    /// <param name="typeOfTheAssociatedShadow">Type of the associated shadow</param>
+    public ShadowAttribute(Type typeOfTheAssociatedShadow)
     {
-        /// <summary>
-        /// Type of the associated shadow
-        /// </summary>
-        public Type Type { get; }
+        Type = typeOfTheAssociatedShadow ?? throw new ArgumentNullException(nameof(typeOfTheAssociatedShadow));
 
-        /// <summary>
-        /// Initializes a new instance of <see cref="ShadowAttribute"/> class.
-        /// </summary>
-        /// <param name="typeOfTheAssociatedShadow">Type of the associated shadow</param>
-        public ShadowAttribute(Type typeOfTheAssociatedShadow)
-        {
-            Type = typeOfTheAssociatedShadow ?? throw new ArgumentNullException(nameof(typeOfTheAssociatedShadow));
-
-            Debug.Assert(typeof(CppObjectShadow).GetTypeInfo().IsAssignableFrom(typeOfTheAssociatedShadow.GetTypeInfo()));
-        }
-
-        [MethodImpl(Utilities.MethodAggressiveOptimization)]
-        internal static ShadowAttribute Get(Type type) => Get(type.GetTypeInfo());
-        [MethodImpl(Utilities.MethodAggressiveOptimization)]
-        internal static ShadowAttribute Get(TypeInfo type) => type.GetCustomAttribute<ShadowAttribute>();
-        internal static bool Has(Type type) => Get(type.GetTypeInfo()) != null;
-        internal static bool Has(TypeInfo type) => Get(type) != null;
+        Debug.Assert(typeof(CppObjectShadow).GetTypeInfo().IsAssignableFrom(typeOfTheAssociatedShadow.GetTypeInfo()));
     }
+
+    [MethodImpl(Utilities.MethodAggressiveOptimization)]
+    internal static ShadowAttribute Get(Type type) => Get(type.GetTypeInfo());
+    [MethodImpl(Utilities.MethodAggressiveOptimization)]
+    internal static ShadowAttribute Get(TypeInfo type) => type.GetCustomAttribute<ShadowAttribute>();
+    internal static bool Has(Type type) => Get(type.GetTypeInfo()) != null;
+    internal static bool Has(TypeInfo type) => Get(type) != null;
 }

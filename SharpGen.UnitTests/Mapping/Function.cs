@@ -6,210 +6,209 @@ using SharpGen.Transform;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace SharpGen.UnitTests.Mapping
+namespace SharpGen.UnitTests.Mapping;
+
+public class Function : MappingTestBase
 {
-    public class Function : MappingTestBase
+    public Function(ITestOutputHelper outputHelper) : base(outputHelper)
     {
-        public Function(ITestOutputHelper outputHelper) : base(outputHelper)
+    }
+
+    [Fact]
+    public void Basic()
+    {
+        var config = new ConfigFile
         {
-        }
+            Id = nameof(Basic),
+            Namespace = nameof(Basic),
+            Includes =
+            {
+                new IncludeRule
+                {
+                    Attach = true,
+                    File = "func.h",
+                    Namespace = nameof(Basic)
+                }
+            },
+            Extension =
+            {
+                new CreateExtensionRule
+                {
+                    NewClass = $"{nameof(Basic)}.Functions",
+                }
+            },
+            Bindings =
+            {
+                new BindRule("int", "System.Int32")
+            },
+            Mappings =
+            {
+                new MappingRule
+                {
+                    Function = "Test",
+                    FunctionDllName = "\"Test.dll\"",
+                    Group = $"{nameof(Basic)}.Functions"
+                }
+            }
+        };
 
-        [Fact]
-        public void Basic()
+        var function = new CppFunction("Test")
         {
-            var config = new ConfigFile
+            ReturnValue = new CppReturnValue
             {
-                Id = nameof(Basic),
-                Namespace = nameof(Basic),
-                Includes =
-                {
-                    new IncludeRule
-                    {
-                        Attach = true,
-                        File = "func.h",
-                        Namespace = nameof(Basic)
-                    }
-                },
-                Extension =
-                {
-                    new CreateExtensionRule
-                    {
-                        NewClass = $"{nameof(Basic)}.Functions",
-                    }
-                },
-                Bindings =
-                {
-                    new BindRule("int", "System.Int32")
-                },
-                Mappings =
-                {
-                    new MappingRule
-                    {
-                        Function = "Test",
-                        FunctionDllName = "\"Test.dll\"",
-                        Group = $"{nameof(Basic)}.Functions"
-                    }
-                }
-            };
+                TypeName = "int",
+            }
+        };
 
-            var function = new CppFunction("Test")
-            {
-                ReturnValue = new CppReturnValue
-                {
-                    TypeName = "int",
-                }
-            };
+        var include = new CppInclude("func");
 
-            var include = new CppInclude("func");
+        var module = new CppModule("SharpGenTestModule");
 
-            var module = new CppModule("SharpGenTestModule");
+        include.Add(function);
+        module.Add(include);
 
-            include.Add(function);
-            module.Add(include);
+        var (solution, _) = MapModel(module, config);
 
-            var (solution, _) = MapModel(module, config);
+        Assert.Single(solution.EnumerateDescendants<CsGroup>());
 
-            Assert.Single(solution.EnumerateDescendants<CsGroup>());
+        var group = solution.EnumerateDescendants<CsGroup>().First();
+        Assert.Equal("Functions", group.Name);
 
-            var group = solution.EnumerateDescendants<CsGroup>().First();
-            Assert.Equal("Functions", group.Name);
+        Assert.Single(group.Functions);
 
-            Assert.Single(group.Functions);
+        var csFunc = group.Functions.First();
+        Assert.Equal(TypeRegistry.Int32, csFunc.ReturnValue.PublicType);
+        Assert.Empty(csFunc.Parameters);
+        Assert.Equal(Visibility.Static, csFunc.Visibility & Visibility.Static);
+    }
 
-            var csFunc = group.Functions.First();
-            Assert.Equal(TypeRegistry.Int32, csFunc.ReturnValue.PublicType);
-            Assert.Empty(csFunc.Parameters);
-            Assert.Equal(Visibility.Static, csFunc.Visibility & Visibility.Static);
-        }
-
-        [Fact]
-        public void PointerSizeReturnValueNotLarge()
+    [Fact]
+    public void PointerSizeReturnValueNotLarge()
+    {
+        var config = new ConfigFile
         {
-            var config = new ConfigFile
+            Id = nameof(PointerSizeReturnValueNotLarge),
+            Namespace = nameof(PointerSizeReturnValueNotLarge),
+            Includes =
             {
-                Id = nameof(PointerSizeReturnValueNotLarge),
-                Namespace = nameof(PointerSizeReturnValueNotLarge),
-                Includes =
+                new IncludeRule
                 {
-                    new IncludeRule
-                    {
-                        File = "pointerSize.h",
-                        Attach = true,
-                        Namespace = nameof(PointerSizeReturnValueNotLarge)
-                    }
-                },
-                Extension =
-                {
-                    new DefineExtensionRule
-                    {
-                        Struct = "SharpGen.Runtime.PointerSize",
-                        SizeOf = 8,
-                        IsNativePrimitive = true,
-                    }
-                },
-                Bindings =
-                {
-                    new BindRule("int", "SharpGen.Runtime.PointerSize")
+                    File = "pointerSize.h",
+                    Attach = true,
+                    Namespace = nameof(PointerSizeReturnValueNotLarge)
                 }
-            };
-
-            var iface = new CppInterface("Interface")
+            },
+            Extension =
             {
-                TotalMethodCount = 1
-            };
-
-            iface.Add(new CppMethod("method")
-            {
-                ReturnValue = new CppReturnValue
+                new DefineExtensionRule
                 {
-                    TypeName = "int"
+                    Struct = "SharpGen.Runtime.PointerSize",
+                    SizeOf = 8,
+                    IsNativePrimitive = true,
                 }
-            });
+            },
+            Bindings =
+            {
+                new BindRule("int", "SharpGen.Runtime.PointerSize")
+            }
+        };
 
-            var include = new CppInclude("pointerSize");
-
-            include.Add(iface);
-
-            var module = new CppModule("SharpGenTestModule");
-            module.Add(include);
-
-            var (solution, _) = MapModel(module, config);
-
-            Assert.Single(solution.EnumerateDescendants<CsInterface>());
-
-            var csIface = solution.EnumerateDescendants<CsInterface>().First();
-
-            Assert.Single(csIface.Methods);
-
-            var method = csIface.Methods.First();
-
-            Assert.False(method.IsReturnStructLarge);
-        }
-
-        [Fact]
-        public void NativePrimitiveTypeNotLarge()
+        var iface = new CppInterface("Interface")
         {
-            var config = new ConfigFile
+            TotalMethodCount = 1
+        };
+
+        iface.Add(new CppMethod("method")
+        {
+            ReturnValue = new CppReturnValue
             {
-                Id = nameof(NativePrimitiveTypeNotLarge),
-                Namespace = nameof(NativePrimitiveTypeNotLarge),
-                Includes =
+                TypeName = "int"
+            }
+        });
+
+        var include = new CppInclude("pointerSize");
+
+        include.Add(iface);
+
+        var module = new CppModule("SharpGenTestModule");
+        module.Add(include);
+
+        var (solution, _) = MapModel(module, config);
+
+        Assert.Single(solution.EnumerateDescendants<CsInterface>());
+
+        var csIface = solution.EnumerateDescendants<CsInterface>().First();
+
+        Assert.Single(csIface.Methods);
+
+        var method = csIface.Methods.First();
+
+        Assert.False(method.IsReturnStructLarge);
+    }
+
+    [Fact]
+    public void NativePrimitiveTypeNotLarge()
+    {
+        var config = new ConfigFile
+        {
+            Id = nameof(NativePrimitiveTypeNotLarge),
+            Namespace = nameof(NativePrimitiveTypeNotLarge),
+            Includes =
+            {
+                new IncludeRule
                 {
-                    new IncludeRule
-                    {
-                        File = "pointerSize.h",
-                        Attach = true,
-                        Namespace = nameof(NativePrimitiveTypeNotLarge)
-                    }
-                },
-                Extension =
-                {
-                    new DefineExtensionRule
-                    {
-                        Struct = "NativePrimitiveType",
-                        SizeOf = 16,
-                        IsNativePrimitive = true,
-                    }
-                },
-                Bindings =
-                {
-                    new BindRule("NativePrimitive", "NativePrimitiveType")
+                    File = "pointerSize.h",
+                    Attach = true,
+                    Namespace = nameof(NativePrimitiveTypeNotLarge)
                 }
-            };
-
-            var iface = new CppInterface("Interface")
+            },
+            Extension =
             {
-                TotalMethodCount = 1
-            };
-
-            iface.Add(new CppMethod("method")
-            {
-                ReturnValue = new CppReturnValue
+                new DefineExtensionRule
                 {
-                    TypeName = "NativePrimitive"
+                    Struct = "NativePrimitiveType",
+                    SizeOf = 16,
+                    IsNativePrimitive = true,
                 }
-            });
+            },
+            Bindings =
+            {
+                new BindRule("NativePrimitive", "NativePrimitiveType")
+            }
+        };
 
-            var include = new CppInclude("pointerSize");
+        var iface = new CppInterface("Interface")
+        {
+            TotalMethodCount = 1
+        };
 
-            include.Add(iface);
+        iface.Add(new CppMethod("method")
+        {
+            ReturnValue = new CppReturnValue
+            {
+                TypeName = "NativePrimitive"
+            }
+        });
 
-            var module = new CppModule("SharpGenTestModule");
-            module.Add(include);
+        var include = new CppInclude("pointerSize");
 
-            var (solution, _) = MapModel(module, config);
+        include.Add(iface);
 
-            Assert.Single(solution.EnumerateDescendants<CsInterface>());
+        var module = new CppModule("SharpGenTestModule");
+        module.Add(include);
 
-            var csIface = solution.EnumerateDescendants<CsInterface>().First();
+        var (solution, _) = MapModel(module, config);
 
-            Assert.Single(csIface.Methods);
+        Assert.Single(solution.EnumerateDescendants<CsInterface>());
 
-            var method = csIface.Methods.First();
+        var csIface = solution.EnumerateDescendants<CsInterface>().First();
 
-            Assert.False(method.IsReturnStructLarge);
+        Assert.Single(csIface.Methods);
 
-            Assert.False(Logger.HasErrors);
-        }
+        var method = csIface.Methods.First();
+
+        Assert.False(method.IsReturnStructLarge);
+
+        Assert.False(Logger.HasErrors);
     }
 }

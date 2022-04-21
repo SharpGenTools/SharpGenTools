@@ -20,12 +20,11 @@
 
 using System;
 
-namespace SharpGen.CppModel
-{
-    public sealed class CppGuid : CppElement
-    {
-        public Guid Guid { get; }
+namespace SharpGen.CppModel;
 
-        public CppGuid(string name, Guid guid) : base(name) => Guid = guid;
-    }
+public sealed class CppGuid : CppElement
+{
+    public Guid Guid { get; }
+
+    public CppGuid(string name, Guid guid) : base(name) => Guid = guid;
 }

@@ -2,79 +2,78 @@
 using System.Runtime.InteropServices;
 using SharpGen.Runtime;
 
-namespace SharpGen.UnitTests.Runtime
+namespace SharpGen.UnitTests.Runtime;
+
+[Shadow(typeof(CallbackShadow))]
+interface ICallback : ICallbackable
 {
-    [Shadow(typeof(CallbackShadow))]
-    interface ICallback : ICallbackable
-    {
-        int Increment(int param);
-    }
+    int Increment(int param);
+}
 
-    class CallbackImpl : CallbackBase, ICallback
+class CallbackImpl : CallbackBase, ICallback
+{
+    public int Increment(int param)
     {
-        public int Increment(int param)
-        {
-            return param + 1;
-        }
+        return param + 1;
     }
+}
 
-    class CallbackShadow : CppObjectShadow
+class CallbackShadow : CppObjectShadow
+{
+    public class CallbackVbtl : CppObjectVtbl
     {
-        public class CallbackVbtl : CppObjectVtbl
+        public CallbackVbtl(int numberOfCallbackMethods) : base(numberOfCallbackMethods + 1)
         {
-            public CallbackVbtl(int numberOfCallbackMethods) : base(numberOfCallbackMethods + 1)
-            {
 #pragma warning disable 618
-                AddMethod(new IncrementDelegate(IncrementImpl), 0);
+            AddMethod(new IncrementDelegate(IncrementImpl), 0);
 #pragma warning restore 618
-            }
-
-            [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-            public delegate int IncrementDelegate(IntPtr thisObj, int param);
-
-            private static int IncrementImpl(IntPtr thisObj, int param)
-            {
-                return ToCallback<ICallback>(thisObj).Increment(param);
-            }
         }
 
-        protected override CppObjectVtbl Vtbl { get; } = new CallbackVbtl(0);
-    }
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate int IncrementDelegate(IntPtr thisObj, int param);
 
-    [Shadow(typeof(Callback2Shadow))]
-    interface ICallback2: ICallback
-    {
-        int Decrement(int param);
-    }
-
-    class Callback2Shadow : CppObjectShadow
-    {
-        public class Callback2Vbtl : CallbackShadow.CallbackVbtl
+        private static int IncrementImpl(IntPtr thisObj, int param)
         {
-            public Callback2Vbtl(int numberOfCallbackMethods) : base(numberOfCallbackMethods + 1)
-            {
+            return ToCallback<ICallback>(thisObj).Increment(param);
+        }
+    }
+
+    protected override CppObjectVtbl Vtbl { get; } = new CallbackVbtl(0);
+}
+
+[Shadow(typeof(Callback2Shadow))]
+interface ICallback2: ICallback
+{
+    int Decrement(int param);
+}
+
+class Callback2Shadow : CppObjectShadow
+{
+    public class Callback2Vbtl : CallbackShadow.CallbackVbtl
+    {
+        public Callback2Vbtl(int numberOfCallbackMethods) : base(numberOfCallbackMethods + 1)
+        {
 #pragma warning disable 618
-                AddMethod(new DecrementDelegate(DecrementImpl), 1);
+            AddMethod(new DecrementDelegate(DecrementImpl), 1);
 #pragma warning restore 618
-            }
-
-            [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-            public delegate int DecrementDelegate(IntPtr thisObj, int param);
-
-            private static int DecrementImpl(IntPtr thisObj, int param)
-            {
-                return ToCallback<ICallback>(thisObj).Increment(param);
-            }
         }
 
-        protected override CppObjectVtbl Vtbl { get; } = new Callback2Vbtl(0);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate int DecrementDelegate(IntPtr thisObj, int param);
+
+        private static int DecrementImpl(IntPtr thisObj, int param)
+        {
+            return ToCallback<ICallback>(thisObj).Increment(param);
+        }
     }
 
-    class Callback2Impl : CallbackImpl, ICallback, ICallback2
+    protected override CppObjectVtbl Vtbl { get; } = new Callback2Vbtl(0);
+}
+
+class Callback2Impl : CallbackImpl, ICallback, ICallback2
+{
+    public int Decrement(int param)
     {
-        public int Decrement(int param)
-        {
-            return param - 1;
-        }
+        return param - 1;
     }
 }

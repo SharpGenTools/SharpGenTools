@@ -18,23 +18,21 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace SharpGen.Model
+namespace SharpGen.Model;
+
+public sealed class CsInterfaceArray : CsTypeBase
 {
-    public sealed class CsInterfaceArray : CsTypeBase
+    public CsInterfaceArray(CsInterface element, string interfaceArrayTypeName) : base(null, null)
     {
-        public CsInterfaceArray(CsInterface element, string interfaceArrayTypeName) : base(null, null)
-        {
-            BaseElement = element;
-            InterfaceArrayTypeName = interfaceArrayTypeName;
-        }
-
-        public override string QualifiedName => $"{InterfaceArrayTypeName}<{BaseElement.QualifiedName}>";
-
-        private CsInterface BaseElement { get; }
-
-        private string InterfaceArrayTypeName { get; }
-
-        public override bool IsBlittable => false;
+        BaseElement = element;
+        InterfaceArrayTypeName = interfaceArrayTypeName;
     }
-}
 
+    public override string QualifiedName => $"{InterfaceArrayTypeName}<{BaseElement.QualifiedName}>";
+
+    private CsInterface BaseElement { get; }
+
+    private string InterfaceArrayTypeName { get; }
+
+    public override bool IsBlittable => false;
+}

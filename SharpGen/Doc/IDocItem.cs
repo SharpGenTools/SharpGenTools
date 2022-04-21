@@ -20,36 +20,35 @@
 
 using System.Collections.Generic;
 
-namespace SharpGen.Doc
+namespace SharpGen.Doc;
+
+/// <summary>
+/// Documentation item
+/// </summary>
+public interface IDocItem : IDocMutableItem
 {
+    /// <value>
+    /// The short id.
+    /// </value>
+    string ShortId { get; set; }
+
+    IList<string> Names { get; }
+
+    /// <value>The summary.</value>
+    string Summary { get; set; }
+
+    /// <value>The remarks.</value>
+    string Remarks { get; set; }
+
+    /// <value>The return.</value>
+    string Return { get; set; }
+
+    /// <value>The items.</value>
+    IList<IDocSubItem> Items { get; }
+
     /// <summary>
-    /// Documentation item
+    /// The list of see-also referenced names.
+    /// <seealso cref="Names" />
     /// </summary>
-    public interface IDocItem : IDocMutableItem
-    {
-        /// <value>
-        /// The short id.
-        /// </value>
-        string ShortId { get; set; }
-
-        IList<string> Names { get; }
-
-        /// <value>The summary.</value>
-        string Summary { get; set; }
-
-        /// <value>The remarks.</value>
-        string Remarks { get; set; }
-
-        /// <value>The return.</value>
-        string Return { get; set; }
-
-        /// <value>The items.</value>
-        IList<IDocSubItem> Items { get; }
-
-        /// <summary>
-        /// The list of see-also referenced names.
-        /// <seealso cref="Names" />
-        /// </summary>
-        IList<string> SeeAlso { get; }
-    }
+    IList<string> SeeAlso { get; }
 }

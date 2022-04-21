@@ -3,53 +3,52 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using SharpGen.Doc;
 
-namespace SharpGen.Platform.Documentation
+namespace SharpGen.Platform.Documentation;
+
+/// <inheritdoc />
+internal sealed class DocSubItem : IDocSubItem
 {
-    /// <inheritdoc />
-    internal sealed class DocSubItem : IDocSubItem
+    private readonly ObservableSet<string> attributes =
+        new(StringComparer.InvariantCultureIgnoreCase);
+
+    private string description;
+    private string term;
+
+    public DocSubItem()
     {
-        private readonly ObservableSet<string> attributes =
-            new(StringComparer.InvariantCultureIgnoreCase);
+        attributes.CollectionChanged += OnCollectionChanged;
+    }
 
-        private string description;
-        private string term;
-
-        public DocSubItem()
+    public string Term
+    {
+        get => term;
+        set
         {
-            attributes.CollectionChanged += OnCollectionChanged;
-        }
+            if (term == value) return;
 
-        public string Term
-        {
-            get => term;
-            set
-            {
-                if (term == value) return;
-
-                term = value;
-                IsDirty = true;
-            }
-        }
-
-        public string Description
-        {
-            get => description;
-            set
-            {
-                if (description == value) return;
-
-                description = value;
-                IsDirty = true;
-            }
-        }
-
-        public IList<string> Attributes => attributes;
-
-        public bool IsDirty { get; set; }
-
-        private void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
+            term = value;
             IsDirty = true;
         }
+    }
+
+    public string Description
+    {
+        get => description;
+        set
+        {
+            if (description == value) return;
+
+            description = value;
+            IsDirty = true;
+        }
+    }
+
+    public IList<string> Attributes => attributes;
+
+    public bool IsDirty { get; set; }
+
+    private void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+    {
+        IsDirty = true;
     }
 }

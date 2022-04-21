@@ -1,22 +1,21 @@
-namespace SharpGen
+namespace SharpGen;
+
+public enum BuiltinType
 {
-    public enum BuiltinType
-    {
-        Marshal,
-        Math,
-        Unsafe,
-        Span,
-        GCHandle,
-        Delegate,
-        FlagsAttribute,
-        GC,
-        IntPtr,
-        UIntPtr,
-        GuidAttribute,
-        StructLayoutAttribute,
-        PlatformNotSupportedException,
-        UnmanagedFunctionPointerAttribute,
-        UnmanagedCallersOnlyAttribute,
-        Guid,
-    }
+    Marshal,
+    Math,
+    Unsafe,
+    Span,
+    GCHandle,
+    Delegate,
+    FlagsAttribute,
+    GC,
+    IntPtr,
+    UIntPtr,
+    GuidAttribute,
+    StructLayoutAttribute,
+    PlatformNotSupportedException,
+    UnmanagedFunctionPointerAttribute,
+    UnmanagedCallersOnlyAttribute,
+    Guid,
 }

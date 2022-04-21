@@ -1,7 +1,6 @@
-namespace SharpGen.Runtime
+namespace SharpGen.Runtime;
+
+public interface IInspectableWithRuntimeClassName
 {
-    public interface IInspectableWithRuntimeClassName
-    {
-        string RuntimeClassName { get; }
-    }
+    string RuntimeClassName { get; }
 }

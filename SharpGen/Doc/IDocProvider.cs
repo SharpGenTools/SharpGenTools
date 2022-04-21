@@ -22,44 +22,43 @@
 
 using System.Threading.Tasks;
 
-namespace SharpGen.Doc
+namespace SharpGen.Doc;
+
+/// <summary>
+/// An <see cref="IDocProvider"/> implementation is responsible to provide documentation to the Parser
+/// in order to feed each C++ element with an associated documentation.
+/// This is optional.
+/// A client of Parser API could provide a documentation provider
+/// in an external assembly.
+/// </summary>
+public interface IDocProvider
 {
     /// <summary>
-    /// An <see cref="IDocProvider"/> implementation is responsible to provide documentation to the Parser
-    /// in order to feed each C++ element with an associated documentation.
-    /// This is optional.
-    /// A client of Parser API could provide a documentation provider
-    /// in an external assembly.
+    /// Finds the documentation for a particular C++ item.
     /// </summary>
-    public interface IDocProvider
-    {
-        /// <summary>
-        /// Finds the documentation for a particular C++ item.
-        /// </summary>
-        /// <param name="fullName">
-        /// The full name.
-        /// For top level elements (like struct, interfaces, enums, functions), it's the name of the element itself.
-        /// For nested elements (like interface methods), the name is of the following format: "IMyInterface::MyMethod".
-        /// </param>
-        /// <param name="context">Environment for documenting, used to create items and subitems</param>
-        /// <returns>Non-null documentation item container created by <see cref="IDocumentationContext"/></returns>
-        Task<IFindDocumentationResult> FindDocumentationAsync(string fullName, IDocumentationContext context);
+    /// <param name="fullName">
+    /// The full name.
+    /// For top level elements (like struct, interfaces, enums, functions), it's the name of the element itself.
+    /// For nested elements (like interface methods), the name is of the following format: "IMyInterface::MyMethod".
+    /// </param>
+    /// <param name="context">Environment for documenting, used to create items and subitems</param>
+    /// <returns>Non-null documentation item container created by <see cref="IDocumentationContext"/></returns>
+    Task<IFindDocumentationResult> FindDocumentationAsync(string fullName, IDocumentationContext context);
 
-        /// <summary>
-        /// If true, any exception thrown, or any error logged by this provider will cause the build to fail.
-        /// </summary>
-        /// <remarks>
-        /// For providers that rely on unstable factors (networking), it is recommended to set this to <c>false</c>.
-        /// However, the default choice should be <c>true</c>.
-        /// </remarks>
-        bool TreatFailuresAsErrors { get; }
+    /// <summary>
+    /// If true, any exception thrown, or any error logged by this provider will cause the build to fail.
+    /// </summary>
+    /// <remarks>
+    /// For providers that rely on unstable factors (networking), it is recommended to set this to <c>false</c>.
+    /// However, the default choice should be <c>true</c>.
+    /// </remarks>
+    bool TreatFailuresAsErrors { get; }
 
-        /// <summary>
-        /// Name of the documentation provider to be presented to user when needed.
-        /// </summary>
-        /// <remarks>
-        /// Short version. Without words like "documentation provider" or "extension".
-        /// </remarks>
-        string UserFriendlyName { get; }
-    }
+    /// <summary>
+    /// Name of the documentation provider to be presented to user when needed.
+    /// </summary>
+    /// <remarks>
+    /// Short version. Without words like "documentation provider" or "extension".
+    /// </remarks>
+    string UserFriendlyName { get; }
 }

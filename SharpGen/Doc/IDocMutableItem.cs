@@ -1,7 +1,6 @@
-namespace SharpGen.Doc
+namespace SharpGen.Doc;
+
+public interface IDocMutableItem
 {
-    public interface IDocMutableItem
-    {
-        bool IsDirty { get; set; }
-    }
+    bool IsDirty { get; set; }
 }

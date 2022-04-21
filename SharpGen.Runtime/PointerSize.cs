@@ -20,62 +20,61 @@
 using System;
 using System.Globalization;
 
-namespace SharpGen.Runtime
+namespace SharpGen.Runtime;
+
+/// <summary>
+///   The maximum number of bytes to which a pointer can point. Use for a count that must span the full range of a pointer.
+///   Equivalent to the native type size_t.
+/// </summary>
+public readonly struct PointerSize : IEquatable<PointerSize>, IFormattable
 {
+    private readonly IntPtr _size;
+
     /// <summary>
-    ///   The maximum number of bytes to which a pointer can point. Use for a count that must span the full range of a pointer.
-    ///   Equivalent to the native type size_t.
+    /// An empty pointer size initialized to zero.
     /// </summary>
-    public readonly struct PointerSize : IEquatable<PointerSize>, IFormattable
+    public static readonly PointerSize Zero = new(0);
+
+    public PointerSize(IntPtr size) => _size = size;
+    private unsafe PointerSize(void* size) => _size = new IntPtr(size);
+    public PointerSize(int size) => _size = new IntPtr(size);
+    public PointerSize(long size) => _size = new IntPtr(size);
+
+    public override string ToString() => ToString(null, null);
+
+    public string ToString(string format, IFormatProvider formatProvider) => string.Format(
+        formatProvider ?? CultureInfo.CurrentCulture,
+        string.IsNullOrEmpty(format) ? "{0}" : "{0:" + format + "}",
+        _size
+    );
+
+    public string ToString(string format) => ToString(format, null);
+
+    public override int GetHashCode() => _size.GetHashCode();
+
+    public bool Equals(PointerSize other) => _size.Equals(other._size);
+
+    public override bool Equals(object value)
     {
-        private readonly IntPtr _size;
-
-        /// <summary>
-        /// An empty pointer size initialized to zero.
-        /// </summary>
-        public static readonly PointerSize Zero = new(0);
-
-        public PointerSize(IntPtr size) => _size = size;
-        private unsafe PointerSize(void* size) => _size = new IntPtr(size);
-        public PointerSize(int size) => _size = new IntPtr(size);
-        public PointerSize(long size) => _size = new IntPtr(size);
-
-        public override string ToString() => ToString(null, null);
-
-        public string ToString(string format, IFormatProvider formatProvider) => string.Format(
-            formatProvider ?? CultureInfo.CurrentCulture,
-            string.IsNullOrEmpty(format) ? "{0}" : "{0:" + format + "}",
-            _size
-        );
-
-        public string ToString(string format) => ToString(format, null);
-
-        public override int GetHashCode() => _size.GetHashCode();
-
-        public bool Equals(PointerSize other) => _size.Equals(other._size);
-
-        public override bool Equals(object value)
-        {
-            if (ReferenceEquals(null, value)) return false;
-            return value is PointerSize size && Equals(size);
-        }
-
-        public static PointerSize operator +(PointerSize left, PointerSize right) => new(left._size.ToInt64() + right._size.ToInt64());
-        public static PointerSize operator +(PointerSize value) => value;
-        public static PointerSize operator -(PointerSize left, PointerSize right) => new(left._size.ToInt64() - right._size.ToInt64());
-        public static PointerSize operator -(PointerSize value) => new(-value._size.ToInt64());
-        public static PointerSize operator *(int scale, PointerSize value) => new(scale*value._size.ToInt64());
-        public static PointerSize operator *(PointerSize value, int scale) => new(scale*value._size.ToInt64());
-        public static PointerSize operator /(PointerSize value, int scale) => new(value._size.ToInt64()/scale);
-        public static bool operator ==(PointerSize left, PointerSize right) => left.Equals(right);
-        public static bool operator !=(PointerSize left, PointerSize right) => !left.Equals(right);
-        public static implicit operator int(PointerSize value) => value._size.ToInt32();
-        public static implicit operator long(PointerSize value) => value._size.ToInt64();
-        public static implicit operator PointerSize(int value) => new(value);
-        public static implicit operator PointerSize(long value) => new(value);
-        public static implicit operator PointerSize(IntPtr value) => new(value);
-        public static implicit operator IntPtr(PointerSize value) => value._size;
-        public static unsafe implicit operator PointerSize(void* value) => new(value);
-        public static unsafe implicit operator void*(PointerSize value) => (void*) value._size;
+        if (ReferenceEquals(null, value)) return false;
+        return value is PointerSize size && Equals(size);
     }
+
+    public static PointerSize operator +(PointerSize left, PointerSize right) => new(left._size.ToInt64() + right._size.ToInt64());
+    public static PointerSize operator +(PointerSize value) => value;
+    public static PointerSize operator -(PointerSize left, PointerSize right) => new(left._size.ToInt64() - right._size.ToInt64());
+    public static PointerSize operator -(PointerSize value) => new(-value._size.ToInt64());
+    public static PointerSize operator *(int scale, PointerSize value) => new(scale*value._size.ToInt64());
+    public static PointerSize operator *(PointerSize value, int scale) => new(scale*value._size.ToInt64());
+    public static PointerSize operator /(PointerSize value, int scale) => new(value._size.ToInt64()/scale);
+    public static bool operator ==(PointerSize left, PointerSize right) => left.Equals(right);
+    public static bool operator !=(PointerSize left, PointerSize right) => !left.Equals(right);
+    public static implicit operator int(PointerSize value) => value._size.ToInt32();
+    public static implicit operator long(PointerSize value) => value._size.ToInt64();
+    public static implicit operator PointerSize(int value) => new(value);
+    public static implicit operator PointerSize(long value) => new(value);
+    public static implicit operator PointerSize(IntPtr value) => new(value);
+    public static implicit operator IntPtr(PointerSize value) => value._size;
+    public static unsafe implicit operator PointerSize(void* value) => new(value);
+    public static unsafe implicit operator void*(PointerSize value) => (void*) value._size;
 }

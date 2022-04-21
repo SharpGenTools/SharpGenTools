@@ -3,74 +3,73 @@ using System.Collections.Generic;
 using System.Text;
 using Xunit;
 
-namespace Interface
+namespace Interface;
+
+public class PropertyTests
 {
-    public class PropertyTests
+    [Fact]
+    public void IsMethodGeneratesIsProperty()
     {
-        [Fact]
-        public void IsMethodGeneratesIsProperty()
+        using (var value = Functions.CreatePropertyTest(true, 0, 0))
         {
-            using (var value = Functions.CreatePropertyTest(true, 0, 0))
-            {
-                Assert.True(value.IsTrue);
-            }
+            Assert.True(value.IsTrue);
         }
+    }
 
-        [Fact]
-        public void IsMethodWithOutParamGeneratesIsProperty()
+    [Fact]
+    public void IsMethodWithOutParamGeneratesIsProperty()
+    {
+        using (var value = Functions.CreatePropertyTest(true, 0, 0))
         {
-            using (var value = Functions.CreatePropertyTest(true, 0, 0))
-            {
-                Assert.True(value.IsTrueOutProp);
-            }
+            Assert.True(value.IsTrueOutProp);
         }
+    }
 
-        [Fact]
-        public void GetSetMethodsGenerateProperty()
+    [Fact]
+    public void GetSetMethodsGenerateProperty()
+    {
+        using (var value = Functions.CreatePropertyTest(false, 10, 0))
         {
-            using (var value = Functions.CreatePropertyTest(false, 10, 0))
-            {
-                Assert.Equal(10, value.Value);
+            Assert.Equal(10, value.Value);
 
-                value.Value = 15;
+            value.Value = 15;
 
-                Assert.Equal(15, value.Value);
-            }
+            Assert.Equal(15, value.Value);
         }
+    }
 
-        [Fact]
-        public void GetSetMethodsWithOutParamGenerateProperty()
+    [Fact]
+    public void GetSetMethodsWithOutParamGenerateProperty()
+    {
+        using (var value = Functions.CreatePropertyTest(false, 0, 10))
         {
-            using (var value = Functions.CreatePropertyTest(false, 0, 10))
-            {
-                Assert.Equal(10, value.Value2);
+            Assert.Equal(10, value.Value2);
 
-                value.Value2 = 15;
+            value.Value2 = 15;
 
-                Assert.Equal(15, value.Value2);
-            }
+            Assert.Equal(15, value.Value2);
         }
+    }
 
-        [Fact]
-        public void PersistentPropertyCachesFirstValue()
+    [Fact]
+    public void PersistentPropertyCachesFirstValue()
+    {
+        using (var value = Functions.CreatePropertyTest(false, 10, 0))
         {
-            using (var value = Functions.CreatePropertyTest(false, 10, 0))
-            {
-                Assert.Equal(10, value.ValuePersistent);
+            Assert.Equal(10, value.ValuePersistent);
 
-                value.Value = 15;
+            value.Value = 15;
 
-                Assert.Equal(10, value.ValuePersistent);
-            }
+            Assert.Equal(10, value.ValuePersistent);
         }
+    }
 
-        [Fact]
-        public void PersistentPropertyWithInterfaceCachesValue()
+    [Fact]
+    public void PersistentPropertyWithInterfaceCachesValue()
+    {
+        using (var value = Functions.CreatePropertyTest(false, 0, 0))
         {
-            using (var value = Functions.CreatePropertyTest(false, 0, 0))
-            {
-                Assert.Equal(value.NativePointer, value.SelfPersistent.NativePointer);
-            }
+            Assert.Equal(value.NativePointer, value.SelfPersistent.NativePointer);
         }
     }
 }

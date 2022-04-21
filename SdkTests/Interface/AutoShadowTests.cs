@@ -6,270 +6,269 @@ using System.Text;
 using SharpGen.Runtime;
 using Xunit;
 
-namespace Interface
-{
-    public class AutoShadowTests
-    {   
-        public AutoShadowTests()
+namespace Interface;
+
+public class AutoShadowTests
+{   
+    public AutoShadowTests()
+    {
+    }
+
+    private static IDisposable SetupTests(bool supportExceptions, out CallbackInterfaceNative nativeView, out ManagedImplementation target)
+    {
+        target = supportExceptions ? new ExceptionEnabledManagedImplementation() : new ManagedImplementation();
+        nativeView = new CallbackInterfaceNative(MarshallingHelpers.ToCallbackPtr<CallbackInterface>(target));
+
+        return new CompositeDisposable
         {
+            target,
+            nativeView
+        };
+    }
+
+    [Fact]
+    public void OutParameterCorrectlySet()
+    {
+        using (SetupTests(false, out var nativeView, out _))
+        {
+            var zero = nativeView.GetZero();
+
+            Assert.Equal(0, zero);
+        }
+    }
+
+    [Fact]
+    public void SimpleParameters()
+    {
+        using (SetupTests(false, out var nativeView, out _))
+        {
+            Assert.Equal(3, nativeView.Add(1, 2));
+        }
+    }
+
+    [Fact]
+    public void StringMarshalling()
+    {
+        using (SetupTests(false, out var nativeView, out _))
+        {
+            var str = "ABC";
+
+            Assert.Equal('A', nativeView.GetFirstCharacter(str));
+            Assert.Equal((byte)'A', nativeView.GetFirstAnsiCharacter(str));
+        }
+    }
+
+    [Fact]
+    public void RefParameter()
+    {
+        using (SetupTests(false, out var nativeView, out _))
+        {
+            var i = 4;
+
+            nativeView.Increment(ref i);
+
+            Assert.Equal(5, i);
+        }
+    }
+
+    [Fact]
+    public void LargeStruct()
+    {
+        using (SetupTests(false, out var nativeView, out _))
+        {
+            var result = nativeView.GetLargeStruct(4, 10);
+
+            Assert.Equal(4, result.A);
+            Assert.Equal(10, result.B);
+        }
+    }
+
+    [Fact]
+    public void MarshalledLargeStruct()
+    {
+        using (SetupTests(false, out var nativeView, out _))
+        {
+            var result = nativeView.GetLargeMarshalledStruct(3, 2, 1);
+
+            Assert.Equal(3, result.I[0]);
+            Assert.Equal(2, result.I[1]);
+            Assert.Equal(1, result.I[2]);
+        }
+    }
+
+    [Fact]
+    public void MappedType()
+    {
+        using (SetupTests(false, out var nativeView, out _))
+        {
+            Assert.Equal(20, nativeView.MappedTypeTest(20));
+        }
+    }
+
+    [Fact]
+    public void InInterfaceParameter()
+    {
+        using (SetupTests(false, out var nativeView, out _))
+        {
+            using (var test = new ManagedImplementation())
+            {
+                Assert.True(nativeView.AreEqual(test));
+            }
+        }
+    }
+
+    [Fact]
+    public void OutInterfaceParameters()
+    {
+        using (SetupTests(false, out var nativeView, out _))
+        {
+            var test = nativeView.CloneInstance();
+            Assert.Equal(1, test.Add(0, 1));
+            MemoryHelpers.Dispose(ref test);
+        }
+    }
+
+    [Fact]
+    public void ExceptionsOnResultReturningMethods()
+    {
+        using (SetupTests(false, out var nativeView, out var target))
+        {
+            target.ThrowExceptionInClone = true;
+            Assert.Throws<SharpGen.Runtime.SharpGenException>(() => nativeView.CloneInstance());
+        }
+    }
+
+    [Fact]
+    public void ExceptionsRethrownOnManagedSideWhenSupportIsImplemented()
+    {
+        using (SetupTests(true, out var nativeView, out var target))
+        {
+            target.ThrowExceptionInClone = true;
+            Assert.Throws<InvalidOperationException>(() => nativeView.CloneInstance());
+        }
+    }
+
+    [Fact]
+    public void ReturnMappings()
+    {
+        using (SetupTests(false, out var nativeView, out var target))
+        {
+            IntPtr val = new IntPtr(5);
+
+            Assert.Equal(val, nativeView.ModifyPointer(val, MethodOperation.PassThrough));
+
+            Assert.Equal(new IntPtr(6), nativeView.ModifyPointer(val, 0));
+        }
+    }
+
+    [Fact]
+    public void ValueTypeArrayReverseMarshalling()
+    {
+        using (SetupTests(false, out var nativeView, out _))
+        {
+            var array = new int[] {1,2,3,4,5};
+
+            Assert.Equal(15, nativeView.ArrayRelationSum(array));
+        }
+    }
+
+    class ExceptionEnabledManagedImplementation : ManagedImplementation, IExceptionCallback
+    {
+        public void RaiseException(Exception e)
+        {
+            throw e;
+        }
+    }
+
+    class ManagedImplementation : CallbackBase, CallbackInterface
+    {
+        public bool ThrowExceptionInClone { get; set; }
+
+        public int Add(int i, int j)
+        {
+            return i + j;
         }
 
-        private static IDisposable SetupTests(bool supportExceptions, out CallbackInterfaceNative nativeView, out ManagedImplementation target)
+        public bool AreEqual(CallbackInterface rhs)
         {
-            target = supportExceptions ? new ExceptionEnabledManagedImplementation() : new ManagedImplementation();
-            nativeView = new CallbackInterfaceNative(MarshallingHelpers.ToCallbackPtr<CallbackInterface>(target));
+            return Add(1, 1) == rhs.Add(1, 1);
+        }
 
-            return new CompositeDisposable
+        public CallbackInterface CloneInstance()
+        {
+            if (ThrowExceptionInClone)
             {
-                target,
-                nativeView
+                throw new InvalidOperationException();
+            }
+            return new ManagedImplementation();
+        }
+
+        public byte GetFirstAnsiCharacter(string str)
+        {
+            return Encoding.ASCII.GetBytes(str)[0];
+        }
+
+        public char GetFirstCharacter(string str)
+        {
+            return str[0];
+        }
+
+        public LargeStructWithMarshalling GetLargeMarshalledStruct(long a, long b, long c)
+        {
+            var result = new LargeStructWithMarshalling();
+
+            result.I[0] = a;
+            result.I[1] = b;
+            result.I[2] = c;
+            return result;
+        }
+
+        public LargeStruct GetLargeStruct(long a, long b)
+        {
+            return new LargeStruct
+            {
+                A = a,
+                B = b
             };
         }
 
-        [Fact]
-        public void OutParameterCorrectlySet()
+        public int GetZero()
         {
-            using (SetupTests(false, out var nativeView, out _))
-            {
-                var zero = nativeView.GetZero();
-
-                Assert.Equal(0, zero);
-            }
+            return 0;
         }
 
-        [Fact]
-        public void SimpleParameters()
+        public void Increment(ref int valueRef)
         {
-            using (SetupTests(false, out var nativeView, out _))
-            {
-                Assert.Equal(3, nativeView.Add(1, 2));
-            }
+            valueRef += 1;
         }
 
-        [Fact]
-        public void StringMarshalling()
+        public int MappedTypeTest(uint i)
         {
-            using (SetupTests(false, out var nativeView, out _))
-            {
-                var str = "ABC";
-
-                Assert.Equal('A', nativeView.GetFirstCharacter(str));
-                Assert.Equal((byte)'A', nativeView.GetFirstAnsiCharacter(str));
-            }
+            return (int)i;
         }
 
-        [Fact]
-        public void RefParameter()
+        public IntPtr ModifyPointer(IntPtr ptr, MethodOperation op)
         {
-            using (SetupTests(false, out var nativeView, out _))
+            if (op != MethodOperation.PassThrough)
             {
-                var i = 4;
-
-                nativeView.Increment(ref i);
-
-                Assert.Equal(5, i);
+                return IntPtr.Add(ptr, 1);
             }
+            return ptr;
         }
 
-        [Fact]
-        public void LargeStruct()
+        public bool ArrayRelationAnd(bool[] arr)
         {
-            using (SetupTests(false, out var nativeView, out _))
-            {
-                var result = nativeView.GetLargeStruct(4, 10);
-
-                Assert.Equal(4, result.A);
-                Assert.Equal(10, result.B);
-            }
+            return arr.Aggregate(true, (agg, val) => agg && val);
         }
 
-        [Fact]
-        public void MarshalledLargeStruct()
+        public int ArrayRelationSum(int[] arr)
         {
-            using (SetupTests(false, out var nativeView, out _))
-            {
-                var result = nativeView.GetLargeMarshalledStruct(3, 2, 1);
-
-                Assert.Equal(3, result.I[0]);
-                Assert.Equal(2, result.I[1]);
-                Assert.Equal(1, result.I[2]);
-            }
+            return arr.Sum();
         }
 
-        [Fact]
-        public void MappedType()
+        public long ArrayRelationSumStruct(LargeStructWithMarshalling[] arr)
         {
-            using (SetupTests(false, out var nativeView, out _))
-            {
-                Assert.Equal(20, nativeView.MappedTypeTest(20));
-            }
-        }
-
-        [Fact]
-        public void InInterfaceParameter()
-        {
-            using (SetupTests(false, out var nativeView, out _))
-            {
-                using (var test = new ManagedImplementation())
-                {
-                    Assert.True(nativeView.AreEqual(test));
-                }
-            }
-        }
-
-        [Fact]
-        public void OutInterfaceParameters()
-        {
-            using (SetupTests(false, out var nativeView, out _))
-            {
-                var test = nativeView.CloneInstance();
-                Assert.Equal(1, test.Add(0, 1));
-                MemoryHelpers.Dispose(ref test);
-            }
-        }
-
-        [Fact]
-        public void ExceptionsOnResultReturningMethods()
-        {
-            using (SetupTests(false, out var nativeView, out var target))
-            {
-                target.ThrowExceptionInClone = true;
-                Assert.Throws<SharpGen.Runtime.SharpGenException>(() => nativeView.CloneInstance());
-            }
-        }
-
-        [Fact]
-        public void ExceptionsRethrownOnManagedSideWhenSupportIsImplemented()
-        {
-            using (SetupTests(true, out var nativeView, out var target))
-            {
-                target.ThrowExceptionInClone = true;
-                Assert.Throws<InvalidOperationException>(() => nativeView.CloneInstance());
-            }
-        }
-
-        [Fact]
-        public void ReturnMappings()
-        {
-            using (SetupTests(false, out var nativeView, out var target))
-            {
-                IntPtr val = new IntPtr(5);
-
-                Assert.Equal(val, nativeView.ModifyPointer(val, MethodOperation.PassThrough));
-
-                Assert.Equal(new IntPtr(6), nativeView.ModifyPointer(val, 0));
-            }
-        }
-
-        [Fact]
-        public void ValueTypeArrayReverseMarshalling()
-        {
-            using (SetupTests(false, out var nativeView, out _))
-            {
-                var array = new int[] {1,2,3,4,5};
-
-                Assert.Equal(15, nativeView.ArrayRelationSum(array));
-            }
-        }
-
-        class ExceptionEnabledManagedImplementation : ManagedImplementation, IExceptionCallback
-        {
-            public void RaiseException(Exception e)
-            {
-                throw e;
-            }
-        }
-
-        class ManagedImplementation : CallbackBase, CallbackInterface
-        {
-            public bool ThrowExceptionInClone { get; set; }
-
-            public int Add(int i, int j)
-            {
-                return i + j;
-            }
-
-            public bool AreEqual(CallbackInterface rhs)
-            {
-                return Add(1, 1) == rhs.Add(1, 1);
-            }
-
-            public CallbackInterface CloneInstance()
-            {
-                if (ThrowExceptionInClone)
-                {
-                    throw new InvalidOperationException();
-                }
-                return new ManagedImplementation();
-            }
-
-            public byte GetFirstAnsiCharacter(string str)
-            {
-                return Encoding.ASCII.GetBytes(str)[0];
-            }
-
-            public char GetFirstCharacter(string str)
-            {
-                return str[0];
-            }
-
-            public LargeStructWithMarshalling GetLargeMarshalledStruct(long a, long b, long c)
-            {
-                var result = new LargeStructWithMarshalling();
-
-                result.I[0] = a;
-                result.I[1] = b;
-                result.I[2] = c;
-                return result;
-            }
-
-            public LargeStruct GetLargeStruct(long a, long b)
-            {
-                return new LargeStruct
-                {
-                    A = a,
-                    B = b
-                };
-            }
-
-            public int GetZero()
-            {
-                return 0;
-            }
-
-            public void Increment(ref int valueRef)
-            {
-                valueRef += 1;
-            }
-
-            public int MappedTypeTest(uint i)
-            {
-                return (int)i;
-            }
-
-            public IntPtr ModifyPointer(IntPtr ptr, MethodOperation op)
-            {
-                if (op != MethodOperation.PassThrough)
-                {
-                    return IntPtr.Add(ptr, 1);
-                }
-                return ptr;
-            }
-
-            public bool ArrayRelationAnd(bool[] arr)
-            {
-                return arr.Aggregate(true, (agg, val) => agg && val);
-            }
-
-            public int ArrayRelationSum(int[] arr)
-            {
-                return arr.Sum();
-            }
-
-            public long ArrayRelationSumStruct(LargeStructWithMarshalling[] arr)
-            {
-                return arr.SelectMany(x => x.I).Sum();
-            }
+            return arr.SelectMany(x => x.I).Sum();
         }
     }
 }

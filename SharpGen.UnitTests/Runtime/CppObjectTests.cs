@@ -2,25 +2,24 @@
 using SharpGen.Runtime;
 using Xunit;
 
-namespace SharpGen.UnitTests.Runtime
+namespace SharpGen.UnitTests.Runtime;
+
+public class CppObjectTests
 {
-    public class CppObjectTests
+    [Fact]
+    public void GetCallbackPtrReturnsPointerToShadow()
     {
-        [Fact]
-        public void GetCallbackPtrReturnsPointerToShadow()
-        {
-            using var callback = new CallbackImpl();
+        using var callback = new CallbackImpl();
 
-            Assert.NotEqual(IntPtr.Zero, MarshallingHelpers.ToCallbackPtr<ICallback>(callback));
-        }
+        Assert.NotEqual(IntPtr.Zero, MarshallingHelpers.ToCallbackPtr<ICallback>(callback));
+    }
 
-        [Fact]
-        public void GetCallbackPtrForClassWithMultipleInheritenceShouldReturnPointer()
-        {
-            using var callback = new Callback2Impl();
+    [Fact]
+    public void GetCallbackPtrForClassWithMultipleInheritenceShouldReturnPointer()
+    {
+        using var callback = new Callback2Impl();
 
-            Assert.NotEqual(IntPtr.Zero, MarshallingHelpers.ToCallbackPtr<ICallback>(callback));
-            Assert.NotEqual(IntPtr.Zero, MarshallingHelpers.ToCallbackPtr<ICallback2>(callback));
-        }
+        Assert.NotEqual(IntPtr.Zero, MarshallingHelpers.ToCallbackPtr<ICallback>(callback));
+        Assert.NotEqual(IntPtr.Zero, MarshallingHelpers.ToCallbackPtr<ICallback2>(callback));
     }
 }

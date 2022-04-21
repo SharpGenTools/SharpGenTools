@@ -20,18 +20,17 @@
 
 using System.Collections.Generic;
 
-namespace SharpGen.CppModel
+namespace SharpGen.CppModel;
+
+public sealed class CppInterface : CppContainer
 {
-    public sealed class CppInterface : CppContainer
+    public string Guid { get; set; }
+    public string Base { get; set; }
+    public int TotalMethodCount { get; set; }
+
+    public IEnumerable<CppMethod> Methods => Iterate<CppMethod>();
+
+    public CppInterface(string name) : base(name)
     {
-        public string Guid { get; set; }
-        public string Base { get; set; }
-        public int TotalMethodCount { get; set; }
-
-        public IEnumerable<CppMethod> Methods => Iterate<CppMethod>();
-
-        public CppInterface(string name) : base(name)
-        {
-        }
     }
 }

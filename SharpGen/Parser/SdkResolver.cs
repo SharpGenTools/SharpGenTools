@@ -7,114 +7,113 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-namespace SharpGen.Parser
+namespace SharpGen.Parser;
+
+public sealed class SdkResolver
 {
-    public sealed class SdkResolver
+    private static readonly string[] WindowsSdkIncludes = {"shared", "um", "ucrt", "winrt"}; 
+
+    public SdkResolver(Logger logger)
     {
-        private static readonly string[] WindowsSdkIncludes = {"shared", "um", "ucrt", "winrt"}; 
+        Logger = logger;
+    }
 
-        public SdkResolver(Logger logger)
+    private Logger Logger { get; }
+
+    public IEnumerable<IncludeDirRule> ResolveIncludeDirsForSdk(SdkRule sdkRule)
+    {
+        switch (sdkRule.Name)
         {
-            Logger = logger;
+            case SdkLib.StdLib:
+                return ResolveStdLib(sdkRule.Version);
+            case SdkLib.WindowsSdk:
+                Logger.Message($"Resolving Windows SDK: version {sdkRule.Version}");
+                return ResolveWindowsSdk(sdkRule.Version);
+            default:
+                Logger.Error(LoggingCodes.UnknownSdk, "Unknown SDK specified in an SDK rule.");
+                return Enumerable.Empty<IncludeDirRule>();
         }
+    }
 
-        private Logger Logger { get; }
-
-        public IEnumerable<IncludeDirRule> ResolveIncludeDirsForSdk(SdkRule sdkRule)
+    private IEnumerable<IncludeDirRule> ResolveStdLib(string version)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            switch (sdkRule.Name)
-            {
-                case SdkLib.StdLib:
-                    return ResolveStdLib(sdkRule.Version);
-                case SdkLib.WindowsSdk:
-                    Logger.Message($"Resolving Windows SDK: version {sdkRule.Version}");
-                    return ResolveWindowsSdk(sdkRule.Version);
-                default:
-                    Logger.Error(LoggingCodes.UnknownSdk, "Unknown SDK specified in an SDK rule.");
-                    return Enumerable.Empty<IncludeDirRule>();
-            }
-        }
+            var vsInstallDir = GetVSInstallPath();
 
-        private IEnumerable<IncludeDirRule> ResolveStdLib(string version)
+            version ??= File.ReadAllText(
+                Path.Combine(vsInstallDir, "VC", "Auxiliary", "Build", "Microsoft.VCToolsVersion.default.txt")
+            );
+
+            yield return new IncludeDirRule(
+                Path.Combine(vsInstallDir, "VC", "Tools", "MSVC", version.Trim(), "include")
+            );
+        }
+        else
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                var vsInstallDir = GetVSInstallPath();
-
-                version ??= File.ReadAllText(
-                    Path.Combine(vsInstallDir, "VC", "Auxiliary", "Build", "Microsoft.VCToolsVersion.default.txt")
-                );
-
-                yield return new IncludeDirRule(
-                    Path.Combine(vsInstallDir, "VC", "Tools", "MSVC", version.Trim(), "include")
-                );
-            }
-            else
-            {
-                yield return new IncludeDirRule(Path.Combine("/usr", "include", "c++", version));
-            }
+            yield return new IncludeDirRule(Path.Combine("/usr", "include", "c++", version));
         }
+    }
         
-        private string GetVSInstallPath()
+    private string GetVSInstallPath()
+    {
+        var vsPathOverride = Environment.GetEnvironmentVariable("SHARPGEN_VS_OVERRIDE");
+        if (!string.IsNullOrEmpty(vsPathOverride))
+            return vsPathOverride;
+
+        try
         {
-            var vsPathOverride = Environment.GetEnvironmentVariable("SHARPGEN_VS_OVERRIDE");
-            if (!string.IsNullOrEmpty(vsPathOverride))
-                return vsPathOverride;
+            var query = new SetupConfiguration();
+            var enumInstances = query.EnumInstances();
 
-            try
+            int fetched;
+            var instances = new ISetupInstance[1];
+            do
             {
-                var query = new SetupConfiguration();
-                var enumInstances = query.EnumInstances();
+                enumInstances.Next(1, instances, out fetched);
+                if (fetched <= 0)
+                    continue;
 
-                int fetched;
-                var instances = new ISetupInstance[1];
-                do
-                {
-                    enumInstances.Next(1, instances, out fetched);
-                    if (fetched <= 0)
-                        continue;
+                var instance2 = (ISetupInstance2) instances[0];
+                var state = instance2.GetState();
+                if ((state & InstanceState.Registered) != InstanceState.Registered)
+                    continue;
 
-                    var instance2 = (ISetupInstance2) instances[0];
-                    var state = instance2.GetState();
-                    if ((state & InstanceState.Registered) != InstanceState.Registered)
-                        continue;
+                if (instance2.GetPackages().Any(Predicate))
+                    return instance2.GetInstallationPath();
 
-                    if (instance2.GetPackages().Any(Predicate))
-                        return instance2.GetInstallationPath();
+            } while (fetched > 0);
 
-                } while (fetched > 0);
-
-                static bool Predicate(ISetupPackageReference pkg) => pkg.GetId() == "Microsoft.VisualStudio.Component.VC.Tools.x86.x64";
-            }
-            catch (Exception e)
-            {
-                Logger.LogRawMessage(
-                    LogLevel.Warning, LoggingCodes.VisualStudioDiscoveryError,
-                    "Visual Studio installation discovery has thrown an exception", e
-                );
-            }
-
-            Logger.Fatal("Unable to find a Visual Studio installation that has the Visual C++ Toolchain installed.");
-
-            return null;
+            static bool Predicate(ISetupPackageReference pkg) => pkg.GetId() == "Microsoft.VisualStudio.Component.VC.Tools.x86.x64";
+        }
+        catch (Exception e)
+        {
+            Logger.LogRawMessage(
+                LogLevel.Warning, LoggingCodes.VisualStudioDiscoveryError,
+                "Visual Studio installation discovery has thrown an exception", e
+            );
         }
 
-        private IEnumerable<IncludeDirRule> ResolveWindowsSdk(string version)
+        Logger.Fatal("Unable to find a Visual Studio installation that has the Visual C++ Toolchain installed.");
+
+        return null;
+    }
+
+    private IEnumerable<IncludeDirRule> ResolveWindowsSdk(string version)
+    {
+        var sdkPathOverride = Environment.GetEnvironmentVariable("SHARPGEN_SDK_OVERRIDE");
+
+        if (!string.IsNullOrEmpty(sdkPathOverride))
         {
-            var sdkPathOverride = Environment.GetEnvironmentVariable("SHARPGEN_SDK_OVERRIDE");
-
-            if (!string.IsNullOrEmpty(sdkPathOverride))
-            {
-                foreach (var include in WindowsSdkIncludes)
-                    yield return new IncludeDirRule(Path.Combine(sdkPathOverride, "Include", version, include));
-
-                yield break;
-            }
-
-            const string prefix = @"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\";
-
             foreach (var include in WindowsSdkIncludes)
-                yield return new IncludeDirRule(prefix + version + '\\' + include);
+                yield return new IncludeDirRule(Path.Combine(sdkPathOverride, "Include", version, include));
+
+            yield break;
         }
+
+        const string prefix = @"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\";
+
+        foreach (var include in WindowsSdkIncludes)
+            yield return new IncludeDirRule(prefix + version + '\\' + include);
     }
 }

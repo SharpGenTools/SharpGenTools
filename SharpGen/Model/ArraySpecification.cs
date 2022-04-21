@@ -1,9 +1,8 @@
-namespace SharpGen.Model
-{
-    public struct ArraySpecification
-    {
-        public ArraySpecification(uint dimension) => Dimension = dimension;
+namespace SharpGen.Model;
 
-        public uint? Dimension { get; set; }
-    }
+public struct ArraySpecification
+{
+    public ArraySpecification(uint dimension) => Dimension = dimension;
+
+    public uint? Dimension { get; set; }
 }

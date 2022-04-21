@@ -7,23 +7,22 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
-namespace SharpGenTools.Sdk.Internal.Roslyn
+namespace SharpGenTools.Sdk.Internal.Roslyn;
+
+internal static class RoslynDebug
 {
-    internal static class RoslynDebug
+    /// <inheritdoc cref="Debug.Assert(bool)"/>
+    [Conditional("DEBUG")]
+    public static void Assert([DoesNotReturnIf(false)] bool b) => Debug.Assert(b);
+
+    /// <inheritdoc cref="Debug.Assert(bool, string)"/>
+    [Conditional("DEBUG")]
+    public static void Assert([DoesNotReturnIf(false)] bool b, string message)
+        => Debug.Assert(b, message);
+
+    [Conditional("DEBUG")]
+    public static void AssertNotNull<T>([NotNull] T value)
     {
-        /// <inheritdoc cref="Debug.Assert(bool)"/>
-        [Conditional("DEBUG")]
-        public static void Assert([DoesNotReturnIf(false)] bool b) => Debug.Assert(b);
-
-        /// <inheritdoc cref="Debug.Assert(bool, string)"/>
-        [Conditional("DEBUG")]
-        public static void Assert([DoesNotReturnIf(false)] bool b, string message)
-            => Debug.Assert(b, message);
-
-        [Conditional("DEBUG")]
-        public static void AssertNotNull<T>([NotNull] T value)
-        {
-            Assert(value is object, "Unexpected null reference");
-        }
+        Assert(value is object, "Unexpected null reference");
     }
 }

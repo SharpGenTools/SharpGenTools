@@ -20,17 +20,16 @@
 
 using System.Collections.Generic;
 
-namespace SharpGen.Doc
+namespace SharpGen.Doc;
+
+/// <summary>
+/// Documentation sub-item, used for structure fields, enum items, and function parameters.
+/// </summary>
+public interface IDocSubItem : IDocMutableItem
 {
-    /// <summary>
-    /// Documentation sub-item, used for structure fields, enum items, and function parameters.
-    /// </summary>
-    public interface IDocSubItem : IDocMutableItem
-    {
-        string Term { get; set; }
+    string Term { get; set; }
 
-        string Description { get; set; }
+    string Description { get; set; }
 
-        IList<string> Attributes { get; }
-    }
+    IList<string> Attributes { get; }
 }

@@ -18,26 +18,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 using System.Xml.Serialization;
-using SharpGen.Model;
 
-namespace SharpGen.Config
+namespace SharpGen.Config;
+
+[XmlType("create")]
+public class CreateExtensionRule : ExtensionBaseRule
 {
-    [XmlType("create")]
-    public class CreateExtensionRule : ExtensionBaseRule
+    [XmlAttribute("class")]
+    public string NewClass { get; set; }
+
+    [XmlIgnore]
+    public Visibility? Visibility { get; set; }
+    [XmlAttribute("visibility")]
+    public Visibility _Visibility_ { get { return Visibility.Value; } set { Visibility = value; } }
+    public bool ShouldSerialize_Visibility_() { return Visibility != null; }
+
+    [ExcludeFromCodeCoverage]
+    public override string ToString()
     {
-        [XmlAttribute("class")]
-        public string NewClass { get; set; }
-
-        [XmlIgnore]
-        public Visibility? Visibility { get; set; }
-        [XmlAttribute("visibility")]
-        public Visibility _Visibility_ { get { return Visibility.Value; } set { Visibility = value; } }
-        public bool ShouldSerialize_Visibility_() { return Visibility != null; }
-
-        [ExcludeFromCodeCoverage]
-        public override string ToString()
-        {
-            return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} visibility:{1}", base.ToString(), Visibility.HasValue ? Visibility.Value.ToString() : "undef");
-        }
+        return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} visibility:{1}", base.ToString(), Visibility.HasValue ? Visibility.Value.ToString() : "undef");
     }
 }

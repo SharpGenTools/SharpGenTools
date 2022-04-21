@@ -24,142 +24,141 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using SharpGen.Runtime.Diagnostics;
 
-namespace SharpGen.Runtime
+namespace SharpGen.Runtime;
+
+/// <summary>
+/// Root IUnknown class to interop with COM object
+/// </summary>
+public partial class ComObject
 {
     /// <summary>
-    /// Root IUnknown class to interop with COM object
+    /// Initializes a new instance of the <see cref="ComObject"/> class from a IUnknown object.
     /// </summary>
-    public partial class ComObject
+    /// <param name="iunknownObject">Reference to a IUnknown object</param>
+#if NET5_0_OR_GREATER
+        [SupportedOSPlatform("windows")]
+#endif
+    public ComObject(object iunknownObject) : base(Marshal.GetIUnknownForObject(iunknownObject))
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ComObject"/> class from a IUnknown object.
-        /// </summary>
-        /// <param name="iunknownObject">Reference to a IUnknown object</param>
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ComObject"/> class.
+    /// </summary>
+    protected ComObject()
+    {
+    }
+
+    /// <summary>
+    ///   Query instance for a particular COM GUID/interface support.
+    /// </summary>
+    /// <param name = "guid">GUID query interface</param>
+    /// <msdn-id>ms682521</msdn-id>
+    /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
+    /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
+    public virtual IntPtr QueryInterfaceOrNull(Guid guid)
+    {
+        QueryInterface(guid, out var pointer);
+        return pointer;
+    }
+
+    ///<summary>
+    /// Query this instance for a particular COM interface support.
+    ///</summary>
+    ///<typeparam name="T">The type of the COM interface to query</typeparam>
+    ///<returns>An instance of the queried interface</returns>
+    /// <exception cref="SharpGenException">If this object doesn't support the interface</exception>
+    /// <msdn-id>ms682521</msdn-id>
+    /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
+    /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
+    public virtual T QueryInterface<T>() where T : ComObject
+    {
+        QueryInterface(typeof(T).GetTypeInfo().GUID, out var parentPtr).CheckError();
+        return MarshallingHelpers.FromPointer<T>(parentPtr);
+    }
+
+    /// <summary>
+    /// Queries a managed object for a particular COM interface support (This method is a shortcut to <see cref="QueryInterface"/>)
+    /// </summary>
+    ///<typeparam name="T">The type of the COM interface to query</typeparam>
+    /// <param name="comObject">The managed COM object.</param>
+    ///<returns>An instance of the queried interface</returns>
+    /// <msdn-id>ms682521</msdn-id>
+    /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
+    /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
 #if NET5_0_OR_GREATER
         [SupportedOSPlatform("windows")]
 #endif
-        public ComObject(object iunknownObject) : base(Marshal.GetIUnknownForObject(iunknownObject))
-        {
-        }
+    public static T As<T>(object comObject) where T : ComObject => As<T>(Marshal.GetIUnknownForObject(comObject));
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ComObject"/> class.
-        /// </summary>
-        protected ComObject()
-        {
-        }
+    /// <summary>
+    /// Queries a managed object for a particular COM interface support (This method is a shortcut to <see cref="QueryInterface"/>)
+    /// </summary>
+    ///<typeparam name="T">The type of the COM interface to query</typeparam>
+    /// <param name="iunknownPtr">The managed COM object.</param>
+    ///<returns>An instance of the queried interface</returns>
+    /// <msdn-id>ms682521</msdn-id>
+    /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
+    /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
+    public static T As<T>(IntPtr iunknownPtr) where T : ComObject
+    {
+        using var tempObject = new ComObject(iunknownPtr);
+        return tempObject.QueryInterface<T>();
+    }
 
-        /// <summary>
-        ///   Query instance for a particular COM GUID/interface support.
-        /// </summary>
-        /// <param name = "guid">GUID query interface</param>
-        /// <msdn-id>ms682521</msdn-id>
-        /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
-        /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
-        public virtual IntPtr QueryInterfaceOrNull(Guid guid)
-        {
-            QueryInterface(guid, out var pointer);
-            return pointer;
-        }
-
-        ///<summary>
-        /// Query this instance for a particular COM interface support.
-        ///</summary>
-        ///<typeparam name="T">The type of the COM interface to query</typeparam>
-        ///<returns>An instance of the queried interface</returns>
-        /// <exception cref="SharpGenException">If this object doesn't support the interface</exception>
-        /// <msdn-id>ms682521</msdn-id>
-        /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
-        /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
-        public virtual T QueryInterface<T>() where T : ComObject
-        {
-            QueryInterface(typeof(T).GetTypeInfo().GUID, out var parentPtr).CheckError();
-            return MarshallingHelpers.FromPointer<T>(parentPtr);
-        }
-
-        /// <summary>
-        /// Queries a managed object for a particular COM interface support (This method is a shortcut to <see cref="QueryInterface"/>)
-        /// </summary>
-        ///<typeparam name="T">The type of the COM interface to query</typeparam>
-        /// <param name="comObject">The managed COM object.</param>
-        ///<returns>An instance of the queried interface</returns>
-        /// <msdn-id>ms682521</msdn-id>
-        /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
-        /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
+    /// <summary>
+    /// Queries a managed object for a particular COM interface support.
+    /// </summary>
+    ///<typeparam name="T">The type of the COM interface to query</typeparam>
+    /// <param name="comObject">The managed COM object.</param>
+    ///<returns>An instance of the queried interface</returns>
+    /// <msdn-id>ms682521</msdn-id>
+    /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
+    /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
 #if NET5_0_OR_GREATER
         [SupportedOSPlatform("windows")]
 #endif
-        public static T As<T>(object comObject) where T : ComObject => As<T>(Marshal.GetIUnknownForObject(comObject));
+    public static T QueryInterface<T>(object comObject) where T : ComObject =>
+        As<T>(Marshal.GetIUnknownForObject(comObject));
 
-        /// <summary>
-        /// Queries a managed object for a particular COM interface support (This method is a shortcut to <see cref="QueryInterface"/>)
-        /// </summary>
-        ///<typeparam name="T">The type of the COM interface to query</typeparam>
-        /// <param name="iunknownPtr">The managed COM object.</param>
-        ///<returns>An instance of the queried interface</returns>
-        /// <msdn-id>ms682521</msdn-id>
-        /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
-        /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
-        public static T As<T>(IntPtr iunknownPtr) where T : ComObject
-        {
-            using var tempObject = new ComObject(iunknownPtr);
-            return tempObject.QueryInterface<T>();
-        }
+    /// <summary>
+    /// Queries a managed object for a particular COM interface support.
+    /// </summary>
+    ///<typeparam name="T">The type of the COM interface to query</typeparam>
+    /// <param name="comPointer">A pointer to a COM object.</param>
+    ///<returns>An instance of the queried interface</returns>
+    /// <msdn-id>ms682521</msdn-id>
+    /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
+    /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
+    public static T QueryInterfaceOrNull<T>(IntPtr comPointer) where T : ComObject
+    {
+        using var tempObject = new ComObject(comPointer);
+        return tempObject.QueryInterfaceOrNull<T>();
+    }
 
-        /// <summary>
-        /// Queries a managed object for a particular COM interface support.
-        /// </summary>
-        ///<typeparam name="T">The type of the COM interface to query</typeparam>
-        /// <param name="comObject">The managed COM object.</param>
-        ///<returns>An instance of the queried interface</returns>
-        /// <msdn-id>ms682521</msdn-id>
-        /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
-        /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
-#if NET5_0_OR_GREATER
-        [SupportedOSPlatform("windows")]
-#endif
-        public static T QueryInterface<T>(object comObject) where T : ComObject =>
-            As<T>(Marshal.GetIUnknownForObject(comObject));
+    ///<summary>
+    /// Query Interface for a particular interface support.
+    ///</summary>
+    ///<returns>An instance of the queried interface or null if it is not supported</returns>
+    ///<returns></returns>
+    /// <msdn-id>ms682521</msdn-id>
+    /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
+    /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
+    public virtual T QueryInterfaceOrNull<T>() where T : ComObject =>
+        MarshallingHelpers.FromPointer<T>(QueryInterfaceOrNull(typeof(T).GetTypeInfo().GUID));
 
-        /// <summary>
-        /// Queries a managed object for a particular COM interface support.
-        /// </summary>
-        ///<typeparam name="T">The type of the COM interface to query</typeparam>
-        /// <param name="comPointer">A pointer to a COM object.</param>
-        ///<returns>An instance of the queried interface</returns>
-        /// <msdn-id>ms682521</msdn-id>
-        /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
-        /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
-        public static T QueryInterfaceOrNull<T>(IntPtr comPointer) where T : ComObject
-        {
-            using var tempObject = new ComObject(comPointer);
-            return tempObject.QueryInterfaceOrNull<T>();
-        }
+    ///<summary>
+    /// Query Interface for a particular interface support and attach to the given instance.
+    ///</summary>
+    ///<typeparam name="T"></typeparam>
+    ///<returns></returns>
+    protected void QueryInterfaceFrom<T>(T fromObject) where T : ComObject =>
+        NativePointer = fromObject.QueryInterfaceOrNull(GetType().GetTypeInfo().GUID);
 
-        ///<summary>
-        /// Query Interface for a particular interface support.
-        ///</summary>
-        ///<returns>An instance of the queried interface or null if it is not supported</returns>
-        ///<returns></returns>
-        /// <msdn-id>ms682521</msdn-id>
-        /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
-        /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
-        public virtual T QueryInterfaceOrNull<T>() where T : ComObject =>
-            MarshallingHelpers.FromPointer<T>(QueryInterfaceOrNull(typeof(T).GetTypeInfo().GUID));
-
-        ///<summary>
-        /// Query Interface for a particular interface support and attach to the given instance.
-        ///</summary>
-        ///<typeparam name="T"></typeparam>
-        ///<returns></returns>
-        protected void QueryInterfaceFrom<T>(T fromObject) where T : ComObject =>
-            NativePointer = fromObject.QueryInterfaceOrNull(GetType().GetTypeInfo().GUID);
-
-        protected override void DisposeCore(IntPtr nativePointer, bool disposing)
-        {
-            // Release the object
-            if (disposing || ObjectTrackerReadOnlyConfiguration.IsReleaseOnFinalizerEnabled)
-                Release();
-        }
+    protected override void DisposeCore(IntPtr nativePointer, bool disposing)
+    {
+        // Release the object
+        if (disposing || ObjectTrackerReadOnlyConfiguration.IsReleaseOnFinalizerEnabled)
+            Release();
     }
 }

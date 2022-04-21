@@ -25,101 +25,100 @@ using SharpGen.CppModel;
 using SharpGen.Transform;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-namespace SharpGen.Model
+namespace SharpGen.Model;
+
+public sealed class CsMethod : CsCallable
 {
-    public sealed class CsMethod : CsCallable
+    protected override int MaxSizeReturnParameter => 4;
+
+    public CsMethod(Ioc ioc, CppMethod cppMethod, string name) : base(ioc, cppMethod, name)
     {
-        protected override int MaxSizeReturnParameter => 4;
+        if (cppMethod == null)
+            return;
 
-        public CsMethod(Ioc ioc, CppMethod cppMethod, string name) : base(ioc, cppMethod, name)
+        var tag = cppMethod.Rule;
+
+        AllowProperty = tag.Property ?? AllowProperty;
+        IsPersistent = tag.Persist ?? IsPersistent;
+        Hidden = tag.Hidden ?? Hidden;
+        CustomVtbl = tag.CustomVtbl ?? CustomVtbl;
+        IsKeepImplementPublic = tag.IsKeepImplementPublic ?? IsKeepImplementPublic;
+
+        // Apply any offset to the method's vtable
+        var offset = tag.LayoutOffsetTranslate;
+
+        Offset = cppMethod.Offset + offset;
+        WindowsOffset = cppMethod.WindowsOffset + offset;
+    }
+
+    public bool Hidden { get; set; }
+    private bool IsKeepImplementPublic { get; }
+    public bool? AllowProperty { get; }
+    public bool CustomVtbl { get; }
+    public bool IsPersistent { get; }
+    public int Offset { get; }
+    public int WindowsOffset { get; }
+
+    public ExpressionSyntax VTableOffsetExpression(PlatformDetectionType platform)
+    {
+        uint windowsOffset = (uint) WindowsOffset, offset = (uint) Offset;
+        var windowsOffsetExpression =
+            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(windowsOffset));
+        var nonWindowsOffsetExpression =
+            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(offset));
+
+        if ((platform & PlatformDetectionType.Any) == PlatformDetectionType.Any && offset != windowsOffset)
+            return ConditionalExpression(
+                MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    Ioc.GlobalNamespace.GetTypeNameSyntax(WellKnownName.PlatformDetection),
+                    IdentifierName("Is" + nameof(PlatformDetectionType.Windows))
+                ),
+                windowsOffsetExpression, nonWindowsOffsetExpression
+            );
+
+        // Use the Windows offset for the default offset in the vtable when the Windows platform is requested for compat reasons.
+        return (platform & PlatformDetectionType.Windows) != 0
+                   ? windowsOffsetExpression
+                   : nonWindowsOffsetExpression;
+    }
+
+    public bool IsFunctionPointerInVtbl
+    {
+        get
         {
-            if (cppMethod == null)
-                return;
-
-            var tag = cppMethod.Rule;
-
-            AllowProperty = tag.Property ?? AllowProperty;
-            IsPersistent = tag.Persist ?? IsPersistent;
-            Hidden = tag.Hidden ?? Hidden;
-            CustomVtbl = tag.CustomVtbl ?? CustomVtbl;
-            IsKeepImplementPublic = tag.IsKeepImplementPublic ?? IsKeepImplementPublic;
-
-            // Apply any offset to the method's vtable
-            var offset = tag.LayoutOffsetTranslate;
-
-            Offset = cppMethod.Offset + offset;
-            WindowsOffset = cppMethod.WindowsOffset + offset;
-        }
-
-        public bool Hidden { get; set; }
-        private bool IsKeepImplementPublic { get; }
-        public bool? AllowProperty { get; }
-        public bool CustomVtbl { get; }
-        public bool IsPersistent { get; }
-        public int Offset { get; }
-        public int WindowsOffset { get; }
-
-        public ExpressionSyntax VTableOffsetExpression(PlatformDetectionType platform)
-        {
-            uint windowsOffset = (uint) WindowsOffset, offset = (uint) Offset;
-            var windowsOffsetExpression =
-                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(windowsOffset));
-            var nonWindowsOffsetExpression =
-                LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(offset));
-
-            if ((platform & PlatformDetectionType.Any) == PlatformDetectionType.Any && offset != windowsOffset)
-                return ConditionalExpression(
-                    MemberAccessExpression(
-                        SyntaxKind.SimpleMemberAccessExpression,
-                        Ioc.GlobalNamespace.GetTypeNameSyntax(WellKnownName.PlatformDetection),
-                        IdentifierName("Is" + nameof(PlatformDetectionType.Windows))
-                    ),
-                    windowsOffsetExpression, nonWindowsOffsetExpression
-                );
-
-            // Use the Windows offset for the default offset in the vtable when the Windows platform is requested for compat reasons.
-            return (platform & PlatformDetectionType.Windows) != 0
-                       ? windowsOffsetExpression
-                       : nonWindowsOffsetExpression;
-        }
-
-        public bool IsFunctionPointerInVtbl
-        {
-            get
+            static bool IsBlittable(CsMarshalCallableBase x)
             {
-                static bool IsBlittable(CsMarshalCallableBase x)
+                var marshalType = x.MarshalType;
+
+                if (marshalType is { IsBlittable: true })
+                    return true;
+
+                return !x.IsArray && !x.HasPointer && !x.IsString && marshalType is CsFundamentalType
                 {
-                    var marshalType = x.MarshalType;
-
-                    if (marshalType is { IsBlittable: true })
-                        return true;
-
-                    return !x.IsArray && !x.HasPointer && !x.IsString && marshalType is CsFundamentalType
-                    {
-                        PrimitiveTypeIdentity: { Type: PrimitiveTypeCode.Char, PointerCount: 0 }
-                    };
-                }
-
-                return Ioc.GeneratorConfig.UseFunctionPointersInVtbl
-                    && Parameters.All(IsBlittable)
-                    && IsBlittable(ReturnValue);
+                    PrimitiveTypeIdentity: { Type: PrimitiveTypeCode.Char, PointerCount: 0 }
+                };
             }
+
+            return Ioc.GeneratorConfig.UseFunctionPointersInVtbl
+                && Parameters.All(IsBlittable)
+                && IsBlittable(ReturnValue);
         }
+    }
 
-        public bool IsPublicVisibilityForced(CsInterface parentInterface)
-        {
-            if (parentInterface == null)
-                return false;
+    public bool IsPublicVisibilityForced(CsInterface parentInterface)
+    {
+        if (parentInterface == null)
+            return false;
 
-            return IsKeepImplementPublic || parentInterface.IsCallback && !Hidden;
-        }
+        return IsKeepImplementPublic || parentInterface.IsCallback && !Hidden;
+    }
 
-        public bool IsPublicVisibilityForced(params CsInterface[] parentInterfaces) =>
-            parentInterfaces.Any(IsPublicVisibilityForced);
+    public bool IsPublicVisibilityForced(params CsInterface[] parentInterfaces) =>
+        parentInterfaces.Any(IsPublicVisibilityForced);
 
-        public void SuffixName(string suffix)
-        {
-            Name += suffix;
-        }
+    public void SuffixName(string suffix)
+    {
+        Name += suffix;
     }
 }

@@ -20,25 +20,24 @@
 using System.Collections.Generic;
 using System.Xml.Serialization;
 
-namespace SharpGen.Config
+namespace SharpGen.Config;
+
+/// <summary>
+/// A set of <see cref="ContextRule"/>.
+/// </summary>
+public class ContextSetRule : ConfigBaseRule
 {
     /// <summary>
-    /// A set of <see cref="ContextRule"/>.
+    /// Gets or sets the id of this context.
     /// </summary>
-    public class ContextSetRule : ConfigBaseRule
-    {
-        /// <summary>
-        /// Gets or sets the id of this context.
-        /// </summary>
-        /// <value>The id.</value>
-        [XmlAttribute("id")]
-        public string Id { get; set; }
+    /// <value>The id.</value>
+    [XmlAttribute("id")]
+    public string Id { get; set; }
 
-        /// <summary>
-        /// Context rules
-        /// </summary>
-        /// <value>The rules.</value>
-        [XmlElement("context")]
-        public List<string> Contexts { get; set; }
-    }
+    /// <summary>
+    /// Context rules
+    /// </summary>
+    /// <value>The rules.</value>
+    [XmlElement("context")]
+    public List<string> Contexts { get; set; }
 }

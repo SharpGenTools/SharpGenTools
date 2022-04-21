@@ -18,12 +18,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace SharpGen.CppModel
+namespace SharpGen.CppModel;
+
+public sealed class CppFunction : CppCallable
 {
-    public sealed class CppFunction : CppCallable
+    public CppFunction(string name) : base(name)
     {
-        public CppFunction(string name) : base(name)
-        {
-        }
     }
 }

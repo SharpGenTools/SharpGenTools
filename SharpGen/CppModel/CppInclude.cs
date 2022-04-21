@@ -20,20 +20,19 @@
 
 using System.Collections.Generic;
 
-namespace SharpGen.CppModel
+namespace SharpGen.CppModel;
+
+/// <summary>
+/// A C++ include contains C++ types declarations for macros, enums, structs, 
+/// interfaces and functions.
+/// </summary>
+public sealed class CppInclude : CppContainer
 {
-    /// <summary>
-    /// A C++ include contains C++ types declarations for macros, enums, structs, 
-    /// interfaces and functions.
-    /// </summary>
-    public sealed class CppInclude : CppContainer
+    public override string FullName => string.Empty;
+
+    public IEnumerable<CppDefine> Macros => Iterate<CppDefine>();
+
+    public CppInclude(string name) : base(name)
     {
-        public override string FullName => string.Empty;
-
-        public IEnumerable<CppDefine> Macros => Iterate<CppDefine>();
-
-        public CppInclude(string name) : base(name)
-        {
-        }
     }
 }

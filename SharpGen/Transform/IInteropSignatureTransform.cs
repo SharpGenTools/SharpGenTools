@@ -3,10 +3,9 @@
 using System.Collections.Generic;
 using SharpGen.Model;
 
-namespace SharpGen.Transform
+namespace SharpGen.Transform;
+
+public interface IInteropSignatureTransform
 {
-    public interface IInteropSignatureTransform
-    {
-        IDictionary<PlatformDetectionType, InteropMethodSignature> GetInteropSignatures(CsCallable callable);
-    }
+    IDictionary<PlatformDetectionType, InteropMethodSignature> GetInteropSignatures(CsCallable callable);
 }

@@ -18,12 +18,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace SharpGen.Runtime
+namespace SharpGen.Runtime;
+
+/// <summary>
+/// Use this interface to tag a class that is called by an unmanaged object.
+/// </summary>
+public interface ICallbackable
 {
-    /// <summary>
-    /// Use this interface to tag a class that is called by an unmanaged object.
-    /// </summary>
-    public interface ICallbackable
-    {
-    }
 }

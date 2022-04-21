@@ -25,116 +25,115 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.CppModel;
 
-namespace SharpGen.Model
+namespace SharpGen.Model;
+
+[Flags]
+public enum InteropMethodSignatureFlags
 {
-    [Flags]
-    public enum InteropMethodSignatureFlags
+    None = 0x0,
+    ForcedReturnBufferSig = 0x1,
+    IsFunction = 0x2,
+}
+
+public sealed class InteropMethodSignature : IEquatable<InteropMethodSignature>
+{
+    private TypeSyntax _returnTypeSyntax;
+    public InteropType ReturnType { get; set; }
+    public TypeSyntax ReturnTypeSyntax => _returnTypeSyntax ??= SyntaxFactory.ParseTypeName(ReturnType.TypeName);
+    public List<InteropMethodSignatureParameter> ParameterTypes { get; } = new();
+
+    public bool ForcedReturnBufferSig
     {
-        None = 0x0,
-        ForcedReturnBufferSig = 0x1,
-        IsFunction = 0x2,
+        get => Flags.HasFlag(InteropMethodSignatureFlags.ForcedReturnBufferSig);
+        set
+        {
+            if (value)
+                Flags |= InteropMethodSignatureFlags.ForcedReturnBufferSig;
+            else
+                Flags &= ~InteropMethodSignatureFlags.ForcedReturnBufferSig;
+        }
     }
 
-    public sealed class InteropMethodSignature : IEquatable<InteropMethodSignature>
+    public bool IsFunction
     {
-        private TypeSyntax _returnTypeSyntax;
-        public InteropType ReturnType { get; set; }
-        public TypeSyntax ReturnTypeSyntax => _returnTypeSyntax ??= SyntaxFactory.ParseTypeName(ReturnType.TypeName);
-        public List<InteropMethodSignatureParameter> ParameterTypes { get; } = new();
-
-        public bool ForcedReturnBufferSig
+        get => Flags.HasFlag(InteropMethodSignatureFlags.IsFunction);
+        set
         {
-            get => Flags.HasFlag(InteropMethodSignatureFlags.ForcedReturnBufferSig);
-            set
-            {
-                if (value)
-                    Flags |= InteropMethodSignatureFlags.ForcedReturnBufferSig;
-                else
-                    Flags &= ~InteropMethodSignatureFlags.ForcedReturnBufferSig;
-            }
+            if (value)
+                Flags |= InteropMethodSignatureFlags.IsFunction;
+            else
+                Flags &= ~InteropMethodSignatureFlags.IsFunction;
+        }
+    }
+
+    public CppCallingConvention CallingConvention { get; set; }
+    public InteropMethodSignatureFlags Flags { get; set; }
+
+    [ExcludeFromCodeCoverage]
+    public override string ToString()
+    {
+        StringBuilder builder = new();
+        builder.Append(ReturnType.TypeName);
+        builder.Append(" Call");
+        builder.Append(ReturnType.TypeName);
+        builder.Append('(');
+        for (int i = 0; i < ParameterTypes.Count; i++)
+        {
+            builder.Append(ParameterTypes[i].InteropType.TypeName);
+            if ((i + 1) < ParameterTypes.Count)
+                builder.Append(',');
         }
 
-        public bool IsFunction
+        builder.Append(')');
+        return builder.ToString();
+    }
+
+    public bool Equals(InteropMethodSignature other)
+    {
+        if (ReferenceEquals(null, other)) return false;
+        if (ReferenceEquals(this, other)) return true;
+
+        if (!Equals(ReturnType, other.ReturnType)) return false;
+        if (CallingConvention != other.CallingConvention) return false;
+        if (Flags != other.Flags) return false;
+        if (ParameterTypes.Count != other.ParameterTypes.Count) return false;
+
+        var typeComparer = InteropMethodSignatureParameter.TypeComparer;
+
+        for (var i = 0; i < ParameterTypes.Count; i++)
         {
-            get => Flags.HasFlag(InteropMethodSignatureFlags.IsFunction);
-            set
-            {
-                if (value)
-                    Flags |= InteropMethodSignatureFlags.IsFunction;
-                else
-                    Flags &= ~InteropMethodSignatureFlags.IsFunction;
-            }
+            if (!typeComparer.Equals(ParameterTypes[i], other.ParameterTypes[i])) return false;
         }
 
-        public CppCallingConvention CallingConvention { get; set; }
-        public InteropMethodSignatureFlags Flags { get; set; }
+        return true;
+    }
 
-        [ExcludeFromCodeCoverage]
-        public override string ToString()
+    public override bool Equals(object obj) =>
+        ReferenceEquals(this, obj) || obj is InteropMethodSignature other && Equals(other);
+
+    public override int GetHashCode()
+    {
+        unchecked
         {
-            StringBuilder builder = new();
-            builder.Append(ReturnType.TypeName);
-            builder.Append(" Call");
-            builder.Append(ReturnType.TypeName);
-            builder.Append('(');
-            for (int i = 0; i < ParameterTypes.Count; i++)
-            {
-                builder.Append(ParameterTypes[i].InteropType.TypeName);
-                if ((i + 1) < ParameterTypes.Count)
-                    builder.Append(',');
-            }
-
-            builder.Append(')');
-            return builder.ToString();
-        }
-
-        public bool Equals(InteropMethodSignature other)
-        {
-            if (ReferenceEquals(null, other)) return false;
-            if (ReferenceEquals(this, other)) return true;
-
-            if (!Equals(ReturnType, other.ReturnType)) return false;
-            if (CallingConvention != other.CallingConvention) return false;
-            if (Flags != other.Flags) return false;
-            if (ParameterTypes.Count != other.ParameterTypes.Count) return false;
+            var hashCode = ReturnType != null ? ReturnType.GetHashCode() : 0;
+            hashCode = (hashCode * 397) ^ CallingConvention.GetHashCode();
+            hashCode = (hashCode * 397) ^ (int) Flags;
+            hashCode = (hashCode * 397) ^ ParameterTypes.Count;
 
             var typeComparer = InteropMethodSignatureParameter.TypeComparer;
 
-            for (var i = 0; i < ParameterTypes.Count; i++)
+            foreach (var parameter in ParameterTypes)
             {
-                if (!typeComparer.Equals(ParameterTypes[i], other.ParameterTypes[i])) return false;
+                hashCode = (hashCode * 397) ^ typeComparer.GetHashCode(parameter);
             }
 
-            return true;
+            return hashCode;
         }
-
-        public override bool Equals(object obj) =>
-            ReferenceEquals(this, obj) || obj is InteropMethodSignature other && Equals(other);
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                var hashCode = ReturnType != null ? ReturnType.GetHashCode() : 0;
-                hashCode = (hashCode * 397) ^ CallingConvention.GetHashCode();
-                hashCode = (hashCode * 397) ^ (int) Flags;
-                hashCode = (hashCode * 397) ^ ParameterTypes.Count;
-
-                var typeComparer = InteropMethodSignatureParameter.TypeComparer;
-
-                foreach (var parameter in ParameterTypes)
-                {
-                    hashCode = (hashCode * 397) ^ typeComparer.GetHashCode(parameter);
-                }
-
-                return hashCode;
-            }
-        }
-
-        public static bool operator ==(InteropMethodSignature left, InteropMethodSignature right) =>
-            Equals(left, right);
-
-        public static bool operator !=(InteropMethodSignature left, InteropMethodSignature right) =>
-            !Equals(left, right);
     }
+
+    public static bool operator ==(InteropMethodSignature left, InteropMethodSignature right) =>
+        Equals(left, right);
+
+    public static bool operator !=(InteropMethodSignature left, InteropMethodSignature right) =>
+        !Equals(left, right);
 }

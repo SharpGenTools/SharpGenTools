@@ -20,13 +20,12 @@
 using System;
 using System.Diagnostics;
 
-namespace SharpGen
+namespace SharpGen;
+
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Constructor)]
+[Conditional("DEBUG")]
+[ExcludeFromCodeCoverage]
+internal sealed class ExcludeFromCodeCoverageAttribute : Attribute
 {
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Constructor)]
-    [Conditional("DEBUG")]
-    [ExcludeFromCodeCoverage]
-    internal sealed class ExcludeFromCodeCoverageAttribute : Attribute
-    {
-        public string Reason { get; set; }
-    }
+    public string Reason { get; set; }
 }

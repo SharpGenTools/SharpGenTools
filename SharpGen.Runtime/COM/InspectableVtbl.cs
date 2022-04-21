@@ -24,121 +24,120 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using SharpGen.Runtime.Win32;
 
-namespace SharpGen.Runtime
+namespace SharpGen.Runtime;
+
+[DebuggerTypeProxy(typeof(CppObjectVtblDebugView))]
+public unsafe class InspectableVtbl : ComObjectVtbl
 {
-    [DebuggerTypeProxy(typeof(CppObjectVtblDebugView))]
-    public unsafe class InspectableVtbl : ComObjectVtbl
+    public InspectableVtbl(int numberOfCallbackMethods) : base(numberOfCallbackMethods + 3)
     {
-        public InspectableVtbl(int numberOfCallbackMethods) : base(numberOfCallbackMethods + 3)
-        {
 #if NET5_0_OR_GREATER
             AddMethod((delegate *unmanaged[Stdcall]<IntPtr, int*, IntPtr**, int>)(&GetIids), 3u);
             AddMethod((delegate *unmanaged[Stdcall]<IntPtr, IntPtr*, int>)(&GetRuntimeClassName), 4u);
             AddMethod((delegate *unmanaged[Stdcall]<IntPtr, int*, int>)(&GetTrustLevel), 5u);
 #else
-            AddMethod(new GetIidsDelegate(GetIids), 3u);
-            AddMethod(new GetRuntimeClassNameDelegate(GetRuntimeClassName), 4u);
-            AddMethod(new GetTrustLevelDelegate(GetTrustLevel), 5u);
+        AddMethod(new GetIidsDelegate(GetIids), 3u);
+        AddMethod(new GetRuntimeClassNameDelegate(GetRuntimeClassName), 4u);
+        AddMethod(new GetTrustLevelDelegate(GetTrustLevel), 5u);
 #endif
-        }
+    }
 
-        /// <unmanaged>
-        /// HRESULT STDMETHODCALLTYPE GetIids(
-        ///   /* [out] */ __RPC__out ULONG *iidCount,
-        ///   /* [size_is][size_is][out] */ __RPC__deref_out_ecount_full_opt(*iidCount) IID **iids
-        /// )
-        /// </unmanaged>
+    /// <unmanaged>
+    /// HRESULT STDMETHODCALLTYPE GetIids(
+    ///   /* [out] */ __RPC__out ULONG *iidCount,
+    ///   /* [size_is][size_is][out] */ __RPC__deref_out_ecount_full_opt(*iidCount) IID **iids
+    /// )
+    /// </unmanaged>
 #if !NET5_0_OR_GREATER
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        private delegate int GetIidsDelegate(IntPtr thisPtr, int* iidCount, IntPtr** iids);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+    private delegate int GetIidsDelegate(IntPtr thisPtr, int* iidCount, IntPtr** iids);
 #else
         [UnmanagedCallersOnly(CallConvs = new[]{typeof(CallConvStdcall)})]
 #endif
-        private static int GetIids(IntPtr thisPtr, int* iidCount, IntPtr** iids)
+    private static int GetIids(IntPtr thisPtr, int* iidCount, IntPtr** iids)
+    {
+        var @this = ToCallback<CallbackBase>(thisPtr);
+        try
         {
-            var @this = ToCallback<CallbackBase>(thisPtr);
-            try
-            {
-                var container = @this.Shadow;
+            var container = @this.Shadow;
 
-                var countGuids = container.Guids.Length;
-                var iidsMemory = Marshal.AllocCoTaskMem(IntPtr.Size * countGuids);
+            var countGuids = container.Guids.Length;
+            var iidsMemory = Marshal.AllocCoTaskMem(IntPtr.Size * countGuids);
 
-                 // Copy GUIDs deduced from Callback
-                *iids = (IntPtr*) iidsMemory;
-                *iidCount = countGuids;
+            // Copy GUIDs deduced from Callback
+            *iids = (IntPtr*) iidsMemory;
+            *iidCount = countGuids;
 
-                MemoryHelpers.CopyMemory(iidsMemory, new ReadOnlySpan<IntPtr>(container.Guids));
+            MemoryHelpers.CopyMemory(iidsMemory, new ReadOnlySpan<IntPtr>(container.Guids));
 
-                return Result.Ok.Code;
-            }
-            catch (Exception exception)
-            {
-                (@this as IExceptionCallback)?.RaiseException(exception);
-                return Result.GetResultFromException(exception).Code;
-            }
+            return Result.Ok.Code;
         }
+        catch (Exception exception)
+        {
+            (@this as IExceptionCallback)?.RaiseException(exception);
+            return Result.GetResultFromException(exception).Code;
+        }
+    }
 
-        /// <unmanaged>
-        /// HRESULT STDMETHODCALLTYPE GetRuntimeClassName([out] __RPC__deref_out_opt HSTRING *className)
-        /// </unmanaged>
+    /// <unmanaged>
+    /// HRESULT STDMETHODCALLTYPE GetRuntimeClassName([out] __RPC__deref_out_opt HSTRING *className)
+    /// </unmanaged>
 #if !NET5_0_OR_GREATER
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        private delegate int GetRuntimeClassNameDelegate(IntPtr thisPtr, IntPtr* className);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+    private delegate int GetRuntimeClassNameDelegate(IntPtr thisPtr, IntPtr* className);
 #else
         [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
 #endif
-        private static int GetRuntimeClassName(IntPtr thisPtr, IntPtr* className)
+    private static int GetRuntimeClassName(IntPtr thisPtr, IntPtr* className)
+    {
+        var @this = ToCallback<IInspectable>(thisPtr);
+        try
         {
-            var @this = ToCallback<IInspectable>(thisPtr);
-            try
-            {
-                var result = new WinRTString(
-                    @this switch
-                    {
-                        IInspectableWithRuntimeClassName { RuntimeClassName: var runtimeClassName } => runtimeClassName,
-                        _ => @this.GetType().FullName
-                    }
-                );
-
-                *className = result.NativePointer;
-
-                return Result.Ok.Code;
-            }
-            catch (Exception exception)
-            {
-                (@this as IExceptionCallback)?.RaiseException(exception);
-                return Result.GetResultFromException(exception).Code;
-            }
-        }
-
-        /// <unmanaged>
-        /// HRESULT STDMETHODCALLTYPE GetTrustLevel(/* [out] */ __RPC__out TrustLevel *trustLevel);
-        /// </unmanaged>
-#if !NET5_0_OR_GREATER
-        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        private delegate int GetTrustLevelDelegate(IntPtr thisPtr, int* trustLevel);
-#else
-        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
-#endif
-        private static int GetTrustLevel(IntPtr thisPtr, int* trustLevel)
-        {
-            var @this = ToCallback<IInspectable>(thisPtr);
-            try
-            {
-                *trustLevel = @this switch
+            var result = new WinRTString(
+                @this switch
                 {
-                    IInspectableWithTrustLevel { TrustLevel: var level } => (int) level,
-                    _ => (int) TrustLevel.BaseTrust
-                };
+                    IInspectableWithRuntimeClassName { RuntimeClassName: var runtimeClassName } => runtimeClassName,
+                    _ => @this.GetType().FullName
+                }
+            );
 
-                return Result.Ok.Code;
-            }
-            catch (Exception exception)
+            *className = result.NativePointer;
+
+            return Result.Ok.Code;
+        }
+        catch (Exception exception)
+        {
+            (@this as IExceptionCallback)?.RaiseException(exception);
+            return Result.GetResultFromException(exception).Code;
+        }
+    }
+
+    /// <unmanaged>
+    /// HRESULT STDMETHODCALLTYPE GetTrustLevel(/* [out] */ __RPC__out TrustLevel *trustLevel);
+    /// </unmanaged>
+#if !NET5_0_OR_GREATER
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+    private delegate int GetTrustLevelDelegate(IntPtr thisPtr, int* trustLevel);
+#else
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+#endif
+    private static int GetTrustLevel(IntPtr thisPtr, int* trustLevel)
+    {
+        var @this = ToCallback<IInspectable>(thisPtr);
+        try
+        {
+            *trustLevel = @this switch
             {
-                (@this as IExceptionCallback)?.RaiseException(exception);
-                return Result.GetResultFromException(exception).Code;
-            }
+                IInspectableWithTrustLevel { TrustLevel: var level } => (int) level,
+                _ => (int) TrustLevel.BaseTrust
+            };
+
+            return Result.Ok.Code;
+        }
+        catch (Exception exception)
+        {
+            (@this as IExceptionCallback)?.RaiseException(exception);
+            return Result.GetResultFromException(exception).Code;
         }
     }
 }

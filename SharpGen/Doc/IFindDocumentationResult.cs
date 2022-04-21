@@ -1,9 +1,8 @@
 #nullable enable
 
-namespace SharpGen.Doc
+namespace SharpGen.Doc;
+
+public interface IFindDocumentationResult
 {
-    public interface IFindDocumentationResult
-    {
-        bool Success { get; }
-    }
+    bool Success { get; }
 }

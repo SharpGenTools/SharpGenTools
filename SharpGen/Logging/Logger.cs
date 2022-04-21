@@ -20,114 +20,111 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
 
-namespace SharpGen.Logging
+namespace SharpGen.Logging;
+
+/// <summary>
+/// Root Logger class.
+/// </summary>
+public sealed class Logger : LoggerBase
 {
-    /// <summary>
-    /// Root Logger class.
-    /// </summary>
-    public sealed class Logger : LoggerBase
+    private int _errorCount;
+    private readonly List<string> contextStack = new();
+    private readonly Stack<LogLocation> fileLocationStack = new();
+
+    public Logger(ILogger output, IProgressReport progress = null)
     {
-        private int _errorCount;
-        private readonly List<string> contextStack = new();
-        private readonly Stack<LogLocation> fileLocationStack = new();
+        LoggerOutput = output;
+        ProgressReport = progress;
+    }
 
-        public Logger(ILogger output, IProgressReport progress = null)
-        {
-            LoggerOutput = output;
-            ProgressReport = progress;
-        }
+    /// <summary>
+    /// Gets the context as a string.
+    /// </summary>
+    private string ContextAsText => HasContext ? string.Join("/", contextStack) : null;
 
-        /// <summary>
-        /// Gets the context as a string.
-        /// </summary>
-        private string ContextAsText => HasContext ? string.Join("/", contextStack) : null;
+    public override ILogger LoggerOutput { get; }
 
-        public override ILogger LoggerOutput { get; }
+    private bool HasContext => contextStack.Count > 0;
 
-        private bool HasContext => contextStack.Count > 0;
+    public override bool HasErrors => _errorCount > 0;
 
-        public override bool HasErrors => _errorCount > 0;
+    public override IProgressReport ProgressReport { get; }
 
-        public override IProgressReport ProgressReport { get; }
+    /// <summary>
+    ///   Pushes a context string.
+    /// </summary>
+    public override void PushContext(string context)
+    {
+        contextStack.Add(context);
+    }
 
-        /// <summary>
-        ///   Pushes a context string.
-        /// </summary>
-        public override void PushContext(string context)
-        {
-            contextStack.Add(context);
-        }
+    /// <summary>
+    ///   Pushes a context location.
+    /// </summary>
+    public override void PushLocation(string fileName, int line = 1, int column = 1)
+    {
+        fileLocationStack.Push(new LogLocation(fileName, line, column));
+    }
 
-        /// <summary>
-        ///   Pushes a context location.
-        /// </summary>
-        public override void PushLocation(string fileName, int line = 1, int column = 1)
-        {
-            fileLocationStack.Push(new LogLocation(fileName, line, column));
-        }
+    /// <summary>
+    ///   Pops the context location.
+    /// </summary>
+    public override void PopLocation()
+    {
+        fileLocationStack.Pop();
+    }
 
-        /// <summary>
-        ///   Pops the context location.
-        /// </summary>
-        public override void PopLocation()
-        {
-            fileLocationStack.Pop();
-        }
+    /// <summary>
+    ///   Pushes a context formatted string.
+    /// </summary>
+    public override void PushContext(string context, params object[] parameters)
+    {
+        contextStack.Add(string.Format(context, parameters));
+    }
 
-        /// <summary>
-        ///   Pushes a context formatted string.
-        /// </summary>
-        public override void PushContext(string context, params object[] parameters)
-        {
-            contextStack.Add(string.Format(context, parameters));
-        }
+    /// <summary>
+    ///   Pops the context.
+    /// </summary>
+    public override void PopContext()
+    {
+        if (contextStack.Count > 0)
+            contextStack.RemoveAt(contextStack.Count - 1);
+    }
 
-        /// <summary>
-        ///   Pops the context.
-        /// </summary>
-        public override void PopContext()
-        {
-            if (contextStack.Count > 0)
-                contextStack.RemoveAt(contextStack.Count - 1);
-        }
+    /// <summary>
+    ///   Logs the specified progress level and message.
+    /// </summary>
+    public override void Progress(int level, string message, params object[] parameters)
+    {
+        Message(message, parameters);
+        if (ProgressReport?.ProgressStatus(level, string.Format(message, parameters)) == true)
+            Exit("Process aborted manually");
+    }
 
-        /// <summary>
-        ///   Logs the specified progress level and message.
-        /// </summary>
-        public override void Progress(int level, string message, params object[] parameters)
-        {
-            Message(message, parameters);
-            if (ProgressReport?.ProgressStatus(level, string.Format(message, parameters)) == true)
-                Exit("Process aborted manually");
-        }
+    /// <summary>
+    /// Exits the process.
+    /// </summary>
+    public override void Exit(string reason, params object[] parameters)
+    {
+        var message = string.Format(reason, parameters);
+        ProgressReport?.FatalExit(message);
+        LoggerOutput?.Exit(message, 1);
+    }
 
-        /// <summary>
-        /// Exits the process.
-        /// </summary>
-        public override void Exit(string reason, params object[] parameters)
-        {
-            var message = string.Format(reason, parameters);
-            ProgressReport?.FatalExit(message);
-            LoggerOutput?.Exit(message, 1);
-        }
+    /// <summary>
+    ///   Logs the raw message to the LoggerOutput.
+    /// </summary>
+    public override void LogRawMessage(LogLevel type, string code, string message, Exception exception, params object[] parameters)
+    {
+        var logLocation = fileLocationStack.Count > 0 ? fileLocationStack.Peek() : null;
 
-        /// <summary>
-        ///   Logs the raw message to the LoggerOutput.
-        /// </summary>
-        public override void LogRawMessage(LogLevel type, string code, string message, Exception exception, params object[] parameters)
-        {
-            var logLocation = fileLocationStack.Count > 0 ? fileLocationStack.Peek() : null;
+        if (LoggerOutput == null)
+            Console.WriteLine("Warning, unable to log error. No LoggerOutput configured");
+        else
+            LoggerOutput.Log(type, logLocation, ContextAsText, code, message, exception, parameters);
 
-            if (LoggerOutput == null)
-                Console.WriteLine("Warning, unable to log error. No LoggerOutput configured");
-            else
-                LoggerOutput.Log(type, logLocation, ContextAsText, code, message, exception, parameters);
-
-            if (type is LogLevel.Error or LogLevel.Fatal)
-                _errorCount++;
-        }
+        if (type is LogLevel.Error or LogLevel.Fatal)
+            _errorCount++;
     }
 }

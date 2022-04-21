@@ -3,13 +3,12 @@ using SharpGen.Config;
 
 #nullable enable
 
-namespace SharpGen.Parser
+namespace SharpGen.Parser;
+
+public interface IIncludeDirectoryResolver
 {
-    public interface IIncludeDirectoryResolver
-    {
-        void Configure(ConfigFile config);
-        void AddDirectories(IEnumerable<IncludeDirRule> directories);
-        void AddDirectories(params IncludeDirRule[] directories);
-        IEnumerable<string> IncludeArguments { get; }
-    }
+    void Configure(ConfigFile config);
+    void AddDirectories(IEnumerable<IncludeDirRule> directories);
+    void AddDirectories(params IncludeDirRule[] directories);
+    IEnumerable<string> IncludeArguments { get; }
 }

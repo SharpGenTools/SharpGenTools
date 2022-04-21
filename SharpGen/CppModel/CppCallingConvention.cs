@@ -18,14 +18,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace SharpGen.CppModel
+namespace SharpGen.CppModel;
+
+public enum CppCallingConvention
 {
-    public enum CppCallingConvention
-    {
-        Unknown = 0,
-        StdCall = 1,
-        FastCall = 2,
-        ThisCall = 3,
-        CDecl = 4,
-    }
+    Unknown = 0,
+    StdCall = 1,
+    FastCall = 2,
+    ThisCall = 3,
+    CDecl = 4,
 }

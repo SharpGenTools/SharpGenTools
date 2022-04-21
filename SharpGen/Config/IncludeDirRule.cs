@@ -17,60 +17,59 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
+
 using System.Xml.Serialization;
 
-namespace SharpGen.Config
+namespace SharpGen.Config;
+
+/// <summary>
+/// An Include directive
+/// </summary>
+public class IncludeDirRule
 {
     /// <summary>
-    /// An Include directive
+    /// Initializes a new instance of the <see cref="IncludeDirRule"/> class.
     /// </summary>
-    public class IncludeDirRule
+    public IncludeDirRule()
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="IncludeDirRule"/> class.
-        /// </summary>
-        public IncludeDirRule()
-        {
-        }
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="IncludeDirRule"/> class.
-        /// </summary>
-        /// <param name="path">The path.</param>
-        public IncludeDirRule(string path)
-        {
-            Path = path;
-        }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IncludeDirRule"/> class.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    public IncludeDirRule(string path)
+    {
+        Path = path;
+    }
 
-        /// <summary>
-        /// Gets or sets the path.
-        /// </summary>
-        /// <value>
-        /// The path.
-        /// </value>
-        [XmlText]
-        public string Path { get; set; }
+    /// <summary>
+    /// Gets or sets the path.
+    /// </summary>
+    /// <value>
+    /// The path.
+    /// </value>
+    [XmlText]
+    public string Path { get; set; }
 
-        /// <summary>
-        /// Gets or sets the is override.
-        /// </summary>
-        /// <value>
-        /// The is override.
-        /// </value>
-        [XmlAttribute("override")]
-        public bool IsOverride { get; set; }
+    /// <summary>
+    /// Gets or sets the is override.
+    /// </summary>
+    /// <value>
+    /// The is override.
+    /// </value>
+    [XmlAttribute("override")]
+    public bool IsOverride { get; set; }
         
-        /// <summary>
-        /// Returns a <see cref="System.String"/> that represents this instance.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="System.String"/> that represents this instance.
-        /// </returns>
-        [ExcludeFromCodeCoverage]
-        public override string ToString()
-        {
-            return string.Format("include-dir: {0} override: {1}", Path, IsOverride);
-        }
+    /// <summary>
+    /// Returns a <see cref="System.String"/> that represents this instance.
+    /// </summary>
+    /// <returns>
+    /// A <see cref="System.String"/> that represents this instance.
+    /// </returns>
+    [ExcludeFromCodeCoverage]
+    public override string ToString()
+    {
+        return string.Format("include-dir: {0} override: {1}", Path, IsOverride);
     }
 }

@@ -3,37 +3,36 @@ using System.IO;
 using SharpGen.Config;
 using Xunit.Abstractions;
 
-namespace SharpGen.UnitTests
+namespace SharpGen.UnitTests;
+
+public abstract class FileSystemTestBase : TestBase, IDisposable
 {
-    public abstract class FileSystemTestBase : TestBase, IDisposable
+    protected DirectoryInfo TestDirectory { get; }
+
+    protected FileSystemTestBase(ITestOutputHelper outputHelper)
+        : base(outputHelper)
     {
-        protected DirectoryInfo TestDirectory { get; }
+        TestDirectory = GenerateTestDirectory();
+    }
 
-        protected FileSystemTestBase(ITestOutputHelper outputHelper)
-            : base(outputHelper)
+    public IncludeDirRule GetTestFileIncludeRule()
+    {
+        return new IncludeDirRule
         {
-            TestDirectory = GenerateTestDirectory();
-        }
+            Path = $@"{TestDirectory.FullName}\includes"
+        };
+    }
 
-        public IncludeDirRule GetTestFileIncludeRule()
-        {
-            return new IncludeDirRule
-            {
-                Path = $@"{TestDirectory.FullName}\includes"
-            };
-        }
+    private static DirectoryInfo GenerateTestDirectory()
+    {
+        var tempFolder = Path.GetTempPath();
+        var testFolderName = Path.GetRandomFileName();
+        var testDirectoryInfo = Directory.CreateDirectory(Path.Combine(tempFolder, testFolderName));
+        return testDirectoryInfo;
+    }
 
-        private static DirectoryInfo GenerateTestDirectory()
-        {
-            var tempFolder = Path.GetTempPath();
-            var testFolderName = Path.GetRandomFileName();
-            var testDirectoryInfo = Directory.CreateDirectory(Path.Combine(tempFolder, testFolderName));
-            return testDirectoryInfo;
-        }
-
-        public void Dispose()
-        {
-            TestDirectory.Delete(true);
-        }
+    public void Dispose()
+    {
+        TestDirectory.Delete(true);
     }
 }

@@ -17,27 +17,26 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
+
 using System.Xml.Serialization;
 
-namespace SharpGen.Config
+namespace SharpGen.Config;
+
+[XmlType("move")]
+public class MoveRule : MappingBaseRule
 {
-    [XmlType("move")]
-    public class MoveRule : MappingBaseRule
+    [XmlAttribute("to")]
+    public string To { get; set; }
+
+    [XmlAttribute("property")]
+    public string Property { get; set; }
+
+    [XmlAttribute("base")]
+    public string Base { get; set; }
+
+    [ExcludeFromCodeCoverage]
+    public override string ToString()
     {
-        [XmlAttribute("to")]
-        public string To { get; set; }
-
-        [XmlAttribute("property")]
-        public string Property { get; set; }
-
-        [XmlAttribute("base")]
-        public string Base { get; set; }
-
-        [ExcludeFromCodeCoverage]
-        public override string ToString()
-        {
-            return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} to:{1} property:{2} base:{3}", base.ToString(), To, Property, Base);
-        }
+        return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} to:{1} property:{2} base:{3}", base.ToString(), To, Property, Base);
     }
 }

@@ -18,20 +18,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace SharpGen.CppModel
-{
-    /// <summary>
-    /// A C++ constant Name/Value.
-    /// </summary>
-    public sealed class CppConstant : CppElement
-    {
-        public CppConstant(string name, string typeName, string value) : base(name)
-        {
-            TypeName = typeName;
-            Value = value;
-        }
+namespace SharpGen.CppModel;
 
-        public string Value { get; }
-        public string TypeName { get; }
+/// <summary>
+/// A C++ constant Name/Value.
+/// </summary>
+public sealed class CppConstant : CppElement
+{
+    public CppConstant(string name, string typeName, string value) : base(name)
+    {
+        TypeName = typeName;
+        Value = value;
     }
+
+    public string Value { get; }
+    public string TypeName { get; }
 }

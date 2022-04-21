@@ -18,124 +18,122 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Diagnostics;
 using SharpGen.Config;
 using SharpGen.CppModel;
 
-namespace SharpGen.Model
+namespace SharpGen.Model;
+
+public sealed class CsParameter : CsMarshalCallableBase
 {
-    public sealed class CsParameter : CsMarshalCallableBase
+    private bool isOptional, usedAsReturn;
+    private const int SizeOfLimit = 16;
+
+    public CsParameterAttribute Attribute { get; set; } = CsParameterAttribute.In;
+
+    public string DefaultValue { get; }
+    private bool ForcePassByValue { get; }
+    public bool HasParams { get; }
+    public bool IsFast { get; }
+
+    public override bool IsArray
     {
-        private bool isOptional, usedAsReturn;
-        private const int SizeOfLimit = 16;
+        get => base.IsArray && !IsString;
+        set => base.IsArray = value;
+    }
 
-        public CsParameterAttribute Attribute { get; set; } = CsParameterAttribute.In;
+    public override bool HasPointer => base.HasPointer || ArraySpecification.HasValue;
 
-        public string DefaultValue { get; }
-        private bool ForcePassByValue { get; }
-        public bool HasParams { get; }
-        public bool IsFast { get; }
-
-        public override bool IsArray
+    public override bool IsFixed
+    {
+        get
         {
-            get => base.IsArray && !IsString;
-            set => base.IsArray = value;
+            if (IsRef || IsRefIn)
+                return !(PassedByNullableInstance || RefInPassedByValue);
+            if (IsOut && !IsBoolToInt)
+                return true;
+            if (IsArray && !IsInterfaceArray)
+                return true;
+            return false;
         }
+    }
 
-        public override bool HasPointer => base.HasPointer || ArraySpecification.HasValue;
+    public bool IsIn => Attribute == CsParameterAttribute.In;
 
-        public override bool IsFixed
-        {
-            get
-            {
-                if (IsRef || IsRefIn)
-                    return !(PassedByNullableInstance || RefInPassedByValue);
-                if (IsOut && !IsBoolToInt)
-                    return true;
-                if (IsArray && !IsInterfaceArray)
-                    return true;
-                return false;
-            }
-        }
+    public bool IsInInterfaceArrayLike => IsArray && PublicType is CsInterface {IsCallback: false} && !IsOut;
 
-        public bool IsIn => Attribute == CsParameterAttribute.In;
+    public bool IsOptional
+    {
+        // Arrays of reference types (interfaces) support null values
+        get => isOptional || PublicType is CsInterface && !IsOut && IsArray;
+        private set => isOptional = value;
+    }
 
-        public bool IsInInterfaceArrayLike => IsArray && PublicType is CsInterface {IsCallback: false} && !IsOut;
+    /// <summary>
+    /// Parameter is an Out parameter and passed by pointer.
+    /// </summary>
+    public override bool IsOut => Attribute == CsParameterAttribute.Out;
 
-        public bool IsOptional
-        {
-            // Arrays of reference types (interfaces) support null values
-            get => isOptional || PublicType is CsInterface && !IsOut && IsArray;
-            private set => isOptional = value;
-        }
+    /// <summary>
+    /// Parameter is an In/Out parameter and passed by pointer.
+    /// </summary>
+    public bool IsRef => Attribute == CsParameterAttribute.Ref;
 
-        /// <summary>
-        /// Parameter is an Out parameter and passed by pointer.
-        /// </summary>
-        public override bool IsOut => Attribute == CsParameterAttribute.Out;
+    /// <summary>
+    /// Parameter is an In parameter and passed by pointer.
+    /// </summary>
+    public bool IsRefIn => Attribute == CsParameterAttribute.RefIn;
 
-        /// <summary>
-        /// Parameter is an In/Out parameter and passed by pointer.
-        /// </summary>
-        public bool IsRef => Attribute == CsParameterAttribute.Ref;
+    private bool RefInPassedByValue => IsRefIn && IsValueType && !IsArray
+                                    && (PublicType.Size <= SizeOfLimit && !HasNativeValueType || ForcePassByValue);
 
-        /// <summary>
-        /// Parameter is an In parameter and passed by pointer.
-        /// </summary>
-        public bool IsRefIn => Attribute == CsParameterAttribute.RefIn;
+    public bool PassedByManagedReference => (IsRef || IsRefIn)
+                                         && !(PassedByNullableInstance || RefInPassedByValue) && !IsStructClass;
 
-        private bool RefInPassedByValue => IsRefIn && IsValueType && !IsArray
-                                        && (PublicType.Size <= SizeOfLimit && !HasNativeValueType || ForcePassByValue);
+    public bool PassedByNullableInstance => IsRefIn && IsValueType && !IsArray && IsOptional;
+    public bool IsNullableStruct => PassedByNullableInstance && !IsStructClass;
+    public bool IsNullable => IsOptional && (IsArray || IsInterface || IsNullableStruct || IsStructClass);
+    public override bool PassedByNativeReference => !IsIn;
 
-        public bool PassedByManagedReference => (IsRef || IsRefIn)
-                                             && !(PassedByNullableInstance || RefInPassedByValue) && !IsStructClass;
+    public override bool IsLocalManagedReference =>
+        Attribute is CsParameterAttribute.Ref or CsParameterAttribute.Out;
 
-        public bool PassedByNullableInstance => IsRefIn && IsValueType && !IsArray && IsOptional;
-        public bool IsNullableStruct => PassedByNullableInstance && !IsStructClass;
-        public bool IsNullable => IsOptional && (IsArray || IsInterface || IsNullableStruct || IsStructClass);
-        public override bool PassedByNativeReference => !IsIn;
+    public override bool UsedAsReturn => usedAsReturn;
 
-        public override bool IsLocalManagedReference =>
-            Attribute is CsParameterAttribute.Ref or CsParameterAttribute.Out;
+    internal void MarkUsedAsReturn() => usedAsReturn = true;
 
-        public override bool UsedAsReturn => usedAsReturn;
+    public CsParameter Clone()
+    {
+        var parameter = (CsParameter) MemberwiseClone();
+        parameter.ResetParentAfterClone();
+        return parameter;
+    }
 
-        internal void MarkUsedAsReturn() => usedAsReturn = true;
+    public CsParameter(Ioc ioc, CppParameter cppParameter, string name) : base(ioc, cppParameter, name)
+    {
+        if (cppParameter == null)
+            return;
 
-        public CsParameter Clone()
-        {
-            var parameter = (CsParameter) MemberwiseClone();
-            parameter.ResetParentAfterClone();
-            return parameter;
-        }
+        var paramAttribute = cppParameter.Attribute;
+        var paramRule = cppParameter.Rule;
 
-        public CsParameter(Ioc ioc, CppParameter cppParameter, string name) : base(ioc, cppParameter, name)
-        {
-            if (cppParameter == null)
-                return;
+        usedAsReturn = paramRule.ParameterUsedAsReturnType ?? UsedAsReturn;
+        DefaultValue = paramRule.DefaultValue;
 
-            var paramAttribute = cppParameter.Attribute;
-            var paramRule = cppParameter.Rule;
+        if (HasFlag(paramAttribute, ParamAttribute.Buffer))
+            IsArray = true;
 
-            usedAsReturn = paramRule.ParameterUsedAsReturnType ?? UsedAsReturn;
-            DefaultValue = paramRule.DefaultValue;
+        if (HasFlag(paramAttribute, ParamAttribute.Fast))
+            IsFast = true;
 
-            if (HasFlag(paramAttribute, ParamAttribute.Buffer))
-                IsArray = true;
+        if (HasFlag(paramAttribute, ParamAttribute.Value))
+            ForcePassByValue = true;
 
-            if (HasFlag(paramAttribute, ParamAttribute.Fast))
-                IsFast = true;
+        if (HasFlag(paramAttribute, ParamAttribute.Params))
+            HasParams = true;
 
-            if (HasFlag(paramAttribute, ParamAttribute.Value))
-                ForcePassByValue = true;
+        if (HasFlag(paramAttribute, ParamAttribute.Optional))
+            IsOptional = true;
 
-            if (HasFlag(paramAttribute, ParamAttribute.Params))
-                HasParams = true;
-
-            if (HasFlag(paramAttribute, ParamAttribute.Optional))
-                IsOptional = true;
-
-            static bool HasFlag(ParamAttribute value, ParamAttribute flag) => (value & flag) == flag;
-        }
+        static bool HasFlag(ParamAttribute value, ParamAttribute flag) => (value & flag) == flag;
     }
 }

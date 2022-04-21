@@ -19,35 +19,33 @@
 // THE SOFTWARE.
 
 using System.Xml.Serialization;
-using SharpGen.CppModel;
 
-namespace SharpGen.Config
+namespace SharpGen.Config;
+
+interface ITypeRule
 {
-    interface ITypeRule
-    {
-        [XmlAttribute("class")]
-        string NewClass { get; set; }
-        [XmlAttribute("enum")]
-        string Enum { get; set; }
-        [XmlAttribute("enum-item")]
-        string EnumItem { get; set; }
-        [XmlAttribute("struct")]
-        string Struct { get; set; }
-        [XmlAttribute("field")]
-        string Field { get; set; }
-        [XmlAttribute("interface")]
-        string Interface { get; set; }
-        [XmlAttribute("function")]
-        string Function { get; set; }
-        [XmlAttribute("method")]
-        string Method { get; set; }
-        [XmlAttribute("param")]
-        string Parameter { get; set; }
-        [XmlAttribute("typedef")]
-        string Typedef { get; set; }
-        [XmlAttribute("element")]
-        string Element { get; set; }
-        [XmlAttribute("variable")]
-        string Variable { get; set; }
-    }
+    [XmlAttribute("class")]
+    string NewClass { get; set; }
+    [XmlAttribute("enum")]
+    string Enum { get; set; }
+    [XmlAttribute("enum-item")]
+    string EnumItem { get; set; }
+    [XmlAttribute("struct")]
+    string Struct { get; set; }
+    [XmlAttribute("field")]
+    string Field { get; set; }
+    [XmlAttribute("interface")]
+    string Interface { get; set; }
+    [XmlAttribute("function")]
+    string Function { get; set; }
+    [XmlAttribute("method")]
+    string Method { get; set; }
+    [XmlAttribute("param")]
+    string Parameter { get; set; }
+    [XmlAttribute("typedef")]
+    string Typedef { get; set; }
+    [XmlAttribute("element")]
+    string Element { get; set; }
+    [XmlAttribute("variable")]
+    string Variable { get; set; }
 }

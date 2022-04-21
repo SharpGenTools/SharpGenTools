@@ -6,18 +6,17 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-namespace SharpGenTools.Sdk.Internal.Roslyn
+namespace SharpGenTools.Sdk.Internal.Roslyn;
+
+internal static class RoslynString
 {
-    internal static class RoslynString
-    {
-        /// <inheritdoc cref="string.IsNullOrEmpty(string)"/>
-        public static bool IsNullOrEmpty([NotNullWhen(returnValue: false)] string? value)
-            => string.IsNullOrEmpty(value);
+    /// <inheritdoc cref="string.IsNullOrEmpty(string)"/>
+    public static bool IsNullOrEmpty([NotNullWhen(returnValue: false)] string? value)
+        => string.IsNullOrEmpty(value);
 
 #if !NET20
-        /// <inheritdoc cref="string.IsNullOrWhiteSpace(string)"/>
-        public static bool IsNullOrWhiteSpace([NotNullWhen(returnValue: false)] string? value)
-            => string.IsNullOrWhiteSpace(value);
+    /// <inheritdoc cref="string.IsNullOrWhiteSpace(string)"/>
+    public static bool IsNullOrWhiteSpace([NotNullWhen(returnValue: false)] string? value)
+        => string.IsNullOrWhiteSpace(value);
 #endif
-    }
 }

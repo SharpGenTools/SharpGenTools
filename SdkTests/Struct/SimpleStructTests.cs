@@ -1,16 +1,15 @@
 using System;
 using Xunit;
 
-namespace Struct
+namespace Struct;
+
+public class SimpleStructTests
 {
-    public class SimpleStructTests
+    [Fact]
+    public void SimpleStructMarshalledCorrectly()
     {
-        [Fact]
-        public void SimpleStructMarshalledCorrectly()
-        {
-            var simple = Functions.GetSimpleStruct();
-            Assert.Equal(10, simple.I);
-            Assert.Equal(3, simple.J);
-        }
+        var simple = Functions.GetSimpleStruct();
+        Assert.Equal(10, simple.I);
+        Assert.Equal(3, simple.J);
     }
 }

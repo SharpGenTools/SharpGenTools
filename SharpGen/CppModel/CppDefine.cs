@@ -18,15 +18,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace SharpGen.CppModel
-{
-    /// <summary>
-    /// A C++ define macro Name=Value.
-    /// </summary>
-    public sealed class CppDefine : CppElement
-    {
-        public CppDefine(string name, string value) : base(name) => Value = value;
+namespace SharpGen.CppModel;
 
-        public string Value { get; }
-    }
+/// <summary>
+/// A C++ define macro Name=Value.
+/// </summary>
+public sealed class CppDefine : CppElement
+{
+    public CppDefine(string name, string value) : base(name) => Value = value;
+
+    public string Value { get; }
 }

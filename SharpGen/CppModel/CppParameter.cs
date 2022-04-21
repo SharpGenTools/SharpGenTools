@@ -20,39 +20,38 @@
 
 using SharpGen.Config;
 
-namespace SharpGen.CppModel
+namespace SharpGen.CppModel;
+
+public sealed class CppParameter : CppMarshallable
 {
-    public sealed class CppParameter : CppMarshallable
+    private ParamAttribute attribute;
+
+    public ParamAttribute Attribute
     {
-        private ParamAttribute attribute;
+        get => CoerceAttribute(
+            Rule.ParameterAttribute switch
+            {
+                { } paramAttributeValue => paramAttributeValue,
+                _ => attribute
+            }
+        );
+        set => attribute = value;
+    }
 
-        public ParamAttribute Attribute
-        {
-            get => CoerceAttribute(
-                Rule.ParameterAttribute switch
-                {
-                    { } paramAttributeValue => paramAttributeValue,
-                    _ => attribute
-                }
-            );
-            set => attribute = value;
-        }
+    private static ParamAttribute CoerceAttribute(ParamAttribute value)
+    {
+        const ParamAttribute inOutMask = ParamAttribute.In | ParamAttribute.InOut | ParamAttribute.Out;
 
-        private static ParamAttribute CoerceAttribute(ParamAttribute value)
-        {
-            const ParamAttribute inOutMask = ParamAttribute.In | ParamAttribute.InOut | ParamAttribute.Out;
+        // Parameters without In/Out annotations are considered as In
+        return (value & inOutMask) == 0 ? value | ParamAttribute.In : value;
+    }
 
-            // Parameters without In/Out annotations are considered as In
-            return (value & inOutMask) == 0 ? value | ParamAttribute.In : value;
-        }
+    internal bool IsAttributeRuleRedundant => Rule.ParameterAttribute is { } ruleValue
+                                           && CoerceAttribute(ruleValue) == CoerceAttribute(attribute);
 
-        internal bool IsAttributeRuleRedundant => Rule.ParameterAttribute is { } ruleValue
-                                               && CoerceAttribute(ruleValue) == CoerceAttribute(attribute);
+    public override string ToString() => "[" + Attribute + "] " + base.ToString();
 
-        public override string ToString() => "[" + Attribute + "] " + base.ToString();
-
-        public CppParameter(string name) : base(name)
-        {
-        }
+    public CppParameter(string name) : base(name)
+    {
     }
 }

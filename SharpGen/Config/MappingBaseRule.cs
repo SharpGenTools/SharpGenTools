@@ -21,53 +21,52 @@ using System.Linq;
 using System.Reflection;
 using System.Xml.Serialization;
 
-namespace SharpGen.Config
+namespace SharpGen.Config;
+
+public abstract class MappingBaseRule : ConfigBaseRule, ITypeRule
 {
-    public abstract class MappingBaseRule : ConfigBaseRule, ITypeRule
+    [XmlAttribute("class")]
+    public string NewClass { get; set; }
+    [XmlAttribute("enum")]
+    public string Enum { get; set; }
+    [XmlAttribute("enum-item")]
+    public string EnumItem { get; set; }
+    [XmlAttribute("struct")]
+    public string Struct { get; set; }
+    [XmlAttribute("field")]
+    public string Field { get; set; }
+    [XmlAttribute("interface")]
+    public string Interface { get; set; }
+    [XmlAttribute("function")]
+    public string Function { get; set; }
+    [XmlAttribute("method")]
+    public string Method { get; set; }
+    [XmlAttribute("param")]
+    public string Parameter { get; set; }
+    [XmlAttribute("typedef")]
+    public string Typedef { get; set; }
+    [XmlAttribute("element")]
+    public string Element { get; set; }
+    [XmlAttribute("variable")]
+    public string Variable { get; set; }
+    [XmlAttribute("doc")]
+    public string DocItem { get; set; }
+
+    [ExcludeFromCodeCoverage]
+    public override string ToString()
     {
-        [XmlAttribute("class")]
-        public string NewClass { get; set; }
-        [XmlAttribute("enum")]
-        public string Enum { get; set; }
-        [XmlAttribute("enum-item")]
-        public string EnumItem { get; set; }
-        [XmlAttribute("struct")]
-        public string Struct { get; set; }
-        [XmlAttribute("field")]
-        public string Field { get; set; }
-        [XmlAttribute("interface")]
-        public string Interface { get; set; }
-        [XmlAttribute("function")]
-        public string Function { get; set; }
-        [XmlAttribute("method")]
-        public string Method { get; set; }
-        [XmlAttribute("param")]
-        public string Parameter { get; set; }
-        [XmlAttribute("typedef")]
-        public string Typedef { get; set; }
-        [XmlAttribute("element")]
-        public string Element { get; set; }
-        [XmlAttribute("variable")]
-        public string Variable { get; set; }
-        [XmlAttribute("doc")]
-        public string DocItem { get; set; }
+        string type = "";
 
-        [ExcludeFromCodeCoverage]
-        public override string ToString()
+        foreach(var property in typeof(MappingBaseRule).GetRuntimeProperties())
         {
-            string type = "";
-
-            foreach(var property in typeof(MappingBaseRule).GetRuntimeProperties())
+            if (property.GetValue(this, null) != null)
             {
-                if (property.GetValue(this, null) != null)
-                {
-                    type = property.GetCustomAttributes<XmlAttributeAttribute>(false).First().AttributeName + ":" +
-                           property.GetValue(this, null);
-                    break;
+                type = property.GetCustomAttributes<XmlAttributeAttribute>(false).First().AttributeName + ":" +
+                       property.GetValue(this, null);
+                break;
 
-                }                
-            }
-            return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} {1}", base.ToString(), type);
+            }                
         }
+        return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} {1}", base.ToString(), type);
     }
 }

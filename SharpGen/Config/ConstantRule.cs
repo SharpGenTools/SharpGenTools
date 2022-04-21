@@ -19,63 +19,62 @@
 // THE SOFTWARE.
 using System.Xml.Serialization;
 
-namespace SharpGen.Config
+namespace SharpGen.Config;
+
+/// <summary>
+/// Create constant associated to a C# class.
+/// Usage: const [from-macro="MACRO_REGEXP"] class="C#_CLASS_NAME" type="C#_TYPE_NAME" name="FIELD_NAME" value="FIELD_VALUE"
+/// </summary>
+[XmlType("const")]
+public class ConstantRule : ExtensionBaseRule
 {
+    [XmlAttribute("from-macro")]
+    public string Macro { get; set; }
+
+    [XmlAttribute("from-guid")]
+    public string Guid { get; set; }
+
+    [XmlAttribute("class")]
+    public string ClassName { get; set; }
+
+    [XmlAttribute("cpp-type")]
+    public string CppType { get; set; }
+
+    [XmlAttribute("cpp-cast")]
+    public string CppCast { get; set; }
+
+    [XmlAttribute("type")]
+    public string Type { get; set; }
+
+    [XmlAttribute("name")]
+    public string Name { get; set; }
+
     /// <summary>
-    /// Create constant associated to a C# class.
-    /// Usage: const [from-macro="MACRO_REGEXP"] class="C#_CLASS_NAME" type="C#_TYPE_NAME" name="FIELD_NAME" value="FIELD_VALUE"
+    /// General visibility for Methods
     /// </summary>
-    [XmlType("const")]
-    public class ConstantRule : ExtensionBaseRule
+    [XmlIgnore]
+    public Visibility? Visibility { get; set; }
+    [XmlAttribute("visibility")]
+    public Visibility _Visibility_ { get { return Visibility.Value; } set { Visibility = value; } } public bool ShouldSerialize_Visibility_() { return Visibility != null; }
+
+    [XmlText]
+    public string Value { get; set; }
+
+    [XmlIgnore]
+    public bool? IsResultDescriptor { get; set; }
+
+    [XmlAttribute("result")]
+    public bool _IsResultDescriptor_
     {
-        [XmlAttribute("from-macro")]
-        public string Macro { get; set; }
+        get => IsResultDescriptor.Value;
+        set => IsResultDescriptor = value;
+    }
 
-        [XmlAttribute("from-guid")]
-        public string Guid { get; set; }
+    public bool ShouldSerialize_IsResultDescriptor_() => IsResultDescriptor.HasValue;
 
-        [XmlAttribute("class")]
-        public string ClassName { get; set; }
-
-        [XmlAttribute("cpp-type")]
-        public string CppType { get; set; }
-
-        [XmlAttribute("cpp-cast")]
-        public string CppCast { get; set; }
-
-        [XmlAttribute("type")]
-        public string Type { get; set; }
-
-        [XmlAttribute("name")]
-        public string Name { get; set; }
-
-        /// <summary>
-        /// General visibility for Methods
-        /// </summary>
-        [XmlIgnore]
-        public Visibility? Visibility { get; set; }
-        [XmlAttribute("visibility")]
-        public Visibility _Visibility_ { get { return Visibility.Value; } set { Visibility = value; } } public bool ShouldSerialize_Visibility_() { return Visibility != null; }
-
-        [XmlText]
-        public string Value { get; set; }
-
-        [XmlIgnore]
-        public bool? IsResultDescriptor { get; set; }
-
-        [XmlAttribute("result")]
-        public bool _IsResultDescriptor_
-        {
-            get => IsResultDescriptor.Value;
-            set => IsResultDescriptor = value;
-        }
-
-        public bool ShouldSerialize_IsResultDescriptor_() => IsResultDescriptor.HasValue;
-
-        [ExcludeFromCodeCoverage]
-        public override string ToString()
-        {
-            return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} from-{1}:{2} class:{3} cpp-type:{4} cpp-cast:{5} type:{6} name:{7} value:{8}", base.ToString(), Macro!=null?"macro":"guid",  Macro ?? Guid, ClassName, CppType, CppCast, Type, Name, Value);
-        }
+    [ExcludeFromCodeCoverage]
+    public override string ToString()
+    {
+        return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} from-{1}:{2} class:{3} cpp-type:{4} cpp-cast:{5} type:{6} name:{7} value:{8}", base.ToString(), Macro!=null?"macro":"guid",  Macro ?? Guid, ClassName, CppType, CppCast, Type, Name, Value);
     }
 }

@@ -20,17 +20,16 @@
 
 using System.Collections.Generic;
 
-namespace SharpGen.CppModel
+namespace SharpGen.CppModel;
+
+public sealed class CppStruct : CppContainer
 {
-    public sealed class CppStruct : CppContainer
+    public string Base { get; set; }
+    public bool IsUnion { get; set; }
+
+    public IEnumerable<CppField> Fields => Iterate<CppField>();
+
+    public CppStruct(string name) : base(name)
     {
-        public string Base { get; set; }
-        public bool IsUnion { get; set; }
-
-        public IEnumerable<CppField> Fields => Iterate<CppField>();
-
-        public CppStruct(string name) : base(name)
-        {
-        }
     }
 }

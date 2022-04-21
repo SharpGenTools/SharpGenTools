@@ -12,48 +12,47 @@
 **
 ===========================================================*/
 
-namespace System.Runtime.CompilerServices
+namespace System.Runtime.CompilerServices;
+
+/// <summary>
+/// A factory type used by compilers to create instances of the type <see cref="FormattableString"/>.
+/// </summary>
+internal static class FormattableStringFactory
 {
     /// <summary>
-    /// A factory type used by compilers to create instances of the type <see cref="FormattableString"/>.
+    /// Create a <see cref="FormattableString"/> from a composite format string and object
+    /// array containing zero or more objects to format.
     /// </summary>
-    internal static class FormattableStringFactory
+    public static FormattableString Create(string format, params object?[] arguments)
     {
-        /// <summary>
-        /// Create a <see cref="FormattableString"/> from a composite format string and object
-        /// array containing zero or more objects to format.
-        /// </summary>
-        public static FormattableString Create(string format, params object?[] arguments)
+        if (format == null)
         {
-            if (format == null)
-            {
-                throw new ArgumentNullException(nameof(format));
-            }
-
-            if (arguments == null)
-            {
-                throw new ArgumentNullException(nameof(arguments));
-            }
-
-            return new ConcreteFormattableString(format, arguments);
+            throw new ArgumentNullException(nameof(format));
         }
 
-        private sealed class ConcreteFormattableString : FormattableString
+        if (arguments == null)
         {
-            private readonly string _format;
-            private readonly object?[] _arguments;
-
-            internal ConcreteFormattableString(string format, object?[] arguments)
-            {
-                _format = format;
-                _arguments = arguments;
-            }
-
-            public override string Format => _format;
-            public override object?[] GetArguments() { return _arguments; }
-            public override int ArgumentCount => _arguments.Length;
-            public override object? GetArgument(int index) { return _arguments[index]; }
-            public override string ToString(IFormatProvider? formatProvider) { return string.Format(formatProvider, _format, _arguments); }
+            throw new ArgumentNullException(nameof(arguments));
         }
+
+        return new ConcreteFormattableString(format, arguments);
+    }
+
+    private sealed class ConcreteFormattableString : FormattableString
+    {
+        private readonly string _format;
+        private readonly object?[] _arguments;
+
+        internal ConcreteFormattableString(string format, object?[] arguments)
+        {
+            _format = format;
+            _arguments = arguments;
+        }
+
+        public override string Format => _format;
+        public override object?[] GetArguments() { return _arguments; }
+        public override int ArgumentCount => _arguments.Length;
+        public override object? GetArgument(int index) { return _arguments[index]; }
+        public override string ToString(IFormatProvider? formatProvider) { return string.Format(formatProvider, _format, _arguments); }
     }
 }

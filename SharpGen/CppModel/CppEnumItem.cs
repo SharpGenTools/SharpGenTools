@@ -18,20 +18,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace SharpGen.CppModel
+namespace SharpGen.CppModel;
+
+/// <summary>
+/// A C++ enum item Name = Value.
+/// </summary>
+public sealed class CppEnumItem : CppElement
 {
-    /// <summary>
-    /// A C++ enum item Name = Value.
-    /// </summary>
-    public sealed class CppEnumItem : CppElement
-    {
-        public CppEnumItem(string name, string value) : base(name) => Value = value;
+    public CppEnumItem(string name, string value) : base(name) => Value = value;
 
-        // Return empty string as enum items are global in C++.
-        private protected override string Path => string.Empty;
+    // Return empty string as enum items are global in C++.
+    private protected override string Path => string.Empty;
 
-        public string Value { get; }
+    public string Value { get; }
 
-        public override string ToString() => "EnumItem [" + Name + "]";
-    }
+    public override string ToString() => "EnumItem [" + Name + "]";
 }

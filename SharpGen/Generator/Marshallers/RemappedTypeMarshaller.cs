@@ -5,68 +5,67 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Model;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-namespace SharpGen.Generator.Marshallers
+namespace SharpGen.Generator.Marshallers;
+
+internal sealed class RemappedTypeMarshaller : MarshallerBase, IMarshaller
 {
-    internal sealed class RemappedTypeMarshaller : MarshallerBase, IMarshaller
-    {
-        public bool CanMarshal(CsMarshalBase csElement) => csElement.MappedToDifferentPublicType;
+    public bool CanMarshal(CsMarshalBase csElement) => csElement.MappedToDifferentPublicType;
 
-        public ArgumentSyntax GenerateManagedArgument(CsParameter csElement) =>
-            GenerateManagedValueTypeArgument(csElement);
+    public ArgumentSyntax GenerateManagedArgument(CsParameter csElement) =>
+        GenerateManagedValueTypeArgument(csElement);
 
-        public ParameterSyntax GenerateManagedParameter(CsParameter csElement) =>
-            GenerateManagedValueTypeParameter(csElement);
+    public ParameterSyntax GenerateManagedParameter(CsParameter csElement) =>
+        GenerateManagedValueTypeParameter(csElement);
 
-        public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame) =>
-            ExpressionStatement(
-                AssignmentExpression(
-                    SyntaxKind.SimpleAssignmentExpression,
-                    GetMarshalStorageLocation(csElement),
-                    CastExpression(GetMarshalTypeSyntax(csElement), IdentifierName(csElement.Name))
-                )
-            );
-
-        public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
-        {
-            yield return LocalDeclarationStatement(
-                VariableDeclaration(
-                    GetMarshalTypeSyntax(csElement),
-                    SingletonSeparatedList(VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)))
-                )
-            );
-        }
-
-        public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement) => Argument(
-            csElement.PassedByNativeReference
-                ? PrefixUnaryExpression(SyntaxKind.AddressOfExpression, GetMarshalStorageLocation(csElement))
-                : GetMarshalStorageLocation(csElement)
+    public StatementSyntax GenerateManagedToNative(CsMarshalBase csElement, bool singleStackFrame) =>
+        ExpressionStatement(
+            AssignmentExpression(
+                SyntaxKind.SimpleAssignmentExpression,
+                GetMarshalStorageLocation(csElement),
+                CastExpression(GetMarshalTypeSyntax(csElement), IdentifierName(csElement.Name))
+            )
         );
 
-        public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame) => null;
+    public IEnumerable<StatementSyntax> GenerateManagedToNativeProlog(CsMarshalCallableBase csElement)
+    {
+        yield return LocalDeclarationStatement(
+            VariableDeclaration(
+                GetMarshalTypeSyntax(csElement),
+                SingletonSeparatedList(VariableDeclarator(GetMarshalStorageLocationIdentifier(csElement)))
+            )
+        );
+    }
 
-        public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame) =>
-            ExpressionStatement(
-                AssignmentExpression(
-                    SyntaxKind.SimpleAssignmentExpression,
-                    IdentifierName(csElement.Name),
-                    GeneratorHelpers.CastExpression(
-                        ParseTypeName(csElement.PublicType.QualifiedName), GetMarshalStorageLocation(csElement)
-                    )
+    public ArgumentSyntax GenerateNativeArgument(CsMarshalCallableBase csElement) => Argument(
+        csElement.PassedByNativeReference
+            ? PrefixUnaryExpression(SyntaxKind.AddressOfExpression, GetMarshalStorageLocation(csElement))
+            : GetMarshalStorageLocation(csElement)
+    );
+
+    public StatementSyntax GenerateNativeCleanup(CsMarshalBase csElement, bool singleStackFrame) => null;
+
+    public StatementSyntax GenerateNativeToManaged(CsMarshalBase csElement, bool singleStackFrame) =>
+        ExpressionStatement(
+            AssignmentExpression(
+                SyntaxKind.SimpleAssignmentExpression,
+                IdentifierName(csElement.Name),
+                GeneratorHelpers.CastExpression(
+                    ParseTypeName(csElement.PublicType.QualifiedName), GetMarshalStorageLocation(csElement)
                 )
-            );
+            )
+        );
 
-        public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement) =>
-            Enumerable.Empty<StatementSyntax>();
+    public IEnumerable<StatementSyntax> GenerateNativeToManagedExtendedProlog(CsMarshalCallableBase csElement) =>
+        Enumerable.Empty<StatementSyntax>();
 
-        public FixedStatementSyntax GeneratePin(CsParameter csElement) => null;
+    public FixedStatementSyntax GeneratePin(CsParameter csElement) => null;
 
-        public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement) => true;
+    public bool GeneratesMarshalVariable(CsMarshalCallableBase csElement) => true;
 
-        public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement) =>
-            ParseTypeName(csElement.MarshalType.QualifiedName);
+    public TypeSyntax GetMarshalTypeSyntax(CsMarshalBase csElement) =>
+        ParseTypeName(csElement.MarshalType.QualifiedName);
 
-        public RemappedTypeMarshaller(Ioc ioc) : base(ioc)
-        {
-        }
+    public RemappedTypeMarshaller(Ioc ioc) : base(ioc)
+    {
     }
 }

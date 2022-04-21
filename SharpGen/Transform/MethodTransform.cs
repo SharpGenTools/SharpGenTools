@@ -26,173 +26,172 @@ using SharpGen.CppModel;
 using SharpGen.Logging;
 using SharpGen.Model;
 
-namespace SharpGen.Transform
+namespace SharpGen.Transform;
+
+/// <summary>
+/// Transform a C++ method/function to a C# method.
+/// </summary>
+public class MethodTransform : TransformBase<CsMethod, CppMethod>, ITransformer<CsMethod>, ITransformPreparer<CppMethod, CsMethod>, ITransformer<CsFunction>, ITransformPreparer<CppFunction, CsFunction>
 {
-    /// <summary>
-    /// Transform a C++ method/function to a C# method.
-    /// </summary>
-    public class MethodTransform : TransformBase<CsMethod, CppMethod>, ITransformer<CsMethod>, ITransformPreparer<CppMethod, CsMethod>, ITransformer<CsFunction>, ITransformPreparer<CppFunction, CsFunction>
+    private readonly GroupRegistry groupRegistry;
+    private readonly MarshalledElementFactory factory;
+    private readonly IInteropSignatureTransform signatureTransform;
+
+    public MethodTransform(NamingRulesManager namingRules,
+                           GroupRegistry groupRegistry,
+                           MarshalledElementFactory factory,
+                           IInteropSignatureTransform interopSignatureTransform,
+                           Ioc ioc) : base(namingRules, ioc)
     {
-        private readonly GroupRegistry groupRegistry;
-        private readonly MarshalledElementFactory factory;
-        private readonly IInteropSignatureTransform signatureTransform;
+        this.groupRegistry = groupRegistry;
+        this.factory = factory;
+        signatureTransform = interopSignatureTransform;
+    }
 
-        public MethodTransform(NamingRulesManager namingRules,
-                               GroupRegistry groupRegistry,
-                               MarshalledElementFactory factory,
-                               IInteropSignatureTransform interopSignatureTransform,
-                               Ioc ioc) : base(namingRules, ioc)
+    /// <summary>
+    /// Prepares the specified C++ element to a C# element.
+    /// </summary>
+    /// <param name="cppMethod">The C++ element.</param>
+    /// <returns>The C# element created and registered to the <see cref="TransformManager"/></returns>
+    public override CsMethod Prepare(CppMethod cppMethod) => new(Ioc, cppMethod, NamingRules.Rename(cppMethod));
+
+    public CsFunction Prepare(CppFunction cppFunction)
+    {
+        CsFunction function = new(Ioc, cppFunction, NamingRules.Rename(cppFunction));
+
+        var groupName = cppFunction.Rule.Group;
+
+        if (groupName == null)
         {
-            this.groupRegistry = groupRegistry;
-            this.factory = factory;
-            signatureTransform = interopSignatureTransform;
+            Logger.Error(LoggingCodes.FunctionNotAttachedToGroup, "CppFunction [{0}] is not tagged and attached to any Class/FunctionGroup", cppFunction);
+            return null;
         }
 
-        /// <summary>
-        /// Prepares the specified C++ element to a C# element.
-        /// </summary>
-        /// <param name="cppMethod">The C++ element.</param>
-        /// <returns>The C# element created and registered to the <see cref="TransformManager"/></returns>
-        public override CsMethod Prepare(CppMethod cppMethod) => new(Ioc, cppMethod, NamingRules.Rename(cppMethod));
+        var csClass = groupRegistry.FindGroup(groupName);
 
-        public CsFunction Prepare(CppFunction cppFunction)
+        if (csClass == null)
         {
-            CsFunction function = new(Ioc, cppFunction, NamingRules.Rename(cppFunction));
-
-            var groupName = cppFunction.Rule.Group;
-
-            if (groupName == null)
-            {
-                Logger.Error(LoggingCodes.FunctionNotAttachedToGroup, "CppFunction [{0}] is not tagged and attached to any Class/FunctionGroup", cppFunction);
-                return null;
-            }
-
-            var csClass = groupRegistry.FindGroup(groupName);
-
-            if (csClass == null)
-            {
-                Logger.Error(LoggingCodes.FunctionNotAttachedToGroup, "CppFunction [{0}] is not attached to a Class/FunctionGroup", cppFunction);
-                return null;
-            }
-
-            // Add the function to the ClassType
-            csClass.Add(function);
-
-            return function;
+            Logger.Error(LoggingCodes.FunctionNotAttachedToGroup, "CppFunction [{0}] is not attached to a Class/FunctionGroup", cppFunction);
+            return null;
         }
 
-        /// <summary>
-        /// Processes the specified C# element to complete the mapping process between the C++ and C# element.
-        /// </summary>
-        /// <param name="csElement">The C# element.</param>
-        public override void Process(CsMethod csElement)
+        // Add the function to the ClassType
+        csClass.Add(function);
+
+        return function;
+    }
+
+    /// <summary>
+    /// Processes the specified C# element to complete the mapping process between the C++ and C# element.
+    /// </summary>
+    /// <param name="csElement">The C# element.</param>
+    public override void Process(CsMethod csElement)
+    {
+        ProcessCallable(csElement);
+    }
+
+    private void ProcessCallable(CsCallable csCallable)
+    {
+        try
         {
-            ProcessCallable(csElement);
+            Logger.PushContext("Method {0}", csCallable.CppElement);
+
+            ProcessMethod(csCallable);
+
+            CreateNativeInteropSignatures(signatureTransform, csCallable);
+        }
+        finally
+        {
+            Logger.PopContext();
+        }
+    }
+
+    public void Process(CsFunction csFunction)
+    {
+        csFunction.Visibility |= Visibility.Static;
+        ProcessCallable(csFunction);
+    }
+
+    /// <summary>
+    /// Processes the specified method.
+    /// </summary>
+    /// <param name="method">The method.</param>
+    private void ProcessMethod(CsCallable method)
+    {
+        var cppMethod = (CppCallable)method.CppElement;
+
+        // For methods, the tag "type" is only used for return type
+        // So we are overriding the return type here
+        var methodRule = cppMethod.Rule;
+        if (methodRule.MappingType != null)
+            cppMethod.ReturnValue.Rule.MappingType = methodRule.MappingType;
+
+        // Get the inferred return type
+        method.ReturnValue = factory.Create(cppMethod.ReturnValue);
+
+        var parameters = cppMethod.Parameters.ToArray();
+        var parameterNames = NamingRules.Rename(parameters);
+
+        Debug.Assert(parameters.Length == parameterNames.Count);
+
+        uint? outCount = 0;
+
+        // Iterates on parameters to convert them to C# parameters
+        for (var index = 0; index < parameters.Length; index++)
+        {
+            var cppParameter = parameters[index];
+            var parameterName = parameterNames[index];
+            var csParameter = factory.Create(cppParameter, parameterName);
+            method.Add(csParameter);
+
+            if (!outCount.HasValue)
+                continue;
+
+            if (csParameter.IsOut && csParameter.Relations.Count == 0)
+                ++outCount;
+
+            if (cppParameter.Rule.ParameterUsedAsReturnType == false)
+                outCount = null;
         }
 
-        private void ProcessCallable(CsCallable csCallable)
-        {
-            try
-            {
-                Logger.PushContext("Method {0}", csCallable.CppElement);
+        if (outCount == 1)
+            TransformOutParametersToReturnValues(method);
+    }
 
-                ProcessMethod(csCallable);
+    private void TransformOutParametersToReturnValues(CsCallable method)
+    {
+        if (method.HasReturnTypeValue)
+            return;
 
-                CreateNativeInteropSignatures(signatureTransform, csCallable);
-            }
-            finally
-            {
-                Logger.PopContext();
-            }
-        }
+        var outCsParameter = method.Parameters.Single(x => x.IsOut && x.Relations.Count == 0);
 
-        public void Process(CsFunction csFunction)
-        {
-            csFunction.Visibility |= Visibility.Static;
-            ProcessCallable(csFunction);
-        }
+        if (outCsParameter.IsArray)
+            return;
 
-        /// <summary>
-        /// Processes the specified method.
-        /// </summary>
-        /// <param name="method">The method.</param>
-        private void ProcessMethod(CsCallable method)
-        {
-            var cppMethod = (CppCallable)method.CppElement;
+        var outCppParameter = outCsParameter.CppElement;
 
-            // For methods, the tag "type" is only used for return type
-            // So we are overriding the return type here
-            var methodRule = cppMethod.Rule;
-            if (methodRule.MappingType != null)
-                cppMethod.ReturnValue.Rule.MappingType = methodRule.MappingType;
+        if (outCppParameter is not CppParameter {Attribute: var attribute})
+            return;
 
-            // Get the inferred return type
-            method.ReturnValue = factory.Create(cppMethod.ReturnValue);
+        if ((attribute & ParamAttribute.Buffer) == ParamAttribute.Buffer)
+            return;
 
-            var parameters = cppMethod.Parameters.ToArray();
-            var parameterNames = NamingRules.Rename(parameters);
+        if ((attribute & ParamAttribute.Fast) == ParamAttribute.Fast)
+            return;
 
-            Debug.Assert(parameters.Length == parameterNames.Count);
+        if ((attribute & ParamAttribute.Value) == ParamAttribute.Value)
+            return;
 
-            uint? outCount = 0;
+        outCsParameter.MarkUsedAsReturn();
 
-            // Iterates on parameters to convert them to C# parameters
-            for (var index = 0; index < parameters.Length; index++)
-            {
-                var cppParameter = parameters[index];
-                var parameterName = parameterNames[index];
-                var csParameter = factory.Create(cppParameter, parameterName);
-                method.Add(csParameter);
+        if (outCppParameter.Rule.ParameterUsedAsReturnType == true)
+            Logger.Message("Parameter [{0}] has redundant return rule specification", outCppParameter.FullName);
+    }
 
-                if (!outCount.HasValue)
-                    continue;
-
-                if (csParameter.IsOut && csParameter.Relations.Count == 0)
-                    ++outCount;
-
-                if (cppParameter.Rule.ParameterUsedAsReturnType == false)
-                    outCount = null;
-            }
-
-            if (outCount == 1)
-                TransformOutParametersToReturnValues(method);
-        }
-
-        private void TransformOutParametersToReturnValues(CsCallable method)
-        {
-            if (method.HasReturnTypeValue)
-                return;
-
-            var outCsParameter = method.Parameters.Single(x => x.IsOut && x.Relations.Count == 0);
-
-            if (outCsParameter.IsArray)
-                return;
-
-            var outCppParameter = outCsParameter.CppElement;
-
-            if (outCppParameter is not CppParameter {Attribute: var attribute})
-                return;
-
-            if ((attribute & ParamAttribute.Buffer) == ParamAttribute.Buffer)
-                return;
-
-            if ((attribute & ParamAttribute.Fast) == ParamAttribute.Fast)
-                return;
-
-            if ((attribute & ParamAttribute.Value) == ParamAttribute.Value)
-                return;
-
-            outCsParameter.MarkUsedAsReturn();
-
-            if (outCppParameter.Rule.ParameterUsedAsReturnType == true)
-                Logger.Message("Parameter [{0}] has redundant return rule specification", outCppParameter.FullName);
-        }
-
-        internal static void CreateNativeInteropSignatures(IInteropSignatureTransform sigTransform, CsCallable callable)
-        {
-            callable.InteropSignatures = new Dictionary<PlatformDetectionType, InteropMethodSignature>();
-            foreach (var sig in sigTransform.GetInteropSignatures(callable))
-                callable.InteropSignatures.Add(sig.Key, sig.Value);
-        }
+    internal static void CreateNativeInteropSignatures(IInteropSignatureTransform sigTransform, CsCallable callable)
+    {
+        callable.InteropSignatures = new Dictionary<PlatformDetectionType, InteropMethodSignature>();
+        foreach (var sig in sigTransform.GetInteropSignatures(callable))
+            callable.InteropSignatures.Add(sig.Key, sig.Value);
     }
 }

@@ -20,25 +20,24 @@
 
 using SharpGen.CppModel;
 
-namespace SharpGen.Model
+namespace SharpGen.Model;
+
+/// <summary>
+///   Struct field
+/// </summary>
+public sealed class CsField : CsMarshalBase
 {
-    /// <summary>
-    ///   Struct field
-    /// </summary>
-    public sealed class CsField : CsMarshalBase
+    public int BitMask { get; set; }
+    public int BitOffset { get; set; }
+    public bool IsBitField { get; }
+    public uint Offset { get; set; }
+    public bool IsBoolBitField => BitMask == 1;
+
+    public CsField(Ioc ioc, CppField cppElement, string name) : base(ioc, cppElement, name)
     {
-        public int BitMask { get; set; }
-        public int BitOffset { get; set; }
-        public bool IsBitField { get; }
-        public uint Offset { get; set; }
-        public bool IsBoolBitField => BitMask == 1;
+        if (cppElement == null)
+            return;
 
-        public CsField(Ioc ioc, CppField cppElement, string name) : base(ioc, cppElement, name)
-        {
-            if (cppElement == null)
-                return;
-
-            IsBitField = cppElement.IsBitField;
-        }
+        IsBitField = cppElement.IsBitField;
     }
 }

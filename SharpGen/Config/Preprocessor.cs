@@ -22,70 +22,69 @@ using System.IO;
 using System.Xml.Linq;
 using System.Linq;
 
-namespace SharpGen.Config
+namespace SharpGen.Config;
+
+/// <summary>
+/// A simple Xml preprocessor.
+/// </summary>
+internal static class Preprocessor
 {
     /// <summary>
-    /// A simple Xml preprocessor.
+    /// Preprocesses the specified XML text.
     /// </summary>
-    internal static class Preprocessor
+    /// <param name="xmlText">The XML text.</param>
+    /// <param name="macros">The macros.</param>
+    /// <returns>A preprocessed xml text</returns>
+    public static string Preprocess(string xmlText, params string[] macros)
     {
-        /// <summary>
-        /// Preprocesses the specified XML text.
-        /// </summary>
-        /// <param name="xmlText">The XML text.</param>
-        /// <param name="macros">The macros.</param>
-        /// <returns>A preprocessed xml text</returns>
-        public static string Preprocess(string xmlText, params string[] macros)
+        var doc = XDocument.Load(new StringReader(xmlText));
+
+        XNamespace ns = ConfigFile.XmlNamespace;
+
+        var list = doc.Descendants(ns + "ifndef").ToList();
+        // Work on deepest first
+        list.Reverse();
+        foreach (var ifndef in list)
         {
-            var doc = XDocument.Load(new StringReader(xmlText));
-
-            XNamespace ns = ConfigFile.XmlNamespace;
-
-            var list = doc.Descendants(ns + "ifndef").ToList();
-            // Work on deepest first
-            list.Reverse();
-            foreach (var ifndef in list)
+            var attr = ifndef.Attribute("name");
+            if (attr != null && macros.Contains(attr.Value))
             {
-                var attr = ifndef.Attribute("name");
-                if (attr != null && macros.Contains(attr.Value))
-                {
-                    ifndef.Remove();
-                }
-                else
-                {
-                    foreach (var element in ifndef.Elements())
-                    {
-                        ifndef.AddBeforeSelf(element);
-                    }
-
-                    ifndef.Remove();
-                }
+                ifndef.Remove();
             }
-
-            list = doc.Descendants(ns + "ifdef").ToList();
-            // Work on deepest first
-            list.Reverse();
-            foreach (var ifdef in list)
+            else
             {
-                var attr = ifdef.Attribute("name");
-                if(attr != null && !string.IsNullOrWhiteSpace(attr.Value))
+                foreach (var element in ifndef.Elements())
                 {
-                    var values = attr.Value.Split(new []{ "|" }, StringSplitOptions.RemoveEmptyEntries);
-                    if(values.Any(macros.Contains))
-                    {
-                        foreach(var element in ifdef.Elements())
-                        {
-                            ifdef.AddBeforeSelf(element);
-                        }
-                    }
+                    ifndef.AddBeforeSelf(element);
                 }
-                ifdef.Remove();
+
+                ifndef.Remove();
             }
-
-            var writer = new StringWriter();
-            doc.Save(writer);
-
-            return writer.ToString();
         }
+
+        list = doc.Descendants(ns + "ifdef").ToList();
+        // Work on deepest first
+        list.Reverse();
+        foreach (var ifdef in list)
+        {
+            var attr = ifdef.Attribute("name");
+            if(attr != null && !string.IsNullOrWhiteSpace(attr.Value))
+            {
+                var values = attr.Value.Split(new []{ "|" }, StringSplitOptions.RemoveEmptyEntries);
+                if(values.Any(macros.Contains))
+                {
+                    foreach(var element in ifdef.Elements())
+                    {
+                        ifdef.AddBeforeSelf(element);
+                    }
+                }
+            }
+            ifdef.Remove();
+        }
+
+        var writer = new StringWriter();
+        doc.Save(writer);
+
+        return writer.ToString();
     }
 }

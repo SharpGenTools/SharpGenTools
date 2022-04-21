@@ -21,18 +21,17 @@
 using System;
 using System.Xml.Serialization;
 
-namespace SharpGen.Config
+namespace SharpGen.Config;
+
+/// <summary>
+/// Defines naming options.
+/// </summary>
+[Flags]
+public enum NamingFlags
 {
-    /// <summary>
-    /// Defines naming options.
-    /// </summary>
-    [Flags]
-    public enum NamingFlags
-    {
-        [XmlEnum("default")] Default = 0x0,
-        [XmlEnum("noexpand")] NoShortNameExpand = 0x01,
-        [XmlEnum("underscore")] KeepUnderscore = 0x02,
-        [XmlEnum("nohungarian")] NoHungarianNotationHandler = 0x04,
-        [XmlEnum("no-premature-break")] NoPrematureBreak = 0x08,
-    }
+    [XmlEnum("default")] Default = 0x0,
+    [XmlEnum("noexpand")] NoShortNameExpand = 0x01,
+    [XmlEnum("underscore")] KeepUnderscore = 0x02,
+    [XmlEnum("nohungarian")] NoHungarianNotationHandler = 0x04,
+    [XmlEnum("no-premature-break")] NoPrematureBreak = 0x08,
 }

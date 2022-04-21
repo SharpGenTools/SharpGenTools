@@ -20,21 +20,20 @@
 
 using System.Collections.Generic;
 
-namespace SharpGen.CppModel
+namespace SharpGen.CppModel;
+
+public sealed class CppEnum : CppContainer
 {
-    public sealed class CppEnum : CppContainer
+    public CppEnum(string name) : base(name)
     {
-        public CppEnum(string name) : base(name)
-        {
-        }
-
-        public void AddEnumItem(string name, string value)
-        {
-            Add(new CppEnumItem(name, value));
-        }
-
-        public IEnumerable<CppEnumItem> EnumItems => Iterate<CppEnumItem>();
-
-        public string UnderlyingType { get; set; } = "int";
     }
+
+    public void AddEnumItem(string name, string value)
+    {
+        Add(new CppEnumItem(name, value));
+    }
+
+    public IEnumerable<CppEnumItem> EnumItems => Iterate<CppEnumItem>();
+
+    public string UnderlyingType { get; set; } = "int";
 }

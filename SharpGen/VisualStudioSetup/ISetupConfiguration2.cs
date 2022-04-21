@@ -1,13 +1,13 @@
 ﻿
 using System.Runtime.InteropServices;
 
-namespace SharpGen.VisualStudioSetup
+namespace SharpGen.VisualStudioSetup;
+
+[Guid("26AAB78C-4A60-49D6-AF3B-3C35BC93365D")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+[ComImport]
+public interface ISetupConfiguration2 : ISetupConfiguration
 {
-  [Guid("26AAB78C-4A60-49D6-AF3B-3C35BC93365D")]
-  [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-  [ComImport]
-  public interface ISetupConfiguration2 : ISetupConfiguration
-  {
     [return: MarshalAs(UnmanagedType.Interface)]
     new IEnumSetupInstances EnumInstances();
 
@@ -19,5 +19,4 @@ namespace SharpGen.VisualStudioSetup
 
     [return: MarshalAs(UnmanagedType.Interface)]
     IEnumSetupInstances EnumAllInstances();
-  }
 }

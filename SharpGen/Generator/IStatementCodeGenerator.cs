@@ -1,8 +1,7 @@
 using SharpGen.Model;
 
-namespace SharpGen.Generator
+namespace SharpGen.Generator;
+
+public interface IStatementCodeGenerator<in T> where T : CsBase
 {
-    public interface IStatementCodeGenerator<in T> where T : CsBase
-    {
-    }
 }

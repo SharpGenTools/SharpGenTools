@@ -21,46 +21,45 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace SharpGen.Runtime
+namespace SharpGen.Runtime;
+
+/// <summary>
+///     A boolean value stored on 4 bytes (instead of 1 in .NET).
+/// </summary>
+[StructLayout(LayoutKind.Sequential, Size = 4)]
+public readonly struct RawBool : IEquatable<RawBool>
 {
-    /// <summary>
-    ///     A boolean value stored on 4 bytes (instead of 1 in .NET).
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 4)]
-    public readonly struct RawBool : IEquatable<RawBool>
+    private readonly int boolValue;
+
+    public RawBool(bool boolValue) => this.boolValue = boolValue ? 1 : 0;
+    public RawBool(int boolValue) => this.boolValue = boolValue;
+    public RawBool(uint boolValue) => this.boolValue = (int) boolValue;
+
+    public override bool Equals(object obj) => obj switch
     {
-        private readonly int boolValue;
+        null => false,
+        bool b => Equals(new RawBool(b)),
+        RawBool rawBool => Equals(rawBool),
+        int b => Equals(new RawBool(b)),
+        uint b => Equals(new RawBool(b)),
+        byte b => Equals(new RawBool(b)),
+        sbyte b => Equals(new RawBool(b)),
+        short b => Equals(new RawBool(b)),
+        ushort b => Equals(new RawBool(b)),
+        long b => Equals(new RawBool((int) b)),
+        ulong b => Equals(new RawBool((uint) b)),
+        _ => false
+    };
 
-        public RawBool(bool boolValue) => this.boolValue = boolValue ? 1 : 0;
-        public RawBool(int boolValue) => this.boolValue = boolValue;
-        public RawBool(uint boolValue) => this.boolValue = (int) boolValue;
-
-        public override bool Equals(object obj) => obj switch
-        {
-            null => false,
-            bool b => Equals(new RawBool(b)),
-            RawBool rawBool => Equals(rawBool),
-            int b => Equals(new RawBool(b)),
-            uint b => Equals(new RawBool(b)),
-            byte b => Equals(new RawBool(b)),
-            sbyte b => Equals(new RawBool(b)),
-            short b => Equals(new RawBool(b)),
-            ushort b => Equals(new RawBool(b)),
-            long b => Equals(new RawBool((int) b)),
-            ulong b => Equals(new RawBool((uint) b)),
-            _ => false
-        };
-
-        public bool Equals(RawBool other) => (boolValue != 0) == (other.boolValue != 0);
-        public override int GetHashCode() => boolValue;
-        public static bool operator ==(RawBool left, RawBool right) => left.Equals(right);
-        public static bool operator !=(RawBool left, RawBool right) => !left.Equals(right);
-        public static implicit operator bool(RawBool booleanValue) => booleanValue.boolValue != 0;
-        public static implicit operator RawBool(bool boolValue) => new(boolValue);
-        public static explicit operator int(RawBool booleanValue) => booleanValue.boolValue;
-        public static explicit operator RawBool(int boolValue) => new(boolValue);
-        public static explicit operator uint(RawBool booleanValue) => (uint) booleanValue.boolValue;
-        public static explicit operator RawBool(uint boolValue) => new(boolValue);
-        public override string ToString() => (boolValue != 0).ToString();
-    }
+    public bool Equals(RawBool other) => (boolValue != 0) == (other.boolValue != 0);
+    public override int GetHashCode() => boolValue;
+    public static bool operator ==(RawBool left, RawBool right) => left.Equals(right);
+    public static bool operator !=(RawBool left, RawBool right) => !left.Equals(right);
+    public static implicit operator bool(RawBool booleanValue) => booleanValue.boolValue != 0;
+    public static implicit operator RawBool(bool boolValue) => new(boolValue);
+    public static explicit operator int(RawBool booleanValue) => booleanValue.boolValue;
+    public static explicit operator RawBool(int boolValue) => new(boolValue);
+    public static explicit operator uint(RawBool booleanValue) => (uint) booleanValue.boolValue;
+    public static explicit operator RawBool(uint boolValue) => new(boolValue);
+    public override string ToString() => (boolValue != 0).ToString();
 }

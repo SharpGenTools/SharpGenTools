@@ -21,24 +21,23 @@
 using System;
 using System.Xml.Serialization;
 
-namespace SharpGen.Config
+namespace SharpGen.Config;
+
+[Flags]
+public enum Visibility : uint
 {
-    [Flags]
-    public enum Visibility : uint
-    {
-        [XmlEnum("public")] Public = 0x01,
-        [XmlEnum("internal")] Internal = 0x02,
-        [XmlEnum("protected")] Protected = 0x04,
-        [XmlEnum("sharpgen-group")] SharpGenGroup = 0x08,
-        [XmlEnum("private")] Private = 0x10,
-        [XmlEnum("override")] Override = 0x20,
-        [XmlEnum("abstract")] Abstract = 0x40,
-        [XmlEnum("static")] Static = 0x80,
-        [XmlEnum("const")] Const = 0x100,
-        [XmlEnum("virtual")] Virtual = 0x200,
-        [XmlEnum("readonly")] Readonly = 0x400,
-        [XmlEnum("sealed")] Sealed = 0x800,
-        [XmlEnum("protected-internal")] ProtectedInternal = 0x1000,
-        [XmlEnum("private-protected")] PrivateProtected = 0x2000,
-    }
+    [XmlEnum("public")] Public = 0x01,
+    [XmlEnum("internal")] Internal = 0x02,
+    [XmlEnum("protected")] Protected = 0x04,
+    [XmlEnum("sharpgen-group")] SharpGenGroup = 0x08,
+    [XmlEnum("private")] Private = 0x10,
+    [XmlEnum("override")] Override = 0x20,
+    [XmlEnum("abstract")] Abstract = 0x40,
+    [XmlEnum("static")] Static = 0x80,
+    [XmlEnum("const")] Const = 0x100,
+    [XmlEnum("virtual")] Virtual = 0x200,
+    [XmlEnum("readonly")] Readonly = 0x400,
+    [XmlEnum("sealed")] Sealed = 0x800,
+    [XmlEnum("protected-internal")] ProtectedInternal = 0x1000,
+    [XmlEnum("private-protected")] PrivateProtected = 0x2000,
 }

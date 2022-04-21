@@ -20,40 +20,39 @@
 
 using System;
 
-namespace SharpGen.Model
+namespace SharpGen.Model;
+
+/// <summary>
+/// Type used for template
+/// </summary>
+public sealed class InteropType : IEquatable<InteropType>
 {
-    /// <summary>
-    /// Type used for template
-    /// </summary>
-    public sealed class InteropType : IEquatable<InteropType>
+    public InteropType(string typeName)
     {
-        public InteropType(string typeName)
-        {
-            if (string.IsNullOrEmpty(typeName))
-                throw new ArgumentException("Value cannot be null or empty.", nameof(typeName));
-            TypeName = typeName;
-        }
-
-        public static implicit operator InteropType(CsFundamentalType type) => new(type.Name);
-
-        public static implicit operator InteropType(string input) => new(input);
-
-        public string TypeName { get; }
-
-        public bool Equals(InteropType other)
-        {
-            if (ReferenceEquals(null, other)) return false;
-            if (ReferenceEquals(this, other)) return true;
-            return TypeName == other.TypeName;
-        }
-
-        public override bool Equals(object obj) =>
-            ReferenceEquals(this, obj) || obj is InteropType other && Equals(other);
-
-        public override int GetHashCode() => TypeName != null ? TypeName.GetHashCode() : 0;
-
-        public static bool operator ==(InteropType left, InteropType right) => Equals(left, right);
-
-        public static bool operator !=(InteropType left, InteropType right) => !Equals(left, right);
+        if (string.IsNullOrEmpty(typeName))
+            throw new ArgumentException("Value cannot be null or empty.", nameof(typeName));
+        TypeName = typeName;
     }
+
+    public static implicit operator InteropType(CsFundamentalType type) => new(type.Name);
+
+    public static implicit operator InteropType(string input) => new(input);
+
+    public string TypeName { get; }
+
+    public bool Equals(InteropType other)
+    {
+        if (ReferenceEquals(null, other)) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return TypeName == other.TypeName;
+    }
+
+    public override bool Equals(object obj) =>
+        ReferenceEquals(this, obj) || obj is InteropType other && Equals(other);
+
+    public override int GetHashCode() => TypeName != null ? TypeName.GetHashCode() : 0;
+
+    public static bool operator ==(InteropType left, InteropType right) => Equals(left, right);
+
+    public static bool operator !=(InteropType left, InteropType right) => !Equals(left, right);
 }

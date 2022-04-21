@@ -1,7 +1,6 @@
-namespace SharpGen.Runtime
+namespace SharpGen.Runtime;
+
+public interface IInspectableWithTrustLevel
 {
-    public interface IInspectableWithTrustLevel
-    {
-        TrustLevel TrustLevel { get; }
-    }
+    TrustLevel TrustLevel { get; }
 }

@@ -22,86 +22,85 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace SharpGen.Runtime
+namespace SharpGen.Runtime;
+
+/// <summary>
+/// An Interface shadow callback
+/// </summary>
+public abstract unsafe class CppObjectShadow : CppObject
 {
     /// <summary>
-    /// An Interface shadow callback
+    /// Gets the callback.
     /// </summary>
-    public abstract unsafe class CppObjectShadow : CppObject
+    public ICallbackable Callback { get; private set; }
+
+    /// <summary>
+    /// Gets the VTBL associated with this shadow instance.
+    /// </summary>
+    protected abstract CppObjectVtbl Vtbl { get; }
+
+    static CppObjectShadow()
     {
-        /// <summary>
-        /// Gets the callback.
-        /// </summary>
-        public ICallbackable Callback { get; private set; }
+        Debug.Assert(Marshal.SizeOf(typeof(CppObjectNative)) == CppObjectNative.Size);
+        Debug.Assert(sizeof(CppObjectNative) == CppObjectNative.Size);
+    }
 
-        /// <summary>
-        /// Gets the VTBL associated with this shadow instance.
-        /// </summary>
-        protected abstract CppObjectVtbl Vtbl { get; }
+    /// <summary>
+    /// Initializes the specified shadow instance from a vtbl and a callback.
+    /// </summary>
+    /// <param name="callbackInstance">The callback.</param>
+    public void Initialize(ICallbackable callbackInstance)
+    {
+        Callback = callbackInstance;
 
-        static CppObjectShadow()
+        // Allocate ptr to vtbl + ptr to callback together
+        var nativePointer = Marshal.AllocHGlobal(CppObjectNative.Size);
+        ref var native = ref *(CppObjectNative*)nativePointer;
+
+        native.VtblPointer = Vtbl.Pointer;
+        native.Shadow = GCHandle.Alloc(this);
+
+        NativePointer = nativePointer;
+    }
+
+    protected override void DisposeCore(IntPtr nativePointer, bool disposing)
+    {
+        // Free the GCHandle
+        ((CppObjectNative*) nativePointer)->Shadow.Free();
+
+        // Free instance
+        Marshal.FreeHGlobal(nativePointer);
+    }
+
+    protected internal static T ToShadow<T>(IntPtr thisPtr) where T : CppObjectShadow
+    {
+        var handle = ((CppObjectNative*) thisPtr)->Shadow;
+        Debug.Assert(handle.IsAllocated);
+        var target = handle.Target;
+        return (T) target;
+    }
+
+    protected internal static T ToCallback<T>(IntPtr thisPtr) where T : ICallbackable
+    {
+        var handle = ((CppObjectNative*) thisPtr)->Shadow;
+        Debug.Assert(handle.IsAllocated);
+        var target = (CppObjectShadow) handle.Target;
+        Debug.Assert(target is not null);
+        return (T) target.Callback;
+    }
+
+    private ref struct CppObjectNative
+    {
+        internal static readonly int Size = IntPtr.Size * 2;
+
+        // ReSharper disable once NotAccessedField.Local
+        public IntPtr VtblPointer;
+        private IntPtr shadowPointer;
+
+        public GCHandle Shadow
         {
-            Debug.Assert(Marshal.SizeOf(typeof(CppObjectNative)) == CppObjectNative.Size);
-            Debug.Assert(sizeof(CppObjectNative) == CppObjectNative.Size);
-        }
-
-        /// <summary>
-        /// Initializes the specified shadow instance from a vtbl and a callback.
-        /// </summary>
-        /// <param name="callbackInstance">The callback.</param>
-        public void Initialize(ICallbackable callbackInstance)
-        {
-            Callback = callbackInstance;
-
-            // Allocate ptr to vtbl + ptr to callback together
-            var nativePointer = Marshal.AllocHGlobal(CppObjectNative.Size);
-            ref var native = ref *(CppObjectNative*)nativePointer;
-
-            native.VtblPointer = Vtbl.Pointer;
-            native.Shadow = GCHandle.Alloc(this);
-
-            NativePointer = nativePointer;
-        }
-
-        protected override void DisposeCore(IntPtr nativePointer, bool disposing)
-        {
-            // Free the GCHandle
-            ((CppObjectNative*) nativePointer)->Shadow.Free();
-
-            // Free instance
-            Marshal.FreeHGlobal(nativePointer);
-        }
-
-        protected internal static T ToShadow<T>(IntPtr thisPtr) where T : CppObjectShadow
-        {
-            var handle = ((CppObjectNative*) thisPtr)->Shadow;
-            Debug.Assert(handle.IsAllocated);
-            var target = handle.Target;
-            return (T) target;
-        }
-
-        protected internal static T ToCallback<T>(IntPtr thisPtr) where T : ICallbackable
-        {
-            var handle = ((CppObjectNative*) thisPtr)->Shadow;
-            Debug.Assert(handle.IsAllocated);
-            var target = (CppObjectShadow) handle.Target;
-            Debug.Assert(target is not null);
-            return (T) target.Callback;
-        }
-
-        private ref struct CppObjectNative
-        {
-            internal static readonly int Size = IntPtr.Size * 2;
-
-            // ReSharper disable once NotAccessedField.Local
-            public IntPtr VtblPointer;
-            private IntPtr shadowPointer;
-
-            public GCHandle Shadow
-            {
-                readonly get => GCHandle.FromIntPtr(shadowPointer);
-                set => shadowPointer = GCHandle.ToIntPtr(value);
-            }
+            readonly get => GCHandle.FromIntPtr(shadowPointer);
+            set => shadowPointer = GCHandle.ToIntPtr(value);
         }
     }
 }

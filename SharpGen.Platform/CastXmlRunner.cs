@@ -27,187 +27,186 @@ using System.Text.RegularExpressions;
 using SharpGen.Logging;
 using SharpGen.Parser;
 
-namespace SharpGen.Platform
+namespace SharpGen.Platform;
+
+/// <summary>
+/// CastXML front end for command line.
+/// see https://github.com/CastXML/CastXML
+/// </summary>
+public sealed class CastXmlRunner : ICastXmlRunner
 {
+    private static readonly Regex MatchError = new("error:", RegexOptions.Compiled);
+
+    // path/to/header.h:68:1: error:
+    private static readonly Regex MatchFileErrorRegex = new(@"^(.*):(\d+):(\d+):\s+error:(.*)", RegexOptions.Compiled);
+
+    private IReadOnlyList<string> AdditionalArguments { get; }
+
+    public string OutputPath { get; set; }
+
     /// <summary>
-    /// CastXML front end for command line.
-    /// see https://github.com/CastXML/CastXML
+    /// Gets or sets the executable path of castxml.
     /// </summary>
-    public sealed class CastXmlRunner : ICastXmlRunner
+    /// <value>The executable path.</value>
+    private string ExecutablePath { get; }
+
+    private Logger Logger => ioc.Logger;
+
+    private readonly IncludeDirectoryResolver directoryResolver;
+    private readonly Ioc ioc;
+
+    public CastXmlRunner(IncludeDirectoryResolver directoryResolver,
+                         string executablePath, IReadOnlyList<string> additionalArguments, Ioc ioc)
     {
-        private static readonly Regex MatchError = new("error:", RegexOptions.Compiled);
+        this.ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
+        this.directoryResolver = directoryResolver ?? throw new ArgumentNullException(nameof(directoryResolver));
+        AdditionalArguments = additionalArguments ?? throw new ArgumentNullException(nameof(additionalArguments));
+        ExecutablePath = executablePath ?? throw new ArgumentNullException(nameof(executablePath));
+    }
 
-        // path/to/header.h:68:1: error:
-        private static readonly Regex MatchFileErrorRegex = new(@"^(.*):(\d+):(\d+):\s+error:(.*)", RegexOptions.Compiled);
+    /// <summary>
+    /// Preprocesses the specified header file.
+    /// </summary>
+    /// <param name="headerFile">The header file.</param>
+    /// <param name="handler">The handler.</param>
+    public void Preprocess(string headerFile, CastXmlPreprocessedLineReceivedEventHandler handler)
+    {
+        void OutputDataCallback(object sender, DataReceivedEventArgs data) => handler(data.Data);
 
-        private IReadOnlyList<string> AdditionalArguments { get; }
-
-        public string OutputPath { get; set; }
-
-        /// <summary>
-        /// Gets or sets the executable path of castxml.
-        /// </summary>
-        /// <value>The executable path.</value>
-        private string ExecutablePath { get; }
-
-        private Logger Logger => ioc.Logger;
-
-        private readonly IncludeDirectoryResolver directoryResolver;
-        private readonly Ioc ioc;
-
-        public CastXmlRunner(IncludeDirectoryResolver directoryResolver,
-                             string executablePath, IReadOnlyList<string> additionalArguments, Ioc ioc)
+        Logger.RunInContext(nameof(Preprocess), () =>
         {
-            this.ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
-            this.directoryResolver = directoryResolver ?? throw new ArgumentNullException(nameof(directoryResolver));
-            AdditionalArguments = additionalArguments ?? throw new ArgumentNullException(nameof(additionalArguments));
-            ExecutablePath = executablePath ?? throw new ArgumentNullException(nameof(executablePath));
-        }
+            if (!File.Exists(ExecutablePath))
+                Logger.Fatal("castxml not found from path: [{0}]", ExecutablePath);
 
-        /// <summary>
-        /// Preprocesses the specified header file.
-        /// </summary>
-        /// <param name="headerFile">The header file.</param>
-        /// <param name="handler">The handler.</param>
-        public void Preprocess(string headerFile, CastXmlPreprocessedLineReceivedEventHandler handler)
+            if (!File.Exists(headerFile))
+                Logger.Fatal("C++ Header file [{0}] not found", headerFile);
+
+            RunCastXml(headerFile, OutputDataCallback, "-E -dD");
+        });
+    }
+
+    /// <summary>
+    /// Processes the specified header headerFile.
+    /// </summary>
+    /// <param name="headerFile">The header headerFile.</param>
+    /// <returns></returns>
+    public StreamReader Process(string headerFile)
+    {
+        StreamReader result = null;
+
+        Logger.RunInContext(nameof(Process), () =>
         {
-            void OutputDataCallback(object sender, DataReceivedEventArgs data) => handler(data.Data);
+            if (!File.Exists(ExecutablePath)) Logger.Fatal("castxml not found from path: [{0}]", ExecutablePath);
 
-            Logger.RunInContext(nameof(Preprocess), () =>
+            if (!File.Exists(headerFile)) Logger.Fatal("C++ Header file [{0}] not found", headerFile);
+
+            var xmlFile = Path.ChangeExtension(headerFile, "xml");
+
+            // Delete any previously generated xml file
+            File.Delete(xmlFile);
+
+            RunCastXml(headerFile, LogCastXmlOutput, $"-o \"{xmlFile}\"");
+
+            if (!File.Exists(xmlFile) || Logger.HasErrors)
             {
-                if (!File.Exists(ExecutablePath))
-                    Logger.Fatal("castxml not found from path: [{0}]", ExecutablePath);
-
-                if (!File.Exists(headerFile))
-                    Logger.Fatal("C++ Header file [{0}] not found", headerFile);
-
-                RunCastXml(headerFile, OutputDataCallback, "-E -dD");
-            });
-        }
-
-        /// <summary>
-        /// Processes the specified header headerFile.
-        /// </summary>
-        /// <param name="headerFile">The header headerFile.</param>
-        /// <returns></returns>
-        public StreamReader Process(string headerFile)
-        {
-            StreamReader result = null;
-
-            Logger.RunInContext(nameof(Process), () =>
-            {
-                if (!File.Exists(ExecutablePath)) Logger.Fatal("castxml not found from path: [{0}]", ExecutablePath);
-
-                if (!File.Exists(headerFile)) Logger.Fatal("C++ Header file [{0}] not found", headerFile);
-
-                var xmlFile = Path.ChangeExtension(headerFile, "xml");
-
-                // Delete any previously generated xml file
-                File.Delete(xmlFile);
-
-                RunCastXml(headerFile, LogCastXmlOutput, $"-o \"{xmlFile}\"");
-
-                if (!File.Exists(xmlFile) || Logger.HasErrors)
-                {
-                    Logger.Error(LoggingCodes.CastXmlFailed, "Unable to generate XML file with castxml [{0}]. Check previous errors.", xmlFile);
-                }
-                else
-                {
-                    result = File.OpenText(xmlFile);
-                }
-            });
-
-            return result;
-        }
-
-        private void RunCastXml(string headerFile, DataReceivedEventHandler outputDataCallback, string additionalArguments)
-        {
-            var arguments = GetCastXmlArgs().Append(additionalArguments)
-                                            .Concat(directoryResolver.IncludeArguments);
-            var argumentsString = string.Join(" ", arguments);
-
-            Logger.Message("CastXML {0}", argumentsString);
-            using var currentProcess = new Process
-            {
-                StartInfo = new ProcessStartInfo(ExecutablePath)
-                {
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    WorkingDirectory = OutputPath,
-                    Arguments = $"{argumentsString} \"{headerFile}\""
-                }
-            };
-            currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
-            currentProcess.OutputDataReceived += outputDataCallback;
-            currentProcess.Start();
-            currentProcess.BeginOutputReadLine();
-            currentProcess.BeginErrorReadLine();
-
-            currentProcess.WaitForExit();
-
-            if (Logger.HasErrors)
-            {
-                Logger.Error(LoggingCodes.CastXmlFailed, "Failed to run CastXML. Check previous errors.");
+                Logger.Error(LoggingCodes.CastXmlFailed, "Unable to generate XML file with castxml [{0}]. Check previous errors.", xmlFile);
             }
-        }
-
-        private IEnumerable<string> GetCastXmlArgs()
-        {
-            return AdditionalArguments.Append("--castxml-gccxml")
-                                      .Append("-m32")
-                                      .Append("-x c++")
-                                      .Append("-Wmacro-redefined")
-                                      .Append("-Wno-invalid-token-paste")
-                                      .Append("-Wno-ignored-attributes");
-        }
-
-        /// <summary>
-        /// Processes the error from header file.
-        /// </summary>
-        /// <param name="sender">The sender.</param>
-        /// <param name="e">The <see cref="System.Diagnostics.DataReceivedEventArgs"/> instance containing the event data.</param>
-        private void ProcessErrorFromHeaderFile(object sender, DataReceivedEventArgs e)
-        {
-            var popContext = false;
-            try
+            else
             {
-                if (e.Data != null)
-                {
-                    var matchError = MatchFileErrorRegex.Match(e.Data);
-
-                    var errorText = e.Data;
-
-                    if (matchError.Success)
-                    {
-                        Logger.PushLocation(matchError.Groups[1].Value, int.Parse(matchError.Groups[2].Value), int.Parse(matchError.Groups[3].Value));
-                        popContext = true;
-                        errorText = matchError.Groups[4].Value;
-                    }
-
-                    if (MatchError.Match(e.Data).Success)
-                        Logger.Error(LoggingCodes.CastXmlError, errorText);
-                    else
-                        Logger.Warning(LoggingCodes.CastXmlWarning, errorText);
-                }
+                result = File.OpenText(xmlFile);
             }
-            finally
+        });
+
+        return result;
+    }
+
+    private void RunCastXml(string headerFile, DataReceivedEventHandler outputDataCallback, string additionalArguments)
+    {
+        var arguments = GetCastXmlArgs().Append(additionalArguments)
+                                        .Concat(directoryResolver.IncludeArguments);
+        var argumentsString = string.Join(" ", arguments);
+
+        Logger.Message("CastXML {0}", argumentsString);
+        using var currentProcess = new Process
+        {
+            StartInfo = new ProcessStartInfo(ExecutablePath)
             {
-                if (popContext)
-                    Logger.PopLocation();
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WorkingDirectory = OutputPath,
+                Arguments = $"{argumentsString} \"{headerFile}\""
             }
-        }
+        };
+        currentProcess.ErrorDataReceived += ProcessErrorFromHeaderFile;
+        currentProcess.OutputDataReceived += outputDataCallback;
+        currentProcess.Start();
+        currentProcess.BeginOutputReadLine();
+        currentProcess.BeginErrorReadLine();
 
-        /// <summary>
-        /// Processes the output from header file.
-        /// </summary>
-        /// <param name="sender">The sender.</param>
-        /// <param name="e">The <see cref="System.Diagnostics.DataReceivedEventArgs"/> instance containing the event data.</param>
-        private void LogCastXmlOutput(object sender, DataReceivedEventArgs e)
+        currentProcess.WaitForExit();
+
+        if (Logger.HasErrors)
+        {
+            Logger.Error(LoggingCodes.CastXmlFailed, "Failed to run CastXML. Check previous errors.");
+        }
+    }
+
+    private IEnumerable<string> GetCastXmlArgs()
+    {
+        return AdditionalArguments.Append("--castxml-gccxml")
+                                  .Append("-m32")
+                                  .Append("-x c++")
+                                  .Append("-Wmacro-redefined")
+                                  .Append("-Wno-invalid-token-paste")
+                                  .Append("-Wno-ignored-attributes");
+    }
+
+    /// <summary>
+    /// Processes the error from header file.
+    /// </summary>
+    /// <param name="sender">The sender.</param>
+    /// <param name="e">The <see cref="System.Diagnostics.DataReceivedEventArgs"/> instance containing the event data.</param>
+    private void ProcessErrorFromHeaderFile(object sender, DataReceivedEventArgs e)
+    {
+        var popContext = false;
+        try
         {
             if (e.Data != null)
-                Logger.Message(e.Data);
+            {
+                var matchError = MatchFileErrorRegex.Match(e.Data);
+
+                var errorText = e.Data;
+
+                if (matchError.Success)
+                {
+                    Logger.PushLocation(matchError.Groups[1].Value, int.Parse(matchError.Groups[2].Value), int.Parse(matchError.Groups[3].Value));
+                    popContext = true;
+                    errorText = matchError.Groups[4].Value;
+                }
+
+                if (MatchError.Match(e.Data).Success)
+                    Logger.Error(LoggingCodes.CastXmlError, errorText);
+                else
+                    Logger.Warning(LoggingCodes.CastXmlWarning, errorText);
+            }
         }
+        finally
+        {
+            if (popContext)
+                Logger.PopLocation();
+        }
+    }
+
+    /// <summary>
+    /// Processes the output from header file.
+    /// </summary>
+    /// <param name="sender">The sender.</param>
+    /// <param name="e">The <see cref="System.Diagnostics.DataReceivedEventArgs"/> instance containing the event data.</param>
+    private void LogCastXmlOutput(object sender, DataReceivedEventArgs e)
+    {
+        if (e.Data != null)
+            Logger.Message(e.Data);
     }
 }

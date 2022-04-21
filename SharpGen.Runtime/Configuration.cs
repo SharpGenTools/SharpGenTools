@@ -21,60 +21,59 @@
 using System.Collections.Generic;
 using SharpGen.Runtime.Diagnostics;
 
-namespace SharpGen.Runtime
+namespace SharpGen.Runtime;
+
+/// <summary>
+/// Global configuration.
+/// </summary>
+public static class Configuration
 {
-    /// <summary>
-    /// Global configuration.
-    /// </summary>
-    public static class Configuration
+    internal static bool ObjectTrackerImmutable;
+    private static bool _enableObjectTracking;
+    private static bool _enableReleaseOnFinalizer;
+    private static bool _useThreadStaticObjectTracking;
+
+    private static void UpdateIfMutable<T>(ref T field, T newValue, bool immutable)
     {
-        internal static bool ObjectTrackerImmutable;
-        private static bool _enableObjectTracking;
-        private static bool _enableReleaseOnFinalizer;
-        private static bool _useThreadStaticObjectTracking;
+        if (EqualityComparer<T>.Default.Equals(field, newValue))
+            return;
 
-        private static void UpdateIfMutable<T>(ref T field, T newValue, bool immutable)
-        {
-            if (EqualityComparer<T>.Default.Equals(field, newValue))
-                return;
+        if (immutable)
+            throw new SharpGenException("Configuration is immutable after the first use");
 
-            if (immutable)
-                throw new SharpGenException("Configuration is immutable after the first use");
+        field = newValue;
+    }
 
-            field = newValue;
-        }
+    /// <summary>
+    /// Enables or disables object tracking. Default is disabled (false).
+    /// </summary>
+    /// <remarks>
+    /// Object Tracking is used to track C++ object lifecycle creation/dispose. When this option is enabled
+    /// objects can be tracked using <see cref="ObjectTracker"/>. Using Object tracking has a significant
+    /// impact on performance and should be used only while debugging.
+    /// </remarks>
+    public static bool EnableObjectTracking
+    {
+        get => _enableObjectTracking;
+        set => UpdateIfMutable(ref _enableObjectTracking, value, ObjectTrackerImmutable);
+    }
 
-        /// <summary>
-        /// Enables or disables object tracking. Default is disabled (false).
-        /// </summary>
-        /// <remarks>
-        /// Object Tracking is used to track C++ object lifecycle creation/dispose. When this option is enabled
-        /// objects can be tracked using <see cref="ObjectTracker"/>. Using Object tracking has a significant
-        /// impact on performance and should be used only while debugging.
-        /// </remarks>
-        public static bool EnableObjectTracking
-        {
-            get => _enableObjectTracking;
-            set => UpdateIfMutable(ref _enableObjectTracking, value, ObjectTrackerImmutable);
-        }
+    /// <summary>
+    /// Enables or disables release of <see cref="CppObject"/> on finalizer. Default is disabled (false).
+    /// </summary>
+    public static bool EnableReleaseOnFinalizer
+    {
+        get => _enableReleaseOnFinalizer;
+        set => UpdateIfMutable(ref _enableReleaseOnFinalizer, value, ObjectTrackerImmutable);
+    }
 
-        /// <summary>
-        /// Enables or disables release of <see cref="CppObject"/> on finalizer. Default is disabled (false).
-        /// </summary>
-        public static bool EnableReleaseOnFinalizer
-        {
-            get => _enableReleaseOnFinalizer;
-            set => UpdateIfMutable(ref _enableReleaseOnFinalizer, value, ObjectTrackerImmutable);
-        }
-
-        /// <summary>
-        /// By default all objects in the process are tracked.
-        /// Use this property to track objects per thread.
-        /// </summary>
-        public static bool UseThreadStaticObjectTracking
-        {
-            get => _useThreadStaticObjectTracking;
-            set => UpdateIfMutable(ref _useThreadStaticObjectTracking, value, ObjectTrackerImmutable);
-        }
+    /// <summary>
+    /// By default all objects in the process are tracked.
+    /// Use this property to track objects per thread.
+    /// </summary>
+    public static bool UseThreadStaticObjectTracking
+    {
+        get => _useThreadStaticObjectTracking;
+        set => UpdateIfMutable(ref _useThreadStaticObjectTracking, value, ObjectTrackerImmutable);
     }
 }

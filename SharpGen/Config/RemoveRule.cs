@@ -17,13 +17,12 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-using System;
+
 using System.Xml.Serialization;
 
-namespace SharpGen.Config
+namespace SharpGen.Config;
+
+[XmlType("remove")]
+public class RemoveRule: MappingBaseRule
 {
-    [XmlType("remove")]
-    public class RemoveRule: MappingBaseRule
-    {
-    }
 }

@@ -20,42 +20,41 @@
 
 using System.Xml.Serialization;
 
-namespace SharpGen.Config
+namespace SharpGen.Config;
+
+/// <summary>
+/// Simple naming rule to rename short name, abbreviation to an expanded name. 
+/// For example, rename SRV to ShaderResourceView.
+/// </summary>
+[XmlType("short")]
+public class NamingRuleShort : NamingRule
 {
     /// <summary>
-    /// Simple naming rule to rename short name, abbreviation to an expanded name. 
-    /// For example, rename SRV to ShaderResourceView.
+    /// Initializes a new instance of the <see cref="NamingRuleShort"/> class.
     /// </summary>
-    [XmlType("short")]
-    public class NamingRuleShort : NamingRule
+    [ExcludeFromCodeCoverage(Reason = "For XML Serialization")]
+    public NamingRuleShort()
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="NamingRuleShort"/> class.
-        /// </summary>
-        [ExcludeFromCodeCoverage(Reason = "For XML Serialization")]
-        public NamingRuleShort()
-        {
-        }
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="NamingRuleShort"/> class.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <param name="value">The value.</param>
-        public NamingRuleShort(string name, string value) : base(name, value)
-        {
-        }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NamingRuleShort"/> class.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    /// <param name="value">The value.</param>
+    public NamingRuleShort(string name, string value) : base(name, value)
+    {
+    }
 
-        /// <summary>
-        /// Returns a <see cref="System.String"/> that represents this instance.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="System.String"/> that represents this instance.
-        /// </returns>
-        [ExcludeFromCodeCoverage]
-        public override string ToString()
-        {
-            return string.Format(System.Globalization.CultureInfo.InvariantCulture, "naming-rule-short: \"{0}\" => \"{1}\"", Name, Value);
-        }
+    /// <summary>
+    /// Returns a <see cref="System.String"/> that represents this instance.
+    /// </summary>
+    /// <returns>
+    /// A <see cref="System.String"/> that represents this instance.
+    /// </returns>
+    [ExcludeFromCodeCoverage]
+    public override string ToString()
+    {
+        return string.Format(System.Globalization.CultureInfo.InvariantCulture, "naming-rule-short: \"{0}\" => \"{1}\"", Name, Value);
     }
 }

@@ -4,43 +4,42 @@
 
 #nullable disable
 
-namespace SharpGenTools.Sdk.Internal.Roslyn
+namespace SharpGenTools.Sdk.Internal.Roslyn;
+
+internal enum PathKind
 {
-    internal enum PathKind
-    {
-        /// <summary>
-        /// Null or empty.
-        /// </summary>
-        Empty,
+    /// <summary>
+    /// Null or empty.
+    /// </summary>
+    Empty,
 
-        /// <summary>
-        /// "file"
-        /// </summary>
-        Relative,
+    /// <summary>
+    /// "file"
+    /// </summary>
+    Relative,
 
-        /// <summary>
-        /// ".\file"
-        /// </summary>
-        RelativeToCurrentDirectory,
+    /// <summary>
+    /// ".\file"
+    /// </summary>
+    RelativeToCurrentDirectory,
 
-        /// <summary>
-        /// "..\file"
-        /// </summary>
-        RelativeToCurrentParent,
+    /// <summary>
+    /// "..\file"
+    /// </summary>
+    RelativeToCurrentParent,
 
-        /// <summary>
-        /// "\dir\file"
-        /// </summary>
-        RelativeToCurrentRoot,
+    /// <summary>
+    /// "\dir\file"
+    /// </summary>
+    RelativeToCurrentRoot,
 
-        /// <summary>
-        /// "C:dir\file"
-        /// </summary>
-        RelativeToDriveDirectory,
+    /// <summary>
+    /// "C:dir\file"
+    /// </summary>
+    RelativeToDriveDirectory,
 
-        /// <summary>
-        /// "C:\file" or "\\machine" (UNC).
-        /// </summary>
-        Absolute,
-    }
+    /// <summary>
+    /// "C:\file" or "\\machine" (UNC).
+    /// </summary>
+    Absolute,
 }

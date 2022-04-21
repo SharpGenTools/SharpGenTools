@@ -23,35 +23,34 @@ using System.Collections.Generic;
 using System.Linq;
 using SharpGen.CppModel;
 
-namespace SharpGen.Model
+namespace SharpGen.Model;
+
+public sealed class CsEnum : CsTypeBase
 {
-    public sealed class CsEnum : CsTypeBase
+    public CsFundamentalType UnderlyingType { get; }
+
+    public override uint Size => UnderlyingType.Size;
+    protected override uint? AlignmentCore => UnderlyingType.Alignment;
+    public override bool IsBlittable => UnderlyingType.IsBlittable;
+
+    public bool IsFlag { get; }
+
+    public IEnumerable<CsEnumItem> EnumItems => Items.OfType<CsEnumItem>();
+
+    public CsEnum(CppEnum cppEnum, string name, CsFundamentalType underlyingType) : base(cppEnum, name)
     {
-        public CsFundamentalType UnderlyingType { get; }
+        UnderlyingType = underlyingType ?? throw new ArgumentNullException(nameof(underlyingType));
 
-        public override uint Size => UnderlyingType.Size;
-        protected override uint? AlignmentCore => UnderlyingType.Alignment;
-        public override bool IsBlittable => UnderlyingType.IsBlittable;
+        if (cppEnum == null)
+            return;
 
-        public bool IsFlag { get; }
+        // If C++ enum name is ending with FLAG OR FLAGS, then tag this enum as flags
+        var cppEnumName = cppEnum.Name;
+        if (cppEnumName.EndsWith("FLAG") || cppEnumName.EndsWith("FLAGS"))
+            IsFlag = true;
 
-        public IEnumerable<CsEnumItem> EnumItems => Items.OfType<CsEnumItem>();
+        var tag = cppEnum.Rule;
 
-        public CsEnum(CppEnum cppEnum, string name, CsFundamentalType underlyingType) : base(cppEnum, name)
-        {
-            UnderlyingType = underlyingType ?? throw new ArgumentNullException(nameof(underlyingType));
-
-            if (cppEnum == null)
-                return;
-
-            // If C++ enum name is ending with FLAG OR FLAGS, then tag this enum as flags
-            var cppEnumName = cppEnum.Name;
-            if (cppEnumName.EndsWith("FLAG") || cppEnumName.EndsWith("FLAGS"))
-                IsFlag = true;
-
-            var tag = cppEnum.Rule;
-
-            IsFlag = tag.EnumHasFlags ?? IsFlag;
-        }
+        IsFlag = tag.EnumHasFlags ?? IsFlag;
     }
 }

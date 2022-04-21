@@ -1,46 +1,43 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Xml.Serialization;
 
-namespace SharpGen.Config
+namespace SharpGen.Config;
+
+public enum SdkLib
 {
-    public enum SdkLib
+    StdLib = 1,
+    WindowsSdk
+}
+
+public class SdkRule
+{
+    public SdkRule()
     {
-        StdLib = 1,
-        WindowsSdk
     }
 
-    public class SdkRule
+    public SdkRule(SdkLib name, string version)
     {
-        public SdkRule()
-        {
-        }
+        Name = name;
+        Version = version;
+    }
 
-        public SdkRule(SdkLib name, string version)
+    [XmlIgnore]
+    public SdkLib Name { get; private set; }
+
+    [XmlAttribute("name")]
+    public string _Name_
+    {
+        get => Name.ToString();
+        set
         {
+            Enum.TryParse(value, out SdkLib name);
             Name = name;
-            Version = version;
         }
+    }
 
-        [XmlIgnore]
-        public SdkLib Name { get; private set; }
-
-        [XmlAttribute("name")]
-        public string _Name_
-        {
-            get => Name.ToString();
-            set
-            {
-                Enum.TryParse(value, out SdkLib name);
-                Name = name;
-            }
-        }
-
-        public bool ShouldSerialize_Name_() => Enum.IsDefined(typeof(SdkLib), Name);
+    public bool ShouldSerialize_Name_() => Enum.IsDefined(typeof(SdkLib), Name);
         
 
-        [XmlAttribute("version")]
-        public string Version { get; set; }
-    }
+    [XmlAttribute("version")]
+    public string Version { get; set; }
 }

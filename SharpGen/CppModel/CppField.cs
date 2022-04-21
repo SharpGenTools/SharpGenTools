@@ -18,30 +18,29 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace SharpGen.CppModel
+namespace SharpGen.CppModel;
+
+/// <summary>
+/// A C++ field.
+/// </summary>
+public sealed class CppField : CppMarshallable
 {
     /// <summary>
-    /// A C++ field.
+    /// Index of the field mostly used to handle unions.
     /// </summary>
-    public sealed class CppField : CppMarshallable
+    public int Offset { get; set; }
+
+    /// <summary>
+    /// Used only for structure with bits
+    /// </summary>
+    public bool IsBitField { get; set; }
+
+    /// <summary>
+    /// Used only for structure with bits
+    /// </summary>
+    public int BitOffset { get; set; }
+
+    public CppField(string name) : base(name)
     {
-        /// <summary>
-        /// Index of the field mostly used to handle unions.
-        /// </summary>
-        public int Offset { get; set; }
-
-        /// <summary>
-        /// Used only for structure with bits
-        /// </summary>
-        public bool IsBitField { get; set; }
-
-        /// <summary>
-        /// Used only for structure with bits
-        /// </summary>
-        public int BitOffset { get; set; }
-
-        public CppField(string name) : base(name)
-        {
-        }
     }
 }

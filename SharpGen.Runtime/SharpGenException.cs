@@ -24,50 +24,49 @@ using System;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 
-namespace SharpGen.Runtime
+namespace SharpGen.Runtime;
+
+/// <summary>
+///     The base class for errors that occur in native code invoked by SharpGen.
+/// </summary>
+public partial class SharpGenException : Exception
 {
-    /// <summary>
-    ///     The base class for errors that occur in native code invoked by SharpGen.
-    /// </summary>
-    public partial class SharpGenException : Exception
+    private SharpGenException(ResultDescriptor descriptor, string? message, Exception? innerException)
+        : base(FormatMessage(descriptor, message, null), innerException)
     {
-        private SharpGenException(ResultDescriptor descriptor, string? message, Exception? innerException)
-            : base(FormatMessage(descriptor, message, null), innerException)
-        {
-            Descriptor = descriptor;
-            HResult = descriptor.Result.Code;
-        }
+        Descriptor = descriptor;
+        HResult = descriptor.Result.Code;
+    }
 
-        private SharpGenException(ResultDescriptor descriptor, string? message, Exception? innerException, params object[]? args)
-            : base(FormatMessage(descriptor, message, args), innerException)
-        {
-            Descriptor = descriptor;
-            HResult = descriptor.Result.Code;
-        }
+    private SharpGenException(ResultDescriptor descriptor, string? message, Exception? innerException, params object[]? args)
+        : base(FormatMessage(descriptor, message, args), innerException)
+    {
+        Descriptor = descriptor;
+        HResult = descriptor.Result.Code;
+    }
 
-        private static string FormatMessage(ResultDescriptor descriptor, string? message, object[]? args) =>
-            message != null
-                ? args is { Length: >0 } ? string.Format(CultureInfo.InvariantCulture, message, args) : message
-                : descriptor.ToString();
+    private static string FormatMessage(ResultDescriptor descriptor, string? message, object[]? args) =>
+        message != null
+            ? args is { Length: >0 } ? string.Format(CultureInfo.InvariantCulture, message, args) : message
+            : descriptor.ToString();
 
-        /// <summary>
-        ///     Gets the <see cref="SharpGen.Runtime.Result">Result code</see> for the exception if one exists.
-        ///     This value indicates the specific type of failure that occurred within the native code.
-        /// </summary>
-        public Result ResultCode
-        {
-            [MethodImpl(Utilities.MethodAggressiveOptimization)]
-            get => Descriptor.Result;
-        }
+    /// <summary>
+    ///     Gets the <see cref="SharpGen.Runtime.Result">Result code</see> for the exception if one exists.
+    ///     This value indicates the specific type of failure that occurred within the native code.
+    /// </summary>
+    public Result ResultCode
+    {
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        get => Descriptor.Result;
+    }
 
-        /// <summary>
-        ///     Gets the <see cref="SharpGen.Runtime.ResultDescriptor">Result descriptor</see> for the exception.
-        ///     This value indicates the specific type of failure that occurred within the native code.
-        /// </summary>
-        private ResultDescriptor Descriptor
-        {
-            [MethodImpl(Utilities.MethodAggressiveOptimization)]
-            get;
-        }
+    /// <summary>
+    ///     Gets the <see cref="SharpGen.Runtime.ResultDescriptor">Result descriptor</see> for the exception.
+    ///     This value indicates the specific type of failure that occurred within the native code.
+    /// </summary>
+    private ResultDescriptor Descriptor
+    {
+        [MethodImpl(Utilities.MethodAggressiveOptimization)]
+        get;
     }
 }

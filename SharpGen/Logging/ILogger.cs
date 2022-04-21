@@ -19,21 +19,20 @@
 // THE SOFTWARE.
 using System;
 
-namespace SharpGen.Logging
+namespace SharpGen.Logging;
+
+/// <summary>
+/// Logging interface for backend output.
+/// </summary>
+public interface ILogger
 {
     /// <summary>
-    /// Logging interface for backend output.
+    /// Exits the process with the specified reason.
     /// </summary>
-    public interface ILogger
-    {
-        /// <summary>
-        /// Exits the process with the specified reason.
-        /// </summary>
-        void Exit(string reason, int exitCode);
+    void Exit(string reason, int exitCode);
 
-        /// <summary>
-        /// Logs the specified log message.
-        /// </summary>
-        void Log(LogLevel logLevel, LogLocation logLocation, string context, string code, string message, Exception exception, params object[] parameters);
-    }
+    /// <summary>
+    /// Logs the specified log message.
+    /// </summary>
+    void Log(LogLevel logLevel, LogLocation logLocation, string context, string code, string message, Exception exception, params object[] parameters);
 }

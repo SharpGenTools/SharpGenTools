@@ -21,81 +21,80 @@
 using System;
 using System.Text;
 
-namespace SharpGen.CppModel
+namespace SharpGen.CppModel;
+
+/// <summary>
+/// Type declaration.
+/// </summary>
+public abstract class CppMarshallable : CppElement
 {
-    /// <summary>
-    /// Type declaration.
-    /// </summary>
-    public abstract class CppMarshallable : CppElement
-    {
 #nullable enable
-        private string? typeName;
-        private string? arrayDimension;
+    private string? typeName;
+    private string? arrayDimension;
 
-        public string TypeName
+    public string TypeName
+    {
+        get => (Rule.OverrideNativeType == true ? Rule.MappingType : typeName)
+            ?? throw new InvalidOperationException(
+                   $"{nameof(CppMarshallable)} is expected to have {nameof(TypeName)}"
+               );
+        set => typeName = value;
+    }
+
+    public string Pointer
+    {
+        get => Rule.Pointer ?? string.Empty;
+        set => Rule.Pointer = value;
+    }
+
+    public bool Const { get; set; }
+    public bool IsArray => ArrayDimension != null;
+
+    public string? ArrayDimension
+    {
+        get => Rule.TypeArrayDimension switch
         {
-            get => (Rule.OverrideNativeType == true ? Rule.MappingType : typeName)
-                ?? throw new InvalidOperationException(
-                       $"{nameof(CppMarshallable)} is expected to have {nameof(TypeName)}"
-                   );
-            set => typeName = value;
+            { } arrayDimensionValue => arrayDimensionValue,
+            _ => arrayDimension
+        };
+        set => arrayDimension = value;
+    }
+
+    public override string ToString()
+    {
+        var builder = new StringBuilder();
+        if (Const)
+            builder.Append("const ");
+        builder.Append(TypeName);
+        builder.Append(Pointer);
+
+        if (!string.IsNullOrEmpty(Name))
+        {
+            builder.Append(' ');
+            builder.Append(Name);
         }
 
-        public string Pointer
+        if (IsArray)
         {
-            get => Rule.Pointer ?? string.Empty;
-            set => Rule.Pointer = value;
+            builder.Append('[');
+            builder.Append(ArrayDimension);
+            builder.Append(']');
         }
 
-        public bool Const { get; set; }
-        public bool IsArray => ArrayDimension != null;
+        return builder.ToString();
+    }
 
-        public string? ArrayDimension
+    public bool HasPointer
+    {
+        get
         {
-            get => Rule.TypeArrayDimension switch
-            {
-                { } arrayDimensionValue => arrayDimensionValue,
-                _ => arrayDimension
-            };
-            set => arrayDimension = value;
+            var pointer = Pointer;
+            return !string.IsNullOrEmpty(pointer) && (pointer.Contains("*") || pointer.Contains("&"));
         }
-
-        public override string ToString()
-        {
-            var builder = new StringBuilder();
-            if (Const)
-                builder.Append("const ");
-            builder.Append(TypeName);
-            builder.Append(Pointer);
-
-            if (!string.IsNullOrEmpty(Name))
-            {
-                builder.Append(' ');
-                builder.Append(Name);
-            }
-
-            if (IsArray)
-            {
-                builder.Append('[');
-                builder.Append(ArrayDimension);
-                builder.Append(']');
-            }
-
-            return builder.ToString();
-        }
-
-        public bool HasPointer
-        {
-            get
-            {
-                var pointer = Pointer;
-                return !string.IsNullOrEmpty(pointer) && (pointer.Contains("*") || pointer.Contains("&"));
-            }
-        }
+    }
 #nullable restore
 
-        protected CppMarshallable(string name) : base(name)
-        {
-        }
+    protected CppMarshallable(string name) : base(name)
+    {
     }
 }

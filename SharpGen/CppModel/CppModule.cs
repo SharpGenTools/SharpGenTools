@@ -22,21 +22,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SharpGen.CppModel
+namespace SharpGen.CppModel;
+
+/// <summary>
+/// A C++ module contains includes.
+/// </summary>
+public sealed class CppModule : CppContainer
 {
-    /// <summary>
-    /// A C++ module contains includes.
-    /// </summary>
-    public sealed class CppModule : CppContainer
+    public override string FullName => string.Empty;
+    public IEnumerable<CppInclude> Includes => Iterate<CppInclude>();
+
+    public CppInclude FindInclude(string includeName) =>
+        Includes.FirstOrDefault(include => string.Equals(include.Name, includeName, StringComparison.InvariantCultureIgnoreCase));
+
+    public CppModule(string name) : base(name)
     {
-        public override string FullName => string.Empty;
-        public IEnumerable<CppInclude> Includes => Iterate<CppInclude>();
-
-        public CppInclude FindInclude(string includeName) =>
-            Includes.FirstOrDefault(include => string.Equals(include.Name, includeName, StringComparison.InvariantCultureIgnoreCase));
-
-        public CppModule(string name) : base(name)
-        {
-        }
     }
 }

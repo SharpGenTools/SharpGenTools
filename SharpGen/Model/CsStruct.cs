@@ -23,133 +23,132 @@ using System.Collections.Generic;
 using System.Linq;
 using SharpGen.CppModel;
 
-namespace SharpGen.Model
+namespace SharpGen.Model;
+
+/// <summary>
+///   A structElement that maps to a native struct
+/// </summary>
+public sealed class CsStruct : CsTypeBase
 {
-    /// <summary>
-    ///   A structElement that maps to a native struct
-    /// </summary>
-    public sealed class CsStruct : CsTypeBase
+    private CsBaseItemListCache<CsField> _fields;
+    private bool hasMarshalType, hasMarshalTypeFromFields;
+
+    public CsStruct(CppStruct cppStruct, string name) : base(cppStruct, name)
     {
-        private CsBaseItemListCache<CsField> _fields;
-        private bool hasMarshalType, hasMarshalTypeFromFields;
+        if (cppStruct == null)
+            return;
 
-        public CsStruct(CppStruct cppStruct, string name) : base(cppStruct, name)
+        var tag = cppStruct.Rule;
+
+        Align = tag.StructPack ?? Align;
+        HasMarshalType = tag.StructHasNativeValueType ?? HasMarshalType;
+        GenerateAsClass = tag.StructToClass ?? GenerateAsClass;
+        HasCustomMarshal = tag.StructCustomMarshal ?? HasCustomMarshal;
+        IsStaticMarshal = tag.IsStaticMarshal ?? IsStaticMarshal;
+        HasCustomNew = tag.StructCustomNew ?? HasCustomNew;
+    }
+
+    public override uint Size => StructSize;
+
+    public uint StructSize { private get; set; }
+
+    /// <summary>
+    ///   Packing alignment for this type (Default is 0 => Platform default)
+    /// </summary>
+    public int Align { get; set; }
+
+    public IReadOnlyList<CsField> Fields => _fields.GetList(this);
+
+    public IEnumerable<CsField> PublicFields => _fields.Enumerate(this)
+                                                       .Where(field => field.Relations.Count == 0);
+
+    public IEnumerable<CsExpressionConstant> ExpressionConstants => Items.OfType<CsExpressionConstant>();
+    public IEnumerable<CsGuidConstant> GuidConstants => Items.OfType<CsGuidConstant>();
+    public IEnumerable<CsResultConstant> ResultConstants => Items.OfType<CsResultConstant>();
+
+    /// <summary>
+    ///   True if this structure is using an explicit layout else it's a sequential structure
+    /// </summary>
+    public bool ExplicitLayout { get; set; }
+
+    /// <summary>
+    ///   True if this struct needs an internal marshal type
+    /// </summary>
+    public bool HasMarshalType
+    {
+        get => hasMarshalType || hasMarshalTypeFromFields
+                              || HasCustomMarshal || IsStaticMarshal || HasCustomNew || GenerateAsClass;
+        set => hasMarshalType = value;
+    }
+
+    public bool HasCustomMarshal { get; }
+    public bool IsStaticMarshal { get; set; }
+    public bool GenerateAsClass { get; }
+    public bool HasCustomNew { get; set; }
+
+    /// <summary>
+    /// True if the native type this structure represents is a native primitive type
+    /// </summary>
+    public bool IsNativePrimitive { get; set; }
+
+    /// <summary>
+    ///   List of declared inner structs
+    /// </summary>
+    public IEnumerable<CsStruct> InnerStructs => Items.OfType<CsStruct>();
+
+    protected override uint? AlignmentCore
+    {
+        get
         {
-            if (cppStruct == null)
-                return;
-
-            var tag = cppStruct.Rule;
-
-            Align = tag.StructPack ?? Align;
-            HasMarshalType = tag.StructHasNativeValueType ?? HasMarshalType;
-            GenerateAsClass = tag.StructToClass ?? GenerateAsClass;
-            HasCustomMarshal = tag.StructCustomMarshal ?? HasCustomMarshal;
-            IsStaticMarshal = tag.IsStaticMarshal ?? IsStaticMarshal;
-            HasCustomNew = tag.StructCustomNew ?? HasCustomNew;
-        }
-
-        public override uint Size => StructSize;
-
-        public uint StructSize { private get; set; }
-
-        /// <summary>
-        ///   Packing alignment for this type (Default is 0 => Platform default)
-        /// </summary>
-        public int Align { get; set; }
-
-        public IReadOnlyList<CsField> Fields => _fields.GetList(this);
-
-        public IEnumerable<CsField> PublicFields => _fields.Enumerate(this)
-                                                           .Where(field => field.Relations.Count == 0);
-
-        public IEnumerable<CsExpressionConstant> ExpressionConstants => Items.OfType<CsExpressionConstant>();
-        public IEnumerable<CsGuidConstant> GuidConstants => Items.OfType<CsGuidConstant>();
-        public IEnumerable<CsResultConstant> ResultConstants => Items.OfType<CsResultConstant>();
-
-        /// <summary>
-        ///   True if this structure is using an explicit layout else it's a sequential structure
-        /// </summary>
-        public bool ExplicitLayout { get; set; }
-
-        /// <summary>
-        ///   True if this struct needs an internal marshal type
-        /// </summary>
-        public bool HasMarshalType
-        {
-            get => hasMarshalType || hasMarshalTypeFromFields
-                                  || HasCustomMarshal || IsStaticMarshal || HasCustomNew || GenerateAsClass;
-            set => hasMarshalType = value;
-        }
-
-        public bool HasCustomMarshal { get; }
-        public bool IsStaticMarshal { get; set; }
-        public bool GenerateAsClass { get; }
-        public bool HasCustomNew { get; set; }
-
-        /// <summary>
-        /// True if the native type this structure represents is a native primitive type
-        /// </summary>
-        public bool IsNativePrimitive { get; set; }
-
-        /// <summary>
-        ///   List of declared inner structs
-        /// </summary>
-        public IEnumerable<CsStruct> InnerStructs => Items.OfType<CsStruct>();
-
-        protected override uint? AlignmentCore
-        {
-            get
-            {
-                // See llvm/lib/IR/DataLayout.cpp:[StructLayout::StructLayout]
-                // See llvm/include/llvm/Support/Alignment.h [Align::Align]
-                uint structAlignment = 1;
-
-                foreach (var field in Fields)
-                {
-                    var fieldAlignment = field.MarshalType.Alignment;
-
-                    if (fieldAlignment is not { } value)
-                        return null;
-
-                    structAlignment = Math.Max(structAlignment, value);
-                }
-
-                return structAlignment;
-            }
-        }
-
-        public override bool IsBlittable => Fields.All(x => x.MarshalType.IsBlittable && !x.IsArray && !x.HasPointer);
-
-        public bool IsFullyMapped { get; set; } = true;
-
-        private protected override IEnumerable<IExpiring> ExpiringOnItemsChange
-        {
-            get
-            {
-                yield return _fields.Expiring;
-            }
-        }
-
-        protected override void OnItemsChanged()
-        {
-            // ReSharper disable once LocalVariableHidesMember
-            var hasMarshalType = false;
+            // See llvm/lib/IR/DataLayout.cpp:[StructLayout::StructLayout]
+            // See llvm/include/llvm/Support/Alignment.h [Align::Align]
+            uint structAlignment = 1;
 
             foreach (var field in Fields)
             {
-                if (field.Relations.Count != 0)
-                    hasMarshalType = true;
+                var fieldAlignment = field.MarshalType.Alignment;
 
-                var fieldHasMarshalType = field.PublicType != field.MarshalType
-                                       || field.HasNativeValueType
-                                       || field.IsArray;
+                if (fieldAlignment is not { } value)
+                    return null;
 
-                // BoolToInt doesn't generate native Marshaling although they have a different marshaller
-                if (fieldHasMarshalType && (!field.IsBoolToInt || field.IsArray))
-                    hasMarshalType = true;
+                structAlignment = Math.Max(structAlignment, value);
             }
 
-            hasMarshalTypeFromFields = hasMarshalType;
+            return structAlignment;
         }
+    }
+
+    public override bool IsBlittable => Fields.All(x => x.MarshalType.IsBlittable && !x.IsArray && !x.HasPointer);
+
+    public bool IsFullyMapped { get; set; } = true;
+
+    private protected override IEnumerable<IExpiring> ExpiringOnItemsChange
+    {
+        get
+        {
+            yield return _fields.Expiring;
+        }
+    }
+
+    protected override void OnItemsChanged()
+    {
+        // ReSharper disable once LocalVariableHidesMember
+        var hasMarshalType = false;
+
+        foreach (var field in Fields)
+        {
+            if (field.Relations.Count != 0)
+                hasMarshalType = true;
+
+            var fieldHasMarshalType = field.PublicType != field.MarshalType
+                                   || field.HasNativeValueType
+                                   || field.IsArray;
+
+            // BoolToInt doesn't generate native Marshaling although they have a different marshaller
+            if (fieldHasMarshalType && (!field.IsBoolToInt || field.IsArray))
+                hasMarshalType = true;
+        }
+
+        hasMarshalTypeFromFields = hasMarshalType;
     }
 }

@@ -20,45 +20,44 @@
 using System.Collections.Generic;
 using System.Xml.Serialization;
 
-namespace SharpGen.Config
+namespace SharpGen.Config;
+
+[XmlType("context")]
+public class ContextRule : ExtensionBaseRule
 {
-    [XmlType("context")]
-    public class ContextRule : ExtensionBaseRule
+    public ContextRule()
     {
-        public ContextRule()
-        {
-            Ids = new List<string>();
-        }
-
-        public ContextRule(string context)
-        {
-            Ids = new List<string> {context};
-        }
-
-        public ContextRule(IEnumerable<string> ids)
-        {
-            Ids = new List<string>(ids);
-        }
-
-        [XmlAttribute("id")]
-        public string ContextSetId { get; set; }
-
-        [XmlText]
-        public List<string> Ids { get; set; }
-
-        [ExcludeFromCodeCoverage]
-        public override string ToString()
-        {
-            return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} Ids:{1}", base.ToString(), (Ids != null) ? Ids.ToString() : "");
-        }
+        Ids = new List<string>();
     }
 
-    [XmlType("context-clear")]
-    public class ClearContextRule : ContextRule
+    public ContextRule(string context)
     {
-        public ClearContextRule()
-        {
-            Ids = null;
-        }
+        Ids = new List<string> {context};
+    }
+
+    public ContextRule(IEnumerable<string> ids)
+    {
+        Ids = new List<string>(ids);
+    }
+
+    [XmlAttribute("id")]
+    public string ContextSetId { get; set; }
+
+    [XmlText]
+    public List<string> Ids { get; set; }
+
+    [ExcludeFromCodeCoverage]
+    public override string ToString()
+    {
+        return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} Ids:{1}", base.ToString(), (Ids != null) ? Ids.ToString() : "");
+    }
+}
+
+[XmlType("context-clear")]
+public class ClearContextRule : ContextRule
+{
+    public ClearContextRule()
+    {
+        Ids = null;
     }
 }

@@ -22,23 +22,22 @@ using System.Collections.Generic;
 using System.Linq;
 using SharpGen.Config;
 
-namespace SharpGen.Model
+namespace SharpGen.Model;
+
+public sealed class CsGroup : CsBase
 {
-    public sealed class CsGroup : CsBase
+    public CsGroup(string name) : base(null, name)
     {
-        public CsGroup(string name) : base(null, name)
-        {
-            Visibility = Visibility.SharpGenGroup | Visibility.Static;
-        }
-
-        public IEnumerable<CsFunction> Functions => Items.OfType<CsFunction>();
-        public IEnumerable<CsExpressionConstant> ExpressionConstants => Items.OfType<CsExpressionConstant>();
-        public IEnumerable<CsGuidConstant> GuidConstants => Items.OfType<CsGuidConstant>();
-        public IEnumerable<CsResultConstant> ResultConstants => Items.OfType<CsResultConstant>();
-
-        protected override string DefaultDescription => "Functions";
-
-        [ExcludeFromCodeCoverage]
-        public override string ToString() => Name;
+        Visibility = Visibility.SharpGenGroup | Visibility.Static;
     }
+
+    public IEnumerable<CsFunction> Functions => Items.OfType<CsFunction>();
+    public IEnumerable<CsExpressionConstant> ExpressionConstants => Items.OfType<CsExpressionConstant>();
+    public IEnumerable<CsGuidConstant> GuidConstants => Items.OfType<CsGuidConstant>();
+    public IEnumerable<CsResultConstant> ResultConstants => Items.OfType<CsResultConstant>();
+
+    protected override string DefaultDescription => "Functions";
+
+    [ExcludeFromCodeCoverage]
+    public override string ToString() => Name;
 }

@@ -21,17 +21,16 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SharpGen.Model
-{
-    /// <summary>
-    /// An assembly container for namespaces.
-    /// </summary>
-    public sealed class CsAssembly : CsBase
-    {
-        public CsAssembly() : base(null, null)
-        {
-        }
+namespace SharpGen.Model;
 
-        public IEnumerable<CsNamespace> Namespaces => Items.OfType<CsNamespace>();
+/// <summary>
+/// An assembly container for namespaces.
+/// </summary>
+public sealed class CsAssembly : CsBase
+{
+    public CsAssembly() : base(null, null)
+    {
     }
+
+    public IEnumerable<CsNamespace> Namespaces => Items.OfType<CsNamespace>();
 }

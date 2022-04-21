@@ -18,83 +18,82 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-namespace SharpGen.Platform
+namespace SharpGen.Platform;
+
+public static class CastXml
 {
-    public static class CastXml
-    {
-        /// <summary>
-        ///     GccXml tag for FundamentalType
-        /// </summary>
-        public const string TagFundamentalType = "FundamentalType";
+    /// <summary>
+    ///     GccXml tag for FundamentalType
+    /// </summary>
+    public const string TagFundamentalType = "FundamentalType";
 
-        /// <summary>
-        ///     GccXml tag for Enumeration
-        /// </summary>
-        public const string TagEnumeration = "Enumeration";
+    /// <summary>
+    ///     GccXml tag for Enumeration
+    /// </summary>
+    public const string TagEnumeration = "Enumeration";
 
-        /// <summary>
-        ///     GccXml tag for Struct
-        /// </summary>
-        public const string TagStruct = "Struct";
+    /// <summary>
+    ///     GccXml tag for Struct
+    /// </summary>
+    public const string TagStruct = "Struct";
 
-        /// <summary>
-        ///     CastXML tag for Class
-        /// </summary>
-        public const string TagClass = "Class";
+    /// <summary>
+    ///     CastXML tag for Class
+    /// </summary>
+    public const string TagClass = "Class";
 
-        /// <summary>
-        ///     GccXml tag for Field
-        /// </summary>
-        public const string TagField = "Field";
+    /// <summary>
+    ///     GccXml tag for Field
+    /// </summary>
+    public const string TagField = "Field";
 
-        /// <summary>
-        ///     GccXml tag for Union
-        /// </summary>
-        public const string TagUnion = "Union";
+    /// <summary>
+    ///     GccXml tag for Union
+    /// </summary>
+    public const string TagUnion = "Union";
 
-        /// <summary>
-        ///     GccXml tag for Typedef
-        /// </summary>
-        public const string TagTypedef = "Typedef";
+    /// <summary>
+    ///     GccXml tag for Typedef
+    /// </summary>
+    public const string TagTypedef = "Typedef";
 
-        /// <summary>
-        ///     GccXml tag for Function
-        /// </summary>
-        public const string TagFunction = "Function";
+    /// <summary>
+    ///     GccXml tag for Function
+    /// </summary>
+    public const string TagFunction = "Function";
 
-        /// <summary>
-        ///     GccXml tag for PointerType
-        /// </summary>
-        public const string TagPointerType = "PointerType";
+    /// <summary>
+    ///     GccXml tag for PointerType
+    /// </summary>
+    public const string TagPointerType = "PointerType";
 
-        /// <summary>
-        ///     GccXml tag for ArrayType
-        /// </summary>
-        public const string TagArrayType = "ArrayType";
+    /// <summary>
+    ///     GccXml tag for ArrayType
+    /// </summary>
+    public const string TagArrayType = "ArrayType";
 
-        /// <summary>
-        ///     GccXml tag for ReferenceType
-        /// </summary>
-        public const string TagReferenceType = "ReferenceType";
+    /// <summary>
+    ///     GccXml tag for ReferenceType
+    /// </summary>
+    public const string TagReferenceType = "ReferenceType";
 
-        /// <summary>
-        ///     GccXml tag for CvQualifiedType
-        /// </summary>
-        public const string TagCvQualifiedType = "CvQualifiedType";
+    /// <summary>
+    ///     GccXml tag for CvQualifiedType
+    /// </summary>
+    public const string TagCvQualifiedType = "CvQualifiedType";
 
-        /// <summary>
-        ///     GccXml tag for Namespace
-        /// </summary>
-        public const string TagNamespace = "Namespace";
+    /// <summary>
+    ///     GccXml tag for Namespace
+    /// </summary>
+    public const string TagNamespace = "Namespace";
 
-        /// <summary>
-        ///     GccXml tag for Variable
-        /// </summary>
-        public const string TagVariable = "Variable";
+    /// <summary>
+    ///     GccXml tag for Variable
+    /// </summary>
+    public const string TagVariable = "Variable";
 
-        /// <summary>
-        ///     GccXml tag for FunctionType
-        /// </summary>
-        public const string TagFunctionType = "FunctionType";
-    }
+    /// <summary>
+    ///     GccXml tag for FunctionType
+    /// </summary>
+    public const string TagFunctionType = "FunctionType";
 }

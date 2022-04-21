@@ -1,32 +1,31 @@
 using System;
 using Xunit;
 
-namespace Struct
+namespace Struct;
+
+public class RelationTests
 {
-    public class RelationTests
+    [Fact]
+    public unsafe void StructSize()
     {
-        [Fact]
-        public unsafe void StructSize()
-        {
-            var str = default(StructSizeRelation);
+        var str = default(StructSizeRelation);
 
-            var native = default(StructSizeRelation.__Native);
+        var native = default(StructSizeRelation.__Native);
 
-            str.__MarshalTo(ref native);
+        str.__MarshalTo(ref native);
 
-            Assert.Equal(sizeof(StructSizeRelation.__Native), native.Size);
-        }
+        Assert.Equal(sizeof(StructSizeRelation.__Native), native.Size);
+    }
 
-        [Fact]
-        public void Constant()
-        {
-            var str = default(ReservedRelation);
+    [Fact]
+    public void Constant()
+    {
+        var str = default(ReservedRelation);
 
-            var native = default(ReservedRelation.__Native);
+        var native = default(ReservedRelation.__Native);
 
-            str.__MarshalTo(ref native);
+        str.__MarshalTo(ref native);
 
-            Assert.Equal(42, native.Reserved);
-        }
+        Assert.Equal(42, native.Reserved);
     }
 }

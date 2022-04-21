@@ -20,20 +20,19 @@
 
 using SharpGen.CppModel;
 
-namespace SharpGen.Model
+namespace SharpGen.Model;
+
+public sealed class CsFunction : CsCallable
 {
-    public sealed class CsFunction : CsCallable
+    public CsFunction(Ioc ioc, CppFunction cppFunction, string name) : base(ioc, cppFunction, name)
     {
-        public CsFunction(Ioc ioc, CppFunction cppFunction, string name) : base(ioc, cppFunction, name)
-        {
-            var tag = cppFunction.Rule;
+        var tag = cppFunction.Rule;
 
-            // Set the DllName for this function
-            DllName = tag.FunctionDllName;
-        }
-
-        protected override int MaxSizeReturnParameter => 8;
-
-        public string DllName { get; }
+        // Set the DllName for this function
+        DllName = tag.FunctionDllName;
     }
+
+    protected override int MaxSizeReturnParameter => 8;
+
+    public string DllName { get; }
 }

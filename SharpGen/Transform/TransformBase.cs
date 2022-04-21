@@ -23,45 +23,44 @@ using SharpGen.CppModel;
 using SharpGen.Logging;
 using SharpGen.Model;
 
-namespace SharpGen.Transform
+namespace SharpGen.Transform;
+
+/// <summary>
+/// Base class to convert a C++ type to a C# type.
+/// </summary>
+public abstract class TransformBase<TCsElement, TCppElement>
+    where TCsElement : CsBase
+    where TCppElement : CppElement
 {
-    /// <summary>
-    /// Base class to convert a C++ type to a C# type.
-    /// </summary>
-    public abstract class TransformBase<TCsElement, TCppElement>
-        where TCsElement : CsBase
-        where TCppElement : CppElement
+    protected readonly Ioc Ioc;
+
+    protected TransformBase(NamingRulesManager namingRules, Ioc ioc)
     {
-        protected readonly Ioc Ioc;
-
-        protected TransformBase(NamingRulesManager namingRules, Ioc ioc)
-        {
-            NamingRules = namingRules;
-            Ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
-        }
-
-        /// <summary>
-        /// Gets the naming rules manager.
-        /// </summary>
-        /// <value>The naming rules manager.</value>
-        protected NamingRulesManager NamingRules { get; }
-
-        /// <summary>
-        /// Gets the logger for this transformation
-        /// </summary>
-        protected Logger Logger => Ioc.Logger;
-
-        /// <summary>
-        /// Prepares the specified C++ element to a C# element.
-        /// </summary>
-        /// <param name="cppElement">The C++ element.</param>
-        /// <returns>The C# element created and registered to the <see cref="TransformManager"/></returns>
-        public abstract TCsElement Prepare(TCppElement cppElement);
-
-        /// <summary>
-        /// Processes the specified C# element to complete the mapping process between the C++ and C# element.
-        /// </summary>
-        /// <param name="csElement">The C# element.</param>
-        public abstract void Process(TCsElement csElement);
+        NamingRules = namingRules;
+        Ioc = ioc ?? throw new ArgumentNullException(nameof(ioc));
     }
+
+    /// <summary>
+    /// Gets the naming rules manager.
+    /// </summary>
+    /// <value>The naming rules manager.</value>
+    protected NamingRulesManager NamingRules { get; }
+
+    /// <summary>
+    /// Gets the logger for this transformation
+    /// </summary>
+    protected Logger Logger => Ioc.Logger;
+
+    /// <summary>
+    /// Prepares the specified C++ element to a C# element.
+    /// </summary>
+    /// <param name="cppElement">The C++ element.</param>
+    /// <returns>The C# element created and registered to the <see cref="TransformManager"/></returns>
+    public abstract TCsElement Prepare(TCppElement cppElement);
+
+    /// <summary>
+    /// Processes the specified C# element to complete the mapping process between the C++ and C# element.
+    /// </summary>
+    /// <param name="csElement">The C# element.</param>
+    public abstract void Process(TCsElement csElement);
 }
