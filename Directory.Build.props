@@ -23,7 +23,7 @@
   </Choose>
 
   <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.csproj'">
-    <LangVersion>9</LangVersion>
+    <LangVersion>10</LangVersion>
     <SharpGenPublicKey>00240000048000009400000006020000002400005253413100040000010001003dab93dc845fe6b52b20d86918a54f7300fa6959d56e9743c6f721857346811cd6a82d12132856755ab87e014127322421694fb522ad98fc3c6b65b389ab18ee3bbdec5c2ad5a8bef05599a3615c3e6afdade7eb2cf571b5ede7feb026b099fa94ee73f2f8dadcb6b1be62f7c984226eb0508d5ca6c3e394605c5cb0fa0851a2</SharpGenPublicKey>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)SharpGenTools.snk</AssemblyOriginatorKeyFile>
     <AllowedOutputExtensionsInPackageBuildOutputFolder Condition="'$(Configuration)' == 'Debug'">$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>

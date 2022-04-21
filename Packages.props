@@ -1,12 +1,12 @@
 <Project>
 
   <ItemGroup>
-    <PackageReference Update="coverlet.msbuild" Version="3.1.0">
+    <PackageReference Update="coverlet.msbuild" Version="3.1.2">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Update="FakeItEasy.Analyzer.CSharp" Version="6.1.0" />
-    <PackageReference Update="FakeItEasy" Version="7.2.0" />
+    <PackageReference Update="FakeItEasy" Version="7.3.1" />
     <PackageReference Update="Microsoft.Bcl.HashCode" Version="1.1.1" />
     <PackageReference Update="Microsoft.Build.Utilities.Core" Version="16.11.0" />
     <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="3.11.0" />
@@ -29,7 +29,7 @@
     <PackageReference Update="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
     <PackageReference Update="System.Runtime.Serialization.Primitives" Version="4.3.0" />
     <PackageReference Update="System.Runtime.Serialization.Xml" Version="4.3.0" />
-    <PackageReference Update="System.Text.Json" Version="5.0.2" />
+    <PackageReference Update="System.Text.Json" Version="6.0.3" />
     <PackageReference Update="System.ValueTuple" Version="4.5.0" />
     <PackageReference Update="System.Xml.XmlDocument" Version="4.3.0" />
     <PackageReference Update="System.Xml.XmlSerializer" Version="4.3.0" />
