@@ -125,6 +125,8 @@ public partial class TypeRegistry
         ["UIntPtr"] = UIntPtr,
         ["System.IntPtr"] = IntPtr,
         ["System.UIntPtr"] = UIntPtr,
+        ["nint"] = IntPtr,
+        ["nuint"] = UIntPtr,
     };
 
     private static readonly Dictionary<PrimitiveTypeCode, Type> PrimitiveRuntimeTypesByCode = new()

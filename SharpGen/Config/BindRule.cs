@@ -76,16 +76,10 @@ public class BindRule : ConfigBaseRule
     /// <summary>
     /// Gets or sets the C# the marshal type
     /// </summary>
-    /// <value>To.</value>
     [XmlAttribute("marshal")]
     public string Marshal { get; set; }
 
-    /// <summary>
-    /// Returns a <see cref="System.String"/> that represents this instance.
-    /// </summary>
-    /// <returns>
-    /// A <see cref="System.String"/> that represents this instance.
-    /// </returns>
+    /// <inheritdoc />
     [ExcludeFromCodeCoverage]
     public override string ToString()
     {

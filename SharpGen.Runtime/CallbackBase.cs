@@ -29,7 +29,11 @@ namespace SharpGen.Runtime;
 /// </summary>
 public abstract class CallbackBase : DisposeBase, ICallbackable
 {
-    private int refCount = 1;
+#if NET5_0_OR_GREATER
+    private uint _refCount = 1;
+#else
+    private int _refCount = 1;
+#endif
     private bool _isDisposed;
 
     protected override bool IsDisposed => _isDisposed;
@@ -57,12 +61,20 @@ public abstract class CallbackBase : DisposeBase, ICallbackable
 
     public uint AddRef()
     {
-        return (uint) Interlocked.Increment(ref refCount);
+#if NET5_0_OR_GREATER
+        return Interlocked.Increment(ref _refCount);
+#else
+        return (uint)Interlocked.Increment(ref _refCount);
+#endif
     }
 
     public uint Release()
     {
-        var newRefCount = Interlocked.Decrement(ref refCount);
+#if NET5_0_OR_GREATER
+        var newRefCount = Interlocked.Decrement(ref _refCount);
+#else
+        var newRefCount = Interlocked.Decrement(ref _refCount);
+#endif
         if (newRefCount == 0)
         {
             // Dispose native resources
@@ -72,7 +84,7 @@ public abstract class CallbackBase : DisposeBase, ICallbackable
     }
 
     public override string ToString() =>
-        $"{GetType().Name}[{RuntimeHelpers.GetHashCode(this):X}:{Volatile.Read(ref refCount)}]";
+        $"{GetType().Name}[{RuntimeHelpers.GetHashCode(this):X}:{Volatile.Read(ref _refCount)}]";
 
     private ShadowContainer shadow;
 

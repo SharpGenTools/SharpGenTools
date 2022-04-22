@@ -34,7 +34,7 @@ namespace SharpGen.Runtime;
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
 [SuppressMessage("ReSharper", "ConvertToAutoProperty")]
-public readonly partial struct Result : IEquatable<Result>
+public readonly partial struct Result : IComparable, IComparable<Result>, IEquatable<Result>, IFormattable
 {
     // .NET Native has issues with <...> in property backing fields in structs
     private readonly int _code;
@@ -45,27 +45,15 @@ public readonly partial struct Result : IEquatable<Result>
     /// <value>The HRESULT error code.</value>
     public int Code => _code;
 
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="Result" /> struct.
-    /// </summary>
     /// <param name="code">The HRESULT error code.</param>
     public Result(int code) => _code = code;
 
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="Result" /> struct.
-    /// </summary>
     /// <param name="code">The HRESULT error code.</param>
     public Result(uint code) => _code = unchecked((int) code);
 
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="Result" /> struct.
-    /// </summary>
     /// <param name="code">The HRESULT error code.</param>
     public Result(long code) => _code = unchecked((int) code);
 
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="Result" /> struct.
-    /// </summary>
     /// <param name="code">The HRESULT error code.</param>
     public Result(ulong code) => _code = unchecked((int) code);
 
@@ -81,22 +69,51 @@ public readonly partial struct Result : IEquatable<Result>
     /// <value><c>true</c> if failure; otherwise, <c>false</c>.</value>
     public bool Failure => Code < 0;
 
-    public static explicit operator int(Result result) => result.Code;
-    public static explicit operator uint(Result result) => unchecked((uint)result.Code);
-    public static implicit operator Result(int result) => new(result);
-    public static implicit operator Result(uint result) => new(result);
+    public static bool operator ==(Result left, Result right) => left.Code == right.Code;
+    public static bool operator !=(Result left, Result right) => left.Code != right.Code;
+    public static bool operator <(Result left, Result right) => left.CompareTo(right) < 0;
+    public static bool operator >(Result left, Result right) => left.CompareTo(right) > 0;
+    public static bool operator <=(Result left, Result right) => left.CompareTo(right) <= 0;
+    public static bool operator >=(Result left, Result right) => left.CompareTo(right) >= 0;
+
+    public static explicit operator sbyte(Result value) => unchecked((sbyte)value.Code);
+    public static explicit operator short(Result value) => unchecked((short)value.Code);
+    public static explicit operator long(Result value) => value.Code;
+    public static explicit operator int(Result value) => value.Code;
+    public static explicit operator nint(Result value) => value.Code;
+    public static explicit operator byte(Result value) => unchecked((byte)value.Code);
+    public static explicit operator ushort(Result value) => unchecked((ushort)value.Code);
+    public static explicit operator uint(Result value) => unchecked((uint)value.Code);
+    public static explicit operator ulong(Result value) => unchecked((ulong)value.Code);
+    public static explicit operator nuint(Result value) => (nuint)value.Code;
+
+    public static explicit operator Result(sbyte value) => new(value);
+    public static explicit operator Result(short value) => new(value);
+    public static implicit operator Result(int value) => new(value);
+    public static explicit operator Result(long value) => new((int)value);
+    public static explicit operator Result(nint value) => new((int)value);
+    public static explicit operator Result(byte value) => new(value);
+    public static explicit operator Result(ushort value) => new(value);
+    public static implicit operator Result(uint value) => new(value);
+    public static explicit operator Result(ulong value) => new((int)value);
+    public static explicit operator Result(nuint value) => new((int)value);
 
     public bool Equals(Result other) => Code == other.Code;
     public override bool Equals(object? obj) => obj is Result res && Equals(res);
     public override int GetHashCode() => Code;
-    public static bool operator ==(Result left, Result right) => left.Code == right.Code;
-    public static bool operator !=(Result left, Result right) => left.Code != right.Code;
-    public override string ToString() => $"Result: {Code}";
+    public override string ToString() => Code.ToString("X8");
+    public string ToString(string format, IFormatProvider formatProvider) => Code.ToString(format, formatProvider);
+
+    public int CompareTo(Result other) => Code.CompareTo(other.Code);
+
+    public int CompareTo(object? obj)
+    {
+        if (ReferenceEquals(null, obj)) return 1;
+        return obj is Result other ? CompareTo(other) : throw new ArgumentException($"Object must be of type {nameof(Result)}");
+    }
 
     [DoesNotReturn]
     private void ThrowFailureException() => throw new SharpGenException(this);
-
-#nullable restore
 
     /// <summary>
     /// Checks the error.
@@ -149,8 +166,6 @@ public readonly partial struct Result : IEquatable<Result>
         if (code < 0 && !allowedFails.Contains(code))
             ThrowFailureException();
     }
-
-#nullable enable
 
     /// <summary>
     /// Gets a <see cref="Result"/> from an <see cref="Exception"/>.
