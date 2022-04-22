@@ -4,7 +4,7 @@
   <Import Project="Sdk.props" Sdk="Microsoft.Build.CentralPackageVersions" />
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net5.0</TargetFrameworks>
+    <TargetFrameworks>net472;net5.0;net6.0</TargetFrameworks>
     <PackageId>SharpGenTools.Sdk</PackageId>
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
