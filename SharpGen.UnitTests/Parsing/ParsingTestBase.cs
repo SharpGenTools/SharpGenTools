@@ -63,31 +63,31 @@ public abstract class ParsingTestBase : FileSystemTestBase
 
     protected CppModule ParseCpp(ConfigFile config)
     {
-        var loaded = ConfigFile.Load(config, new string[0], Logger);
+        config.Load(null, Array.Empty<string>(), Logger);
 
-        loaded.GetFilesWithIncludesAndExtensionHeaders(out var configsWithIncludes,
+        config.GetFilesWithIncludesAndExtensionHeaders(out var configsWithIncludes,
                                                        out var configsWithExtensionHeaders);
 
         CppHeaderGenerator cppHeaderGenerator = new(TestDirectory.FullName, Ioc);
 
         var updated = cppHeaderGenerator
-                     .GenerateCppHeaders(loaded, configsWithIncludes, configsWithExtensionHeaders)
+                     .GenerateCppHeaders(config, configsWithIncludes, configsWithExtensionHeaders)
                      .UpdatedConfigs;
 
-        var castXml = GetCastXml(loaded);
+        var castXml = GetCastXml(config);
 
         var macro = new MacroManager(castXml);
         var extensionGenerator = new CppExtensionHeaderGenerator();
 
-        var skeleton = loaded.CreateSkeletonModule();
+        var skeleton = config.CreateSkeletonModule();
 
-        macro.Parse(Path.Combine(TestDirectory.FullName, loaded.HeaderFileName), skeleton);
+        macro.Parse(Path.Combine(TestDirectory.FullName, config.HeaderFileName), skeleton);
 
         extensionGenerator.GenerateExtensionHeaders(
-            loaded, TestDirectory.FullName, skeleton, configsWithExtensionHeaders, updated
+            config, TestDirectory.FullName, skeleton, configsWithExtensionHeaders, updated
         );
 
-        CppParser parser = new(loaded, Ioc)
+        CppParser parser = new(config, Ioc)
         {
             OutputPath = TestDirectory.FullName
         };

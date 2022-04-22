@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Xml;
 using System.Xml.Linq;
 using SharpGen.Config;
 using Xunit;
@@ -10,64 +11,58 @@ public class ConfigPreprocessorTests
     [Fact]
     public void IfDefIncludesChildrenWhenMacroDefined()
     {
-        using (var stringReader = new StringReader(
-                   Preprocessor.Preprocess(
-                       $"<root xmlns:pre='{ConfigFile.XmlNamespace}'><pre:ifdef name='Defined'><child /></pre:ifdef></root>",
-                       "Defined")))
-        {
-            var document = XDocument.Load(stringReader);
-            Assert.Single(document.Descendants("child"));
-        }
+        var document = Preprocess(
+            $"<root xmlns:pre='{ConfigFile.XmlNamespace}'><pre:ifdef name='Defined'><child /></pre:ifdef></root>",
+            "Defined"
+        );
+        Assert.Single(document.Descendants("child"));
+    }
+
+    private static XDocument Preprocess(string xml, params string[] macros)
+    {
+        using var ppReader = XmlReader.Create(new StringReader(xml));
+        using var ppWriter = new MemoryStream();
+        Preprocessor.Preprocess(ppReader, ppWriter, macros);
+        ppWriter.Position = 0;
+        using var stringReader = new StreamReader(ppWriter);
+        return XDocument.Load(stringReader);
     }
 
     [Fact]
     public void IfDefExcludesChildrenWhenMacroUndefined()
     {
-        using (var stringReader = new StringReader(
-                   Preprocessor.Preprocess(
-                       $"<root xmlns:pre='{ConfigFile.XmlNamespace}'><pre:ifdef name='Undefined'><child /></pre:ifdef><child /></root>")))
-        {
-            var document = XDocument.Load(stringReader);
-            Assert.Single(document.Descendants("child"));
-        }
+        var document = Preprocess(
+            $"<root xmlns:pre='{ConfigFile.XmlNamespace}'><pre:ifdef name='Undefined'><child /></pre:ifdef><child /></root>"
+        );
+        Assert.Single(document.Descendants("child"));
     }
 
     [Fact]
     public void IfDefSupportsOrOperator()
     {
-        using (var stringReader = new StringReader(
-                   Preprocessor.Preprocess(
-                       $"<root xmlns:pre='{ConfigFile.XmlNamespace}'><pre:ifdef name='Undefined|Defined'><child /></pre:ifdef></root>",
-                       "Defined")))
-        {
-            var document = XDocument.Load(stringReader);
-            Assert.Single(document.Descendants("child"));
-        }
+        var document = Preprocess(
+            $"<root xmlns:pre='{ConfigFile.XmlNamespace}'><pre:ifdef name='Undefined|Defined'><child /></pre:ifdef></root>",
+            "Defined"
+        );
+        Assert.Single(document.Descendants("child"));
     }
 
     [Fact]
     public void IfNDefExcludesChildrenWhenMacroDefined()
     {
-        using (var stringReader = new StringReader(
-                   Preprocessor.Preprocess(
-                       $"<root xmlns:pre='{ConfigFile.XmlNamespace}'><pre:ifndef name='Defined'><child /></pre:ifndef></root>",
-                       "Defined")))
-        {
-            var document = XDocument.Load(stringReader);
-            Assert.Empty(document.Descendants("child"));
-        }
+        var document = Preprocess(
+            $"<root xmlns:pre='{ConfigFile.XmlNamespace}'><pre:ifndef name='Defined'><child /></pre:ifndef></root>",
+            "Defined"
+        );
+        Assert.Empty(document.Descendants("child"));
     }
 
     [Fact]
     public void IfNDefIncludesChildrenWhenMacroUndefined()
     {
-        using (var stringReader = new StringReader(
-                   Preprocessor.Preprocess(
-                       $"<root xmlns:pre='{ConfigFile.XmlNamespace}'><pre:ifndef name='Undefined'><child /></pre:ifndef></root>"
-                   )))
-        {
-            var document = XDocument.Load(stringReader);
-            Assert.Single(document.Descendants("child"));
-        }
+        var document = Preprocess(
+            $"<root xmlns:pre='{ConfigFile.XmlNamespace}'><pre:ifndef name='Undefined'><child /></pre:ifndef></root>"
+        );
+        Assert.Single(document.Descendants("child"));
     }
 }

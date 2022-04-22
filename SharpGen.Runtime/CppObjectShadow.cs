@@ -25,19 +25,14 @@ using System.Runtime.InteropServices;
 namespace SharpGen.Runtime;
 
 /// <summary>
-/// An Interface shadow callback
+/// A callback interface shadow, used to supplement interface implementers with additional logic,
+/// possibly to modify marshalling behavior.
+/// Using shadows incurs minor negative memory and performance impact, so use sparingly.
+/// In terms of .NET runtime, it's a COM Callable Wrapper (CCW).
 /// </summary>
-public abstract unsafe class CppObjectShadow : CppObject
+public abstract unsafe class CppObjectShadow
 {
-    /// <summary>
-    /// Gets the callback.
-    /// </summary>
-    public ICallbackable Callback { get; private set; }
-
-    /// <summary>
-    /// Gets the VTBL associated with this shadow instance.
-    /// </summary>
-    protected abstract CppObjectVtbl Vtbl { get; }
+    private GCHandle callbackHandle;
 
     static CppObjectShadow()
     {
@@ -45,48 +40,96 @@ public abstract unsafe class CppObjectShadow : CppObject
         Debug.Assert(sizeof(CppObjectNative) == CppObjectNative.Size);
     }
 
-    /// <summary>
-    /// Initializes the specified shadow instance from a vtbl and a callback.
-    /// </summary>
-    /// <param name="callbackInstance">The callback.</param>
-    public void Initialize(ICallbackable callbackInstance)
+    protected CppObjectShadow()
     {
-        Callback = callbackInstance;
+        Debug.Assert(this is not ICallbackable);
+    }
 
+    internal void Initialize(GCHandle callbackHandle)
+    {
+        Debug.Assert(!this.callbackHandle.IsAllocated);
+        Debug.Assert(callbackHandle.IsAllocated);
+        Debug.Assert(callbackHandle.Target is CallbackBase);
+        Debug.Assert(callbackHandle.Target is ICallbackable);
+        this.callbackHandle = callbackHandle;
+    }
+
+    internal static IntPtr CreateCallableWrapper(GCHandle callback, void* vtbl)
+    {
         // Allocate ptr to vtbl + ptr to callback together
         var nativePointer = Marshal.AllocHGlobal(CppObjectNative.Size);
-        ref var native = ref *(CppObjectNative*)nativePointer;
+        ref var native = ref *(CppObjectNative*) nativePointer;
 
-        native.VtblPointer = Vtbl.Pointer;
-        native.Shadow = GCHandle.Alloc(this);
+        Debug.Assert(callback.IsAllocated);
 
-        NativePointer = nativePointer;
+        native.VtblPointer = vtbl;
+        native.Shadow = callback;
+
+        return nativePointer;
     }
 
-    protected override void DisposeCore(IntPtr nativePointer, bool disposing)
+    internal static void FreeCallableWrapper(IntPtr pointer, bool disposing)
     {
-        // Free the GCHandle
-        ((CppObjectNative*) nativePointer)->Shadow.Free();
+        // Free the callback
+        if (((CppObjectNative*) pointer)->Shadow is { IsAllocated: true, Target: CppObjectShadow shadow } handle)
+        {
+            // Callback is a CppObjectShadow subtype. Dispose it if needed.
+            MemoryHelpers.Dispose(shadow, disposing);
+
+            // Free GCHandle if it points to a shadow, not the CallbackBase. Why?
+            // Same GCHandle is reused in multiple CCWs to lower the handle table pressure.
+            handle.Free();
+        }
 
         // Free instance
-        Marshal.FreeHGlobal(nativePointer);
+        Marshal.FreeHGlobal(pointer);
     }
 
-    protected internal static T ToShadow<T>(IntPtr thisPtr) where T : CppObjectShadow
+    public static T ToShadow<T>(IntPtr thisPtr) where T : CppObjectShadow
     {
+        Debug.Assert(thisPtr != IntPtr.Zero);
+
         var handle = ((CppObjectNative*) thisPtr)->Shadow;
         Debug.Assert(handle.IsAllocated);
-        var target = handle.Target;
-        return (T) target;
+        return handle.Target switch
+        {
+            T shadow => shadow,
+            null => throw new Exception($"Shadow {typeof(T).FullName} is dead"),
+            { } value => throw new Exception(
+                             $"Shadow is of an unexpected type {value.GetType().FullName}, expected {typeof(T).FullName}"
+                         )
+        };
     }
 
-    protected internal static T ToCallback<T>(IntPtr thisPtr) where T : ICallbackable
+    public static T ToCallback<T>(IntPtr thisPtr) where T : ICallbackable
     {
+        Debug.Assert(thisPtr != IntPtr.Zero);
+
         var handle = ((CppObjectNative*) thisPtr)->Shadow;
         Debug.Assert(handle.IsAllocated);
-        var target = (CppObjectShadow) handle.Target;
-        Debug.Assert(target is not null);
-        return (T) target.Callback;
+        return handle.Target switch
+        {
+            T value => value,
+            CppObjectShadow shadow => shadow.ToCallback<T>(),
+            null => throw new Exception($"Shadow {typeof(T).FullName} is dead"),
+            { } value => throw new Exception(
+                             $"Shadow is of an unexpected type {value.GetType().FullName}, expected {typeof(T).FullName}"
+                         )
+        };
+    }
+
+    public T ToCallback<T>() where T : ICallbackable
+    {
+        var handle = callbackHandle;
+        Debug.Assert(handle.IsAllocated);
+        return handle.Target switch
+        {
+            T value => value,
+            null => throw new Exception($"Shadow {typeof(T).FullName} references dead callback"),
+            { } value => throw new Exception(
+                             $"Shadow references an unexpected callback of type {value.GetType().FullName}, expected {typeof(T).FullName}"
+                         )
+        };
     }
 
     private ref struct CppObjectNative
@@ -94,13 +137,13 @@ public abstract unsafe class CppObjectShadow : CppObject
         internal static readonly int Size = IntPtr.Size * 2;
 
         // ReSharper disable once NotAccessedField.Local
-        public IntPtr VtblPointer;
-        private IntPtr shadowPointer;
+        public void* VtblPointer;
+        private IntPtr _shadowPointer;
 
         public GCHandle Shadow
         {
-            readonly get => GCHandle.FromIntPtr(shadowPointer);
-            set => shadowPointer = GCHandle.ToIntPtr(value);
+            readonly get => GCHandle.FromIntPtr(_shadowPointer);
+            set => _shadowPointer = GCHandle.ToIntPtr(value);
         }
     }
 }

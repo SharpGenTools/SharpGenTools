@@ -2,10 +2,6 @@
 
   <PropertyGroup>
     <SharpGenGenerateConsumerBindMapping Condition="'$(SharpGenGenerateConsumerBindMapping)' == ''">true</SharpGenGenerateConsumerBindMapping>
-    <SharpGenSdkToolsDirectory Condition="'$(SharpGenSdkToolsDirectory)' == ''">$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', 'tools'))</SharpGenSdkToolsDirectory>
-    <CppStandard Condition="'$(CppStandard)' == ''">c++14</CppStandard>
-    <SharpGenWaitForDebuggerAttach Condition="'$(SharpGenWaitForDebuggerAttach)' == ''">false</SharpGenWaitForDebuggerAttach>
-    <SharpGenDocumentationFailuresAsErrors Condition="'$(SharpGenDocumentationFailuresAsErrors)' == ''">true</SharpGenDocumentationFailuresAsErrors>
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)Sdk.Version.props" />

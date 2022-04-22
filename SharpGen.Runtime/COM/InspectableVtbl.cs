@@ -19,28 +19,32 @@
 // THE SOFTWARE.
 
 using System;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using SharpGen.Runtime.Win32;
 
 namespace SharpGen.Runtime;
 
-[DebuggerTypeProxy(typeof(CppObjectVtblDebugView))]
-public unsafe class InspectableVtbl : ComObjectVtbl
+public static unsafe class InspectableVtbl
 {
-    public InspectableVtbl(int numberOfCallbackMethods) : base(numberOfCallbackMethods + 3)
-    {
 #if NET5_0_OR_GREATER
-            AddMethod((delegate *unmanaged[Stdcall]<IntPtr, int*, IntPtr**, int>)(&GetIids), 3u);
-            AddMethod((delegate *unmanaged[Stdcall]<IntPtr, IntPtr*, int>)(&GetRuntimeClassName), 4u);
-            AddMethod((delegate *unmanaged[Stdcall]<IntPtr, int*, int>)(&GetTrustLevel), 5u);
+    public static readonly IntPtr[] Vtbl =
+    {
+        (IntPtr) (delegate *unmanaged[Stdcall]<IntPtr, int*, IntPtr**, int>) (&GetIids),
+        (IntPtr) (delegate *unmanaged[Stdcall]<IntPtr, IntPtr*, int>) (&GetRuntimeClassName),
+        (IntPtr) (delegate *unmanaged[Stdcall]<IntPtr, int*, int>) (&GetTrustLevel)
+    };
 #else
-        AddMethod(new GetIidsDelegate(GetIids), 3u);
-        AddMethod(new GetRuntimeClassNameDelegate(GetRuntimeClassName), 4u);
-        AddMethod(new GetTrustLevelDelegate(GetTrustLevel), 5u);
+    private static readonly GetIidsDelegate GetIidsDelegateCache = GetIids;
+    private static readonly GetRuntimeClassNameDelegate GetRuntimeClassNameDelegateCache = GetRuntimeClassName;
+    private static readonly GetTrustLevelDelegate GetTrustLevelDelegateCache = GetTrustLevel;
+    public static readonly IntPtr[] Vtbl =
+    {
+        Marshal.GetFunctionPointerForDelegate(GetIidsDelegateCache),
+        Marshal.GetFunctionPointerForDelegate(GetRuntimeClassNameDelegateCache),
+        Marshal.GetFunctionPointerForDelegate(GetTrustLevelDelegateCache)
+    };
 #endif
-    }
 
     /// <unmanaged>
     /// HRESULT STDMETHODCALLTYPE GetIids(
@@ -52,23 +56,22 @@ public unsafe class InspectableVtbl : ComObjectVtbl
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate int GetIidsDelegate(IntPtr thisPtr, int* iidCount, IntPtr** iids);
 #else
-        [UnmanagedCallersOnly(CallConvs = new[]{typeof(CallConvStdcall)})]
+    [UnmanagedCallersOnly(CallConvs = new[]{typeof(CallConvStdcall)})]
 #endif
     private static int GetIids(IntPtr thisPtr, int* iidCount, IntPtr** iids)
     {
-        var @this = ToCallback<CallbackBase>(thisPtr);
+        var @this = CppObjectShadow.ToCallback<CallbackBase>(thisPtr);
         try
         {
-            var container = @this.Shadow;
-
-            var countGuids = container.Guids.Length;
+            var guids = @this.Guids;
+            var countGuids = guids.Length;
             var iidsMemory = Marshal.AllocCoTaskMem(IntPtr.Size * countGuids);
 
             // Copy GUIDs deduced from Callback
             *iids = (IntPtr*) iidsMemory;
             *iidCount = countGuids;
 
-            MemoryHelpers.CopyMemory(iidsMemory, new ReadOnlySpan<IntPtr>(container.Guids));
+            MemoryHelpers.CopyMemory(iidsMemory, guids);
 
             return Result.Ok.Code;
         }
@@ -86,11 +89,11 @@ public unsafe class InspectableVtbl : ComObjectVtbl
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate int GetRuntimeClassNameDelegate(IntPtr thisPtr, IntPtr* className);
 #else
-        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
 #endif
     private static int GetRuntimeClassName(IntPtr thisPtr, IntPtr* className)
     {
-        var @this = ToCallback<IInspectable>(thisPtr);
+        var @this = CppObjectShadow.ToCallback<IInspectable>(thisPtr);
         try
         {
             var result = new WinRTString(
@@ -119,11 +122,11 @@ public unsafe class InspectableVtbl : ComObjectVtbl
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate int GetTrustLevelDelegate(IntPtr thisPtr, int* trustLevel);
 #else
-        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
 #endif
     private static int GetTrustLevel(IntPtr thisPtr, int* trustLevel)
     {
-        var @this = ToCallback<IInspectable>(thisPtr);
+        var @this = CppObjectShadow.ToCallback<IInspectable>(thisPtr);
         try
         {
             *trustLevel = @this switch

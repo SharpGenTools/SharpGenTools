@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using SharpGen.CppModel;
 using SharpGen.Transform;
 
@@ -9,7 +10,7 @@ namespace SharpGen.Model;
 public abstract class CsCallable : CsBase, IExpiring
 {
     private CsBaseItemListCache<CsParameter> _parameters;
-    private Dictionary<PlatformDetectionType, InteropMethodSignature> interopSignatures;
+    private IReadOnlyDictionary<PlatformDetectionType, InteropMethodSignature> _interopSignatures;
     protected readonly Ioc Ioc;
 
     protected abstract int MaxSizeReturnParameter { get; }
@@ -32,7 +33,7 @@ public abstract class CsCallable : CsBase, IExpiring
         CppCallingConvention = callable.CallingConvention;
     }
 
-    public CppCallingConvention CppCallingConvention { get; } = CppCallingConvention.Unknown;
+    public CallingConvention CppCallingConvention { get; }
     public bool RequestRawPtr { get; }
     private string CppSignature { get; }
     private string ShortName { get; }
@@ -94,15 +95,15 @@ public abstract class CsCallable : CsBase, IExpiring
     public bool IsReturnStructLarge => ReturnValue.MarshalType is CsStruct { IsNativePrimitive: false } csStruct
                                     && csStruct.Size > MaxSizeReturnParameter;
 
-    public Dictionary<PlatformDetectionType, InteropMethodSignature> InteropSignatures
+    public IReadOnlyDictionary<PlatformDetectionType, InteropMethodSignature> InteropSignatures
     {
-        get => interopSignatures ?? throw new InvalidOperationException($"Accessing non-initialized {nameof(InteropSignatures)}");
+        get => _interopSignatures ?? throw new InvalidOperationException($"Accessing non-initialized {nameof(InteropSignatures)}");
         set
         {
-            if (interopSignatures != null)
+            if (_interopSignatures is not null)
                 throw new InvalidOperationException($"Setting initialized {nameof(InteropSignatures)}");
 
-            interopSignatures = value;
+            _interopSignatures = value;
         }
     }
 
@@ -166,7 +167,7 @@ public abstract class CsCallable : CsBase, IExpiring
 
     public void Expire()
     {
-        interopSignatures = null;
+        _interopSignatures = null;
     }
 
     public override IEnumerable<CsBase> AdditionalItems => AppendNonNull(base.AdditionalItems, ReturnValue);

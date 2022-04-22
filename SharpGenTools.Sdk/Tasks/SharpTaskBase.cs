@@ -2,8 +2,8 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
 using Logger = SharpGen.Logging.Logger;
-using Task = Microsoft.Build.Utilities.Task;
 
 namespace SharpGenTools.Sdk.Tasks;
 

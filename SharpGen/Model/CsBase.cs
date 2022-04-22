@@ -47,7 +47,7 @@ public abstract class CsBase
         CppElement = cppElement;
         Name = name;
 
-        if (cppElement is { Rule: { Visibility: { } visibility } })
+        if (cppElement is { Rule.Visibility: { } visibility })
             Visibility = visibility;
     }
 

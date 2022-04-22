@@ -1,10 +1,10 @@
-﻿using SharpGen.Config;
-using SharpGen.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using SharpGen.Config;
+using SharpGen.Logging;
 
 namespace SharpGen.Parser;
 

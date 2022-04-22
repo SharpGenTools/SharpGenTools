@@ -18,13 +18,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Runtime.InteropServices;
+
 namespace SharpGen.CppModel;
 
-public enum CppCallingConvention
+public static class CppCallingConvention
 {
-    Unknown = 0,
-    StdCall = 1,
-    FastCall = 2,
-    ThisCall = 3,
-    CDecl = 4,
+    public static readonly CallingConvention? Unknown = default;
+    public const CallingConvention StdCall = CallingConvention.StdCall;
+    public const CallingConvention FastCall = CallingConvention.FastCall;
+    public const CallingConvention ThisCall = CallingConvention.ThisCall;
+    public const CallingConvention CDecl = CallingConvention.Cdecl;
 }

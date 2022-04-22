@@ -1,17 +1,20 @@
-﻿using System;
-using SharpGen.Config;
-using SharpGen.Logging;
-using SharpGen.VisualStudioSetup;
+﻿#nullable enable
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using SharpGen.Config;
+using SharpGen.Logging;
+using SharpGen.VisualStudioSetup;
 
 namespace SharpGen.Parser;
 
 public sealed class SdkResolver
 {
-    private static readonly string[] WindowsSdkIncludes = {"shared", "um", "ucrt", "winrt"}; 
+    private static readonly string[] WindowsSdkIncludes = { "shared", "um", "ucrt", "winrt" };
+    private static readonly char[] ComponentSeparator = { ';' };
 
     public SdkResolver(Logger logger)
     {
@@ -22,20 +25,22 @@ public sealed class SdkResolver
 
     public IEnumerable<IncludeDirRule> ResolveIncludeDirsForSdk(SdkRule sdkRule)
     {
+        if (sdkRule.Components is { } components && sdkRule.Name != SdkLib.WindowsSdk)
+            Logger.Warning(null, $"Unexpected `{sdkRule._Name_}` SDK components specified: `{components}`.");
+
         switch (sdkRule.Name)
         {
             case SdkLib.StdLib:
                 return ResolveStdLib(sdkRule.Version);
             case SdkLib.WindowsSdk:
-                Logger.Message($"Resolving Windows SDK: version {sdkRule.Version}");
-                return ResolveWindowsSdk(sdkRule.Version);
+                return ResolveWindowsSdk(sdkRule.Version, sdkRule.Components);
             default:
                 Logger.Error(LoggingCodes.UnknownSdk, "Unknown SDK specified in an SDK rule.");
                 return Enumerable.Empty<IncludeDirRule>();
         }
     }
 
-    private IEnumerable<IncludeDirRule> ResolveStdLib(string version)
+    private IEnumerable<IncludeDirRule> ResolveStdLib(string? version)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -54,8 +59,8 @@ public sealed class SdkResolver
             yield return new IncludeDirRule(Path.Combine("/usr", "include", "c++", version));
         }
     }
-        
-    private string GetVSInstallPath()
+
+    private string? GetVSInstallPath()
     {
         var vsPathOverride = Environment.GetEnvironmentVariable("SHARPGEN_VS_OVERRIDE");
         if (!string.IsNullOrEmpty(vsPathOverride))
@@ -81,10 +86,10 @@ public sealed class SdkResolver
 
                 if (instance2.GetPackages().Any(Predicate))
                     return instance2.GetInstallationPath();
-
             } while (fetched > 0);
 
-            static bool Predicate(ISetupPackageReference pkg) => pkg.GetId() == "Microsoft.VisualStudio.Component.VC.Tools.x86.x64";
+            static bool Predicate(ISetupPackageReference pkg) =>
+                pkg.GetId() == "Microsoft.VisualStudio.Component.VC.Tools.x86.x64";
         }
         catch (Exception e)
         {
@@ -99,21 +104,24 @@ public sealed class SdkResolver
         return null;
     }
 
-    private IEnumerable<IncludeDirRule> ResolveWindowsSdk(string version)
+    private IEnumerable<IncludeDirRule> ResolveWindowsSdk(string version, string? components)
     {
-        var sdkPathOverride = Environment.GetEnvironmentVariable("SHARPGEN_SDK_OVERRIDE");
+        var componentList = components is not null
+                                ? components.Split(ComponentSeparator, StringSplitOptions.RemoveEmptyEntries)
+                                            .Select(static x => x.Trim())
+                                            .ToArray()
+                                : WindowsSdkIncludes;
 
-        if (!string.IsNullOrEmpty(sdkPathOverride))
+        if (Environment.GetEnvironmentVariable("SHARPGEN_SDK_OVERRIDE") is { Length: > 0 } sdkPathOverride)
         {
-            foreach (var include in WindowsSdkIncludes)
+            foreach (var include in componentList)
                 yield return new IncludeDirRule(Path.Combine(sdkPathOverride, "Include", version, include));
-
-            yield break;
         }
 
-        const string prefix = @"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\";
+        const string prefix =
+            @"=HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots\KitsRoot10;Include\";
 
-        foreach (var include in WindowsSdkIncludes)
+        foreach (var include in componentList)
             yield return new IncludeDirRule(prefix + version + '\\' + include);
     }
 }

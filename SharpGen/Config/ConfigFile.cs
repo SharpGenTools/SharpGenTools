@@ -17,15 +17,19 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Xml;
 using System.Xml.Serialization;
 using SharpGen.Logging;
-using System.Reflection;
 
 namespace SharpGen.Config;
 
@@ -36,6 +40,13 @@ namespace SharpGen.Config;
 public partial class ConfigFile
 {
     internal const string XmlNamespace = "urn:SharpGen.Config";
+
+    private static readonly Lazy<XmlSerializer> Serializer =
+        new(static () => new XmlSerializer(typeof(ConfigFile)), LazyThreadSafetyMode.PublicationOnly);
+
+    private static readonly Lazy<XmlSerializerNamespaces> XmlNamespaces =
+        new(static () => new XmlSerializerNamespaces(new XmlQualifiedName[] { new(string.Empty, XmlNamespace) }),
+            LazyThreadSafetyMode.PublicationOnly);
 
     /// <summary>
     /// Gets dynamic variables used by dynamic variable substitution #(MyVariable)
@@ -205,30 +216,40 @@ public partial class ConfigFile
     /// <returns>the expanded object</returns>
     private object ExpandVariables(object objectToExpand, bool expandDynamicVariable, Logger logger)
     {
-        if (objectToExpand == null)
-            return null;
-        if (objectToExpand is string str)
-            return ExpandString(str, expandDynamicVariable, logger);
-        if (objectToExpand.GetType().GetTypeInfo().IsPrimitive)
-            return objectToExpand;
-        if (objectToExpand is IList list)
+        switch (objectToExpand)
         {
-            for (int i = 0; i < list.Count; i++)
-                list[i] = ExpandVariables(list[i], expandDynamicVariable, logger);
-            return list;
-        }
-        foreach (var propertyInfo in objectToExpand.GetType().GetRuntimeProperties())
-        {
-            if (!propertyInfo.GetCustomAttributes<XmlIgnoreAttribute>(false).Any())
+            case null:
+                return null;
+            case string str:
+                return ExpandString(str, expandDynamicVariable, logger);
+            case IList list:
             {
-                // Check that this field is "ShouldSerializable"
-                var method = objectToExpand.GetType().GetRuntimeMethod("ShouldSerialize" + propertyInfo.Name, Type.EmptyTypes);
-                if (method != null && !((bool)method.Invoke(objectToExpand, null)))
-                    continue;
-
-                propertyInfo.SetValue(objectToExpand, ExpandVariables(propertyInfo.GetValue(objectToExpand, null), expandDynamicVariable, logger), null);
+                for (int i = 0, count = list.Count; i < count; i++)
+                    list[i] = ExpandVariables(list[i], expandDynamicVariable, logger);
+                return list;
             }
         }
+
+        var type = objectToExpand.GetType();
+        if (!type.GetTypeInfo().IsPrimitive)
+        {
+            foreach (var propertyInfo in type.GetRuntimeProperties())
+            {
+                if (propertyInfo.GetCustomAttributes<XmlIgnoreAttribute>(false).Any())
+                    continue;
+
+                // Check that this field is "ShouldSerializable"
+                var method = type.GetRuntimeMethod("ShouldSerialize" + propertyInfo.Name, Type.EmptyTypes);
+                if (method is not null && !(bool) method.Invoke(objectToExpand, null))
+                    continue;
+
+                var oldValue = propertyInfo.GetValue(objectToExpand, null);
+                var newValue = ExpandVariables(oldValue, expandDynamicVariable, logger);
+                if (!ReferenceEquals(oldValue, newValue))
+                    propertyInfo.SetValue(objectToExpand, newValue, null);
+            }
+        }
+
         return objectToExpand;
     }
 
@@ -252,8 +273,9 @@ public partial class ConfigFile
     /// <summary>
     /// Regex used to expand variable
     /// </summary>
-    static readonly Regex ReplaceVariableRegex = new Regex(@"\$\(([a-zA-Z_][\w_]*)\)", RegexOptions.Compiled);
-    static readonly Regex ReplaceDynamicVariableRegex = new Regex(@"#\(([a-zA-Z_][\w_]*)\)", RegexOptions.Compiled);
+    private static readonly Regex ReplaceVariableRegex = new(@"\$\(([a-zA-Z_][\w_]*)\)", RegexOptions.Compiled);
+
+    private static readonly Regex ReplaceDynamicVariableRegex = new(@"#\(([a-zA-Z_][\w_]*)\)", RegexOptions.Compiled);
 
     /// <summary>
     /// Expands a string using environment variable and variables defined in mapping files.
@@ -271,17 +293,14 @@ public partial class ConfigFile
                 result,
                 match =>
                 {
-                    string name = match.Groups[1].Value;
-                    string localResult = GetVariable(name, logger);
-                    if (localResult == null)
-                        localResult = Environment.GetEnvironmentVariable(name);
-                    if (localResult == null)
-                    {
-                        logger.Error(LoggingCodes.UnkownVariable, "Unable to substitute config/environment variable $({0}). Variable is not defined", name);
-                        return "";
-                    }
-                    return localResult;
-                });
+                    var name = match.Groups[1].Value;
+                    var localResult = GetVariable(name, logger) ?? Environment.GetEnvironmentVariable(name);
+                    if (localResult is not null)
+                        return localResult;
+                    logger.Error(LoggingCodes.UnkownVariable, "Unable to substitute config/environment variable $({0}). Variable is not defined", name);
+                    return string.Empty;
+                }
+            );
         }
 
         // Perform Dynamic Variable substitution
@@ -291,21 +310,21 @@ public partial class ConfigFile
                 result,
                 match =>
                 {
-                    string name = match.Groups[1].Value;
-                    string localResult;
-                    if (!GetRoot().DynamicVariables.TryGetValue(name, out localResult))
-                    {
-                        logger.Error(LoggingCodes.UnkownDynamicVariable, "Unable to substitute dynamic variable #({0}). Variable is not defined", name);
-                        return "";
-                    }
-                    localResult = localResult.Trim('"');
-                    return localResult;
-                });
-        }           
+                    var name = match.Groups[1].Value;
+                    if (GetRoot().DynamicVariables.TryGetValue(name, out var localResult))
+                        return localResult.Trim('"');
+
+                    logger.Error(LoggingCodes.UnkownDynamicVariable,
+                                 "Unable to substitute dynamic variable #({0}). Variable is not defined", name);
+                    return string.Empty;
+                }
+            );
+        }
+
         return result;
     }
 
-    private void PostLoad(ConfigFile parent, string file, string[] macros, IEnumerable<KeyValue> variables, Logger logger)
+    private void PostLoad(ConfigFile parent, string file, string[] macros, IReadOnlyCollection<KeyValue> variables, Logger logger)
     {
         FilePath = file;
         Parent = parent;
@@ -344,26 +363,36 @@ public partial class ConfigFile
     /// <summary>
     /// Loads the specified config file attached to a parent config file.
     /// </summary>
-    /// <param name="parent">The parent.</param>
-    /// <param name="file">The file.</param>
     /// <returns>The loaded config</returns>
-    private static ConfigFile Load(ConfigFile parent, string file, string[] macros, IEnumerable<KeyValue> variables, Logger logger)
+    private static ConfigFile Load(ConfigFile parent, string file, string[] macros,
+                                   IReadOnlyCollection<KeyValue> variables, Logger logger)
     {
         if(!File.Exists(file))
         {
             logger.Error(LoggingCodes.ConfigNotFound, "Configuration file {0} not found.", file);
             return null;
         }
-            
-        var deserializer = new XmlSerializer(typeof(ConfigFile));
-        ConfigFile config = null;
+
         try
         {
             logger.PushLocation(file);
 
-            config = (ConfigFile)deserializer.Deserialize(new StringReader(Preprocessor.Preprocess(File.ReadAllText(file), macros)));
+            using MemoryStream preprocessedStream = new();
 
-            config?.PostLoad(parent, file, macros, variables, logger);
+            {
+                using var configStream = File.OpenRead(file);
+                using var configReader = XmlReader.Create(configStream);
+                Preprocessor.Preprocess(configReader, preprocessedStream, macros);
+            }
+
+            preprocessedStream.Position = 0;
+
+            if (Serializer.Value.Deserialize(preprocessedStream) is ConfigFile config)
+            {
+                config.PostLoad(parent, file, macros, variables, logger);
+
+                return config;
+            }
         }
         catch (Exception ex)
         {
@@ -373,7 +402,7 @@ public partial class ConfigFile
         {
             logger.PopLocation();
         }
-        return config;
+        return null;
     }
 
     public ConfigFile GetRoot()
@@ -421,25 +450,11 @@ public partial class ConfigFile
             mappingFile.Verify(logger);
     }
 
-    public static ConfigFile Load(ConfigFile root, string[] macros, Logger logger, params KeyValue[] variables)
+    public void Load(string file, string[] macros, Logger logger, params KeyValue[] variables)
     {
-        root.PostLoad(null, null, macros, variables, logger);
-        root.Verify(logger);
-        root.ExpandVariables(false, logger);
-        return root;
-    }
-
-    /// <summary>
-    /// Loads a specified MappingFile.
-    /// </summary>
-    /// <param name="file">The MappingFile.</param>
-    /// <returns>The MappingFile loaded</returns>
-    public static ConfigFile Load(string file, string[] macros, Logger logger, params KeyValue[] variables)
-    {
-        var root =  Load(null, file, macros, variables, logger);
-        root.Verify(logger);
-        root.ExpandVariables(false, logger);
-        return root;
+        PostLoad(null, file, macros, variables, logger);
+        Verify(logger);
+        ExpandVariables(false, logger);
     }
 
     public void Write(string file)
@@ -455,22 +470,13 @@ public partial class ConfigFile
     /// <param name="writer">The writer.</param>
     public void Write(Stream writer)
     {
-        //Create our own namespaces for the output
-        var ns = new XmlSerializerNamespaces();
-        ns.Add("", XmlNamespace);
-        var serializer = new XmlSerializer(typeof(ConfigFile));
-        serializer.Serialize(writer, this, ns);
+        Serializer.Value.Serialize(writer, this, XmlNamespaces.Value);
     }
 
-    /// <summary>
-    /// Returns a <see cref="System.String"/> that represents this instance.
-    /// </summary>
-    /// <returns>
-    /// A <see cref="System.String"/> that represents this instance.
-    /// </returns>
+    /// <inheritdoc />
     [ExcludeFromCodeCoverage]
     public override string ToString()
     {
-        return string.Format(System.Globalization.CultureInfo.InvariantCulture, "config {0}", Id);
+        return string.Format(CultureInfo.InvariantCulture, "config {0}", Id);
     }
 }

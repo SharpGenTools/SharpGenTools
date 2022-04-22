@@ -1,6 +1,6 @@
 ﻿
 using System.Runtime.InteropServices;
-using FILETIME = System.Runtime.InteropServices.ComTypes.FILETIME;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace SharpGen.VisualStudioSetup;
 

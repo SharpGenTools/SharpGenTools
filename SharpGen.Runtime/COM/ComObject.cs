@@ -26,17 +26,51 @@ using SharpGen.Runtime.Diagnostics;
 
 namespace SharpGen.Runtime;
 
-/// <summary>
-/// Root IUnknown class to interop with COM object
-/// </summary>
-public partial class ComObject
+/// <unmanaged>IUnknown</unmanaged>
+/// <unmanaged-short>IUnknown</unmanaged-short>
+[Guid("00000000-0000-0000-C000-000000000046")]
+public class ComObject : CppObject, IUnknown
 {
+    public ComObject(IntPtr nativePtr): base(nativePtr)
+    {
+    }
+
+    public static explicit operator ComObject(IntPtr nativePtr) => nativePtr == IntPtr.Zero ? null : new ComObject(nativePtr);
+
+    /// <unmanaged>HRESULT IUnknown::QueryInterface([In] const GUID&amp; riid, [Out] void** ppvObject)</unmanaged>
+    /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
+    public unsafe Result QueryInterface(Guid riid, out IntPtr ppvObject)
+    {
+        Result __result__;
+        fixed (void* ppvObject_ = &ppvObject)
+            __result__ = ((delegate* unmanaged[Stdcall]<IntPtr, void*, void*, int> )this[0U])(NativePointer, &riid, ppvObject_);
+        return __result__;
+    }
+
+    /// <unmanaged>ULONG IUnknown::AddRef()</unmanaged>
+    /// <unmanaged-short>IUnknown::AddRef</unmanaged-short>
+    public unsafe uint AddRef()
+    {
+        uint __result__;
+        __result__ = ((delegate* unmanaged[Stdcall]<IntPtr, uint> )this[1U])(NativePointer);
+        return __result__;
+    }
+
+    /// <unmanaged>ULONG IUnknown::Release()</unmanaged>
+    /// <unmanaged-short>IUnknown::Release</unmanaged-short>
+    public unsafe uint Release()
+    {
+        uint __result__;
+        __result__ = ((delegate* unmanaged[Stdcall]<IntPtr, uint> )this[2U])(NativePointer);
+        return __result__;
+    }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ComObject"/> class from a IUnknown object.
     /// </summary>
     /// <param name="iunknownObject">Reference to a IUnknown object</param>
 #if NET5_0_OR_GREATER
-        [SupportedOSPlatform("windows")]
+    [SupportedOSPlatform("windows")]
 #endif
     public ComObject(object iunknownObject) : base(Marshal.GetIUnknownForObject(iunknownObject))
     {
@@ -87,7 +121,7 @@ public partial class ComObject
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
 #if NET5_0_OR_GREATER
-        [SupportedOSPlatform("windows")]
+    [SupportedOSPlatform("windows")]
 #endif
     public static T As<T>(object comObject) where T : ComObject => As<T>(Marshal.GetIUnknownForObject(comObject));
 
@@ -116,7 +150,7 @@ public partial class ComObject
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
 #if NET5_0_OR_GREATER
-        [SupportedOSPlatform("windows")]
+    [SupportedOSPlatform("windows")]
 #endif
     public static T QueryInterface<T>(object comObject) where T : ComObject =>
         As<T>(Marshal.GetIUnknownForObject(comObject));

@@ -269,6 +269,8 @@ public static partial class MemoryHelpers
     public static unsafe bool IsMemoryAligned(void* memoryPtr, uint align = 16) =>
         IsMemoryAligned((nuint) memoryPtr, align);
 
+#nullable enable
+
     public static void Dispose<T>(ref T? value, bool disposing = true) where T : struct
     {
         switch (value)
@@ -290,7 +292,7 @@ public static partial class MemoryHelpers
         }
     }
 
-    public static void Dispose<T>(ref T value, bool disposing = true) where T : class
+    public static void Dispose<T>(ref T? value, bool disposing = true) where T : class
     {
         switch (value)
         {
@@ -307,6 +309,34 @@ public static partial class MemoryHelpers
                 return;
             default:
                 value = null;
+                return;
+        }
+    }
+
+    public static void Dispose<T>(T? value, bool disposing = true) where T : struct
+    {
+        switch (value)
+        {
+            case IEnlightenedDisposable disposable:
+                disposable.CheckAndDispose(disposing);
+                return;
+            case IDisposable disposable:
+                if (disposing)
+                    disposable.Dispose();
+                return;
+        }
+    }
+
+    public static void Dispose<T>(T? value, bool disposing = true) where T : class
+    {
+        switch (value)
+        {
+            case IEnlightenedDisposable disposable:
+                disposable.CheckAndDispose(disposing);
+                return;
+            case IDisposable disposable:
+                if (disposing)
+                    disposable.Dispose();
                 return;
         }
     }

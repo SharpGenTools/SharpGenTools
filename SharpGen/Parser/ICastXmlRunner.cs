@@ -1,6 +1,6 @@
-using System.IO;
-
 #nullable enable
+
+using System.IO;
 
 namespace SharpGen.Parser;
 

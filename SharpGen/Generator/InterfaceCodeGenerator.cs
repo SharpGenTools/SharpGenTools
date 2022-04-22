@@ -310,11 +310,15 @@ internal sealed class InterfaceCodeGenerator : MemberMultiCodeGeneratorBase<CsIn
 
         var resultList = NewMemberList;
 
-        if (csElement.IsCallback && csElement.AutoGenerateShadow)
+        if (csElement.IsCallback && csElement.AutoGenerateVtbl)
         {
-            resultList.Add(csElement, Generators.Shadow);
-            var shadowAttribute = Attribute(GlobalNamespace.GetTypeNameSyntax(WellKnownName.ShadowAttribute))
-               .AddArgumentListArguments(AttributeArgument(TypeOfExpression(ParseTypeName(csElement.ShadowName))));
+            resultList.Add(csElement, Generators.Vtbl);
+            var shadowAttribute = Attribute(
+                GlobalNamespace.GetTypeNameSyntax(WellKnownName.VtblAttribute),
+                AttributeArgumentList(
+                    SingletonSeparatedList(AttributeArgument(TypeOfExpression(ParseTypeName(csElement.VtblName))))
+                )
+            );
             attributes = attributes?.AddAttributes(shadowAttribute) ?? AttributeList(SingletonSeparatedList(shadowAttribute));
         }
 

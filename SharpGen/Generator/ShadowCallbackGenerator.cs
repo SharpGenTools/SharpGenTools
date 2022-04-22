@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SharpGen.CppModel;
 using SharpGen.Generator.Marshallers;
 using SharpGen.Model;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
@@ -28,8 +28,13 @@ internal sealed class ShadowCallbackGenerator : MemberPlatformMultiCodeGenerator
                                                                       PlatformDetectionType platform)
     {
         var sig = csElement.InteropSignatures[platform];
-        if (csElement is not CsMethod { IsFunctionPointerInVtbl: true })
-            yield return GenerateDelegateDeclaration(csElement, platform, sig);
+
+        var delegateDecl = GenerateDelegateDeclaration(csElement, platform, sig);
+        if (csElement is CsMethod { IsFunctionPointerInVtbl: true })
+            delegateDecl = delegateDecl.WithLeadingIfDirective(GeneratorHelpers.NotPreprocessorNameSyntax)
+                                       .WithTrailingElseDirective();
+
+        yield return delegateDecl;
         yield return GenerateShadowCallback(csElement, platform, sig);
     }
 
@@ -92,27 +97,21 @@ internal sealed class ShadowCallbackGenerator : MemberPlatformMultiCodeGenerator
               .WithBlock(statementList.ToBlock());
     }
 
-    private static StatementSyntax GenerateShadowCallbackStatement(CsCallable csElement) =>
-        LocalDeclarationStatement(
-            VariableDeclaration(
-                GeneratorHelpers.VarIdentifierName,
-                SingletonSeparatedList(
-                    VariableDeclarator(
-                        Identifier("@this"),
-                        default,
-                        EqualsValueClause(
-                            InvocationExpression(
-                                GenericName(
-                                    Identifier("ToCallback"),
-                                    TypeArgumentList(
-                                        SingletonSeparatedList<TypeSyntax>(IdentifierName(csElement.Parent.Name))
-                                    )
-                                ),
-                                ArgumentList(SingletonSeparatedList(Argument(IdentifierName("thisObject"))))
-                            )
+    private StatementSyntax GenerateShadowCallbackStatement(CsCallable csElement) =>
+        GeneratorHelpers.VarDeclaration(
+            Identifier("@this"),
+            InvocationExpression(
+                MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    GlobalNamespace.GetTypeNameSyntax(WellKnownName.CppObjectShadow),
+                    GenericName(
+                        Identifier("ToCallback"),
+                        TypeArgumentList(
+                            SingletonSeparatedList<TypeSyntax>(IdentifierName(csElement.Parent.Name))
                         )
                     )
-                )
+                ),
+                ArgumentList(SingletonSeparatedList(Argument(IdentifierName("thisObject"))))
             )
         );
 
@@ -268,7 +267,7 @@ internal sealed class ShadowCallbackGenerator : MemberPlatformMultiCodeGenerator
 
         return MethodDeclaration(
                    interopReturnType,
-                   csElement.Name + GeneratorHelpers.GetPlatformSpecificSuffix(platform)
+                   VtblGenerator.GetMethodImplName(csElement, platform)
                )
               .WithModifiers(
                    TokenList(
@@ -293,12 +292,12 @@ internal sealed class ShadowCallbackGenerator : MemberPlatformMultiCodeGenerator
                                        )
                                    )
                                )
-                           )
+                           ).WithTrailingEndIfDirective()
                        )
                        : default
                );
 
-        static ExpressionSyntax FnPtrCallConvs(CppCallingConvention callingConvention) =>
+        static ExpressionSyntax FnPtrCallConvs(CallingConvention callingConvention) =>
             ImplicitArrayCreationExpression(
                 InitializerExpression(
                     SyntaxKind.ArrayInitializerExpression,

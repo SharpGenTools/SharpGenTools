@@ -141,11 +141,7 @@ public static class GeneratorHelpers
                 if ((platform & flag) != flag)
                     continue;
 
-                var newCondition = MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    globalNamespace.GetTypeNameSyntax(WellKnownName.PlatformDetection),
-                    IdentifierName("Is" + flag)
-                );
+                var newCondition = PlatformCondition(globalNamespace, flag);
 
                 condition = condition is null
                                 ? newCondition
@@ -172,4 +168,75 @@ public static class GeneratorHelpers
 
         return platformDetectionIfStatement;
     }
+
+    public static ExpressionSyntax PlatformCondition(GlobalNamespaceProvider globalNamespace,
+                                                     PlatformDetectionType flag) => MemberAccessExpression(
+        SyntaxKind.SimpleMemberAccessExpression,
+        globalNamespace.GetTypeNameSyntax(WellKnownName.PlatformDetection),
+        IdentifierName("Is" + flag)
+    );
+
+    public static T WithLeadingIfDirective<T>(this T node, ExpressionSyntax condition) where T : SyntaxNode =>
+        node.WithLeadingTrivia(
+            node.GetLeadingTrivia().Insert(0, Trivia(IfDirectiveTrivia(condition, true, true, true)))
+        );
+
+    public static T WithTrailingEndIfDirective<T>(this T node) where T : SyntaxNode =>
+        node.WithTrailingTrivia(node.GetTrailingTrivia().Add(Trivia(EndIfDirectiveTrivia(true))));
+
+    public static T WithTrailingElseDirective<T>(this T node) where T : SyntaxNode =>
+        node.WithTrailingTrivia(node.GetTrailingTrivia().Add(Trivia(ElseDirectiveTrivia(true, true))));
+
+    public static LocalDeclarationStatementSyntax VarDeclaration(SyntaxToken name, ExpressionSyntax value) =>
+        LocalDeclarationStatement(
+            VariableDeclaration(
+                VarIdentifierName,
+                SingletonSeparatedList(VariableDeclarator(name, default, EqualsValueClause(value)))
+            )
+        );
+
+    public static Func<CsMethod, int> GetOffsetGetter(PlatformDetectionType platform)
+    {
+        return platform switch
+        {
+            PlatformDetectionType.Windows => WindowsOffsetGetter,
+            PlatformDetectionType.ItaniumSystemV => ItaniumSystemVOffsetGetter,
+            _ => throw new ArgumentOutOfRangeException(nameof(platform), platform, null)
+        };
+
+        static int WindowsOffsetGetter(CsMethod x) => x.WindowsOffset;
+        static int ItaniumSystemVOffsetGetter(CsMethod x) => x.Offset;
+    }
+
+    public delegate ExpressionSyntax ExpressionTransform<in T>(T expression) where T : ExpressionSyntax;
+
+    private static ExpressionSyntax IdentityExpressionTransformImpl<T>(T expression) where T : ExpressionSyntax =>
+        expression;
+
+    public static ExpressionSyntax PlatformSpecificExpression<T>(GlobalNamespaceProvider globalNamespace,
+                                                                 PlatformDetectionType platform,
+                                                                 Func<bool> anyPredicate,
+                                                                 Func<T> windowsExpression,
+                                                                 Func<T> nonWindowsExpression,
+                                                                 ExpressionTransform<T> conditionalWrapper =
+                                                                     null)
+        where T : ExpressionSyntax
+    {
+        if ((platform & PlatformDetectionType.Any) == PlatformDetectionType.Any && anyPredicate())
+        {
+            conditionalWrapper ??= IdentityExpressionTransformImpl;
+            return ConditionalExpression(
+                PlatformCondition(globalNamespace, PlatformDetectionType.Windows),
+                conditionalWrapper(windowsExpression()), conditionalWrapper(nonWindowsExpression())
+            );
+        }
+
+        // Use the Windows offset for the default offset in the vtable when the Windows platform is requested for compat reasons.
+        return (platform & PlatformDetectionType.Windows) != 0
+                   ? windowsExpression()
+                   : nonWindowsExpression();
+    }
+
+    public static readonly IdentifierNameSyntax PreprocessorNameSyntax = IdentifierName("NET5_0_OR_GREATER");
+    public static readonly PrefixUnaryExpressionSyntax NotPreprocessorNameSyntax = PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, PreprocessorNameSyntax);
 }

@@ -18,7 +18,6 @@ using SharpGen.Transform;
 using SharpGenTools.Sdk.Documentation;
 using SharpGenTools.Sdk.Extensibility;
 using SharpGenTools.Sdk.Internal;
-using SdkResolver = SharpGen.Parser.SdkResolver;
 
 namespace SharpGenTools.Sdk.Tasks;
 
@@ -160,8 +159,7 @@ public sealed class SharpGenTask : SharpGenTaskBase
         serviceContainer.AddService(
             new GeneratorConfig
             {
-                Platforms = ConfigPlatforms,
-                UseFunctionPointersInVtbl = UseFunctionPointersInVtbl
+                Platforms = ConfigPlatforms
             }
         );
 
@@ -352,7 +350,7 @@ public sealed class SharpGenTask : SharpGenTaskBase
 
     private ConfigFile LoadConfig(ConfigFile config)
     {
-        config = ConfigFile.Load(config, Macros, SharpGenLogger);
+        config.Load(null, Macros, SharpGenLogger);
 
         var sdkResolver = new SdkResolver(SharpGenLogger);
         SharpGenLogger.Message("Resolving SDKs...");

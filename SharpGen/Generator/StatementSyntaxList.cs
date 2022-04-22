@@ -1,31 +1,24 @@
+#nullable enable
+
+#if !SHARPGEN_ROSLYN
+using SharpGen.Model;
+#endif
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SharpGen.Model;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Generator;
 
-internal sealed class StatementSyntaxList : SyntaxListBase<StatementSyntax, StatementSyntaxList>
+public sealed class StatementSyntaxList : SyntaxListBase<StatementSyntax, StatementSyntaxList>
 {
-#nullable enable
+#if !SHARPGEN_ROSLYN
     public StatementSyntaxList(Ioc? ioc = null) : base(ioc)
     {
     }
 
     protected override StatementSyntaxList New => new(ioc);
-
-    protected override StatementSyntax? Coerce<T>(T? value) where T : class => value switch
-    {
-        null => null,
-        StatementSyntax statement => statement,
-        ExpressionSyntax expression => ExpressionStatement(expression),
-        StatementSyntaxList statementList => statementList.ToStatement(),
-        IEnumerable<StatementSyntax> statementList => From(statementList).ToStatement(),
-        IEnumerable<ExpressionSyntax> statementList => From(statementList).ToStatement(),
-        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
-    };
 
     protected override IEnumerable<StatementSyntax> GetPlatformSpecificValue<TResult>(
         IEnumerable<PlatformDetectionType> types, Func<PlatformDetectionType, TResult> syntaxBuilder
@@ -46,8 +39,6 @@ internal sealed class StatementSyntaxList : SyntaxListBase<StatementSyntax, Stat
             platform => Coerce(syntaxBuilder(platform))
         )
     };
-
-#nullable restore
 
     public void Add<T>(T source, IStatementCodeGenerator<T> generator) where T : CsBase
     {
@@ -94,13 +85,26 @@ internal sealed class StatementSyntaxList : SyntaxListBase<StatementSyntax, Stat
             return;
         throw new ArgumentOutOfRangeException(nameof(generator));
     }
+#else
+    protected override StatementSyntaxList New => new();
+#endif
+
+    protected override StatementSyntax? Coerce<T>(T? value) where T : class => value switch
+    {
+        null => null,
+        StatementSyntax statement => statement,
+        ExpressionSyntax expression => ExpressionStatement(expression),
+        StatementSyntaxList statementList => statementList.ToStatement(),
+        IEnumerable<StatementSyntax> statementList => From(statementList).ToStatement(),
+        IEnumerable<ExpressionSyntax> statementList => From(statementList).ToStatement(),
+        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
+    };
 
     public BlockSyntax ToBlock()
     {
         var statement = ToStatement();
-        return statement is BlockSyntax block ? block : Block(statement);
+        return statement as BlockSyntax ?? Block(statement);
     }
 
     public StatementSyntax ToStatement() => Count == 1 ? this[0] : Block(this);
-
 }

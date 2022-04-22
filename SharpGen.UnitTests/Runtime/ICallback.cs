@@ -2,78 +2,59 @@
 using System.Runtime.InteropServices;
 using SharpGen.Runtime;
 
-namespace SharpGen.UnitTests.Runtime;
-
-[Shadow(typeof(CallbackShadow))]
-interface ICallback : ICallbackable
+namespace SharpGen.UnitTests.Runtime
 {
-    int Increment(int param);
-}
-
-class CallbackImpl : CallbackBase, ICallback
-{
-    public int Increment(int param)
+    [Vtbl(typeof(CallbackVtbl))]
+    interface ICallback : ICallbackable
     {
-        return param + 1;
+        int Increment(int param);
     }
-}
 
-class CallbackShadow : CppObjectShadow
-{
-    public class CallbackVbtl : CppObjectVtbl
+    class CallbackImpl : CallbackBase, ICallback
     {
-        public CallbackVbtl(int numberOfCallbackMethods) : base(numberOfCallbackMethods + 1)
+        public int Increment(int param) => param + 1;
+    }
+
+    public static class CallbackVtbl
+    {
+        private static readonly IncrementDelegate Increment = IncrementImpl;
+
+        public static readonly IntPtr[] Vtbl =
         {
-#pragma warning disable 618
-            AddMethod(new IncrementDelegate(IncrementImpl), 0);
-#pragma warning restore 618
-        }
+            Marshal.GetFunctionPointerForDelegate(Increment)
+        };
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate int IncrementDelegate(IntPtr thisObj, int param);
 
-        private static int IncrementImpl(IntPtr thisObj, int param)
-        {
-            return ToCallback<ICallback>(thisObj).Increment(param);
-        }
+        private static int IncrementImpl(IntPtr thisObj, int param) =>
+            CppObjectShadow.ToCallback<ICallback>(thisObj).Increment(param);
     }
 
-    protected override CppObjectVtbl Vtbl { get; } = new CallbackVbtl(0);
-}
-
-[Shadow(typeof(Callback2Shadow))]
-interface ICallback2: ICallback
-{
-    int Decrement(int param);
-}
-
-class Callback2Shadow : CppObjectShadow
-{
-    public class Callback2Vbtl : CallbackShadow.CallbackVbtl
+    [Vtbl(typeof(Callback2Vtbl))]
+    interface ICallback2: ICallback
     {
-        public Callback2Vbtl(int numberOfCallbackMethods) : base(numberOfCallbackMethods + 1)
+        int Decrement(int param);
+    }
+
+    public static class Callback2Vtbl
+    {
+        private static readonly DecrementDelegate Decrement = DecrementImpl;
+
+        public static IntPtr[] Fill() => new[]
         {
-#pragma warning disable 618
-            AddMethod(new DecrementDelegate(DecrementImpl), 1);
-#pragma warning restore 618
-        }
+            Marshal.GetFunctionPointerForDelegate(Decrement)
+        };
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate int DecrementDelegate(IntPtr thisObj, int param);
 
-        private static int DecrementImpl(IntPtr thisObj, int param)
-        {
-            return ToCallback<ICallback>(thisObj).Increment(param);
-        }
+        private static int DecrementImpl(IntPtr thisObj, int param) =>
+            CppObjectShadow.ToCallback<ICallback>(thisObj).Increment(param);
     }
 
-    protected override CppObjectVtbl Vtbl { get; } = new Callback2Vbtl(0);
-}
-
-class Callback2Impl : CallbackImpl, ICallback, ICallback2
-{
-    public int Decrement(int param)
+    class Callback2Impl : CallbackImpl, ICallback, ICallback2
     {
-        return param - 1;
+        public int Decrement(int param) => param - 1;
     }
 }

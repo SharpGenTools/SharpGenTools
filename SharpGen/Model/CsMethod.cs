@@ -22,6 +22,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.CppModel;
+using SharpGen.Generator;
 using SharpGen.Transform;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -61,26 +62,12 @@ public sealed class CsMethod : CsCallable
 
     public ExpressionSyntax VTableOffsetExpression(PlatformDetectionType platform)
     {
-        uint windowsOffset = (uint) WindowsOffset, offset = (uint) Offset;
-        var windowsOffsetExpression =
-            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(windowsOffset));
-        var nonWindowsOffsetExpression =
-            LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(offset));
-
-        if ((platform & PlatformDetectionType.Any) == PlatformDetectionType.Any && offset != windowsOffset)
-            return ConditionalExpression(
-                MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    Ioc.GlobalNamespace.GetTypeNameSyntax(WellKnownName.PlatformDetection),
-                    IdentifierName("Is" + nameof(PlatformDetectionType.Windows))
-                ),
-                windowsOffsetExpression, nonWindowsOffsetExpression
-            );
-
-        // Use the Windows offset for the default offset in the vtable when the Windows platform is requested for compat reasons.
-        return (platform & PlatformDetectionType.Windows) != 0
-                   ? windowsOffsetExpression
-                   : nonWindowsOffsetExpression;
+        int windowsOffset = WindowsOffset, offset = Offset;
+        return GeneratorHelpers.PlatformSpecificExpression(
+            Ioc.GlobalNamespace, platform, () => offset != windowsOffset,
+            () => LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(windowsOffset)),
+            () => LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(offset))
+        );
     }
 
     public bool IsFunctionPointerInVtbl
@@ -100,8 +87,7 @@ public sealed class CsMethod : CsCallable
                 };
             }
 
-            return Ioc.GeneratorConfig.UseFunctionPointersInVtbl
-                && Parameters.All(IsBlittable)
+            return Parameters.All(IsBlittable)
                 && IsBlittable(ReturnValue);
         }
     }

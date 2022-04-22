@@ -22,8 +22,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using SharpGen.Logging;
 using SharpGen.CppModel;
+using SharpGen.Logging;
 using SharpGen.Model;
 
 namespace SharpGen.Transform;

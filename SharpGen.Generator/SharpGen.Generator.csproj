@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Sdk Name="Microsoft.Build.CentralPackageVersions" />
+
+    <PropertyGroup>
+        <TargetFrameworks>net472;net5.0</TargetFrameworks>
+        <EnableNETAnalyzers>true</EnableNETAnalyzers>
+        <AnalysisLevel>latest</AnalysisLevel>
+        <IsPackable>false</IsPackable>
+        <Nullable>enable</Nullable>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <DefineConstants>SHARPGEN_ROSLYN</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Bcl.HashCode" Condition="'$(TargetFramework)' == 'net472'" />
+        <PackageReference Include="Nullable" Condition="'$(TargetFramework)' == 'net472'" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+        <PackageReference Include="IsExternalInit" Condition="'$(TargetFramework)' == 'net472'" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Include="..\SharpGen\Generator\StatementSyntaxList.cs">
+        <Link>StatementSyntaxList.cs</Link>
+      </Compile>
+      <Compile Include="..\SharpGen\Generator\SyntaxListBase.cs">
+        <Link>SyntaxListBase.cs</Link>
+      </Compile>
+    </ItemGroup>
+
+</Project>

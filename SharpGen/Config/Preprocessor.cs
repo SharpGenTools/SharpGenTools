@@ -17,27 +17,26 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.IO;
-using System.Xml.Linq;
 using System.Linq;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace SharpGen.Config;
 
 /// <summary>
-/// A simple Xml preprocessor.
+/// A simple XML preprocessor.
 /// </summary>
 internal static class Preprocessor
 {
     /// <summary>
-    /// Preprocesses the specified XML text.
+    /// Preprocesses the XML document given the reader instance.
     /// </summary>
-    /// <param name="xmlText">The XML text.</param>
-    /// <param name="macros">The macros.</param>
-    /// <returns>A preprocessed xml text</returns>
-    public static string Preprocess(string xmlText, params string[] macros)
+    public static void Preprocess(XmlReader xmlReader, Stream outputStream, params string[] macros)
     {
-        var doc = XDocument.Load(new StringReader(xmlText));
+        var doc = XDocument.Load(xmlReader);
 
         XNamespace ns = ConfigFile.XmlNamespace;
 
@@ -62,29 +61,28 @@ internal static class Preprocessor
             }
         }
 
-        list = doc.Descendants(ns + "ifdef").ToList();
+        list.Clear();
+        list.AddRange(doc.Descendants(ns + "ifdef"));
         // Work on deepest first
         list.Reverse();
         foreach (var ifdef in list)
         {
             var attr = ifdef.Attribute("name");
-            if(attr != null && !string.IsNullOrWhiteSpace(attr.Value))
+            if (attr != null && !string.IsNullOrWhiteSpace(attr.Value))
             {
-                var values = attr.Value.Split(new []{ "|" }, StringSplitOptions.RemoveEmptyEntries);
-                if(values.Any(macros.Contains))
+                var values = attr.Value.Split(new[] { "|" }, StringSplitOptions.RemoveEmptyEntries);
+                if (values.Any(macros.Contains))
                 {
-                    foreach(var element in ifdef.Elements())
+                    foreach (var element in ifdef.Elements())
                     {
                         ifdef.AddBeforeSelf(element);
                     }
                 }
             }
+
             ifdef.Remove();
         }
 
-        var writer = new StringWriter();
-        doc.Save(writer);
-
-        return writer.ToString();
+        doc.Save(outputStream);
     }
 }

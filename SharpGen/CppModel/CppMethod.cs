@@ -18,6 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Runtime.InteropServices;
+
 namespace SharpGen.CppModel;
 
 public sealed class CppMethod : CppCallable
@@ -25,7 +27,7 @@ public sealed class CppMethod : CppCallable
     public int Offset { get; set; }
     public int WindowsOffset { get; set; }
 
-    protected override CppCallingConvention DefaultCallingConvention => CppCallingConvention.ThisCall;
+    protected override CallingConvention DefaultCallingConvention => CppCallingConvention.ThisCall;
 
     public CppMethod(string name) : base(name)
     {

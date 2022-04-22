@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <BuildingSdkTests>true</BuildingSdkTests>
+    <SharpGenEnablePackageReferenceCheck>false</SharpGenEnablePackageReferenceCheck>
     <MicrosoftCommonPropsHasBeenImported>true</MicrosoftCommonPropsHasBeenImported>
   </PropertyGroup>
 

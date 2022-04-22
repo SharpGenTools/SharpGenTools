@@ -7,12 +7,22 @@
         <SdkTestNative>$(MSBuildProjectName)</SdkTestNative>
         <SharpGenWaitForDebuggerAttach>false</SharpGenWaitForDebuggerAttach>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CoreCompileDependsOn>$(CoreCompileDependsOn);SharpGenSetRoslynGeneratedPath</CoreCompileDependsOn>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == 'true' and '$(VisualStudioVersion)' != ''">
         <TargetFramework>net5.0</TargetFramework>
         <TargetPlatform>x86</TargetPlatform>
     </PropertyGroup>
+
+    <PropertyGroup Condition="'$(SharpGenSdkTestsMultiTfmDependencies)' == 'true'">
+        <TargetFrameworks>netcoreapp2.1;net5.0</TargetFrameworks>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(SharpGenSdkTestsMultiTfmDependencies)' == 'true' and '$(MSBuildProjectName)' != 'Struct'">
+        <ProjectReference Include="..\Struct\Struct.csproj" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="SharpGen.Runtime" Version="$(LocalPackageVersion)" IsImplicitlyDefined="true"/>
@@ -28,6 +38,12 @@
 
         <Compile Include="$(MSBuildThisFileDirectory)RuntimeConfigurationInitializer.cs"/>
     </ItemGroup>
+
+    <Target Name="SharpGenSetRoslynGeneratedPath">
+        <PropertyGroup>
+            <CompilerGeneratedFilesOutputPath>$(IntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
+        </PropertyGroup>
+    </Target>
 
     <Target Name="SharpGenSdkTestsSetDebuggerAttach" BeforeTargets="SharpGenExecute" Condition="'$(SdkTestsDebuggerAttach)' == 'true'">
         <PropertyGroup>

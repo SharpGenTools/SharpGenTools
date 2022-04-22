@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -5,17 +7,20 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+#if !SHARPGEN_ROSLYN
 using SharpGen.Generator.Marshallers;
 using SharpGen.Model;
+#endif
 
 namespace SharpGen.Generator;
 
-internal abstract class SyntaxListBase<TValue, TSelf>
+public abstract class SyntaxListBase<TValue, TSelf>
     : IReadOnlyList<TValue>, ICollection<TValue>, ICollection
     where TValue : CSharpSyntaxNode where TSelf : SyntaxListBase<TValue, TSelf>
 {
-#nullable enable
     private readonly List<TValue> listImplementation = new(8);
+
+#if !SHARPGEN_ROSLYN
     protected readonly Ioc? ioc;
 
     private MarshallingRegistry Registry =>
@@ -32,6 +37,7 @@ internal abstract class SyntaxListBase<TValue, TSelf>
         this.ioc = ioc;
         AddRange(collection);
     }
+#endif
 
     protected abstract TSelf New { get; }
 
@@ -70,6 +76,7 @@ internal abstract class SyntaxListBase<TValue, TSelf>
         AddRange(collection.Select(Coerce));
     }
 
+#if !SHARPGEN_ROSLYN
     protected abstract IEnumerable<TValue?> GetPlatformSpecificValue<TResult>(
         IEnumerable<PlatformDetectionType> types,
         Func<PlatformDetectionType, TResult> syntaxBuilder
@@ -207,8 +214,6 @@ internal abstract class SyntaxListBase<TValue, TSelf>
         where T : CsBase where TSyntax : SyntaxNode =>
         TryAddGeneric<T, TSyntax, TGenerator>(source, generator) || TryAddPlatform<T, TSyntax, TGenerator>(source, generator);
 
-#nullable restore
-
     public void AddRange<T, TResult>(T source, Func<IMarshaller, T, IEnumerable<TResult>> transform)
         where T : CsMarshalBase where TResult : class => AddRange(transform(Registry.GetMarshaller(source), source));
 
@@ -220,6 +225,7 @@ internal abstract class SyntaxListBase<TValue, TSelf>
 
     public void AddRange<T, TResult>(IEnumerable<T> source, Func<IMarshaller, T, TResult> transform)
         where T : CsMarshalBase where TResult : class => AddRange(source.Select(x => transform(Registry.GetMarshaller(x), x)));
+#endif
 
     public void Add<T, TResult>(T source, Func<T, TResult> transform) where TResult : class => Add(transform(source));
 
@@ -242,5 +248,10 @@ internal abstract class SyntaxListBase<TValue, TSelf>
     public bool IsReadOnly => false;
     public int IndexOf(TValue item) => listImplementation.IndexOf(item);
     public void RemoveAt(int index) => listImplementation.RemoveAt(index);
-    public TValue this[int index] => listImplementation[index];
+
+    public TValue this[int index]
+    {
+        get => listImplementation[index];
+        set => listImplementation[index] = value;
+    }
 }

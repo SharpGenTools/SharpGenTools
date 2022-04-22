@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
@@ -348,7 +349,7 @@ public sealed class CppParser
         attributes = stripSpaces.ToString();
 
         // Default calling convention
-        var cppCallingConvention = CppCallingConvention.Unknown;
+        CallingConvention? cppCallingConvention = null;
 
         // Default parameter attribute
         var paramAttribute = ParamAttribute.None;
@@ -450,9 +451,9 @@ public sealed class CppParser
 
             param.Attribute = paramAttribute;
         }
-        else if (cppElement is CppCallable callable && cppCallingConvention != CppCallingConvention.Unknown)
+        else if (cppElement is CppCallable callable && cppCallingConvention is { } callingConvention)
         {
-            callable.CallingConvention = cppCallingConvention;
+            callable.CallingConvention = callingConvention;
         }
         else if (cppElement is CppInterface iface && guid != null)
         {

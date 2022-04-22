@@ -104,7 +104,7 @@ internal sealed class PropertyCodeGenerator : MemberMultiCodeGeneratorBase<CsPro
                                     SingletonSeparatedList(
                                         Argument(
                                                 DeclarationExpression(
-                                                    IdentifierName("var"),
+                                                    GeneratorHelpers.VarIdentifierName,
                                                     SingleVariableDesignation(output)))
                                            .WithRefOrOutKeyword(
                                                 Token(SyntaxKind.OutKeyword))))

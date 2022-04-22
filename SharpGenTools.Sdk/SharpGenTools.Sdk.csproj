@@ -40,10 +40,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SharpGen.Platform\SharpGen.Platform.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Remove="SourceGeneratorUtilities.cs" />
+    <ProjectReference Include="..\SharpGen.Generator\SharpGen.Generator.csproj" ReferenceOutputAssembly="false">
+      <!-- As the composite root (in DI terms) we still want to ensure that the UI tier has a copy of the DAL dll to load up.-->
+      <OutputItemType>Content</OutputItemType>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <!-- DebugSymbolsProjectOutputGroup copies PDB files, but not for Visual Studio, which is still fine as Visual Studio knows how to get debugging information.  -->
+      <Targets>Build;DebugSymbolsProjectOutputGroup</Targets>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -53,7 +56,6 @@
     <Content Include="Sdk.targets" PackagePath="Sdk" />
     <Content Include="SharpGenTools.Sdk.props" PackagePath="build;buildMultiTargeting" />
     <Content Include="SharpGenTools.Sdk.targets" PackagePath="build;buildMultiTargeting" />
-    <Content Include="SourceGeneratorUtilities.cs" PackagePath="Sdk" />
   </ItemGroup>
 
   <Target Name="SharpGenWriteVersionProps" BeforeTargets="_GetPackageFiles;GenerateNuspec" Outputs="@(SdkVersionProps)">

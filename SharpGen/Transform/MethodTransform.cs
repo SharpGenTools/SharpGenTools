@@ -61,7 +61,7 @@ public class MethodTransform : TransformBase<CsMethod, CppMethod>, ITransformer<
 
         var groupName = cppFunction.Rule.Group;
 
-        if (groupName == null)
+        if (groupName is null)
         {
             Logger.Error(LoggingCodes.FunctionNotAttachedToGroup, "CppFunction [{0}] is not tagged and attached to any Class/FunctionGroup", cppFunction);
             return null;
@@ -69,7 +69,7 @@ public class MethodTransform : TransformBase<CsMethod, CppMethod>, ITransformer<
 
         var csClass = groupRegistry.FindGroup(groupName);
 
-        if (csClass == null)
+        if (csClass is null)
         {
             Logger.Error(LoggingCodes.FunctionNotAttachedToGroup, "CppFunction [{0}] is not attached to a Class/FunctionGroup", cppFunction);
             return null;
@@ -190,8 +190,8 @@ public class MethodTransform : TransformBase<CsMethod, CppMethod>, ITransformer<
 
     internal static void CreateNativeInteropSignatures(IInteropSignatureTransform sigTransform, CsCallable callable)
     {
-        callable.InteropSignatures = new Dictionary<PlatformDetectionType, InteropMethodSignature>();
-        foreach (var sig in sigTransform.GetInteropSignatures(callable))
-            callable.InteropSignatures.Add(sig.Key, sig.Value);
+        callable.InteropSignatures = new Dictionary<PlatformDetectionType, InteropMethodSignature>(
+            sigTransform.GetInteropSignatures(callable)
+        );
     }
 }

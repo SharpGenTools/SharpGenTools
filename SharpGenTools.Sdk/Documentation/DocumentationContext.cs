@@ -1,10 +1,10 @@
+#nullable enable
+
 using System;
 using SharpGen.Doc;
 using SharpGen.Logging;
 using SharpGen.Platform;
 using SharpGen.Platform.Documentation;
-
-#nullable enable
 
 namespace SharpGenTools.Sdk.Documentation;
 

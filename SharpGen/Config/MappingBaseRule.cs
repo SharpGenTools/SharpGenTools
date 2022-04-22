@@ -17,6 +17,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Xml.Serialization;
@@ -55,18 +57,18 @@ public abstract class MappingBaseRule : ConfigBaseRule, ITypeRule
     [ExcludeFromCodeCoverage]
     public override string ToString()
     {
-        string type = "";
+        var type = string.Empty;
 
-        foreach(var property in typeof(MappingBaseRule).GetRuntimeProperties())
+        foreach (var property in typeof(MappingBaseRule).GetRuntimeProperties())
         {
-            if (property.GetValue(this, null) != null)
+            if (property.GetValue(this, null) is { } value)
             {
                 type = property.GetCustomAttributes<XmlAttributeAttribute>(false).First().AttributeName + ":" +
-                       property.GetValue(this, null);
+                       value;
                 break;
-
-            }                
+            }
         }
-        return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} {1}", base.ToString(), type);
+
+        return string.Format(CultureInfo.InvariantCulture, "{0} {1}", base.ToString(), type);
     }
 }

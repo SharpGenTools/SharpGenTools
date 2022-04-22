@@ -26,7 +26,6 @@ public sealed class DefaultGenerators : IGeneratorRegistry
         ShadowCallable = new ShadowCallbackGenerator(ioc);
         ReverseCallableProlog = new ReverseCallablePrologCodeGenerator(ioc);
         Vtbl = new VtblGenerator(ioc);
-        Shadow = new ShadowGenerator(ioc);
         Marshalling = new MarshallingRegistry(ioc);
         Config = ioc.GeneratorConfig;
     }
@@ -47,7 +46,6 @@ public sealed class DefaultGenerators : IGeneratorRegistry
     public IMemberCodeGenerator<CsFunction> Function { get; }
     public IMemberCodeGenerator<CsFunction> FunctionImport { get; }
     public IMemberCodeGenerator<CsInterface> Interface { get; }
-    public IMemberCodeGenerator<CsInterface> Shadow { get; }
     public IMemberCodeGenerator<CsInterface> Vtbl { get; }
     public IMemberCodeGenerator<CsCallable> ShadowCallable { get; }
     public IStatementCodeGenerator<CsCallable> ReverseCallableProlog { get; }

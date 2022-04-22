@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Text;
 using Microsoft.CodeAnalysis;
 
 namespace SharpGenTools.Sdk.Internal.Roslyn;
@@ -63,7 +64,7 @@ internal static class Hash
             // Should end up with a constrained virtual call to object.GetHashCode (i.e. avoid boxing where possible).
             if (value != null)
             {
-                hashCode = Hash.Combine(value.GetHashCode(), hashCode);
+                hashCode = Combine(value.GetHashCode(), hashCode);
             }
         }
 
@@ -87,7 +88,7 @@ internal static class Hash
             // Should end up with a constrained virtual call to object.GetHashCode (i.e. avoid boxing where possible).
             if (value != null)
             {
-                hashCode = Hash.Combine(value.GetHashCode(), hashCode);
+                hashCode = Combine(value.GetHashCode(), hashCode);
             }
         }
 
@@ -113,7 +114,7 @@ internal static class Hash
             // Should end up with a constrained virtual call to object.GetHashCode (i.e. avoid boxing where possible).
             if (value != null)
             {
-                hashCode = Hash.Combine(value.GetHashCode(), hashCode);
+                hashCode = Combine(value.GetHashCode(), hashCode);
             }
         }
 
@@ -138,7 +139,7 @@ internal static class Hash
 
             if (value != null)
             {
-                hashCode = Hash.Combine(stringComparer.GetHashCode(value), hashCode);
+                hashCode = Combine(stringComparer.GetHashCode(value), hashCode);
             }
         }
 
@@ -165,11 +166,11 @@ internal static class Hash
     /// <returns>The FNV-1a hash of <paramref name="data"/></returns>
     internal static int GetFNVHashCode(byte[] data)
     {
-        int hashCode = Hash.FnvOffsetBias;
+        int hashCode = FnvOffsetBias;
 
         for (int i = 0; i < data.Length; i++)
         {
-            hashCode = unchecked((hashCode ^ data[i]) * Hash.FnvPrime);
+            hashCode = unchecked((hashCode ^ data[i]) * FnvPrime);
         }
 
         return hashCode;
@@ -186,7 +187,7 @@ internal static class Hash
     /// <returns>The FNV-1a hash of <paramref name="data"/></returns>
     internal static int GetFNVHashCode(ReadOnlySpan<byte> data, out bool isAscii)
     {
-        int hashCode = Hash.FnvOffsetBias;
+        int hashCode = FnvOffsetBias;
 
         byte asciiMask = 0;
 
@@ -194,7 +195,7 @@ internal static class Hash
         {
             byte b = data[i];
             asciiMask |= b;
-            hashCode = unchecked((hashCode ^ b) * Hash.FnvPrime);
+            hashCode = unchecked((hashCode ^ b) * FnvPrime);
         }
 
         isAscii = (asciiMask & 0x80) == 0;
@@ -209,11 +210,11 @@ internal static class Hash
     /// <returns>The FNV-1a hash of <paramref name="data"/></returns>
     internal static int GetFNVHashCode(ImmutableArray<byte> data)
     {
-        int hashCode = Hash.FnvOffsetBias;
+        int hashCode = FnvOffsetBias;
 
         for (int i = 0; i < data.Length; i++)
         {
-            hashCode = unchecked((hashCode ^ data[i]) * Hash.FnvPrime);
+            hashCode = unchecked((hashCode ^ data[i]) * FnvPrime);
         }
 
         return hashCode;
@@ -229,11 +230,11 @@ internal static class Hash
     /// </summary>
     internal static int GetFNVHashCode(ReadOnlySpan<char> data)
     {
-        int hashCode = Hash.FnvOffsetBias;
+        int hashCode = FnvOffsetBias;
 
         for (int i = 0; i < data.Length; i++)
         {
-            hashCode = unchecked((hashCode ^ data[i]) * Hash.FnvPrime);
+            hashCode = unchecked((hashCode ^ data[i]) * FnvPrime);
         }
 
         return hashCode;
@@ -261,11 +262,11 @@ internal static class Hash
 
     internal static int GetCaseInsensitiveFNVHashCode(ReadOnlySpan<char> data)
     {
-        int hashCode = Hash.FnvOffsetBias;
+        int hashCode = FnvOffsetBias;
 
         for (int i = 0; i < data.Length; i++)
         {
-            hashCode = unchecked((hashCode ^ CaseInsensitiveComparison.ToLower(data[i])) * Hash.FnvPrime);
+            hashCode = unchecked((hashCode ^ CaseInsensitiveComparison.ToLower(data[i])) * FnvPrime);
         }
 
         return hashCode;
@@ -291,7 +292,7 @@ internal static class Hash
     /// <returns>The FNV-1a hash code of <paramref name="text"/></returns>
     internal static int GetFNVHashCode(string text)
     {
-        return CombineFNVHash(Hash.FnvOffsetBias, text);
+        return CombineFNVHash(FnvOffsetBias, text);
     }
 
     /// <summary>
@@ -300,14 +301,14 @@ internal static class Hash
     /// </summary>
     /// <param name="text">The input string</param>
     /// <returns>The FNV-1a hash code of <paramref name="text"/></returns>
-    internal static int GetFNVHashCode(System.Text.StringBuilder text)
+    internal static int GetFNVHashCode(StringBuilder text)
     {
-        int hashCode = Hash.FnvOffsetBias;
+        int hashCode = FnvOffsetBias;
         int end = text.Length;
 
         for (int i = 0; i < end; i++)
         {
-            hashCode = unchecked((hashCode ^ text[i]) * Hash.FnvPrime);
+            hashCode = unchecked((hashCode ^ text[i]) * FnvPrime);
         }
 
         return hashCode;
@@ -323,12 +324,12 @@ internal static class Hash
     /// <returns>The FNV-1a hash code of the substring beginning at <paramref name="start"/> and ending after <paramref name="length"/> characters.</returns>
     internal static int GetFNVHashCode(char[] text, int start, int length)
     {
-        int hashCode = Hash.FnvOffsetBias;
+        int hashCode = FnvOffsetBias;
         int end = start + length;
 
         for (int i = start; i < end; i++)
         {
-            hashCode = unchecked((hashCode ^ text[i]) * Hash.FnvPrime);
+            hashCode = unchecked((hashCode ^ text[i]) * FnvPrime);
         }
 
         return hashCode;
@@ -345,7 +346,7 @@ internal static class Hash
     /// <returns>The FNV-1a hash code of the character.</returns>
     internal static int GetFNVHashCode(char ch)
     {
-        return Hash.CombineFNVHash(Hash.FnvOffsetBias, ch);
+        return CombineFNVHash(FnvOffsetBias, ch);
     }
 
     /// <summary>
@@ -359,7 +360,7 @@ internal static class Hash
     {
         foreach (char ch in text)
         {
-            hashCode = unchecked((hashCode ^ ch) * Hash.FnvPrime);
+            hashCode = unchecked((hashCode ^ ch) * FnvPrime);
         }
 
         return hashCode;
@@ -374,6 +375,6 @@ internal static class Hash
     /// <returns>The result of combining <paramref name="hashCode"/> with <paramref name="ch"/> using the FNV-1a algorithm</returns>
     internal static int CombineFNVHash(int hashCode, char ch)
     {
-        return unchecked((hashCode ^ ch) * Hash.FnvPrime);
+        return unchecked((hashCode ^ ch) * FnvPrime);
     }
 }

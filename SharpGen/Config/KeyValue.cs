@@ -17,7 +17,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-        
+
+using System.Globalization;
 using System.Xml.Serialization;
 
 namespace SharpGen.Config;
@@ -69,6 +70,6 @@ public class KeyValue
     [ExcludeFromCodeCoverage]
     public override string ToString()
     {
-        return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}=\"{1}\"", Name, Value);
+        return string.Format(CultureInfo.InvariantCulture, "{0}=\"{1}\"", Name, Value);
     }
 }

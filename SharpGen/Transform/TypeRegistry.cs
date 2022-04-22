@@ -1,8 +1,8 @@
-﻿using SharpGen.Logging;
-using SharpGen.Model;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using SharpGen.Logging;
+using SharpGen.Model;
 
 namespace SharpGen.Transform;
 

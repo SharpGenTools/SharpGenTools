@@ -18,12 +18,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Runtime.InteropServices;
+
 namespace SharpGen.Runtime;
 
 /// <summary>
 /// Base interface for Component Object Model (COM).
 /// </summary>
+/// <unmanaged>IUnknown</unmanaged>
+/// <unmanaged-short>IUnknown</unmanaged-short>
 [ExcludeFromTypeList]
-public partial interface IUnknown
+[Guid("00000000-0000-0000-C000-000000000046"), Vtbl(typeof(ComObjectVtbl))]
+public interface IUnknown : ICallbackable
 {
 }

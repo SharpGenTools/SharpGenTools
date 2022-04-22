@@ -52,7 +52,7 @@ public static partial class MarshallingHelpers
         {
             null => IntPtr.Zero,
             CppObject cpp => cpp.NativePointer,
-            CallbackBase managed => managed.Shadow.Find(typeof(TCallback))
+            CallbackBase managed => managed.Find<TCallback>()
         };
 
     /// <summary>

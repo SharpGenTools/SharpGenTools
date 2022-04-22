@@ -1,7 +1,7 @@
+#nullable enable
+
 using System.Collections.Generic;
 using SharpGen.Config;
-
-#nullable enable
 
 namespace SharpGen.Parser;
 

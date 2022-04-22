@@ -17,6 +17,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
+using System.Globalization;
 using System.Xml.Serialization;
 
 namespace SharpGen.Config;
@@ -36,6 +38,6 @@ public class CreateExtensionRule : ExtensionBaseRule
     [ExcludeFromCodeCoverage]
     public override string ToString()
     {
-        return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} visibility:{1}", base.ToString(), Visibility.HasValue ? Visibility.Value.ToString() : "undef");
+        return string.Format(CultureInfo.InvariantCulture, "{0} visibility:{1}", base.ToString(), Visibility.HasValue ? Visibility.Value.ToString() : "undef");
     }
 }

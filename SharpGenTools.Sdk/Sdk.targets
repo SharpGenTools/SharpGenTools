@@ -1,4 +1,16 @@
-﻿<Project>
+﻿<Project InitialTargets="SharpGenCheckToolset">
+
+  <Target Name="SharpGenCheckToolset"
+          Condition="'$(SharpGenEnableToolsetCheck)' != 'false'">
+    <Error Text="MSBuild version '$(MSBuildToolsVersion)' is not supported by SharpGenTools SDK."
+           File="$(MSBuildProjectFullPath)"
+           Code="SD0004"
+           Condition="'$(MSBuildToolsVersion)' != 'Current'" />
+    <Error Text="Only C# projects are supported by SharpGenTools SDK."
+           File="$(MSBuildProjectFullPath)"
+           Code="SD0007"
+           Condition="'$(MSBuildProjectExtension)' != '.csproj'" />
+  </Target>
 
   <Choose>
     <When Condition="'$(SharpGenIntermediateDir)' == ''">
@@ -30,6 +42,13 @@
   <PropertyGroup>
     <SharpGenGeneratedCodeFolder Condition="'$(SharpGenGeneratedCodeFolder)' == ''">$([MSBuild]::NormalizeDirectory('$(SharpGenIntermediateDir)', 'Generated'))</SharpGenGeneratedCodeFolder>
     <SharpGenConsumerBindMappingConfigId Condition="'$(SharpGenConsumerBindMappingConfigId)' == ''">$(AssemblyName)</SharpGenConsumerBindMappingConfigId>
+
+    <SharpGenSdkToolsDirectory Condition="'$(SharpGenSdkToolsDirectory)' == ''">$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', 'tools'))</SharpGenSdkToolsDirectory>
+    <CppStandard Condition="'$(CppStandard)' == ''">c++14</CppStandard>
+    <SharpGenWaitForDebuggerAttach Condition="'$(SharpGenWaitForDebuggerAttach)' == ''">false</SharpGenWaitForDebuggerAttach>
+    <SharpGenDocumentationFailuresAsErrors Condition="'$(SharpGenDocumentationFailuresAsErrors)' == ''">true</SharpGenDocumentationFailuresAsErrors>
+
+    <ContinueOnError Condition="'$(ContinueOnError)' == ''">false</ContinueOnError>
   </PropertyGroup>
 
   <Choose>
@@ -55,6 +74,11 @@
 
   <ItemGroup Condition="'@(SharpGenSdkAssembly)' == ''">
     <SharpGenSdkAssembly Include="$([System.IO.Path]::Combine('$(SharpGenSdkToolsDirectory)', '$(SharpGenSdkAssemblyFrameworkIdentifier)', '$(SharpGenSdkAssemblyRuntimeIdentifier)', 'SharpGenTools.Sdk.dll'))" />
+    <Analyzer Include="$([System.IO.Path]::Combine('$(SharpGenSdkToolsDirectory)', '$(SharpGenSdkAssemblyFrameworkIdentifier)', '$(SharpGenSdkAssemblyRuntimeIdentifier)', 'SharpGen.Generator.dll'))" Condition="'@(SharpGenMapping)' != ''" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'@(SharpGenMapping)' != ''">
+    <CompilerVisibleProperty Include="SharpGenWaitForRoslynDebuggerAttach" />
   </ItemGroup>
 
   <ItemGroup Condition="'@(SharpGenCastXml)' == ''">
@@ -231,14 +255,12 @@
                   Macros="$(SharpGenMacros)"
                   OutputPath="$(SharpGenIntermediateDir)"
                   Platforms="@(SharpGenPlatforms)"
-                  SilenceMissingDocumentationErrorIdentifierPatterns="@(SharpGenSilenceMissingDocumentationErrorIdentifierPatterns)"
-                  UseFunctionPointersInVtbl="$(SharpGenUseFunctionPointersInVtbl)" />
+                  SilenceMissingDocumentationErrorIdentifierPatterns="@(SharpGenSilenceMissingDocumentationErrorIdentifierPatterns)" />
 
     <!-- MSBuild will include these items even when target is considered up-to-date. -->
     <!-- Added bonus: these don't show up in IDE file tree (no clutter) -->
     <ItemGroup>
       <Compile Include="@(GeneratedCSharpFiles)" />
-      <Compile Include="$(MSBuildThisFileDirectory)SourceGeneratorUtilities.cs" />
     </ItemGroup>
   </Target>
 
@@ -249,15 +271,30 @@
       <SharpGenPlatforms Include="ItaniumSystemV" Condition="!$(RuntimeIdentifier.StartsWith('win'))" />
     </ItemGroup>
 
-    <PropertyGroup Condition="'$(SharpGenUseFunctionPointersInVtbl)' == ''">
-      <SharpGenUseFunctionPointersInVtbl Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' and '$(_TargetFrameworkVersionWithoutV)' >= '5.0'">true</SharpGenUseFunctionPointersInVtbl>
-      <SharpGenUseFunctionPointersInVtbl Condition="'$(SharpGenUseFunctionPointersInVtbl)' == ''">false</SharpGenUseFunctionPointersInVtbl>
-    </PropertyGroup>
-
     <ReadLinesFromFile Condition="Exists('@(SharpGenInputsCache)')"
                        File="@(SharpGenInputsCache)">
       <Output TaskParameter="Lines" ItemName="SharpGenInputs" />
     </ReadLinesFromFile>
+
+    <ItemGroup>
+      <_SharpGenMappingNonexistent Include="@(SharpGenMapping)" Condition="!Exists('%(Identity)')" />
+      <_SharpGenConsumerMappingNonexistent Include="@(SharpGenConsumerMapping)" Condition="!Exists('%(Identity)')" />
+    </ItemGroup>
+
+    <!-- Issue a warning for each non-existent mapping file. -->
+    <Warning Text="The referenced SharpGen mapping file '%(_SharpGenMappingNonexistent.Identity)' does not exist. This is likely an error in your project file."
+             File="$(MSBuildProjectFullPath)"
+             Code="SD0005"
+             Condition="'@(_SharpGenMappingNonexistent)' != ''"/>
+    <Warning Text="The referenced SharpGen consumer mapping file '%(_SharpGenConsumerMappingNonexistent.Identity)' does not exist. Check your referenced packages and projects."
+             File="$(MSBuildProjectFullPath)"
+             Code="SD0006"
+             Condition="'@(_SharpGenConsumerMappingNonexistent)' != ''"/>
+
+    <ItemGroup>
+      <_SharpGenMappingNonexistent Remove="@(_SharpGenMappingNonexistent)" />
+      <_SharpGenConsumerMappingNonexistent Remove="@(_SharpGenConsumerMappingNonexistent)" />
+    </ItemGroup>
 
     <SharpPropertyCacheTask CastXmlArguments="@(CastXmlArg)"
                             CastXmlExecutable="@(SharpGenCastXml)"
@@ -276,8 +313,7 @@
                             OutputPath="$(SharpGenIntermediateDir)"
                             Platforms="@(SharpGenPlatforms)"
                             PropertyCache="@(SharpGenPropertyCache)"
-                            SilenceMissingDocumentationErrorIdentifierPatterns="@(SharpGenSilenceMissingDocumentationErrorIdentifierPatterns)"
-                            UseFunctionPointersInVtbl="$(SharpGenUseFunctionPointersInVtbl)" />
+                            SilenceMissingDocumentationErrorIdentifierPatterns="@(SharpGenSilenceMissingDocumentationErrorIdentifierPatterns)" />
   </Target>
 
   <Target Name="GenerateConsumerBindMappingFile"

@@ -19,43 +19,47 @@
 // THE SOFTWARE.
 
 using System;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace SharpGen.Runtime;
 
-[DebuggerTypeProxy(typeof(CppObjectVtblDebugView))]
-public unsafe class ComObjectVtbl : CppObjectVtbl
+public static unsafe class ComObjectVtbl
 {
-    public ComObjectVtbl(int numberOfCallbackMethods) : base(numberOfCallbackMethods + 3)
-    {
 #if NET5_0_OR_GREATER
-            AddMethod((delegate* unmanaged[Stdcall]<IntPtr, Guid*, void*, int>)(&QueryInterfaceImpl), 0u);
-            AddMethod((delegate* unmanaged[Stdcall]<IntPtr, uint>)(&AddRefImpl), 1u);
-            AddMethod((delegate* unmanaged[Stdcall]<IntPtr, uint>)(&ReleaseImpl), 2u);
+    public static readonly IntPtr[] Vtbl =
+    {
+        (IntPtr) (delegate* unmanaged[Stdcall]<IntPtr, Guid*, void*, int>) (&QueryInterfaceImpl),
+        (IntPtr) (delegate* unmanaged[Stdcall]<IntPtr, uint>) (&AddRefImpl),
+        (IntPtr) (delegate* unmanaged[Stdcall]<IntPtr, uint>) (&ReleaseImpl)
+    };
 #else
-        AddMethod(new QueryInterfaceDelegate(QueryInterfaceImpl), 0u);
-        AddMethod(new AddRefDelegate(AddRefImpl), 1u);
-        AddMethod(new ReleaseDelegate(ReleaseImpl), 2u);
+    private static readonly QueryInterfaceDelegate QueryInterfaceDelegateCache = QueryInterfaceImpl;
+    private static readonly AddRefDelegate AddRefDelegateCache = AddRefImpl;
+    private static readonly ReleaseDelegate ReleaseDelegateCache = ReleaseImpl;
+    public static readonly IntPtr[] Vtbl =
+    {
+        Marshal.GetFunctionPointerForDelegate(QueryInterfaceDelegateCache),
+        Marshal.GetFunctionPointerForDelegate(AddRefDelegateCache),
+        Marshal.GetFunctionPointerForDelegate(ReleaseDelegateCache)
+    };
 #endif
-    }
 
 #if !NET5_0_OR_GREATER
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate int QueryInterfaceDelegate(IntPtr thisObject, Guid* guid, void* output);
 #else
-        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
 #endif
     private static int QueryInterfaceImpl(IntPtr thisObject, Guid* guid, void* output)
     {
-        var callback = ToCallback<CallbackBase>(thisObject);
+        var callback = CppObjectShadow.ToCallback<CallbackBase>(thisObject);
 #if DEBUG
         try
         {
 #endif
             ref var ppvObject = ref Unsafe.AsRef<IntPtr>(output);
-            var result = callback.Shadow.Find(*guid);
+            var result = callback.Find(*guid);
             ppvObject = result;
 
             if (result == IntPtr.Zero)
@@ -78,17 +82,17 @@ public unsafe class ComObjectVtbl : CppObjectVtbl
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate uint AddRefDelegate(IntPtr thisObject);
 #else
-        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
 #endif
     private static uint AddRefImpl(IntPtr thisObject) =>
-        MarshallingHelpers.AddRef(ToCallback<IUnknown>(thisObject));
+        MarshallingHelpers.AddRef(CppObjectShadow.ToCallback<IUnknown>(thisObject));
 
 #if !NET5_0_OR_GREATER
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate uint ReleaseDelegate(IntPtr thisObject);
 #else
-        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
 #endif
     private static uint ReleaseImpl(IntPtr thisObject) =>
-        MarshallingHelpers.Release(ToCallback<IUnknown>(thisObject));
+        MarshallingHelpers.Release(CppObjectShadow.ToCallback<IUnknown>(thisObject));
 }

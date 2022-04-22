@@ -1,43 +1,58 @@
 ﻿using System;
 using System.Xml.Serialization;
 
-namespace SharpGen.Config;
-
-public enum SdkLib
+namespace SharpGen.Config
 {
-    StdLib = 1,
-    WindowsSdk
-}
-
-public class SdkRule
-{
-    public SdkRule()
+    public enum SdkLib
     {
+        StdLib = 1,
+        WindowsSdk
     }
 
-    public SdkRule(SdkLib name, string version)
+    public static class SdkLibExtensions
     {
-        Name = name;
-        Version = version;
-    }
-
-    [XmlIgnore]
-    public SdkLib Name { get; private set; }
-
-    [XmlAttribute("name")]
-    public string _Name_
-    {
-        get => Name.ToString();
-        set
+        public static string Name(this SdkLib lib) => lib switch
         {
-            Enum.TryParse(value, out SdkLib name);
-            Name = name;
-        }
+            SdkLib.StdLib => "standard library",
+            SdkLib.WindowsSdk => "Windows SDK",
+            _ => lib.ToString()
+        };
     }
 
-    public bool ShouldSerialize_Name_() => Enum.IsDefined(typeof(SdkLib), Name);
-        
+    public class SdkRule
+    {
+        public SdkRule()
+        {
+        }
 
-    [XmlAttribute("version")]
-    public string Version { get; set; }
+        public SdkRule(SdkLib name, string version)
+        {
+            Name = name;
+            Version = version;
+        }
+
+        [XmlIgnore]
+        public SdkLib? Name { get; private set; }
+
+        [XmlAttribute("name")]
+        public string _Name_
+        {
+            get => Name.ToString();
+            set
+            {
+                if (Enum.TryParse(value, out SdkLib name))
+                    Name = name;
+                else
+                    Name = null;
+            }
+        }
+
+        public bool ShouldSerialize_Name_() => Name is { } name && Enum.IsDefined(typeof(SdkLib), name);
+
+        [XmlAttribute("version")]
+        public string Version { get; set; }
+
+        [XmlAttribute("components")]
+        public string Components { get; set; }
+    }
 }

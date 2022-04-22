@@ -20,7 +20,6 @@ public abstract class SharpGenTaskBase : SharpTaskBase
     [Required] public string OutputPath { get; set; }
     [Required] public ITaskItem[] Platforms { get; set; }
     [Required] public ITaskItem[] SilenceMissingDocumentationErrorIdentifierPatterns { get; set; }
-    [Required] public bool UseFunctionPointersInVtbl { get; set; }
     public ITaskItem ConsumerBindMappingConfig { get; set; }
     // ReSharper restore UnusedAutoPropertyAccessor.Global, MemberCanBeProtected.Global
 }

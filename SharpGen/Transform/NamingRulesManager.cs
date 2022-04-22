@@ -41,21 +41,25 @@ public sealed partial class NamingRulesManager
     {
         var name = originalName;
 
-        // Handle Tag
-        var nameModifiedByTag = false;
+        if (tag.MappingNameFinal is { Length: > 0 } mappingNameFinal)
+        {
+            // Rename is tagged as final, then return the string
+            isFinal = true;
+            isPrematureBreak = false;
+            return mappingNameFinal;
+        }
 
-        if (!string.IsNullOrEmpty(tag.MappingName))
+        // Handle Tag
+        bool nameModifiedByTag;
+
+        if (tag.MappingName is { Length: > 0 } mappingName)
         {
             nameModifiedByTag = true;
-            name = tag.MappingName;
-
-            // Rename is tagged as final, then return the string
-            if (tag.IsFinalMappingName == true)
-            {
-                isFinal = true;
-                isPrematureBreak = false;
-                return name;
-            }
+            name = mappingName;
+        }
+        else
+        {
+            nameModifiedByTag = false;
         }
 
         isFinal = false;

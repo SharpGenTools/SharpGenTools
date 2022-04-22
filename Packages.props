@@ -7,9 +7,21 @@
     </PackageReference>
     <PackageReference Update="FakeItEasy.Analyzer.CSharp" Version="6.1.0" />
     <PackageReference Update="FakeItEasy" Version="7.3.1" />
+    <PackageReference Update="IsExternalInit" Version="1.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Update="Karambolo.Extensions.Logging.File" Version="3.2.1" />
     <PackageReference Update="Microsoft.Bcl.HashCode" Version="1.1.1" />
     <PackageReference Update="Microsoft.Build.Utilities.Core" Version="16.11.0" />
+    <PackageReference Update="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
     <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="3.11.0" />
+    <PackageReference Update="Microsoft.Extensions.Hosting" Version="6.0.1" />
+    <PackageReference Update="Microsoft.Extensions.Logging" Version="6.0.0" />
+    <PackageReference Update="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
     <PackageReference Update="Microsoft.NET.Test.Sdk" Version="16.11.0" />
     <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.0-beta-20204-02">
       <PrivateAssets>all</PrivateAssets>

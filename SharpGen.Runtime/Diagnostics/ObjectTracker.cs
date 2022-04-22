@@ -20,12 +20,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 
 namespace SharpGen.Runtime.Diagnostics;
 
-using ObjectReferenceDictionary = Dictionary<IntPtr, List<ObjectReference>>;
+using ObjectReferenceDictionary = Dictionary<IntPtr, List<WeakReference<CppObject>>>;
 
 /// <summary>
 /// Track all allocated objects.
@@ -82,29 +81,11 @@ public static class ObjectTracker
     {
         if (!objectReferences.TryGetValue(nativePointer, out var referenceList))
         {
-            referenceList = new List<ObjectReference>();
+            referenceList = new List<WeakReference<CppObject>>();
             objectReferences.Add(nativePointer, referenceList);
         }
 
-        referenceList.Add(new ObjectReference(DateTime.Now, cppObject, Environment.StackTrace));
-    }
-
-    /// <summary>
-    /// Finds a list of object reference from a specified C++ object pointer.
-    /// </summary>
-    /// <param name="objPtr">The C++ object pointer.</param>
-    /// <returns>A list of object reference</returns>
-    public static List<ObjectReference> Find(IntPtr objPtr)
-    {
-        var objectReferences = ObjectReferences;
-        lock (objectReferences)
-        {
-            // Object is already tracked
-            if (objectReferences.TryGetValue(objPtr, out var referenceList))
-                return new List<ObjectReference>(referenceList);
-        }
-
-        return new List<ObjectReference>();
+        referenceList.Add(new WeakReference<CppObject>(cppObject));
     }
 
     /// <summary>
@@ -150,8 +131,7 @@ public static class ObjectTracker
         // Object is tracked, remove from reference list
         for (var i = referenceList.Count - 1; i >= 0; --i)
         {
-            var objectReference = referenceList[i].Object;
-            if (!objectReference.TryGetTarget(out var target) || ReferenceEquals(target, cppObject))
+            if (!referenceList[i].TryGetTarget(out var target) || ReferenceEquals(target, cppObject))
                 referenceList.RemoveAt(i);
         }
 
@@ -187,9 +167,9 @@ public static class ObjectTracker
     /// <summary>
     /// Reports all COM object that are active and not yet disposed.
     /// </summary>
-    public static List<ObjectReference> FindActiveObjects()
+    private static List<WeakReference<CppObject>> FindActiveObjects()
     {
-        List<ObjectReference> activeObjects;
+        List<WeakReference<CppObject>> activeObjects;
         var objectReferences = ObjectReferences;
         lock (objectReferences)
         {
@@ -198,51 +178,11 @@ public static class ObjectTracker
             {
                 foreach (var objectReference in referenceList)
                 {
-                    if (objectReference.Object.TryGetTarget(out _))
+                    if (objectReference.TryGetTarget(out _))
                         activeObjects.Add(objectReference);
                 }
             }
         }
         return activeObjects;
-    }
-
-    /// <summary>
-    /// Reports all C++ objects that are active and not yet disposed.
-    /// </summary>
-    public static string ReportActiveObjects()
-    {
-        var text = new StringBuilder();
-        var count = 0;
-        var countPerType = new Dictionary<string, int>();
-
-        foreach (var findActiveObject in FindActiveObjects())
-        {
-            var findActiveObjectStr = findActiveObject.ToString();
-            if (string.IsNullOrEmpty(findActiveObjectStr))
-                continue;
-
-            text.AppendFormat("[{0}]: {1}", count++, findActiveObjectStr);
-
-            if (!findActiveObject.Object.TryGetTarget(out var target))
-                continue;
-
-            var targetType = target.GetType().Name;
-            countPerType[targetType] = countPerType.TryGetValue(targetType, out var typeCount)
-                                           ? typeCount + 1
-                                           : 1;
-        }
-
-        var keys = new List<string>(countPerType.Keys);
-        keys.Sort();
-
-        text.AppendLine();
-        text.AppendLine("Count per Type:");
-        foreach (var key in keys)
-        {
-            text.AppendFormat("{0} : {1}", key, countPerType[key]);
-            text.AppendLine();
-        }
-
-        return text.ToString();
     }
 }

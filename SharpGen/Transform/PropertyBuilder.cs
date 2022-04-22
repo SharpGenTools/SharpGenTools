@@ -1,9 +1,9 @@
-﻿using SharpGen.Config;
-using SharpGen.Model;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using SharpGen.Config;
 using SharpGen.CppModel;
+using SharpGen.Model;
 
 namespace SharpGen.Transform;
 

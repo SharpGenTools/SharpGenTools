@@ -133,7 +133,7 @@ public sealed class CsInterface : CsTypeBase
     }
 
     private string DefaultShadowFullName => $"{QualifiedName}Shadow";
-    private string DefaultVtblFullName => $"{ShadowName}.{Name}Vtbl";
+    private string DefaultVtblFullName => $"{QualifiedName}Vtbl";
 
     public bool AutoGenerateShadow { get; } = true;
     public bool AutoGenerateVtbl { get; } = true;

@@ -17,6 +17,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
+using System.Globalization;
 using System.Xml.Serialization;
 
 namespace SharpGen.Config;
@@ -75,6 +77,6 @@ public class ConstantRule : ExtensionBaseRule
     [ExcludeFromCodeCoverage]
     public override string ToString()
     {
-        return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} from-{1}:{2} class:{3} cpp-type:{4} cpp-cast:{5} type:{6} name:{7} value:{8}", base.ToString(), Macro!=null?"macro":"guid",  Macro ?? Guid, ClassName, CppType, CppCast, Type, Name, Value);
+        return string.Format(CultureInfo.InvariantCulture, "{0} from-{1}:{2} class:{3} cpp-type:{4} cpp-cast:{5} type:{6} name:{7} value:{8}", base.ToString(), Macro!=null?"macro":"guid",  Macro ?? Guid, ClassName, CppType, CppCast, Type, Name, Value);
     }
 }

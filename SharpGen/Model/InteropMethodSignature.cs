@@ -20,10 +20,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SharpGen.CppModel;
 
 namespace SharpGen.Model;
 
@@ -66,7 +66,7 @@ public sealed class InteropMethodSignature : IEquatable<InteropMethodSignature>
         }
     }
 
-    public CppCallingConvention CallingConvention { get; set; }
+    public CallingConvention CallingConvention { get; set; }
     public InteropMethodSignatureFlags Flags { get; set; }
 
     [ExcludeFromCodeCoverage]

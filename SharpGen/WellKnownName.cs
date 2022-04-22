@@ -50,6 +50,11 @@ public enum WellKnownName
     ShadowAttribute,
 
     /// <summary>
+    ///     Attribute that defines the virtual method table type for an interface.
+    /// </summary>
+    VtblAttribute,
+
+    /// <summary>
     ///     Static class that enables platform detection for SharpGen-generated code.
     /// </summary>
     PlatformDetection,

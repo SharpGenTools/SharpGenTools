@@ -18,15 +18,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.Runtime.InteropServices;
+
 namespace SharpGen.Runtime;
 
-/// <summary>
-/// IInspectable used for a C# callback object exposed as WinRT Component.
-/// </summary>
-/// <msdn-id>br205821</msdn-id>
-/// <unamanaged>IInspectable</unamanaged>
+/// <unmanaged>IInspectable</unmanaged>
 /// <unmanaged-short>IInspectable</unmanaged-short>
 [ExcludeFromTypeList]
-public partial interface IInspectable
+[Guid("AF86E2E0-B12D-4c6a-9C5A-D7AA65101E90"), Vtbl(typeof(InspectableVtbl))]
+public interface IInspectable : IUnknown
 {
 }

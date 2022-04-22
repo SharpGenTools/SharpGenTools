@@ -20,7 +20,6 @@ public interface IGeneratorRegistry
     IMemberCodeGenerator<CsFunction> Function { get; }
     IMemberCodeGenerator<CsFunction> FunctionImport { get; }
     IMemberCodeGenerator<CsInterface> Interface { get; }
-    IMemberCodeGenerator<CsInterface> Shadow { get; }
     IMemberCodeGenerator<CsInterface> Vtbl { get; }
     IMemberCodeGenerator<CsCallable> ShadowCallable { get; }
     IStatementCodeGenerator<CsCallable> ReverseCallableProlog { get; }

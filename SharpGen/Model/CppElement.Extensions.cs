@@ -114,10 +114,11 @@ public static class CppElementExtensions
         if (newRule.Property.HasValue) tag.Property = newRule.Property;
         if (newRule.CustomVtbl.HasValue) tag.CustomVtbl = newRule.CustomVtbl;
         if (newRule.Persist.HasValue) tag.Persist = newRule.Persist;
-        if (newRule.MappingName != null)
-            tag.MappingName = RegexRename(patchRegex, element.FullName, newRule.MappingName);
+        if (newRule.MappingName is { } mappingName)
+            tag.MappingName = RegexRename(patchRegex, element.FullName, mappingName);
+        if (newRule.MappingNameFinal is { } mappingNameFinal)
+            tag.MappingNameFinal = RegexRename(patchRegex, element.FullName, mappingNameFinal);
         if (newRule.NamingFlags.HasValue) tag.NamingFlags = newRule.NamingFlags.Value;
-        if (newRule.IsFinalMappingName != null) tag.IsFinalMappingName = newRule.IsFinalMappingName;
         if (newRule.StructPack != null) tag.StructPack = newRule.StructPack;
         if (newRule.StructHasNativeValueType != null)
             tag.StructHasNativeValueType = newRule.StructHasNativeValueType;

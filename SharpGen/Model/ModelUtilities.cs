@@ -8,7 +8,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SharpGen.Config;
-using SharpGen.CppModel;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace SharpGen.Model;
@@ -98,29 +97,19 @@ public static class ModelUtilities
         return list;
     }
 
-    private static string ToManagedCallingConventionName(this CppCallingConvention callConv) =>
-        callConv switch
-        {
-            CppCallingConvention.StdCall => nameof(CallingConvention.StdCall),
-            CppCallingConvention.CDecl => nameof(CallingConvention.Cdecl),
-            CppCallingConvention.ThisCall => nameof(CallingConvention.ThisCall),
-            CppCallingConvention.FastCall => nameof(CallingConvention.FastCall),
-            _ => nameof(CallingConvention.Winapi)
-        };
-
-    public static ExpressionSyntax GetManagedCallingConventionExpression(CppCallingConvention callingConvention) =>
+    public static ExpressionSyntax GetManagedCallingConventionExpression(CallingConvention callingConvention) =>
         MemberAccessExpression(
             SyntaxKind.SimpleMemberAccessExpression,
             CallingConventionIdentifier,
-            IdentifierName(callingConvention.ToManagedCallingConventionName())
+            IdentifierName(callingConvention.ToString())
         );
 
-    public static string ToCallConvShortName(this CppCallingConvention callConv) => callConv switch
+    public static string ToCallConvShortName(this CallingConvention callConv) => callConv switch
     {
-        CppCallingConvention.StdCall => "Stdcall",
-        CppCallingConvention.CDecl => "Cdecl",
-        CppCallingConvention.ThisCall => "Thiscall",
-        CppCallingConvention.FastCall => "Fastcall",
+        CallingConvention.StdCall => "Stdcall",
+        CallingConvention.Cdecl => "Cdecl",
+        CallingConvention.ThisCall => "Thiscall",
+        CallingConvention.FastCall => "Fastcall",
         _ => throw new ArgumentOutOfRangeException(nameof(callConv))
     };
 

@@ -21,6 +21,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Xml.Serialization;
 
@@ -126,6 +127,6 @@ public class IncludeRule
     [ExcludeFromCodeCoverage]
     public override string ToString()
     {
-        return string.Format(System.Globalization.CultureInfo.InvariantCulture, "include: {0}", File);
+        return string.Format(CultureInfo.InvariantCulture, "include: {0}", File);
     }
 }

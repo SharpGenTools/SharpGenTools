@@ -33,7 +33,9 @@ public class MacroManagerTests : ParsingTestBase
             }
         };
 
-        var castXml = GetCastXml(ConfigFile.Load(config, Array.Empty<string>(), Logger));
+        config.Load(null, Array.Empty<string>(), Logger);
+
+        var castXml = GetCastXml(config);
 
         var macroManager = new MacroManager(castXml);
 

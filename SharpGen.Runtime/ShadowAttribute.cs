@@ -17,6 +17,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
 using System;
 using System.Diagnostics;
 using System.Reflection;
@@ -25,7 +26,7 @@ using System.Runtime.CompilerServices;
 namespace SharpGen.Runtime;
 
 /// <summary>
-/// Shadow attribute used to associate a C++ callbackable interface to its Shadow implementation.
+/// Shadow attribute used to associate a C++ callable managed interface to its Shadow implementation.
 /// </summary>
 [AttributeUsage(AttributeTargets.Interface)]
 public sealed class ShadowAttribute : Attribute
@@ -38,12 +39,15 @@ public sealed class ShadowAttribute : Attribute
     /// <summary>
     /// Initializes a new instance of <see cref="ShadowAttribute"/> class.
     /// </summary>
-    /// <param name="typeOfTheAssociatedShadow">Type of the associated shadow</param>
-    public ShadowAttribute(Type typeOfTheAssociatedShadow)
+    /// <param name="holder">Type of the associated shadow</param>
+    public ShadowAttribute(Type holder)
     {
-        Type = typeOfTheAssociatedShadow ?? throw new ArgumentNullException(nameof(typeOfTheAssociatedShadow));
+        Type = holder ?? throw new ArgumentNullException(nameof(holder));
 
-        Debug.Assert(typeof(CppObjectShadow).GetTypeInfo().IsAssignableFrom(typeOfTheAssociatedShadow.GetTypeInfo()));
+        Debug.Assert(typeof(CppObjectShadow).GetTypeInfo().IsAssignableFrom(holder.GetTypeInfo()));
+#if !NETSTANDARD1_3
+        Debug.Assert(holder.GetTypeInfo().GetConstructor(Type.EmptyTypes) is not null);
+#endif
     }
 
     [MethodImpl(Utilities.MethodAggressiveOptimization)]

@@ -1,7 +1,7 @@
+#nullable enable
+
 using System;
 using SharpGen.Logging;
-
-#nullable enable
 
 namespace SharpGen.Doc;
 

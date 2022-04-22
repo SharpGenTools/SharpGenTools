@@ -1,7 +1,7 @@
-﻿using SharpGen.Logging;
-using SharpGen.Model;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using SharpGen.Logging;
+using SharpGen.Model;
 
 namespace SharpGen.Transform;
 
@@ -152,7 +152,7 @@ internal sealed class InteropSignatureTransform : IInteropSignatureTransform
     }
 
     private InteropType CoerceToBlittable(InteropType type) =>
-        ioc.GeneratorConfig.UseFunctionPointersInVtbl && type is { TypeName: "char" } ? "ushort" : type;
+        type is { TypeName: "char" } ? TypeRegistry.UInt16 : type;
 
     private InteropType GetInteropTypeForReturnValue(CsReturnValue returnValue, PlatformDetectionType platform)
     {

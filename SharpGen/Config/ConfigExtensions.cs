@@ -1,7 +1,7 @@
-﻿using SharpGen.CppModel;
-using SharpGen.Logging;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using SharpGen.CppModel;
+using SharpGen.Logging;
 
 namespace SharpGen.Config;
 

@@ -36,10 +36,7 @@ public class Interface : MappingTestBase
             }
         };
 
-        var iface = new CppInterface("Interface")
-        {
-            TotalMethodCount = 1
-        };
+        var iface = new CppInterface("Interface");
 
         iface.Add(new CppMethod("method")
         {
@@ -104,10 +101,7 @@ public class Interface : MappingTestBase
             }
         };
 
-        var iface = new CppInterface("Interface")
-        {
-            TotalMethodCount = 1
-        };
+        var iface = new CppInterface("Interface");
 
         iface.Add(new CppMethod("method")
         {
@@ -162,10 +156,7 @@ public class Interface : MappingTestBase
             }
         };
 
-        var iface = new CppInterface("Interface")
-        {
-            TotalMethodCount = 1
-        };
+        var iface = new CppInterface("Interface");
 
         var method = new CppMethod("method")
         {
@@ -265,7 +256,6 @@ public class Interface : MappingTestBase
 
         CppInterface iface = new("ID3D12RootSignatureDeserializer")
         {
-            TotalMethodCount = 1,
             Items = new[]
             {
                 new CppMethod("GetRootSignatureDesc")
@@ -378,7 +368,6 @@ public class Interface : MappingTestBase
 
         CppInterface iface = new("IDxcUtils")
         {
-            TotalMethodCount = 1,
             Items = new[]
             {
                 new CppMethod("CreateBlobFromPinned")
@@ -542,7 +531,6 @@ public class Interface : MappingTestBase
 
         CppInterface iface = new("IDirect3DSurface9")
         {
-            TotalMethodCount = 1,
             Items = new[]
             {
                 new CppMethod("ReleaseDC")

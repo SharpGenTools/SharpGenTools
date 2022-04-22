@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using SharpGen.Config;
 using SharpGen.CppModel;
 using SharpGen.Model;
@@ -17,15 +18,15 @@ public abstract class MappingTestBase : TestBase
     protected (CsAssembly Assembly, IEnumerable<DefineExtensionRule> Defines) MapModel(CppModule module, ConfigFile config)
     {
         var transformer = CreateTransformer();
-
-        return transformer.Transform(module, ConfigFile.Load(config, new string[0], Logger));
+        config.Load(null, Array.Empty<string>(), Logger);
+        return transformer.Transform(module, config);
     }
 
     protected (IEnumerable<BindRule> bindings, IEnumerable<DefineExtensionRule> defines) GetConsumerBindings(CppModule module, ConfigFile config)
     {
         var transformer = CreateTransformer();
-
-        transformer.Transform(module, ConfigFile.Load(config, new string[0], Logger));
+        config.Load(null, Array.Empty<string>(), Logger);
+        transformer.Transform(module, config);
 
         return transformer.GenerateTypeBindingsForConsumers();
     }

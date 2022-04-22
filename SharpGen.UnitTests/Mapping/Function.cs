@@ -113,10 +113,7 @@ public class Function : MappingTestBase
             }
         };
 
-        var iface = new CppInterface("Interface")
-        {
-            TotalMethodCount = 1
-        };
+        var iface = new CppInterface("Interface");
 
         iface.Add(new CppMethod("method")
         {
@@ -177,10 +174,7 @@ public class Function : MappingTestBase
             }
         };
 
-        var iface = new CppInterface("Interface")
-        {
-            TotalMethodCount = 1
-        };
+        var iface = new CppInterface("Interface");
 
         iface.Add(new CppMethod("method")
         {

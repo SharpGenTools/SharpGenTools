@@ -17,6 +17,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+
+using System.Globalization;
 using System.Xml.Serialization;
 
 namespace SharpGen.Config;
@@ -83,6 +85,6 @@ public class BindRule : ConfigBaseRule
     [ExcludeFromCodeCoverage]
     public override string ToString()
     {
-        return string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} from:{1} to:{2} marshal:{3}", base.ToString(), From, To, Marshal);
+        return string.Format(CultureInfo.InvariantCulture, "{0} from:{1} to:{2} marshal:{3}", base.ToString(), From, To, Marshal);
     }
 }
