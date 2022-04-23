@@ -1,7 +1,13 @@
+// #define FORCE_REFLECTION_ONLY
+
+#nullable enable
+
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -32,6 +38,7 @@ public static unsafe class TypeDataStorage
     [MethodImpl(Utilities.MethodAggressiveOptimization)]
     internal static Guid GetGuid<T>() where T : ICallbackable
     {
+#if !FORCE_REFLECTION_ONLY
         ref var guid = ref Storage<T>.Guid;
 
         if (guid != default)
@@ -42,21 +49,126 @@ public static unsafe class TypeDataStorage
 #else
         return guid = typeof(T).GUID;
 #endif
+#else
+#if NETSTANDARD1_3
+        return typeof(T).GetTypeInfo().GUID;
+#else
+        return typeof(T).GUID;
+#endif
+#endif
     }
 
     internal static void Register<T>(void* vtbl) where T : ICallbackable
     {
-        Debug.Assert(Storage<T>.TargetVtbl is null);
-        Storage<T>.TargetVtbl = vtbl;
-        vtblByGuid[GetGuid<T>()] = new IntPtr(vtbl);
+#if !FORCE_REFLECTION_ONLY
+        Register(GetGuid<T>(), vtbl);
+#endif
     }
 
-    internal static bool GetVtbl(Guid guid, out void* pointer)
+    internal static void Register(Guid guid, void* vtbl) => vtblByGuid[guid] = new IntPtr(vtbl);
+
+    internal static IntPtr[] GetSourceVtbl<T>() where T : ICallbackable
     {
-        var result = vtblByGuid.TryGetValue(guid, out var ptr);
-        pointer = ptr.ToPointer();
-        return result;
+#if !FORCE_REFLECTION_ONLY
+        if (Storage<T>.SourceVtbl is { } storedVtbl)
+            return storedVtbl;
+#endif
+
+        return GetSourceVtblFromReflection(typeof(T));
     }
+
+    private static IntPtr[] GetSourceVtblFromReflection(Type type)
+    {
+        const string vtbl = "Vtbl";
+
+        var vtblAttribute = VtblAttribute.Get(type);
+        Debug.Assert(vtblAttribute is not null, $"Type {type.FullName} has no Vtbl attribute");
+
+        var vtblType = vtblAttribute.Type;
+
+#if NETSTANDARD1_3
+        static bool Predicate(MemberInfo x) => x.Name == vtbl;
+
+        if (vtblType.GetRuntimeFields().FirstOrDefault(Predicate)?.GetValue(null) is IntPtr[] vtblFieldValue)
+        {
+            return vtblFieldValue;
+        }
+
+        if (vtblType.GetRuntimeProperties().FirstOrDefault(Predicate)?.GetValue(null) is IntPtr[] vtblPropertyValue)
+        {
+            return vtblPropertyValue;
+        }
+#else
+        const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Static;
+
+        if (vtblType.GetField(vtbl, flags)?.GetValue(null) is IntPtr[] vtblFieldValue)
+        {
+            return vtblFieldValue;
+        }
+
+        if (vtblType.GetProperty(vtbl, flags)?.GetValue(null) is IntPtr[] vtblPropertyValue)
+        {
+            return vtblPropertyValue;
+        }
+#endif
+
+        Debug.Fail($"Type {type.FullName} has no Vtbl field or property");
+
+        return null;
+    }
+
+    internal static bool GetTargetVtbl(TypeInfo type, out void* pointer)
+    {
+#if !FORCE_REFLECTION_ONLY
+        if (vtblByGuid.TryGetValue(type.GUID, out var ptr))
+        {
+            pointer = ptr.ToPointer();
+            return true;
+        }
+#endif
+
+        if (GetSourceVtblFromReflection(type.AsType()) is { } sourceVtbl)
+        {
+            pointer = RegisterFromReflection(type, sourceVtbl).ToPointer();
+            return true;
+        }
+
+        pointer = default;
+        return false;
+    }
+
+    private static IntPtr RegisterFromReflection(TypeInfo type, IntPtr[] sourceVtbl)
+    {
+        var callbackable = typeof(ICallbackable).GetTypeInfo();
+
+        TypeDataRegistrationHelper helper = new();
+        List<RegisterInheritanceItem> items = new();
+
+        foreach (var iface in type.ImplementedInterfaces)
+        {
+            var typeInfo = iface.GetTypeInfo();
+            if (callbackable == typeInfo || !callbackable.IsAssignableFrom(typeInfo))
+                continue;
+
+            var iSourceVtbl = GetSourceVtblFromReflection(iface);
+            if (iSourceVtbl is null)
+                throw new Exception($"Failed to reflect Vtbl out of an {nameof(ICallbackable)} interface '{iface.FullName}'.");
+
+            items.Add(new RegisterInheritanceItem(typeInfo, typeInfo.ImplementedInterfaces.Count(), iSourceVtbl));
+        }
+
+        // TODO: properly sort items by inheritance
+        // TODO: verify single inheritance
+        items.Sort(static (x, y) => Comparer<int>.Default.Compare(x.InterfaceCount, y.InterfaceCount));
+
+        foreach (var (_, _, iSourceVtbl) in items)
+            helper.Add(iSourceVtbl);
+
+        helper.Add(sourceVtbl);
+        return helper.Register(type);
+    }
+
+    private record struct RegisterInheritanceItem(TypeInfo Type, int InterfaceCount, IntPtr[] SourceVtbl);
 
     [SuppressMessage("ReSharper", "StaticMemberInGenericType")]
     [SuppressMessage("Usage", "CA2211:Non-constant fields should not be visible")]
@@ -64,6 +176,5 @@ public static unsafe class TypeDataStorage
     {
         public static Guid Guid;
         public static IntPtr[] SourceVtbl;
-        public static void* TargetVtbl;
     }
 }

@@ -18,10 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -35,9 +37,9 @@ namespace SharpGen.Runtime;
 /// </summary>
 public abstract unsafe partial class CallbackBase : DisposeBase, ICallbackable
 {
-    private Dictionary<Guid, IntPtr> _ccw;
+    private Dictionary<Guid, IntPtr>? _ccw;
     private IntPtr _guidPtr;
-    private IntPtr[] _guids;
+    private IntPtr[]? _guids;
 #if NET5_0_OR_GREATER
     private uint _refCount = 1;
 #else
@@ -110,7 +112,7 @@ public abstract unsafe partial class CallbackBase : DisposeBase, ICallbackable
             if (_guids is { } guids)
                 return guids;
 
-            var guidList = BuildGuidList(GetType());
+            var guidList = BuildGuidList();
             var guidCount = guidList.Length;
             var guidPtr = Marshal.AllocHGlobal(sizeof(Guid) * guidCount);
             var pGuid = (Guid*) guidPtr;
@@ -134,7 +136,8 @@ public abstract unsafe partial class CallbackBase : DisposeBase, ICallbackable
         if (_ccw is not { } guidToShadow)
         {
             guidToShadow = _ccw = new(4);
-            InitializeCallableWrapperStorage();
+            Debug.Assert(!_thisHandle.IsAllocated);
+            InitializeCallableWrappers(_ccw);
         }
 
         return guidToShadow.TryGetValue(guidType, out var shadow) ? shadow : IntPtr.Zero;
@@ -142,60 +145,34 @@ public abstract unsafe partial class CallbackBase : DisposeBase, ICallbackable
 
     public IntPtr Find<TCallback>() where TCallback : ICallbackable => Find(TypeDataStorage.GetGuid<TCallback>());
 
-    private void InitializeCallableWrapperStorage()
+    protected GCHandle ThisHandle => _thisHandle switch
     {
-        var ccw = _ccw;
-        Debug.Assert(ccw is not null);
-        Debug.Assert(ccw.Count == 0);
-        Debug.Assert(!_thisHandle.IsAllocated);
+        { IsAllocated: true } handle => handle,
+        _ => _thisHandle = GCHandle.Alloc(this, GCHandleType.WeakTrackResurrection)
+    };
 
-        // Associate all shadows with their interfaces.
-        var interfaces = GetUninheritedShadowedInterfaces(GetType());
-        if (interfaces.Count == 0)
-            return;
+    protected static IntPtr CreateCallableWrapper(void* vtbl, GCHandle callback)
+    {
+        Debug.Assert(vtbl != (void*) 0);
+        Debug.Assert(callback.IsAllocated);
+        return CppObjectCallableWrapper.Create(vtbl, callback);
+    }
 
-        var thisHandle = _thisHandle = GCHandle.Alloc(this, GCHandleType.WeakTrackResurrection);
-
-        foreach (var item in interfaces)
+    protected static GCHandle CreateMultiInheritanceShadow(params GCHandle[] shadows)
+    {
+        if (shadows == null) throw new ArgumentNullException(nameof(shadows));
+        return shadows.Length switch
         {
-            Debug.Assert(VtblAttribute.Has(item.Type));
-
-            GCHandle shadowHandle;
-            if (ShadowAttribute.Get(item.Type) is { Type: { } shadowType })
-            {
-                var shadow = (CppObjectShadow) Activator.CreateInstance(shadowType);
-
-                // Initialize the shadow with the callback
-                shadow.Initialize(thisHandle);
-
-                shadowHandle = GCHandle.Alloc(shadow, GCHandleType.Normal);
-            }
-            else
-            {
-                shadowHandle = thisHandle;
-            }
-
-            var success = TypeDataStorage.GetVtbl(item.Type.GUID, out var vtbl);
-            Debug.Assert(success);
-
-            var wrapper = CppObjectShadow.CreateCallableWrapper(shadowHandle, vtbl);
-
-            ccw[item.Type.GUID] = wrapper;
-
-            // Associate also inherited interface to this shadow
-            foreach (var inheritInterface in item.ImplementedInterfaces)
-            {
-                var guid = inheritInterface.GUID;
-
-                // If we have the same GUID as an already added interface,
-                // then there's already an accurate shadow for it, so we have nothing to do.
-                if (ccw.ContainsKey(guid))
-                    continue;
-
-                // Use same CCW as derived
-                ccw[guid] = wrapper;
-            }
-        }
+            0 => throw new ArgumentException(
+                     "Multi-inheritance shadow cannot be constructed for empty shadow collection.",
+                     nameof(shadows)
+                 ),
+            1 => throw new ArgumentException(
+                     "Multi-inheritance shadow cannot be constructed for a single shadow.",
+                     nameof(shadows)
+                 ),
+            _ => GCHandle.Alloc(new CppObjectMultiShadow(shadows), GCHandleType.Normal)
+        };
     }
 
     private void DisposeCallableWrappers(bool disposing)
@@ -209,7 +186,7 @@ public abstract unsafe partial class CallbackBase : DisposeBase, ICallbackable
 #endif
             foreach (var comObjectCallbackNative in shadows)
                 if (freed.Add(comObjectCallbackNative))
-                    CppObjectShadow.FreeCallableWrapper(comObjectCallbackNative, disposing);
+                    CppObjectCallableWrapper.Free(comObjectCallbackNative, disposing);
         }
 
         if (Interlocked.Exchange(ref _guidPtr, default) is var pointer)
@@ -217,5 +194,38 @@ public abstract unsafe partial class CallbackBase : DisposeBase, ICallbackable
 
         if (_thisHandle.IsAllocated)
             _thisHandle.Free();
+    }
+
+    internal IReadOnlyCollection<CppObjectShadow> Shadows
+    {
+        get
+        {
+            Debug.Assert(_ccw is not null);
+
+            HashSet<CppObjectShadow> shadows = new(ReferenceEqualityComparer.Instance);
+
+            foreach (CppObjectCallableWrapper* ccw in _ccw.Values)
+            {
+                var handle = ccw->Shadow;
+                if (!handle.IsAllocated)
+                    continue;
+
+                switch (handle.Target)
+                {
+                    case CppObjectShadow shadow:
+                        shadows.Add(shadow);
+                        break;
+                    case CppObjectMultiShadow multiShadow:
+                        multiShadow.AddShadowsToSet(shadows);
+                        break;
+                }
+            }
+
+#if NET45
+            return shadows.ToArray();
+#else
+            return shadows;
+#endif
+        }
     }
 }

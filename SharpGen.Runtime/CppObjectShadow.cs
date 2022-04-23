@@ -18,8 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#nullable enable
+
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace SharpGen.Runtime;
@@ -36,8 +40,8 @@ public abstract unsafe class CppObjectShadow
 
     static CppObjectShadow()
     {
-        Debug.Assert(Marshal.SizeOf(typeof(CppObjectNative)) == CppObjectNative.Size);
-        Debug.Assert(sizeof(CppObjectNative) == CppObjectNative.Size);
+        Debug.Assert(Marshal.SizeOf(typeof(CppObjectCallableWrapper)) == CppObjectCallableWrapper.Size);
+        Debug.Assert(sizeof(CppObjectCallableWrapper) == CppObjectCallableWrapper.Size);
     }
 
     protected CppObjectShadow()
@@ -54,63 +58,44 @@ public abstract unsafe class CppObjectShadow
         this.callbackHandle = callbackHandle;
     }
 
-    internal static IntPtr CreateCallableWrapper(GCHandle callback, void* vtbl)
-    {
-        // Allocate ptr to vtbl + ptr to callback together
-        var nativePointer = Marshal.AllocHGlobal(CppObjectNative.Size);
-        ref var native = ref *(CppObjectNative*) nativePointer;
-
-        Debug.Assert(callback.IsAllocated);
-
-        native.VtblPointer = vtbl;
-        native.Shadow = callback;
-
-        return nativePointer;
-    }
-
-    internal static void FreeCallableWrapper(IntPtr pointer, bool disposing)
-    {
-        // Free the callback
-        if (((CppObjectNative*) pointer)->Shadow is { IsAllocated: true, Target: CppObjectShadow shadow } handle)
-        {
-            // Callback is a CppObjectShadow subtype. Dispose it if needed.
-            MemoryHelpers.Dispose(shadow, disposing);
-
-            // Free GCHandle if it points to a shadow, not the CallbackBase. Why?
-            // Same GCHandle is reused in multiple CCWs to lower the handle table pressure.
-            handle.Free();
-        }
-
-        // Free instance
-        Marshal.FreeHGlobal(pointer);
-    }
-
-    public static T ToShadow<T>(IntPtr thisPtr) where T : CppObjectShadow
+    public static T ToAnyShadow<T>(IntPtr thisPtr) where T : CppObjectShadow
     {
         Debug.Assert(thisPtr != IntPtr.Zero);
 
-        var handle = ((CppObjectNative*) thisPtr)->Shadow;
+        var handle = ((CppObjectCallableWrapper*) thisPtr)->Shadow;
         Debug.Assert(handle.IsAllocated);
         return handle.Target switch
         {
             T shadow => shadow,
+            CppObjectMultiShadow multiShadow => multiShadow.ToShadow<T>() ?? throw new Exception($"Shadow {typeof(T).FullName} not found in the inheritance graph"),
+            CallbackBase callback => callback.Shadows.OfType<T>().FirstOrDefault() ?? throw new Exception($"Shadow {typeof(T).FullName} not found in the inheritance graph"),
             null => throw new Exception($"Shadow {typeof(T).FullName} is dead"),
+            ICallbackable value => throw new Exception(
+                             $"Shadow is of an unexpected {nameof(ICallbackable)} type {value.GetType().FullName}, expected {typeof(T).FullName}"
+                         ),
             { } value => throw new Exception(
                              $"Shadow is of an unexpected type {value.GetType().FullName}, expected {typeof(T).FullName}"
                          )
         };
     }
 
+    public static IEnumerable<T> ToAllShadows<T>(IntPtr thisPtr) where T : CppObjectShadow =>
+        ToCallback<CallbackBase>(thisPtr).Shadows.OfType<T>();
+
+    public IEnumerable<T> ToAllShadows<T>() where T : CppObjectShadow => ToCallback<CallbackBase>().Shadows.OfType<T>();
+
     public static T ToCallback<T>(IntPtr thisPtr) where T : ICallbackable
     {
         Debug.Assert(thisPtr != IntPtr.Zero);
 
-        var handle = ((CppObjectNative*) thisPtr)->Shadow;
+        var handle = ((CppObjectCallableWrapper*) thisPtr)->Shadow;
         Debug.Assert(handle.IsAllocated);
         return handle.Target switch
         {
             T value => value,
             CppObjectShadow shadow => shadow.ToCallback<T>(),
+            CppObjectMultiShadow multiShadow when multiShadow.ToCallback(out T? callback) => callback,
+            CppObjectMultiShadow => throw new Exception($"Shadow {typeof(T).FullName} is missing the callback in the whole inheritance graph"),
             null => throw new Exception($"Shadow {typeof(T).FullName} is dead"),
             { } value => throw new Exception(
                              $"Shadow is of an unexpected type {value.GetType().FullName}, expected {typeof(T).FullName}"
@@ -130,20 +115,5 @@ public abstract unsafe class CppObjectShadow
                              $"Shadow references an unexpected callback of type {value.GetType().FullName}, expected {typeof(T).FullName}"
                          )
         };
-    }
-
-    private ref struct CppObjectNative
-    {
-        internal static readonly int Size = IntPtr.Size * 2;
-
-        // ReSharper disable once NotAccessedField.Local
-        public void* VtblPointer;
-        private IntPtr _shadowPointer;
-
-        public GCHandle Shadow
-        {
-            readonly get => GCHandle.FromIntPtr(_shadowPointer);
-            set => _shadowPointer = GCHandle.ToIntPtr(value);
-        }
     }
 }

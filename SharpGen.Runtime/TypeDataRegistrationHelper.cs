@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace SharpGen.Runtime;
 
@@ -19,7 +20,7 @@ public unsafe ref struct TypeDataRegistrationHelper
         _size = 0;
     }
 
-    public void Add<T>() where T : ICallbackable => Add(TypeDataStorage.Storage<T>.SourceVtbl);
+    public void Add<T>() where T : ICallbackable => Add(TypeDataStorage.GetSourceVtbl<T>());
 
     public void Add(IntPtr[] vtbl)
     {
@@ -31,7 +32,16 @@ public unsafe ref struct TypeDataRegistrationHelper
         _size += (uint) vtbl.Length;
     }
 
-    public void Register<T>() where T : ICallbackable
+    public void Register<T>() where T : ICallbackable => TypeDataStorage.Register<T>(RegisterImpl());
+
+    internal IntPtr Register(TypeInfo type)
+    {
+        var vtbl = RegisterImpl();
+        TypeDataStorage.Register(type.GUID, vtbl);
+        return new IntPtr(vtbl);
+    }
+
+    private void** RegisterImpl()
     {
         InitializeIfNeeded();
 
@@ -46,8 +56,9 @@ public unsafe ref struct TypeDataRegistrationHelper
             offset += length;
         }
 
-        TypeDataStorage.Register<T>(nativePointer);
         pointers.Clear();
         _size = 0;
+
+        return nativePointer;
     }
 }

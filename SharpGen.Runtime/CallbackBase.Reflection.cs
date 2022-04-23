@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,85 +9,6 @@ namespace SharpGen.Runtime;
 
 public abstract partial class CallbackBase
 {
-    private static readonly Dictionary<Type, List<ImmediateShadowInterfaceInfo>> TypeToShadowTypes = new();
-
-    private static Guid[] BuildGuidList(Type type)
-    {
-        List<Guid> guids = new();
-
-        // Associate all shadows with their interfaces.
-        foreach (var item in GetUninheritedShadowedInterfaces(type))
-        {
-            var itemType = item.Type;
-            if (!ExcludeFromTypeListAttribute.Has(itemType))
-                guids.Add(itemType.GUID);
-
-            // Associate also inherited interface to this shadow
-            foreach (var inheritInterface in item.ImplementedInterfaces)
-            {
-                if (!ExcludeFromTypeListAttribute.Has(inheritInterface))
-                    guids.Add(inheritInterface.GUID);
-            }
-        }
-
-#if NETCOREAPP2_0_OR_GREATER || NETSTANDARD2_1 || NET472
-        HashSet<Guid> guidSet = new(guids.Count);
-#else
-        HashSet<Guid> guidSet = new();
-#endif
-
-        return guids.Where(guid => guidSet.Add(guid)).ToArray();
-    }
-
-
-    /// <summary>
-    /// Gets a list of interfaces implemented by <paramref name="type"/> that aren't inherited by any other shadowed interfaces.
-    /// </summary>
-    /// <param name="type">The type for which to get the list.</param>
-    /// <returns>The interface list.</returns>
-    private static List<ImmediateShadowInterfaceInfo> GetUninheritedShadowedInterfaces(Type type)
-    {
-        List<ImmediateShadowInterfaceInfo> list;
-        var typeToShadowTypes = TypeToShadowTypes;
-
-        // Cache reflection on interface inheritance
-        lock (typeToShadowTypes)
-            if (typeToShadowTypes.TryGetValue(type, out list))
-                return list;
-
-        list = BuildUninheritedShadowedInterfacesList(type);
-
-        lock (typeToShadowTypes)
-            typeToShadowTypes[type] = list;
-
-        return list;
-    }
-
-    private static List<ImmediateShadowInterfaceInfo> BuildUninheritedShadowedInterfacesList(Type type)
-    {
-        HashSet<TypeInfo> removeQueue = new();
-        List<ImmediateShadowInterfaceInfo> result = new();
-
-        foreach (var implementedInterface in type.GetTypeInfo().ImplementedInterfaces)
-        {
-            var item = implementedInterface.GetTypeInfo();
-
-            // Only process interfaces that are have vtbl
-            if (!VtblAttribute.Has(item))
-                continue;
-
-            ImmediateShadowInterfaceInfo interfaceInfo = new(item);
-            result.Add(interfaceInfo);
-
-            // Keep only final interfaces and not intermediate.
-            foreach (var @interface in interfaceInfo.ImplementedInterfaces)
-                removeQueue.Add(@interface);
-        }
-
-        result.RemoveAll(item => removeQueue.Contains(item.Type));
-        return result;
-    }
-
     private readonly struct ImmediateShadowInterfaceInfo
     {
         public readonly TypeInfo Type;
@@ -106,6 +29,175 @@ public abstract partial class CallbackBase
 
                 ImplementedInterfaces.Add(interfaceInfo);
             }
+        }
+    }
+
+    // Cache reflection on interface inheritance
+    private class CallbackTypeInfo
+    {
+        private readonly TypeInfo type;
+        private ImmediateShadowInterfaceInfo[]? _vtbls;
+        private TypeInfo[]? _shadows;
+        private Guid[]? _guids;
+
+        public CallbackTypeInfo(Type type) : this(type.GetTypeInfo())
+        {
+        }
+
+        private CallbackTypeInfo(TypeInfo type)
+        {
+            this.type = type ?? throw new ArgumentNullException(nameof(type));
+        }
+
+        /// <summary>
+        /// Gets a list of implemented interfaces that aren't inherited by any other <c>[Vtbl]</c> interfaces.
+        /// </summary>
+        /// <returns>The interface list.</returns>
+        public ImmediateShadowInterfaceInfo[] Vtbls
+        {
+            get
+            {
+                lock (this)
+                    if (_vtbls is { } vtbls)
+                        return vtbls;
+
+                var list = BuildVtblList();
+
+                lock (this)
+                    _vtbls = list;
+
+                return list;
+            }
+        }
+
+        public TypeInfo[] Shadows
+        {
+            get
+            {
+                lock (this)
+                    if (_shadows is { } shadows)
+                        return shadows;
+
+                var list = BuildShadowList();
+
+                lock (this)
+                    _shadows = list;
+
+                return list;
+            }
+        }
+
+        public Guid[] Guids
+        {
+            get
+            {
+                lock (this)
+                    if (_guids is { } guids)
+                        return guids;
+
+                var list = BuildGuidList();
+
+                lock (this)
+                    _guids = list;
+
+                return list;
+            }
+        }
+
+        private ImmediateShadowInterfaceInfo[] BuildVtblList()
+        {
+            HashSet<TypeInfo> removeQueue = new();
+            List<ImmediateShadowInterfaceInfo> result = new();
+
+            foreach (var implementedInterface in type.ImplementedInterfaces)
+            {
+                var item = implementedInterface.GetTypeInfo();
+
+                // Only process interfaces that have vtbl
+                if (!VtblAttribute.Has(item))
+                    continue;
+
+                ImmediateShadowInterfaceInfo interfaceInfo = new(item);
+                result.Add(interfaceInfo);
+
+                // Keep only final interfaces and not intermediate.
+                foreach (var @interface in interfaceInfo.ImplementedInterfaces)
+                    removeQueue.Add(@interface);
+            }
+
+            result.RemoveAll(item => removeQueue.Contains(item.Type));
+            return result.ToArray();
+        }
+
+        private Guid[] BuildGuidList()
+        {
+            List<Guid> guids = new();
+
+            // Associate all shadows with their interfaces.
+            foreach (var item in Vtbls)
+            {
+                var itemType = item.Type;
+                if (!ExcludeFromTypeListAttribute.Has(itemType))
+                    guids.Add(itemType.GUID);
+
+                // Associate also inherited interface to this shadow
+                foreach (var inheritInterface in item.ImplementedInterfaces)
+                {
+                    if (!ExcludeFromTypeListAttribute.Has(inheritInterface))
+                        guids.Add(inheritInterface.GUID);
+                }
+            }
+
+#if NETCOREAPP2_0_OR_GREATER || NETSTANDARD2_1 || NET472
+            HashSet<Guid> guidSet = new(guids.Count);
+#else
+            HashSet<Guid> guidSet = new();
+#endif
+
+            return guids.Where(guid => guidSet.Add(guid)).ToArray();
+        }
+
+        private TypeInfo[] BuildShadowList()
+        {
+            List<TypeInfo> shadows = new(), result;
+
+            foreach (var implementedInterface in type.ImplementedInterfaces)
+            {
+                var attribute = ShadowAttribute.Get(implementedInterface);
+
+                // Only process interfaces that have Shadow attribute
+                if (attribute is null)
+                    continue;
+
+                shadows.Add(attribute.Type.GetTypeInfo());
+            }
+
+            var count = shadows.Count;
+            result = new List<TypeInfo>(count);
+
+            // Retain only shadows which have no other subtypes (none of the other shadows are children)
+            for (var i = 0; i < count; i++)
+            {
+                var item = shadows[i];
+
+                var any = false;
+                for (var j = 0; j < count; j++)
+                {
+                    if (i == j)
+                        continue;
+
+                    if (item.IsAssignableFrom(shadows[j]))
+                    {
+                        any = true;
+                        break;
+                    }
+                }
+
+                if (!any)
+                    result.Add(item);
+            }
+
+            return result.ToArray();
         }
     }
 }

@@ -9,7 +9,7 @@ internal static class TestTypeRegistry
     internal static void Initialize()
     {
         TypeDataStorage.Storage<ICallback>.SourceVtbl = CallbackVtbl.Vtbl;
-        TypeDataStorage.Storage<ICallback2>.SourceVtbl = Callback2Vtbl.Fill();
+        TypeDataStorage.Storage<ICallback2>.SourceVtbl = Callback2Vtbl.Vtbl;
         TypeDataRegistrationHelper helper = new();
         {
             helper.Add<ICallback>();

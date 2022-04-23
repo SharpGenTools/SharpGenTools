@@ -41,7 +41,7 @@ public static class Callback2Vtbl
 {
     private static readonly DecrementDelegate Decrement = DecrementImpl;
 
-    public static IntPtr[] Fill() => new[]
+    public static IntPtr[] Vtbl { get; } =
     {
         Marshal.GetFunctionPointerForDelegate(Decrement)
     };

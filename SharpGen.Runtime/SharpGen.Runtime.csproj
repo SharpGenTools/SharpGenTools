@@ -40,4 +40,8 @@
     <Compile Remove="Shim/Formattable*" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net5.0'">
+    <Compile Remove="Shim/ReferenceEqualityComparer.cs" />
+  </ItemGroup>
+
 </Project>
