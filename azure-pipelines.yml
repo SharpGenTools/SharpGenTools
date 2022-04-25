@@ -1,12 +1,12 @@
 trigger:
   branches:
     include:
-      - master
+      - main
   tags:
     include:
       - v*.*
 pr:
-- master
+- main
 
 variables:
   buildNumber: $[counter(variables['build.reason'], 1000)]
@@ -81,7 +81,7 @@ stages:
             pathToPublish: '$(Build.ArtifactStagingDirectory)'
             artifactName: NuGet Packages
 - stage: Deploy
-  condition: or(eq(variables['Build.SourceBranchName'], 'master'), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
+  condition: or(eq(variables['Build.SourceBranchName'], 'main'), startsWith(variables['Build.SourceBranch'], 'refs/tags/v'))
   dependsOn: Build
   jobs:
     - job: MyGet_Deploy
