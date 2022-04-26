@@ -297,7 +297,7 @@ public partial class ConfigFile
                     var localResult = GetVariable(name, logger) ?? Environment.GetEnvironmentVariable(name);
                     if (localResult is not null)
                         return localResult;
-                    logger.Error(LoggingCodes.UnkownVariable, "Unable to substitute config/environment variable $({0}). Variable is not defined", name);
+                    logger.Error(LoggingCodes.UnknownVariable, "Unable to substitute config/environment variable $({0}). Variable is not defined", name);
                     return string.Empty;
                 }
             );
@@ -314,7 +314,7 @@ public partial class ConfigFile
                     if (GetRoot().DynamicVariables.TryGetValue(name, out var localResult))
                         return localResult.Trim('"');
 
-                    logger.Error(LoggingCodes.UnkownDynamicVariable,
+                    logger.Error(LoggingCodes.UnknownDynamicVariable,
                                  "Unable to substitute dynamic variable #({0}). Variable is not defined", name);
                     return string.Empty;
                 }
