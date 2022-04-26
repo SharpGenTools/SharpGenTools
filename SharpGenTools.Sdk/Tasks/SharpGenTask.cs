@@ -1,10 +1,16 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Xml;
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
 using SharpGen;
 using SharpGen.Config;
 using SharpGen.CppModel;
@@ -18,49 +24,153 @@ using SharpGen.Transform;
 using SharpGenTools.Sdk.Documentation;
 using SharpGenTools.Sdk.Extensibility;
 using SharpGenTools.Sdk.Internal;
+using Logger = SharpGen.Logging.Logger;
+using SdkResolver = SharpGen.Parser.SdkResolver;
 
 namespace SharpGenTools.Sdk.Tasks;
 
-public sealed class SharpGenTask : SharpGenTaskBase
+public sealed partial class SharpGenTask : Task, ICancelableTask
 {
     // Default encoding used by MSBuild ReadLinesFromFile task
     private static readonly Encoding DefaultEncoding = new UTF8Encoding(false, true);
     private readonly IocServiceContainer serviceContainer = new();
     private readonly Ioc ioc = new();
+    private string? profilePath;
+    private volatile bool isCancellationRequested;
+    private Mutex? workerLock;
+    private bool workerLockAcquired;
+
+    // ReSharper disable MemberCanBePrivate.Global, UnusedAutoPropertyAccessor.Global
+    [Required] public string[]? CastXmlArguments { get; set; }
+    [Required] public string? CastXmlExecutable { get; set; }
+    [Required] public string[]? ConfigFiles { get; set; }
+    [Required] public string? ConsumerBindMappingConfigId { get; set; }
+    [Required] public bool DebugWaitForDebuggerAttach { get; set; }
+    [Required] public bool DocumentationFailuresAsErrors { get; set; }
+    [Required] public string[]? ExtensionAssemblies { get; set; }
+    [Required] public string[]? ExternalDocumentation { get; set; }
+    [Required] public ITaskItem[]? GlobalNamespaceOverrides { get; set; }
+    [Required] public string[]? Macros { get; set; }
+    [Required] public string? IntermediateOutputDirectory { get; set; }
+    public string? PlatformName { get; set; }
+    [Required] public string[]? Platforms { get; set; }
+
+    [Output]
+    public string ProfilePath
+    {
+        get => profilePath ?? throw new InvalidOperationException("Profile not set");
+        set
+        {
+            if (profilePath is not null)
+                throw new InvalidOperationException("Profile cannot be set twice");
+            profilePath = Utilities.EnsureTrailingSlash(value ?? throw new InvalidOperationException("Profile cannot be null"));
+        }
+    }
+
+    public string? RuntimeIdentifier { get; set; }
+    [Required] public string[]? SilenceMissingDocumentationErrorIdentifierPatterns { get; set; }
+    // ReSharper restore UnusedAutoPropertyAccessor.Global, MemberCanBePrivate.Global
+
+    private string GeneratedCodeFile => GetProfileChild("SharpGen.Bindings.g.cs");
+    private string InputsCache => GetProfileChild("InputsCache.txt");
+    private string PropertyCache => GetProfileChild("PropertyCache.txt");
+    private string DocumentationCache => GetProfileChild("DocumentationCache.json");
+    private string DirtyMarkerFile => GetProfileChild("dirty");
+    private string PackagePropsFile => GetProfileChild("Package.props");
+
+    private string ConsumerBindMappingConfig => GetProfileChild(
+        (ConsumerBindMappingConfigId ?? throw new InvalidOperationException(nameof(ConsumerBindMappingConfigId))) +
+        ".BindMapping.xml"
+    );
+
+    private string GetProfileChild(string childName) => Path.Combine(ProfilePath, childName);
+
+    private Logger SharpGenLogger { get; set; }
+
+    [Conditional("DEBUG")]
+    private void WaitForDebuggerAttach()
+    {
+        if (!Debugger.IsAttached)
+        {
+            SharpGenLogger.Warning(null, $"{GetType().Name} is waiting for attach: {Process.GetCurrentProcess().Id}");
+            Thread.Yield();
+        }
+
+        while (!Debugger.IsAttached && !isCancellationRequested)
+            Thread.Sleep(TimeSpan.FromSeconds(1));
+    }
+
+    public void Cancel() => isCancellationRequested = true;
 
     public override bool Execute()
     {
-        PrepareExecute();
+        BindingRedirectResolution.Enable();
 
-        serviceContainer.AddService(SharpGenLogger);
-        serviceContainer.AddService<IDocumentationLinker, DocumentationLinker>();
-        serviceContainer.AddService<GlobalNamespaceProvider>();
-        serviceContainer.AddService(new TypeRegistry(ioc));
-        ioc.ConfigureServices(serviceContainer);
+        SharpGenLogger = new Logger(new MSBuildSharpGenLogger(Log));
 
-        ExtensibilityDriver.Instance.LoadExtensions(SharpGenLogger,
-                                                    ExtensionAssemblies.Select(x => x.ItemSpec).ToArray());
+#if DEBUG
+        if (DebugWaitForDebuggerAttach)
+            WaitForDebuggerAttach();
+#endif
 
-        var config = new ConfigFile
-        {
-            Files = ConfigFiles.Select(file => file.ItemSpec).ToList(),
-            Id = "SharpGen-MSBuild"
-        };
+        var success = false;
 
         try
         {
-            config = LoadConfig(config);
+            if (!GeneratePropertyCache())
+                return success = true;
 
-            return !SharpGenLogger.HasErrors && Execute(config);
+            if (AbortExecution)
+                return success = false;
+
+            serviceContainer.AddService(SharpGenLogger);
+            serviceContainer.AddService<IDocumentationLinker, DocumentationLinker>();
+            serviceContainer.AddService<GlobalNamespaceProvider>();
+            serviceContainer.AddService(new TypeRegistry(ioc));
+            ioc.ConfigureServices(serviceContainer);
+
+            ExtensibilityDriver.Instance.LoadExtensions(SharpGenLogger, ExtensionAssemblies.ToArray());
+
+            ConfigFile config = new()
+            {
+                Files = ConfigFiles.ToList(),
+                Id = "SharpGen-MSBuild"
+            };
+
+            LoadConfig(config);
+
+            return success = !AbortExecution && Execute(config);
         }
         catch (CodeGenFailedException ex)
         {
             SharpGenLogger.Fatal("Internal SharpGen exception", ex);
-            return false;
+            return success = false;
+        }
+        finally
+        {
+            Debug.Assert(workerLock != null, nameof(workerLock) + " != null");
+
+            try
+            {
+                GeneratePackagesProps();
+            }
+            catch (Exception e)
+            {
+                SharpGenLogger.Fatal("Internal SharpGen exception while generating NuGet package properties file", e);
+            }
+
+            if (success && !AbortExecution && File.Exists(DirtyMarkerFile))
+                File.Delete(DirtyMarkerFile);
+
+            if (workerLockAcquired)
+                workerLock.ReleaseMutex();
+
+            workerLock.Dispose();
+            workerLock = null;
         }
     }
 
-    private bool AbortExecution => SharpGenLogger.HasErrors || IsCancellationRequested;
+    private bool AbortExecution => SharpGenLogger.HasErrors || isCancellationRequested;
 
     private bool Execute(ConfigFile config)
     {
@@ -69,7 +179,7 @@ public sealed class SharpGenTask : SharpGenTaskBase
             out var configsWithExtensionHeaders
         );
 
-        CppHeaderGenerator cppHeaderGenerator = new(OutputPath, ioc);
+        CppHeaderGenerator cppHeaderGenerator = new(ProfilePath, ioc);
 
         var cppHeaderGenerationResult = cppHeaderGenerator.GenerateCppHeaders(config, configsWithHeaders, configsWithExtensionHeaders);
 
@@ -79,9 +189,9 @@ public sealed class SharpGenTask : SharpGenTaskBase
         IncludeDirectoryResolver resolver = new(ioc);
         resolver.Configure(config);
 
-        CastXmlRunner castXml = new(resolver, CastXmlExecutable.ItemSpec, CastXmlArguments, ioc)
+        CastXmlRunner castXml = new(resolver, CastXmlExecutable, CastXmlArguments, ioc)
         {
-            OutputPath = OutputPath
+            OutputPath = ProfilePath
         };
 
         var macroManager = new MacroManager(castXml);
@@ -90,16 +200,16 @@ public sealed class SharpGenTask : SharpGenTaskBase
 
         var module = config.CreateSkeletonModule();
 
-        macroManager.Parse(Path.Combine(OutputPath, config.HeaderFileName), module);
+        macroManager.Parse(Path.Combine(ProfilePath, config.HeaderFileName), module);
 
         cppExtensionGenerator.GenerateExtensionHeaders(
-            config, OutputPath, module, configsWithExtensionHeaders, cppHeaderGenerationResult.UpdatedConfigs
+            config, ProfilePath, module, configsWithExtensionHeaders, cppHeaderGenerationResult.UpdatedConfigs
         );
 
         GenerateInputsCache(
             macroManager.IncludedFiles
                         .Concat(config.ConfigFilesLoaded.Select(x => x.AbsoluteFilePath))
-                        .Concat(configsWithExtensionHeaders.Select(x => Path.Combine(OutputPath, x.ExtensionFileName)))
+                        .Concat(configsWithExtensionHeaders.Select(x => Path.Combine(ProfilePath, x.ExtensionFileName)))
                         .Select(s => Utilities.FixFilePath(s, Utilities.EmptyFilePathBehavior.Ignore))
                         .Where(x => x != null)
                         .Distinct()
@@ -111,7 +221,7 @@ public sealed class SharpGenTask : SharpGenTaskBase
         // Run the parser
         var parser = new CppParser(config, ioc)
         {
-            OutputPath = OutputPath
+            OutputPath = ProfilePath
         };
 
         if (AbortExecution)
@@ -199,7 +309,7 @@ public sealed class SharpGenTask : SharpGenTaskBase
         if (AbortExecution)
             return false;
 
-        var documentationCacheItemSpec = DocumentationCache.ItemSpec;
+        var documentationCacheItemSpec = DocumentationCache;
 
         Utilities.RequireAbsolutePath(documentationCacheItemSpec, nameof(DocumentationCache));
 
@@ -223,7 +333,7 @@ public sealed class SharpGenTask : SharpGenTaskBase
                     silencePatterns = new Regex[SilenceMissingDocumentationErrorIdentifierPatterns.Length];
                     for (var i = 0; i < silencePatterns.Length; i++)
                         silencePatterns[i] = new Regex(
-                            SilenceMissingDocumentationErrorIdentifierPatterns[i].ItemSpec,
+                            SilenceMissingDocumentationErrorIdentifierPatterns[i],
                             RegexOptions.CultureInvariant
                         );
                 }
@@ -244,35 +354,49 @@ public sealed class SharpGenTask : SharpGenTaskBase
                                           ? LogLevel.Warning
                                           : docLogLevelDefault;
 
-                if (queryFailure.Exceptions == null || queryFailure.Exceptions.Count <= 1)
+                switch (queryFailure.Exceptions)
                 {
-                    SharpGenLogger.LogRawMessage(
-                        docLogLevel,
-                        LoggingCodes.DocumentationProviderInternalError,
-                        "Documentation provider [{0}] query for \"{1}\" failed.",
-                        queryFailure.Exceptions?.FirstOrDefault(),
-                        providerName,
-                        queryFailure.Query
-                    );
-                }
-                else
-                {
-                    var exceptionsCount = queryFailure.Exceptions.Count;
-                    for (var index = 0; index < exceptionsCount; index++)
+                    case { Count: > 1 } exceptions:
                     {
-                        var exception = queryFailure.Exceptions[index];
+                        var exceptionsCount = exceptions.Count;
+                        for (var index = 0; index < exceptionsCount; index++)
+                        {
+                            var exception = exceptions[index];
 
+                            SharpGenLogger.LogRawMessage(
+                                docLogLevel,
+                                LoggingCodes.DocumentationProviderInternalError,
+                                "Documentation provider [{0}] query for \"{1}\" failed ({2}/{3}).",
+                                exception,
+                                providerName,
+                                queryFailure.Query,
+                                index + 1,
+                                exceptionsCount
+                            );
+                        }
+
+                        break;
+                    }
+                    case { Count: 1 } exceptions:
                         SharpGenLogger.LogRawMessage(
                             docLogLevel,
                             LoggingCodes.DocumentationProviderInternalError,
-                            "Documentation provider [{0}] query for \"{1}\" failed ({2}/{3}).",
-                            exception,
+                            "Documentation provider [{0}] query for \"{1}\" failed.",
+                            exceptions[0],
                             providerName,
-                            queryFailure.Query,
-                            index + 1,
-                            exceptionsCount
+                            queryFailure.Query
                         );
-                    }
+                        break;
+                    default:
+                        SharpGenLogger.LogRawMessage(
+                            docLogLevel,
+                            LoggingCodes.DocumentationProviderInternalError,
+                            "Documentation provider [{0}] query for \"{1}\" failed.",
+                            null,
+                            providerName,
+                            queryFailure.Query
+                        );
+                        break;
                 }
             }
         }
@@ -286,11 +410,11 @@ public sealed class SharpGenTask : SharpGenTaskBase
 
         foreach (var file in ExternalDocumentation)
         {
-            using var stream = File.OpenRead(file.ItemSpec);
+            using var stream = File.OpenRead(file);
 
             var xml = new XmlDocument();
             xml.Load(stream);
-            documentationFiles.Add(file.ItemSpec, xml);
+            documentationFiles.Add(file, xml);
         }
 
         if (AbortExecution)
@@ -300,7 +424,9 @@ public sealed class SharpGenTask : SharpGenTaskBase
         serviceContainer.AddService<IGeneratorRegistry>(new DefaultGenerators(ioc));
 
         RoslynGenerator generator = new();
-        generator.Run(solution, GeneratedCodeFolder, ioc);
+
+        var generatedCode = generator.Run(solution, ioc);
+        File.WriteAllText(GeneratedCodeFile, generatedCode);
 
         return !SharpGenLogger.HasErrors;
     }
@@ -313,7 +439,7 @@ public sealed class SharpGenTask : SharpGenTaskBase
 
             foreach (var platform in Platforms)
             {
-                if (!Enum.TryParse<PlatformDetectionType>(platform.ItemSpec, out var parsedPlatform))
+                if (!Enum.TryParse<PlatformDetectionType>(platform, out var parsedPlatform))
                 {
                     SharpGenLogger.Warning(
                         LoggingCodes.InvalidPlatformDetectionType,
@@ -334,21 +460,19 @@ public sealed class SharpGenTask : SharpGenTaskBase
 
     private void GenerateConfigForConsumers(ConfigFile consumerConfig)
     {
-        if (ConsumerBindMappingConfig == null) return;
-
-        using var consumerBindMapping = File.Create(ConsumerBindMappingConfig.ItemSpec);
+        using var consumerBindMapping = File.Create(ConsumerBindMappingConfig);
 
         consumerConfig.Write(consumerBindMapping);
     }
 
     private void GenerateInputsCache(IEnumerable<string> paths)
     {
-        using var inputCacheStream = new StreamWriter(InputsCache.ItemSpec, false, DefaultEncoding);
+        using var inputCacheStream = new StreamWriter(InputsCache, false, DefaultEncoding);
 
         foreach (var path in paths) inputCacheStream.WriteLine(path);
     }
 
-    private ConfigFile LoadConfig(ConfigFile config)
+    private void LoadConfig(ConfigFile config)
     {
         config.Load(null, Macros, SharpGenLogger);
 
@@ -367,7 +491,56 @@ public sealed class SharpGenTask : SharpGenTaskBase
                 }
             }
         }
+    }
 
-        return config;
+    private void GeneratePackagesProps()
+    {
+        using MemoryStream stream = new();
+        {
+            using var writer = new StreamWriter(stream, DefaultEncoding, -1, true);
+
+
+            writer.WriteLine(@"<Project>");
+            writer.WriteLine(@"  <ItemGroup>");
+            writer.WriteLine(
+                $@"    <SharpGenConsumerMapping Include=""$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)', '..', 'build', '{ConsumerBindMappingConfigId}.BindMapping.xml'))""/>"
+            );
+            writer.WriteLine(@"  </ItemGroup>");
+            writer.WriteLine(@"</Project>");
+        }
+
+        bool writeNeeded;
+
+        if (File.Exists(PackagePropsFile))
+        {
+            ReadOnlySpan<byte> cachedHash = File.ReadAllBytes(PackagePropsFile);
+
+            stream.Position = 0;
+            var success = stream.TryGetBuffer(out var buffer);
+            Debug.Assert(success);
+
+            if (buffer.AsSpan().SequenceEqual(cachedHash))
+            {
+                SharpGenLogger.Message("NuGet package properties file is already up-to-date.");
+                writeNeeded = false;
+            }
+            else
+            {
+                SharpGenLogger.Message("NuGet package properties file is out-of-date.");
+                writeNeeded = true;
+            }
+        }
+        else
+        {
+            SharpGenLogger.Message("NuGet package properties file doesn't exist.");
+            writeNeeded = true;
+        }
+
+        if (writeNeeded)
+        {
+            stream.Position = 0;
+            using var file = File.Open(PackagePropsFile, FileMode.Create, FileAccess.Write);
+            stream.CopyTo(file);
+        }
     }
 }

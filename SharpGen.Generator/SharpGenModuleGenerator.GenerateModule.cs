@@ -193,7 +193,7 @@ public sealed partial class SharpGenModuleGenerator
                     );
 
         context.AddSource(
-            "SharpGen.g.cs",
+            "SharpGen.Module.g.cs",
             SourceText.From(GenerateCompilationUnit(clazz).ToString(), Encoding.UTF8)
         );
     }

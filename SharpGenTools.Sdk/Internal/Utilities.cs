@@ -91,4 +91,30 @@ public static class Utilities
             throw new IOException(e.Message, e);
         }
     }
+
+    private static string FixFilePath(string path)
+    {
+        return string.IsNullOrEmpty(path) || Path.DirectorySeparatorChar == '\\' ? path : path.Replace('\\', '/');
+    }
+
+    internal static string EnsureTrailingSlash(string fileSpec)
+    {
+        fileSpec = FixFilePath(fileSpec);
+        if (fileSpec.Length > 0 && !IsSlash(fileSpec[fileSpec.Length - 1]))
+        {
+            fileSpec += Path.DirectorySeparatorChar;
+        }
+
+        return fileSpec;
+    }
+
+    /// <summary>
+    /// Indicates if the given character is a slash.
+    /// </summary>
+    /// <param name="c"></param>
+    /// <returns>true, if slash</returns>
+    private static bool IsSlash(char c)
+    {
+        return (c == Path.DirectorySeparatorChar) || (c == Path.AltDirectorySeparatorChar);
+    }
 }

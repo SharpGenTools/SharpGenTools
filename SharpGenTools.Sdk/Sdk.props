@@ -1,7 +1,8 @@
 ﻿<Project>
 
   <PropertyGroup>
-    <SharpGenGenerateConsumerBindMapping Condition="'$(SharpGenGenerateConsumerBindMapping)' == ''">true</SharpGenGenerateConsumerBindMapping>
+    <BeforePack Condition="'$(BeforePack)' != ''">$(BeforePack);SharpGenGenerateConsumerBindMappingFile;SharpGenGenerateConsumerProps</BeforePack>
+    <BeforePack Condition="'$(BeforePack)' == ''">SharpGenGenerateConsumerBindMappingFile;SharpGenGenerateConsumerProps</BeforePack>
   </PropertyGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)Sdk.Version.props" />
@@ -18,12 +19,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <GenerateSharpGenBindingsDependsOn Include="PrepareForBuild" />
-    <GenerateSharpGenBindingsDependsOn Include="CreateIntermediateDir" />
-    <GenerateSharpGenBindingsDependsOn Include="GetMappingsFromProjectReferences" />
-    <GenerateSharpGenBindingsDependsOn Include="SharpGenReadCaches" />
+    <GenerateSharpGenBindingsDependsOn Include="PrepareProjectReferences" Condition="'$(IsCrossTargetingBuild)' != 'true'" />
+    <GenerateSharpGenBindingsDependsOn Include="PrepareForBuild" Condition="'$(IsCrossTargetingBuild)' != 'true'" />
+    <GenerateSharpGenBindingsDependsOn Include="SharpGenGetMappingsFromProjectReferencesInnerBuild" Condition="'$(IsCrossTargetingBuild)' != 'true'" />
+    <GenerateSharpGenBindingsDependsOn Include="SharpGenGetMappingsFromProjectReferencesOuterBuild" Condition="'$(IsCrossTargetingBuild)' == 'true'" />
     <GenerateSharpGenBindingsDependsOn Include="SharpGenExecute" />
-    <GenerateSharpGenBindingsDependsOn Include="GenerateConsumerBindMappingFile" />
   </ItemGroup>
 
 </Project>
