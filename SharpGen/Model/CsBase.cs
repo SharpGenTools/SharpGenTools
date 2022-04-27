@@ -206,6 +206,15 @@ public abstract class CsBase
     }
 
     /// <summary>
+    /// Gets the full name of the C++ element.
+    /// </summary>
+    /// <value>The name of the C++ element.</value>
+    public string CppElementFullName
+    {
+        get => CppElement?.FullName ?? CppElementName;
+    }
+
+    /// <summary>
     /// Gets or sets the doc id.
     /// </summary>
     public string DocId { get; set; }
