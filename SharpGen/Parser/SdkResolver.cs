@@ -44,28 +44,68 @@ public sealed class SdkResolver
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            var vsInstallDir = GetVSInstallPath();
+            foreach (var vsInstallDir in GetVSInstallPath())
+            {
+                string actualVersion;
+                if (version is not null)
+                {
+                    actualVersion = version;
+                }
+                else
+                {
+                    var defaultVersion = Path.Combine(
+                        vsInstallDir, "VC", "Auxiliary", "Build", "Microsoft.VCToolsVersion.default.txt"
+                    );
 
-            version ??= File.ReadAllText(
-                Path.Combine(vsInstallDir, "VC", "Auxiliary", "Build", "Microsoft.VCToolsVersion.default.txt")
-            );
+                    if (!File.Exists(defaultVersion))
+                        continue;
 
-            yield return new IncludeDirRule(
-                Path.Combine(vsInstallDir, "VC", "Tools", "MSVC", version.Trim(), "include")
-            );
+                    actualVersion = File.ReadAllText(defaultVersion);
+                }
+
+                var path = Path.Combine(
+                    vsInstallDir, "VC", "Tools", "MSVC", actualVersion.Trim(), "include"
+                );
+
+                if (!Directory.Exists(path))
+                    continue;
+
+                yield return new IncludeDirRule(path);
+                yield break;
+            }
         }
         else
         {
-            yield return new IncludeDirRule(Path.Combine("/usr", "include", "c++", version));
+            if (version is not null)
+            {
+                var path = Path.Combine("/usr", "include", "c++", version);
+                if (Directory.Exists(path))
+                    yield return new IncludeDirRule(path);
+            }
+            else
+            {
+                DirectoryInfo cpp = new(Path.Combine("/usr", "include", "c++"));
+
+                if (!cpp.Exists)
+                    yield break;
+
+                // TODO: pick latest if not specified
+                var path = cpp.EnumerateDirectories().FirstOrDefault()?.FullName;
+                if (path is not null)
+                    yield return new IncludeDirRule(path);
+            }
         }
     }
 
-    private string? GetVSInstallPath()
+    private IReadOnlyCollection<string?> GetVSInstallPath()
     {
         var vsPathOverride = Environment.GetEnvironmentVariable("SHARPGEN_VS_OVERRIDE");
         if (!string.IsNullOrEmpty(vsPathOverride))
-            return vsPathOverride;
+        {
+            return new[] {vsPathOverride};
+        }
 
+        List<string?> paths = new();
         try
         {
             var query = new SetupConfiguration();
@@ -85,7 +125,7 @@ public sealed class SdkResolver
                     continue;
 
                 if (instance2.GetPackages().Any(Predicate))
-                    return instance2.GetInstallationPath();
+                    paths.Add(instance2.GetInstallationPath());
             } while (fetched > 0);
 
             static bool Predicate(ISetupPackageReference pkg) =>
@@ -99,9 +139,10 @@ public sealed class SdkResolver
             );
         }
 
-        Logger.Fatal("Unable to find a Visual Studio installation that has the Visual C++ Toolchain installed.");
+        if (paths.Count == 0)
+            Logger.Fatal("Unable to find a Visual Studio installation that has the Visual C++ Toolchain installed.");
 
-        return null;
+        return paths;
     }
 
     private IEnumerable<IncludeDirRule> ResolveWindowsSdk(string version, string? components)

@@ -151,7 +151,9 @@ public static class CppElementExtensions
         if (newRule.ParameterUsedAsReturnType != null)
             tag.ParameterUsedAsReturnType = newRule.ParameterUsedAsReturnType;
         if (newRule.Relation != null) tag.Relation = newRule.Relation;
-        if (newRule.Hidden != null) tag.Hidden = newRule.Hidden;
+        if (newRule.Hidden is { } hidden) tag.Hidden = hidden;
+        if (newRule.ManagedPartial is { } managedPartial) tag.ManagedPartial = managedPartial;
+        if (newRule.NativePartial is { } nativePartial) tag.NativePartial = nativePartial;
         if (newRule.KeepPointers != null) tag.KeepPointers = newRule.KeepPointers;
         if (newRule.StringMarshal is { } stringMarshal) tag.StringMarshal = stringMarshal;
     }

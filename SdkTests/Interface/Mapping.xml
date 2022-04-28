@@ -29,7 +29,7 @@
     <map method="InterfaceWithProperties::(.+)Persistent" persist="true" />
 
     <!-- Shadow auto-gen mappings -->
-    <map interface="CallbackInterface" callback="true" callback-dual="true" autogen-shadow="true" />
+    <map interface="CallbackInterface" callback="true" callback-dual="true" />
     <map param="CallbackInterface::GetZero::ppValue" attribute="out" />
     <map param="CallbackInterface::Increment::pValue" attribute="inout" />
     <map method="CallbackInterface::.*" property="false" />
@@ -39,10 +39,10 @@
     <map param="CallbackInterface::ArrayRelation(.*)::length" relation="length(array)" />
   
     <!-- Issue #67 -->
-    <map interface="FastOutInterface" callback="true" callback-dual="true" autogen-shadow="true" />
+    <map interface="FastOutInterface" callback="true" callback-dual="true" />
     <map param="FastOutInterfaceTest::out" attribute="fast out" />
 
-    <map interface="IStream" callback-visibility="public" callback="true" callback-dual="true" callback-name="ComStream" autogen-shadow="true" />
+    <map interface="IStream" callback-visibility="public" callback="true" callback-dual="true" callback-name="ComStream" />
     <map param="IStream::QueryInterface::ppvObject" attribute="out" />
     <map param="IStream::Seek::dwOrigin" type="SHARPGEN_RUNTIME_SEEKORIGIN"/>
     <map param="IStream::Seek::plibNewPosition" return="true" attribute="out optional"/>

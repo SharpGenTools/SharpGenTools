@@ -27,18 +27,19 @@ using SharpGenTools.Sdk.Internal;
 using Logger = SharpGen.Logging.Logger;
 using SdkResolver = SharpGen.Parser.SdkResolver;
 
-namespace SharpGenTools.Sdk.Tasks;
+namespace SharpGenTools.Sdk;
 
 public sealed partial class SharpGenTask : Task, ICancelableTask
 {
     // Default encoding used by MSBuild ReadLinesFromFile task
-    private static readonly Encoding DefaultEncoding = new UTF8Encoding(false, true);
+    internal static readonly Encoding DefaultEncoding = new UTF8Encoding(false, true);
+    private static readonly char[] SpaceSeparator = { ' ' };
     private readonly IocServiceContainer serviceContainer = new();
     private readonly Ioc ioc = new();
     private string? profilePath;
     private volatile bool isCancellationRequested;
     private Mutex? workerLock;
-    private bool workerLockAcquired;
+    private bool workerLockAcquired, regenerationStarted;
 
     // ReSharper disable MemberCanBePrivate.Global, UnusedAutoPropertyAccessor.Global
     [Required] public string[]? CastXmlArguments { get; set; }
@@ -102,6 +103,11 @@ public sealed partial class SharpGenTask : Task, ICancelableTask
 
     public void Cancel() => isCancellationRequested = true;
 
+    private static string[] PreprocessPathListProperty(string[] items) =>
+        items.Distinct(StringComparer.OrdinalIgnoreCase)
+             .OrderBy(static x => x, StringComparer.OrdinalIgnoreCase)
+             .ToArray();
+
     public override bool Execute()
     {
         BindingRedirectResolution.Enable();
@@ -117,29 +123,24 @@ public sealed partial class SharpGenTask : Task, ICancelableTask
 
         try
         {
-            if (!GeneratePropertyCache())
-                return success = true;
+            ConfigFiles = PreprocessPathListProperty(ConfigFiles);
+            ExtensionAssemblies = PreprocessPathListProperty(ExtensionAssemblies);
+            ExternalDocumentation = PreprocessPathListProperty(ExternalDocumentation);
 
-            if (AbortExecution)
-                return success = false;
-
-            serviceContainer.AddService(SharpGenLogger);
-            serviceContainer.AddService<IDocumentationLinker, DocumentationLinker>();
-            serviceContainer.AddService<GlobalNamespaceProvider>();
-            serviceContainer.AddService(new TypeRegistry(ioc));
-            ioc.ConfigureServices(serviceContainer);
-
-            ExtensibilityDriver.Instance.LoadExtensions(SharpGenLogger, ExtensionAssemblies.ToArray());
-
-            ConfigFile config = new()
+            if (GeneratePropertyCache())
             {
-                Files = ConfigFiles.ToList(),
-                Id = "SharpGen-MSBuild"
-            };
+                return success = ExecuteImpl();
+            }
+            else
+            {
+                if (AbortExecution)
+                    return success = false;
 
-            LoadConfig(config);
+                if (IsInputsCacheValid())
+                    return success = true;
 
-            return success = !AbortExecution && Execute(config);
+                return success = ExecuteImpl();
+            }
         }
         catch (CodeGenFailedException ex)
         {
@@ -156,7 +157,25 @@ public sealed partial class SharpGenTask : Task, ICancelableTask
             }
             catch (Exception e)
             {
-                SharpGenLogger.Fatal("Internal SharpGen exception while generating NuGet package properties file", e);
+                SharpGenLogger.LogRawMessage(
+                    LogLevel.Warning, null,
+                    "Internal SharpGen exception while generating NuGet package properties file", e
+                );
+            }
+
+            if (regenerationStarted)
+            {
+                try
+                {
+                    GenerateInputsCache();
+                }
+                catch (Exception e)
+                {
+                    SharpGenLogger.LogRawMessage(
+                        LogLevel.Warning, null,
+                        "Internal SharpGen exception while generating input file cache", e
+                    );
+                }
             }
 
             if (success && !AbortExecution && File.Exists(DirtyMarkerFile))
@@ -172,12 +191,37 @@ public sealed partial class SharpGenTask : Task, ICancelableTask
 
     private bool AbortExecution => SharpGenLogger.HasErrors || isCancellationRequested;
 
-    private bool Execute(ConfigFile config)
+    private bool ExecuteImpl()
     {
+        File.WriteAllBytes(DirtyMarkerFile, Array.Empty<byte>());
+        regenerationStarted = true;
+
+        if (AbortExecution)
+            return false;
+
+        serviceContainer.AddService(SharpGenLogger);
+        serviceContainer.AddService<IDocumentationLinker, DocumentationLinker>();
+        serviceContainer.AddService<GlobalNamespaceProvider>();
+        serviceContainer.AddService(new TypeRegistry(ioc));
+        ioc.ConfigureServices(serviceContainer);
+
+        ExtensibilityDriver.Instance.LoadExtensions(SharpGenLogger, ExtensionAssemblies);
+        AddInputsCacheFiles(ExtensionAssemblies);
+
+        ConfigFile config = new()
+        {
+            Files = ConfigFiles.ToList(),
+            Id = "SharpGen-MSBuild"
+        };
+
+        LoadConfig(config);
+
         config.GetFilesWithIncludesAndExtensionHeaders(
             out var configsWithHeaders,
             out var configsWithExtensionHeaders
         );
+
+        AddInputsCacheFiles(config.ConfigFilesLoaded.Select(x => x.AbsoluteFilePath));
 
         CppHeaderGenerator cppHeaderGenerator = new(ProfilePath, ioc);
 
@@ -189,31 +233,23 @@ public sealed partial class SharpGenTask : Task, ICancelableTask
         IncludeDirectoryResolver resolver = new(ioc);
         resolver.Configure(config);
 
+        AddInputsCacheFile(CastXmlExecutable);
         CastXmlRunner castXml = new(resolver, CastXmlExecutable, CastXmlArguments, ioc)
         {
             OutputPath = ProfilePath
         };
 
-        var macroManager = new MacroManager(castXml);
-
-        var cppExtensionGenerator = new CppExtensionHeaderGenerator();
-
         var module = config.CreateSkeletonModule();
 
+        MacroManager macroManager = new(castXml);
         macroManager.Parse(Path.Combine(ProfilePath, config.HeaderFileName), module);
+        AddInputsCacheFiles(macroManager.IncludedFiles);
 
-        cppExtensionGenerator.GenerateExtensionHeaders(
+        new CppExtensionHeaderGenerator().GenerateExtensionHeaders(
             config, ProfilePath, module, configsWithExtensionHeaders, cppHeaderGenerationResult.UpdatedConfigs
         );
 
-        GenerateInputsCache(
-            macroManager.IncludedFiles
-                        .Concat(config.ConfigFilesLoaded.Select(x => x.AbsoluteFilePath))
-                        .Concat(configsWithExtensionHeaders.Select(x => Path.Combine(ProfilePath, x.ExtensionFileName)))
-                        .Select(s => Utilities.FixFilePath(s, Utilities.EmptyFilePathBehavior.Ignore))
-                        .Where(x => x != null)
-                        .Distinct()
-        );
+        AddInputsCacheFiles(configsWithExtensionHeaders.Select(x => Path.Combine(ProfilePath, x.ExtensionFileName)));
 
         if (AbortExecution)
             return false;
@@ -408,6 +444,7 @@ public sealed partial class SharpGenTask : Task, ICancelableTask
 
         var documentationFiles = new Dictionary<string, XmlDocument>();
 
+        AddInputsCacheFiles(ExternalDocumentation);
         foreach (var file in ExternalDocumentation)
         {
             using var stream = File.OpenRead(file);
@@ -465,18 +502,14 @@ public sealed partial class SharpGenTask : Task, ICancelableTask
         consumerConfig.Write(consumerBindMapping);
     }
 
-    private void GenerateInputsCache(IEnumerable<string> paths)
-    {
-        using var inputCacheStream = new StreamWriter(InputsCache, false, DefaultEncoding);
-
-        foreach (var path in paths) inputCacheStream.WriteLine(path);
-    }
-
     private void LoadConfig(ConfigFile config)
     {
         config.Load(null, Macros, SharpGenLogger);
 
-        var sdkResolver = new SdkResolver(SharpGenLogger);
+        AddInputsCacheEnvironmentVariable("SHARPGEN_VS_OVERRIDE");
+        AddInputsCacheEnvironmentVariable("SHARPGEN_SDK_OVERRIDE");
+
+        SdkResolver sdkResolver = new(SharpGenLogger);
         SharpGenLogger.Message("Resolving SDKs...");
         foreach (var cfg in config.ConfigFilesLoaded)
         {
@@ -495,10 +528,10 @@ public sealed partial class SharpGenTask : Task, ICancelableTask
 
     private void GeneratePackagesProps()
     {
-        using MemoryStream stream = new();
-        {
-            using var writer = new StreamWriter(stream, DefaultEncoding, -1, true);
+        using CacheFile cacheFile = new(new FileInfo(PackagePropsFile));
 
+        {
+            using var writer = cacheFile.StreamWriter;
 
             writer.WriteLine(@"<Project>");
             writer.WriteLine(@"  <ItemGroup>");
@@ -509,38 +542,17 @@ public sealed partial class SharpGenTask : Task, ICancelableTask
             writer.WriteLine(@"</Project>");
         }
 
-        bool writeNeeded;
-
-        if (File.Exists(PackagePropsFile))
-        {
-            ReadOnlySpan<byte> cachedHash = File.ReadAllBytes(PackagePropsFile);
-
-            stream.Position = 0;
-            var success = stream.TryGetBuffer(out var buffer);
-            Debug.Assert(success);
-
-            if (buffer.AsSpan().SequenceEqual(cachedHash))
+        SharpGenLogger.Message(
+            cacheFile.State switch
             {
-                SharpGenLogger.Message("NuGet package properties file is already up-to-date.");
-                writeNeeded = false;
+                CacheFile.CacheState.Hit => "NuGet package properties file is already up-to-date.",
+                CacheFile.CacheState.Miss => "NuGet package properties file is out-of-date.",
+                CacheFile.CacheState.Absent => "NuGet package properties file doesn't exist.",
+                _ => throw new ArgumentOutOfRangeException()
             }
-            else
-            {
-                SharpGenLogger.Message("NuGet package properties file is out-of-date.");
-                writeNeeded = true;
-            }
-        }
-        else
-        {
-            SharpGenLogger.Message("NuGet package properties file doesn't exist.");
-            writeNeeded = true;
-        }
+        );
 
-        if (writeNeeded)
-        {
-            stream.Position = 0;
-            using var file = File.Open(PackagePropsFile, FileMode.Create, FileAccess.Write);
-            stream.CopyTo(file);
-        }
+        if (cacheFile.IsWriteNeeded)
+            cacheFile.Write();
     }
 }

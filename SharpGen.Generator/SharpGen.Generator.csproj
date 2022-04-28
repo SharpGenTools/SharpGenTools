@@ -3,7 +3,7 @@
     <Sdk Name="Microsoft.Build.CentralPackageVersions" />
 
     <PropertyGroup>
-        <TargetFrameworks>net472;net5.0</TargetFrameworks>
+        <TargetFramework>netstandard2.0</TargetFramework>
         <EnableNETAnalyzers>true</EnableNETAnalyzers>
         <AnalysisLevel>latest</AnalysisLevel>
         <IsPackable>false</IsPackable>
@@ -14,11 +14,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Bcl.HashCode" Condition="'$(TargetFramework)' == 'net472'" />
-        <PackageReference Include="Nullable" Condition="'$(TargetFramework)' == 'net472'" />
+        <PackageReference Include="IsExternalInit" />
+        <PackageReference Include="Microsoft.Bcl.HashCode" />
         <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
-        <PackageReference Include="IsExternalInit" Condition="'$(TargetFramework)' == 'net472'" />
+        <PackageReference Include="Nullable" />
     </ItemGroup>
 
     <ItemGroup>

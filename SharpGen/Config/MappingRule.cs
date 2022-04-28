@@ -171,21 +171,7 @@ public class MappingRule : MappingBaseRule
     ///     Mapping name
     /// </summary>
     [XmlAttribute("name")]
-    public string MappingNameFinal
-    {
-        get => MappingName;
-        set
-        {
-            MappingName = value;
-            IsFinalMappingName = true;
-        }
-    }
-
-    /// <summary>
-    ///     True if the MappingName doesn't need any further rename processing
-    /// </summary>
-    [XmlIgnore]
-    public bool? IsFinalMappingName { get; set; } = false;
+    public string MappingNameFinal { get; set; }
 
     /// <summary>
     ///     True if a struct should used a native value type marshalling
@@ -469,6 +455,32 @@ public class MappingRule : MappingBaseRule
     }
 
     /// <summary>
+    ///     Provides an ability to prevent default vtbl method implementation generation in an interface
+    /// </summary>
+    [XmlIgnore]
+    public bool? ManagedPartial { get; set; }
+
+    [XmlAttribute("managed-partial")]
+    public bool _ManagedPartial_
+    {
+        get => ManagedPartial.Value;
+        set => ManagedPartial = value;
+    }
+
+    /// <summary>
+    ///     Provides an ability to prevent default CppObject method implementation generation
+    /// </summary>
+    [XmlIgnore]
+    public bool? NativePartial { get; set; }
+
+    [XmlAttribute("native-partial")]
+    public bool _NativePartial_
+    {
+        get => NativePartial.Value;
+        set => NativePartial = value;
+    }
+
+    /// <summary>
     ///     Best-effort flag for retaining pointers in generated bindings.
     /// </summary>
     [XmlIgnore]
@@ -516,9 +528,9 @@ public class MappingRule : MappingBaseRule
 
     public bool ShouldSerialize_StructPack_() => StructPack != null;
 
-    public bool ShouldSerializeMappingName() => IsFinalMappingName.HasValue && !IsFinalMappingName.Value;
+    public bool ShouldSerializeMappingName() => MappingName != null;
 
-    public bool ShouldSerializeMappingNameFinal() => !IsFinalMappingName.HasValue || IsFinalMappingName.Value;
+    public bool ShouldSerializeMappingNameFinal() => MappingNameFinal != null;
 
     public bool ShouldSerialize_StructHasNativeValueType_() => StructHasNativeValueType != null;
 
@@ -540,7 +552,7 @@ public class MappingRule : MappingBaseRule
 
     public bool ShouldSerialize_IsDualCallbackInterface_() => IsDualCallbackInterface != null;
 
-    public bool ShouldSerialize_AutoGenerateShadow_() => AutoGenerateShadow != null;
+    public bool ShouldSerialize_AutoGenerateShadow_() => false;
 
     public bool ShouldSerialize_AutoGenerateVtbl_() => AutoGenerateVtbl != null;
 
@@ -557,6 +569,10 @@ public class MappingRule : MappingBaseRule
     public bool ShouldSerialize_ParameterUsedAsReturnType_() => ParameterUsedAsReturnType != null;
 
     public bool ShouldSerialize_Hidden_() => Hidden != null;
+
+    public bool ShouldSerialize_ManagedPartial_() => ManagedPartial != null;
+
+    public bool ShouldSerialize_NativePartial_() => NativePartial != null;
 
     public bool ShouldSerialize_KeepPointers_() => KeepPointers != null;
 

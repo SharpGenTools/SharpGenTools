@@ -119,6 +119,44 @@ internal sealed class ShadowCallbackGenerator : MemberPlatformMultiCodeGenerator
     {
         var interopReturnType = sig.ReturnTypeSyntax;
 
+        var methodDeclaration = MethodDeclaration(
+                                          interopReturnType,
+                                          VtblGenerator.GetMethodImplName(csElement, platform)
+                                      )
+                                     .WithModifiers(
+                                          TokenList(
+                                              Token(SyntaxKind.PrivateKeyword), Token(SyntaxKind.StaticKeyword),
+                                              Token(SyntaxKind.UnsafeKeyword)
+                                          )
+                                      )
+                                     .WithParameterList(GetNativeParameterList(csElement, sig))
+                                     .WithAttributeLists(
+                                          csElement is CsMethod { IsFunctionPointerInVtbl: true }
+                                              ? SingletonList(
+                                                  AttributeList(
+                                                      SingletonSeparatedList(
+                                                          Attribute(
+                                                              UnmanagedCallersOnlyAttributeName,
+                                                              AttributeArgumentList(
+                                                                  SingletonSeparatedList(
+                                                                      AttributeArgument(FnPtrCallConvs(sig.CallingConvention))
+                                                                         .WithNameEquals(NameEquals("CallConvs"))
+                                                                  )
+                                                              )
+                                                          )
+                                                      )
+                                                  ).WithTrailingEndIfDirective()
+                                              )
+                                              : default
+                                      );
+
+        if (csElement is CsMethod { ManagedPartial: true })
+        {
+            return methodDeclaration
+                  .AddModifiers(Token(SyntaxKind.PartialKeyword))
+                  .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+        }
+
         var statements = NewStatementList;
 
         statements.Add(csElement, platform, Generators.ReverseCallableProlog);
@@ -265,37 +303,7 @@ internal sealed class ShadowCallbackGenerator : MemberPlatformMultiCodeGenerator
                 )
         );
 
-        return MethodDeclaration(
-                   interopReturnType,
-                   VtblGenerator.GetMethodImplName(csElement, platform)
-               )
-              .WithModifiers(
-                   TokenList(
-                       Token(SyntaxKind.PrivateKeyword), Token(SyntaxKind.StaticKeyword),
-                       Token(SyntaxKind.UnsafeKeyword)
-                   )
-               )
-              .WithParameterList(GetNativeParameterList(csElement, sig))
-              .WithBody(fullBody.ToBlock())
-              .WithAttributeLists(
-                   csElement is CsMethod { IsFunctionPointerInVtbl: true }
-                       ? SingletonList(
-                           AttributeList(
-                               SingletonSeparatedList(
-                                   Attribute(
-                                       UnmanagedCallersOnlyAttributeName,
-                                       AttributeArgumentList(
-                                           SingletonSeparatedList(
-                                               AttributeArgument(FnPtrCallConvs(sig.CallingConvention))
-                                                  .WithNameEquals(NameEquals("CallConvs"))
-                                           )
-                                       )
-                                   )
-                               )
-                           ).WithTrailingEndIfDirective()
-                       )
-                       : default
-               );
+        return methodDeclaration.WithBody(fullBody.ToBlock());
 
         static ExpressionSyntax FnPtrCallConvs(CallingConvention callingConvention) =>
             ImplicitArrayCreationExpression(

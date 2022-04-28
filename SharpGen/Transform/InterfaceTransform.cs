@@ -61,7 +61,6 @@ public class InterfaceTransform : TransformBase<CsInterface, CppInterface>, ITra
         CppObjectType = new CsInterface(null, globalNamespace.GetTypeName(WellKnownName.CppObject));
         DefaultCallbackable = new CsInterface(null, globalNamespace.GetTypeName(WellKnownName.ICallbackable))
         {
-            ShadowName = globalNamespace.GetTypeName(WellKnownName.CppObjectShadow),
             VtblName = globalNamespace.GetTypeName(WellKnownName.CppObjectVtbl)
         };
     }
@@ -107,7 +106,7 @@ public class InterfaceTransform : TransformBase<CsInterface, CppInterface>, ITra
 
         TypeRegistry.BindType(cppInterface.Name, cSharpInterface, source: cppInterface.ParentInclude?.Name);
 
-        if (cppInterface.Rule.AutoGenerateShadow == true)
+        if (cppInterface.Rule.AutoGenerateShadow is { })
             Logger.Message("Interface [{0}] has redundant shadow generation flag", cppInterface.FullName);
 
         if (cppInterface.Rule.AutoGenerateVtbl == true)
@@ -288,10 +287,7 @@ public class InterfaceTransform : TransformBase<CsInterface, CppInterface>, ITra
 
             MethodTransform.CreateNativeInteropSignatures(interopSignatureTransform, newCsMethod);
 
-            var keepImplementPublic = interfaceType.AutoGenerateShadow ||
-                                      method.IsPublicVisibilityForced(interfaceType);
-
-            if (!keepImplementPublic)
+            if (!method.IsPublicVisibilityForced(interfaceType))
             {
                 newCsMethod.Visibility = Visibility.Internal;
                 newCsMethod.SuffixName("_");

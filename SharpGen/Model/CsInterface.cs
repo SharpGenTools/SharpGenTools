@@ -123,7 +123,11 @@ public sealed class CsInterface : CsTypeBase
     public string ShadowName
     {
         get => shadowName ?? DefaultShadowFullName;
-        set => shadowName = value;
+        set
+        {
+            shadowName = value;
+            AutoGenerateShadow = true;
+        }
     }
 
     public string VtblName
@@ -135,7 +139,7 @@ public sealed class CsInterface : CsTypeBase
     private string DefaultShadowFullName => $"{QualifiedName}Shadow";
     private string DefaultVtblFullName => $"{QualifiedName}Vtbl";
 
-    public bool AutoGenerateShadow { get; } = true;
+    public bool AutoGenerateShadow { get; private set; }
     public bool AutoGenerateVtbl { get; } = true;
     public bool StaticShadowVtbl { get; } = true;
     public bool AutoDisposePersistentProperties { get; } = true;

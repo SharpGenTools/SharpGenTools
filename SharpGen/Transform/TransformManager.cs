@@ -179,7 +179,8 @@ public sealed class TransformManager
                 string.IsNullOrEmpty(bindingRule.Marshal)
                     ? null
                     : TypeRegistry.ImportType(bindingRule.Marshal),
-                file.Id
+                bindingRule.Source ?? file.Id,
+                bindingRule.Override ?? false
             );
         }
     }
@@ -631,49 +632,6 @@ public sealed class TransformManager
 
     public (IEnumerable<BindRule> bindings, IEnumerable<DefineExtensionRule> defines) GenerateTypeBindingsForConsumers()
     {
-        return (from record in TypeRegistry.GetTypeBindings()
-                select new BindRule(record.CppType, record.CSharpType.QualifiedName, record.MarshalType?.QualifiedName),
-                GenerateDefinesForMappedTypes());
-    }
-
-    private IEnumerable<DefineExtensionRule> GenerateDefinesForMappedTypes()
-    {
-        foreach (var (_, CSharpType, _) in TypeRegistry.GetTypeBindings())
-        {
-            switch (CSharpType)
-            {
-                case CsEnum csEnum:
-                    CsFundamentalType tempQualifier = csEnum.UnderlyingType;
-                    yield return new DefineExtensionRule
-                    {
-                        Enum = csEnum.QualifiedName,
-                        SizeOf = checked((int) csEnum.Size),
-                        UnderlyingType = tempQualifier?.Name
-                    };
-                    break;
-                case CsStruct csStruct:
-                    yield return new DefineExtensionRule
-                    {
-                        Struct = csStruct.QualifiedName,
-                        SizeOf = checked((int) csStruct.Size),
-                        Align = csStruct.Align,
-                        HasCustomMarshal = csStruct.HasCustomMarshal,
-                        HasCustomNew = csStruct.HasCustomNew,
-                        IsStaticMarshal = csStruct.IsStaticMarshal,
-                        IsNativePrimitive = csStruct.IsNativePrimitive
-                    };
-                    break;
-                case CsInterface csInterface:
-                    yield return new DefineExtensionRule
-                    {
-                        Interface = csInterface.QualifiedName,
-                        NativeImplementation = csInterface.NativeImplementation?.QualifiedName,
-                        ShadowName = csInterface.ShadowName,
-                        VtblName = csInterface.VtblName,
-                        IsCallbackInterface = csInterface.IsCallback
-                    };
-                    break;
-            }
-        }
+        return TypeRegistry.GetTypeBindings();
     }
 }

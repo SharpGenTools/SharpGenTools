@@ -188,14 +188,6 @@
       <_SharpGenConsumerMappingNonexistent Remove="@(_SharpGenConsumerMappingNonexistent)" />
     </ItemGroup>
 
-    <ItemGroup>
-      <_SharpGenConsumerMapping Remove="@(_SharpGenConsumerMapping)" />
-      <_SharpGenConsumerMapping Include="@(SharpGenConsumerMapping->Distinct())" />
-      <SharpGenConsumerMapping Remove="@(SharpGenConsumerMapping)" />
-      <SharpGenConsumerMapping Include="@(_SharpGenConsumerMapping)" />
-      <_SharpGenConsumerMapping Remove="@(_SharpGenConsumerMapping)" />
-    </ItemGroup>
-
     <SharpGenTask CastXmlArguments="@(CastXmlArg)"
                   CastXmlExecutable="@(SharpGenCastXml)"
                   ConfigFiles="@(SharpGenMapping);@(SharpGenConsumerMapping)"
@@ -219,14 +211,14 @@
     <ItemGroup>
       <Compile Include="$(SharpGenProfilePath)SharpGen.Bindings.g.cs" />
       <SharpGenConsumerBindMappingFile Include="$(SharpGenProfilePath)$(SharpGenConsumerBindMappingConfigId).BindMapping.xml">
-        <PackagePath>build;buildMultiTargeting</PackagePath>
+        <PackagePath>build</PackagePath>
         <Pack>true</Pack>
       </SharpGenConsumerBindMappingFile>
     </ItemGroup>
   </Target>
 
   <Target Name="SharpGenGenerateConsumerBindMappingFile"
-          Outputs="@(SharpGenConsumerBindMappingFile)"
+          Returns="@(SharpGenConsumerBindMappingFile)"
           DependsOnTargets="GenerateSharpGenBindings"
           Condition="'$(SharpGenGenerateConsumerBindMapping)' != 'false' and '@(SharpGenMapping)' != ''" />
 

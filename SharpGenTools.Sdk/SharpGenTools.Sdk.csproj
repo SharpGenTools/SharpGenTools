@@ -33,6 +33,15 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net5.0'">
     <Compile Remove="CallerArgumentExpressionAttribute.cs" />
+    <Compile Update="SharpGenTask.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="SharpGenTask.InputsCache.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="SharpGenTask.PropertyCache.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>

@@ -18,6 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using System.ComponentModel;
 using System.Globalization;
 using System.Xml.Serialization;
 
@@ -39,41 +40,77 @@ public class DefineExtensionRule : ExtensionBaseRule
     [XmlAttribute("underlying")]
     public string UnderlyingType { get; set; }
 
-    [XmlAttribute("shadow")]
+    [XmlAttribute("shadow"), DefaultValue(null)]
     public string ShadowName { get; set; }
 
     [XmlAttribute("vtbl")]
     public string VtblName { get; set; }
 
-    [XmlIgnore]
-    public int? SizeOf { get; set; }
+    [XmlIgnore] public int? SizeOf { get; set; }
+
     [XmlAttribute("sizeof")]
-    public int _SizeOf_ { get { return SizeOf.Value; } set { SizeOf = value; } } public bool ShouldSerialize_SizeOf_() { return SizeOf != null; }
-            
-    [XmlIgnore]
-    public int? Align { get; set; }
+    public int _SizeOf_
+    {
+        get => SizeOf.Value;
+        set => SizeOf = value;
+    }
+
+    public bool ShouldSerialize_SizeOf_() => SizeOf != null;
+
+    [XmlIgnore] public int? Align { get; set; }
+
     [XmlAttribute("align")]
-    public int _Align_ { get { return Align.Value; } set { Align = value; } } public bool ShouldSerialize_Align_() { return Align != null; }
+    public int _Align_
+    {
+        get => Align.Value;
+        set => Align = value;
+    }
 
-    [XmlIgnore]
-    public bool? HasCustomMarshal { get; set; }
+    public bool ShouldSerialize_Align_() => Align != null;
+
+    [XmlIgnore] public bool? HasCustomMarshal { get; set; }
+
     [XmlAttribute("marshal")]
-    public bool _HasCustomMarshal_ { get { return HasCustomMarshal.Value; } set { HasCustomMarshal = value; } } public bool ShouldSerialize_HasCustomMarshal_() { return HasCustomMarshal != null; }
+    public bool _HasCustomMarshal_
+    {
+        get => HasCustomMarshal.Value;
+        set => HasCustomMarshal = value;
+    }
 
-    [XmlIgnore]
-    public bool? IsStaticMarshal { get; set; }
+    public bool ShouldSerialize_HasCustomMarshal_() => HasCustomMarshal != null;
+
+    [XmlIgnore] public bool? IsStaticMarshal { get; set; }
+
     [XmlAttribute("static-marshal")]
-    public bool _IsStaticMarshal_ { get { return IsStaticMarshal.Value; } set { IsStaticMarshal = value; } } public bool ShouldSerialize_IsStaticMarshal_() { return IsStaticMarshal != null; }
+    public bool _IsStaticMarshal_
+    {
+        get => IsStaticMarshal.Value;
+        set => IsStaticMarshal = value;
+    }
 
-    [XmlIgnore]
-    public bool? HasCustomNew { get; set; }
+    public bool ShouldSerialize_IsStaticMarshal_() => IsStaticMarshal != null;
+
+    [XmlIgnore] public bool? HasCustomNew { get; set; }
+
     [XmlAttribute("custom-new")]
-    public bool _HasCustomNew_ { get { return HasCustomNew.Value; } set { HasCustomNew = value; } } public bool ShouldSerialize_HasCustomNew_() { return HasCustomNew != null; }
+    public bool _HasCustomNew_
+    {
+        get => HasCustomNew.Value;
+        set => HasCustomNew = value;
+    }
 
-    [XmlIgnore]
-    public bool? IsNativePrimitive { get; set; }
+    public bool ShouldSerialize_HasCustomNew_() => HasCustomNew != null;
+
+    [XmlIgnore] public bool? IsNativePrimitive { get; set; }
+
     [XmlAttribute("primitive")]
-    public bool _IsNativePrimitive_ { get => IsNativePrimitive.Value; set => IsNativePrimitive = value; } public bool ShouldSerialize_IsNativePrimitive_() => IsNativePrimitive != null;
+    public bool _IsNativePrimitive_
+    {
+        get => IsNativePrimitive.Value;
+        set => IsNativePrimitive = value;
+    }
+
+    public bool ShouldSerialize_IsNativePrimitive_() => IsNativePrimitive != null;
 
     [XmlIgnore] public bool? IsCallbackInterface { get; set; }
 

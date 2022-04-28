@@ -21,7 +21,7 @@ public sealed partial class SharpGenModuleGenerator
         List<VtblJob> vtblJobs = new();
 
         void HandleGuid(ITypeSymbol symbol, Guid parsedGuid) =>
-            guidJobs.Add(new GuidJob(symbol, Utilities.GetGuidParameters(parsedGuid)));
+            guidJobs.Add(new GuidJob(symbol, parsedGuid, Utilities.GetGuidParameters(parsedGuid)));
 
         void HandleVtbl(ITypeSymbol symbol, ITypeSymbol vtblTypeSymbol)
         {
@@ -58,16 +58,23 @@ public sealed partial class SharpGenModuleGenerator
 
         StatementSyntaxList body = new();
 
-        body.AddRange(
-            guidJobs,
-            job => ExpressionStatement(
-                AssignmentExpression(
-                    SyntaxKind.SimpleAssignmentExpression,
-                    StorageField(ParseName(job.Type.ToDisplayString()), IdentifierName("Guid")),
-                    ObjectCreationExpression(ParseTypeName("System.Guid")).WithArgumentList(job.Guid)
+        StatementSyntax GuidTransform(GuidJob job) =>
+            context.Compilation.IsSymbolAccessibleWithin(job.Type, context.Compilation.Assembly)
+                ? ExpressionStatement(
+                    AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression,
+                        StorageField(ParseName(job.Type.ToDisplayString()), IdentifierName("Guid")),
+                        ObjectCreationExpression(ParseTypeName("System.Guid"), job.GuidSyntax, default)
+                    )
                 )
-            )
-        );
+                : Block()
+                   .WithLeadingTrivia(
+                        Comment(
+                            $"// Type {job.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} is inaccessible, but has GUID {job.Guid}"
+                        )
+                    );
+
+        body.AddRange(guidJobs, GuidTransform);
 
         if (context.CancellationToken.IsCancellationRequested)
             return;
@@ -198,10 +205,10 @@ public sealed partial class SharpGenModuleGenerator
         );
     }
 
-    private sealed record GuidJob(ITypeSymbol Type, ArgumentListSyntax Guid)
+    private sealed record GuidJob(ITypeSymbol Type, Guid Guid, ArgumentListSyntax GuidSyntax)
     {
         public readonly ITypeSymbol Type = Type ?? throw new ArgumentNullException(nameof(Type));
-        public readonly ArgumentListSyntax Guid = Guid ?? throw new ArgumentNullException(nameof(Guid));
+        public readonly ArgumentListSyntax GuidSyntax = GuidSyntax ?? throw new ArgumentNullException(nameof(GuidSyntax));
     }
 
     private sealed class VtblJob

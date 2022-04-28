@@ -42,6 +42,8 @@ public sealed class CsMethod : CsCallable
         AllowProperty = tag.Property ?? AllowProperty;
         IsPersistent = tag.Persist ?? IsPersistent;
         Hidden = tag.Hidden ?? Hidden;
+        ManagedPartial = tag.ManagedPartial ?? ManagedPartial;
+        NativePartial = tag.NativePartial ?? NativePartial;
         CustomVtbl = tag.CustomVtbl ?? CustomVtbl;
         IsKeepImplementPublic = tag.IsKeepImplementPublic ?? IsKeepImplementPublic;
 
@@ -53,6 +55,8 @@ public sealed class CsMethod : CsCallable
     }
 
     public bool Hidden { get; set; }
+    public bool ManagedPartial { get; }
+    public bool NativePartial { get; }
     private bool IsKeepImplementPublic { get; }
     public bool? AllowProperty { get; }
     public bool CustomVtbl { get; }

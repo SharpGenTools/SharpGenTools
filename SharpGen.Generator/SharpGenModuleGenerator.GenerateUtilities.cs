@@ -50,8 +50,9 @@ public sealed partial class SharpGenModuleGenerator
     {
         List<MemberDeclarationSyntax> attributes = new(1);
 
-        if (context.Compilation.GetTypeByMetadataName(ModuleInitializerAttributeName) is not
-            { IsReferenceType: true, IsGenericType: false })
+        var moduleInitType = context.Compilation.GetTypeByMetadataName(ModuleInitializerAttributeName);
+        if (moduleInitType is not { IsReferenceType: true, IsGenericType: false } ||
+            !context.Compilation.IsSymbolAccessibleWithin(moduleInitType, context.Compilation.Assembly))
             attributes.Add(ModuleInitializerAttribute);
 
         if (attributes.Count == 0)

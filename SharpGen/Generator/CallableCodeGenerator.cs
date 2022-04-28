@@ -39,6 +39,13 @@ internal sealed class CallableCodeGenerator : MemberSingleCodeGeneratorBase<CsCa
                   .WithModifiers(TokenList());
         }
 
+        if (csElement is CsMethod { NativePartial: true })
+        {
+            return methodDeclaration
+                  .AddModifiers(Token(SyntaxKind.PartialKeyword))
+                  .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+        }
+
         var statements = NewStatementList;
 
         foreach (var param in csElement.Parameters)
