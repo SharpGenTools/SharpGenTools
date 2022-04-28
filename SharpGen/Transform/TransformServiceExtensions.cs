@@ -50,7 +50,7 @@ public static class TransformServiceExtensions
         }
         else
         {
-            docItems.Add($"<include file='{externalCommentsPath}' path=\"{ExternalDocCommentsReader.GetCodeCommentsXPath(element)}/*\" />");
+            docItems.Add($"<include file=\"{externalCommentsPath}\" path=\"{ExternalDocCommentsReader.GetCodeCommentsXPath(element)}/*\" />");
         }
 
         if (element.CppElementName != null)

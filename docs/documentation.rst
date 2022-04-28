@@ -12,12 +12,31 @@ You can supply external documentation though XML files structured as below:
 .. code-block:: xml
 
     <comments>
-        <comment id="C++ or C# Element Name">
+        <comment id="Full C++ element name">
             <summary>Summary here</summary>
+        </comment>
+        <comment id="DML_BUFFER_BINDING">
+            <summary>An example summary for a C++ struct named DML_BUFFER_BINDING.</summary>
+        </comment>
+        <comment id="DML_BUFFER_BINDING::Buffer">
+            <summary>An example summary for a C++ field named Buffer within a struct named DML_BUFFER_BINDING.</summary>
         </comment>
     </comments>
 
-SharpGenTools will automatically include an ``<include>`` documentation tag that points to a matching element in an external documentation file. You can specify an external comments file to SharpGen by adding it as a ``SharpGenExternalDocs`` item in your project file.
+SharpGenTools will automatically add an ``<include>`` documentation tag to matching elements in the generated code. This tag will point to the matching element in an external documentation file. You can specify an external comments file to SharpGen by adding it as a ``SharpGenExternalDocs`` item in your project file.
+
+An example project file that supports documentation:
+
+.. code-block:: xml
+
+    <Project Sdk="Microsoft.NET.Sdk">
+        ...
+        <ItemGroup>
+            <SharpGenMapping Include="Mappings.xml" />
+            <SharpGenExternalDocs Include="Documentation.xml" />
+            ...
+        </ItemGroup>
+    </Project>
 
 Doc Providers
 ==================

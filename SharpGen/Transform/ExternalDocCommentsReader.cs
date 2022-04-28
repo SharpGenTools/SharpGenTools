@@ -42,6 +42,6 @@ public class ExternalDocCommentsReader
 
     private static string GetExternalDocCommentId(CsBase element)
     {
-        return element.CppElementName ?? element.QualifiedName;
+        return element.CppElementFullName ?? element.QualifiedName;
     }
 }

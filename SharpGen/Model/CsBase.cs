@@ -195,15 +195,13 @@ public abstract class CsBase
     /// <value>The C++ element.</value>
     public CppElement CppElement { get; }
 
-    /// <summary>
-    /// Gets the name of the C++ element.
-    /// </summary>
-    /// <value>The name of the C++ element.</value>
     public string CppElementName
     {
         get => string.IsNullOrEmpty(_cppElementName) ? CppElement?.Name : _cppElementName;
         set => _cppElementName = value;
     }
+
+    public string CppElementFullName => CppElement?.FullName ?? CppElementName;
 
     /// <summary>
     /// Gets or sets the doc id.
@@ -230,7 +228,7 @@ public abstract class CsBase
     {
     }
 
-    public virtual string DocUnmanagedName => CppElementName;
+    public virtual string DocUnmanagedName => CppElementFullName;
 
     public virtual string DocUnmanagedShortName => CppElementName;
 
