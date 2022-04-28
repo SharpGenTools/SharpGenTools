@@ -18,7 +18,7 @@ public sealed class RoslynGenerator
         SingletonSeparatedList(Attribute(ParseName("System.Runtime.CompilerServices.ModuleInitializerAttribute")))
     );
 
-    public string Run(CsAssembly csAssembly, Ioc ioc)
+    public SyntaxTree Run(CsAssembly csAssembly, Ioc ioc)
     {
         var logger = ioc.Logger;
         var generators = ioc.Generators;
@@ -50,11 +50,16 @@ public sealed class RoslynGenerator
         }
 
         return CSharpSyntaxTree.Create(
-            CompilationUnit(
-                default, default, default,
-                List(csAssembly.Namespaces.Select(NamespaceSelector)).AddRange(moduleInitializer)
-            ).NormalizeWhitespace(elasticTrivia: true)
-        ).GetCompilationUnitRoot().ToFullString();
+            RoslynSyntaxNormalizer.Normalize(
+                CompilationUnit(
+                    default, default, default,
+                    List(csAssembly.Namespaces.Select(NamespaceSelector)).AddRange(moduleInitializer)
+                ),
+                "    ",
+                "\r\n",
+                true
+            )
+        );
     }
 
     private MethodDeclarationSyntax GenerateResultDescriptor(CsResultConstant[] descriptors, Ioc ioc)

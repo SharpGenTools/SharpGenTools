@@ -18,7 +18,6 @@ public sealed partial class SharpGenTask
 {
     private const int CacheFormatSignature = ('S' << 0) | ('G' << 8) | ('P' << 16) | ('C' << 24);
     private const int CacheFormatVersion = 1;
-    private static readonly Encoding TextEncoding = Encoding.UTF8;
 
     private static HashAlgorithm CreateSettingsHash() => SHA256.Create();
 

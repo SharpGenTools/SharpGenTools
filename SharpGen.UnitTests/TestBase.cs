@@ -24,6 +24,11 @@ public abstract class TestBase
         Ioc.ConfigureServices(serviceContainer);
     }
 
+    protected void AddIocServices(Action<IocServiceContainer> action)
+    {
+        action(serviceContainer);
+    }
+
     protected IDisposable LoggerEnvironment(LoggerAssertHandler handler)
     {
         return new LoggerTestEnvironment(loggerImpl, handler);

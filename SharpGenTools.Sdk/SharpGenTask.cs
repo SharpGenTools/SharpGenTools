@@ -11,6 +11,7 @@ using System.Threading;
 using System.Xml;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using Microsoft.CodeAnalysis.CSharp;
 using SharpGen;
 using SharpGen.Config;
 using SharpGen.CppModel;
@@ -462,8 +463,9 @@ public sealed partial class SharpGenTask : Task, ICancelableTask
 
         RoslynGenerator generator = new();
 
-        var generatedCode = generator.Run(solution, ioc);
-        File.WriteAllText(GeneratedCodeFile, generatedCode);
+        using var codeStream = File.Open(GeneratedCodeFile, FileMode.Create, FileAccess.Write);
+        using var codeWriter = new StreamWriter(codeStream, DefaultEncoding);
+        generator.Run(solution, ioc).GetCompilationUnitRoot().WriteTo(codeWriter);
 
         return !SharpGenLogger.HasErrors;
     }
