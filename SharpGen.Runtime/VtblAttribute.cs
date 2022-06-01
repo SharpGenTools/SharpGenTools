@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -28,9 +29,9 @@ public sealed class VtblAttribute : Attribute
     }
 
     [MethodImpl(Utilities.MethodAggressiveOptimization)]
-    internal static VtblAttribute Get(Type type) => Get(type.GetTypeInfo());
+    internal static VtblAttribute? Get(Type type) => Get(type.GetTypeInfo());
     [MethodImpl(Utilities.MethodAggressiveOptimization)]
-    internal static VtblAttribute Get(TypeInfo type) => type.GetCustomAttribute<VtblAttribute>();
+    internal static VtblAttribute? Get(TypeInfo type) => type.GetCustomAttribute<VtblAttribute>();
     internal static bool Has(Type type) => Get(type.GetTypeInfo()) != null;
     internal static bool Has(TypeInfo type) => Get(type) != null;
 }

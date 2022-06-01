@@ -15,7 +15,7 @@ public abstract unsafe partial class CallbackBase
 
     private GCHandle CreateShadow(TypeInfo type)
     {
-        var shadow = (CppObjectShadow) Activator.CreateInstance(type.AsType());
+        var shadow = (CppObjectShadow) Activator.CreateInstance(type.AsType())!;
 
         // Initialize the shadow with the callback
         shadow.Initialize(ThisHandle);

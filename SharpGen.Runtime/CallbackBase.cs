@@ -204,7 +204,7 @@ public abstract unsafe partial class CallbackBase : DisposeBase, ICallbackable
 
             HashSet<CppObjectShadow> shadows = new(ReferenceEqualityComparer.Instance);
 
-            foreach (CppObjectCallableWrapper* ccw in _ccw.Values)
+            foreach (CppObjectCallableWrapper* ccw in _ccw!.Values)
             {
                 var handle = ccw->Shadow;
                 if (!handle.IsAllocated)

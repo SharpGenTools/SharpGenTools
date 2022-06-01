@@ -67,7 +67,7 @@ public static unsafe class TypeDataStorage
 
     internal static void Register(Guid guid, void* vtbl) => vtblByGuid[guid] = new IntPtr(vtbl);
 
-    internal static IntPtr[] GetSourceVtbl<T>() where T : ICallbackable
+    internal static IntPtr[]? GetSourceVtbl<T>() where T : ICallbackable
     {
 #if !FORCE_REFLECTION_ONLY
         if (Storage<T>.SourceVtbl is { } storedVtbl)
@@ -77,14 +77,14 @@ public static unsafe class TypeDataStorage
         return GetSourceVtblFromReflection(typeof(T));
     }
 
-    private static IntPtr[] GetSourceVtblFromReflection(Type type)
+    private static IntPtr[]? GetSourceVtblFromReflection(Type type)
     {
         const string vtbl = "Vtbl";
 
         var vtblAttribute = VtblAttribute.Get(type);
         Debug.Assert(vtblAttribute is not null, $"Type {type.FullName} has no Vtbl attribute");
 
-        var vtblType = vtblAttribute.Type;
+        var vtblType = vtblAttribute!.Type;
 
 #if NETSTANDARD1_3
         static bool Predicate(MemberInfo x) => x.Name == vtbl;
@@ -175,6 +175,6 @@ public static unsafe class TypeDataStorage
     public static class Storage<T> where T : ICallbackable
     {
         public static Guid Guid;
-        public static IntPtr[] SourceVtbl;
+        public static IntPtr[]? SourceVtbl;
     }
 }

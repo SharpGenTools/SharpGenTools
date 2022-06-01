@@ -102,7 +102,8 @@ public readonly partial struct Result : IComparable, IComparable<Result>, IEquat
     public override bool Equals(object? obj) => obj is Result res && Equals(res);
     public override int GetHashCode() => Code;
     public override string ToString() => Code.ToString("X8");
-    public string ToString(string format, IFormatProvider formatProvider) => Code.ToString(format, formatProvider);
+    /// <inheritdoc />
+    public string ToString(string? format, IFormatProvider? formatProvider) => Code.ToString(format, formatProvider);
 
     public int CompareTo(Result other) => Code.CompareTo(other.Code);
 

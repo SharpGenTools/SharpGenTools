@@ -18,6 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -31,11 +33,14 @@ namespace SharpGen.Runtime;
 [Guid("00000000-0000-0000-C000-000000000046")]
 public class ComObject : CppObject, IUnknown
 {
-    public ComObject(IntPtr nativePtr): base(nativePtr)
+    public ComObject(IntPtr nativePtr) : base(nativePtr)
     {
     }
 
-    public static explicit operator ComObject(IntPtr nativePtr) => nativePtr == IntPtr.Zero ? null : new ComObject(nativePtr);
+    public static explicit operator ComObject?(IntPtr nativePtr)
+    {
+        return nativePtr == IntPtr.Zero ? null : new ComObject(nativePtr);
+    }
 
     /// <unmanaged>HRESULT IUnknown::QueryInterface([In] const GUID&amp; riid, [Out] void** ppvObject)</unmanaged>
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
@@ -43,7 +48,7 @@ public class ComObject : CppObject, IUnknown
     {
         Result __result__;
         fixed (void* ppvObject_ = &ppvObject)
-            __result__ = ((delegate* unmanaged[Stdcall]<IntPtr, void*, void*, int> )this[0U])(NativePointer, &riid, ppvObject_);
+            __result__ = ((delegate* unmanaged[Stdcall]<IntPtr, void*, void*, int>) this[0U])(NativePointer, &riid, ppvObject_);
         return __result__;
     }
 
@@ -52,7 +57,7 @@ public class ComObject : CppObject, IUnknown
     public unsafe uint AddRef()
     {
         uint __result__;
-        __result__ = ((delegate* unmanaged[Stdcall]<IntPtr, uint> )this[1U])(NativePointer);
+        __result__ = ((delegate* unmanaged[Stdcall]<IntPtr, uint>) this[1U])(NativePointer);
         return __result__;
     }
 
@@ -61,7 +66,7 @@ public class ComObject : CppObject, IUnknown
     public unsafe uint Release()
     {
         uint __result__;
-        __result__ = ((delegate* unmanaged[Stdcall]<IntPtr, uint> )this[2U])(NativePointer);
+        __result__ = ((delegate* unmanaged[Stdcall]<IntPtr, uint>) this[2U])(NativePointer);
         return __result__;
     }
 
@@ -108,7 +113,7 @@ public class ComObject : CppObject, IUnknown
     public virtual T QueryInterface<T>() where T : ComObject
     {
         QueryInterface(typeof(T).GetTypeInfo().GUID, out var parentPtr).CheckError();
-        return MarshallingHelpers.FromPointer<T>(parentPtr);
+        return MarshallingHelpers.FromPointer<T>(parentPtr)!;
     }
 
     /// <summary>
@@ -164,7 +169,7 @@ public class ComObject : CppObject, IUnknown
     /// <msdn-id>ms682521</msdn-id>
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
-    public static T QueryInterfaceOrNull<T>(IntPtr comPointer) where T : ComObject
+    public static T? QueryInterfaceOrNull<T>(IntPtr comPointer) where T : ComObject
     {
         using var tempObject = new ComObject(comPointer);
         return tempObject.QueryInterfaceOrNull<T>();
@@ -178,16 +183,20 @@ public class ComObject : CppObject, IUnknown
     /// <msdn-id>ms682521</msdn-id>
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
-    public virtual T QueryInterfaceOrNull<T>() where T : ComObject =>
-        MarshallingHelpers.FromPointer<T>(QueryInterfaceOrNull(typeof(T).GetTypeInfo().GUID));
+    public virtual T? QueryInterfaceOrNull<T>() where T : ComObject
+    {
+        return MarshallingHelpers.FromPointer<T>(QueryInterfaceOrNull(typeof(T).GetTypeInfo().GUID));
+    }
 
     ///<summary>
     /// Query Interface for a particular interface support and attach to the given instance.
     ///</summary>
     ///<typeparam name="T"></typeparam>
     ///<returns></returns>
-    protected void QueryInterfaceFrom<T>(T fromObject) where T : ComObject =>
+    protected void QueryInterfaceFrom<T>(T fromObject) where T : ComObject
+    {
         NativePointer = fromObject.QueryInterfaceOrNull(GetType().GetTypeInfo().GUID);
+    }
 
     protected override void DisposeCore(IntPtr nativePointer, bool disposing)
     {

@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace SharpGen.Runtime;
@@ -40,7 +41,6 @@ public abstract unsafe class CppObjectShadow
 
     static CppObjectShadow()
     {
-        Debug.Assert(Marshal.SizeOf(typeof(CppObjectCallableWrapper)) == CppObjectCallableWrapper.Size);
         Debug.Assert(sizeof(CppObjectCallableWrapper) == CppObjectCallableWrapper.Size);
     }
 

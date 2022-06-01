@@ -11,13 +11,15 @@ public abstract partial class CallbackBase
 
     private CallbackTypeInfo GetTypeInfo()
     {
-        CallbackTypeInfo info;
+        CallbackTypeInfo? info;
         var type = GetType();
         var cache = TypeReflectionCache;
 
         lock (cache)
+        {
             if (cache.TryGetValue(type, out info))
                 return info;
+        }
 
         info = new CallbackTypeInfo(type);
 
