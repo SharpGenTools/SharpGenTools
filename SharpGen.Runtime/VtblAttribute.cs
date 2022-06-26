@@ -1,6 +1,7 @@
 ﻿#nullable enable
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -15,13 +16,20 @@ public sealed class VtblAttribute : Attribute
     /// <summary>
     /// Type of the associated virtual method table
     /// </summary>
+#if NET5_0_OR_GREATER
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields | DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties)]
+#endif
     public Type Type { get; }
 
     /// <summary>
     /// Initializes a new instance of <see cref="VtblAttribute"/> class.
     /// </summary>
     /// <param name="holder">Type of the associated virtual method table</param>
-    public VtblAttribute(Type holder)
+    public VtblAttribute(
+#if NET5_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields | DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties)]
+#endif
+        Type holder)
     {
         Type = holder ?? throw new ArgumentNullException(nameof(holder));
 

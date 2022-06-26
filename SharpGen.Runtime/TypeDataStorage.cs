@@ -10,6 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using SharpGen.Runtime.TrimmingWrappers;
 
 namespace SharpGen.Runtime;
 
@@ -117,7 +118,13 @@ public static unsafe class TypeDataStorage
         return null;
     }
 
-    internal static bool GetTargetVtbl(TypeInfo type, out void* pointer)
+    internal static bool GetTargetVtbl(
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+#elif NET5_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+        TypeInfo type, out void* pointer)
     {
 #if !FORCE_REFLECTION_ONLY
         if (vtblByGuid.TryGetValue(type.GUID, out var ptr))
@@ -137,7 +144,13 @@ public static unsafe class TypeDataStorage
         return false;
     }
 
-    private static IntPtr RegisterFromReflection(TypeInfo type, IntPtr[] sourceVtbl)
+    private static IntPtr RegisterFromReflection(
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+#elif NET5_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+        TypeInfo type, IntPtr[] sourceVtbl)
     {
         var callbackable = typeof(ICallbackable).GetTypeInfo();
 
@@ -146,7 +159,7 @@ public static unsafe class TypeDataStorage
 
         foreach (var iface in type.ImplementedInterfaces)
         {
-            var typeInfo = iface.GetTypeInfo();
+            var typeInfo = iface.GetTypeInfoWithNestedPreservedInterfaces();
             if (callbackable == typeInfo || !callbackable.IsAssignableFrom(typeInfo))
                 continue;
 

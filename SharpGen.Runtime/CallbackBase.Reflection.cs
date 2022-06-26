@@ -2,8 +2,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using SharpGen.Runtime.TrimmingWrappers;
 
 namespace SharpGen.Runtime;
 
@@ -11,10 +13,21 @@ public abstract partial class CallbackBase
 {
     private readonly struct ImmediateShadowInterfaceInfo
     {
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+#elif NET5_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
         public readonly TypeInfo Type;
         public readonly List<TypeInfo> ImplementedInterfaces;
 
-        public ImmediateShadowInterfaceInfo(TypeInfo type)
+        public ImmediateShadowInterfaceInfo(
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+#elif NET5_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+            TypeInfo type)
         {
             Type = type;
             ImplementedInterfaces = new(6);
@@ -35,16 +48,33 @@ public abstract partial class CallbackBase
     // Cache reflection on interface inheritance
     private class CallbackTypeInfo
     {
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+#elif NET5_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
         private readonly TypeInfo type;
         private ImmediateShadowInterfaceInfo[]? _vtbls;
         private TypeInfo[]? _shadows;
         private Guid[]? _guids;
 
-        public CallbackTypeInfo(Type type) : this(type.GetTypeInfo())
+        public CallbackTypeInfo(
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+#elif NET5_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+            Type type) : this(type.GetTypeInfo())
         {
         }
 
-        private CallbackTypeInfo(TypeInfo type)
+        private CallbackTypeInfo(
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+#elif NET5_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+            TypeInfo type)
         {
             this.type = type ?? throw new ArgumentNullException(nameof(type));
         }
@@ -111,7 +141,7 @@ public abstract partial class CallbackBase
 
             foreach (var implementedInterface in type.ImplementedInterfaces)
             {
-                var item = implementedInterface.GetTypeInfo();
+                var item = implementedInterface.GetTypeInfoWithNestedPreservedInterfaces();
 
                 // Only process interfaces that have vtbl
                 if (!VtblAttribute.Has(item))

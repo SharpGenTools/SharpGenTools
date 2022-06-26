@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using SharpGen.Runtime.TrimmingWrappers;
 
 namespace SharpGen.Runtime;
 
@@ -12,7 +13,7 @@ public abstract partial class CallbackBase
     private CallbackTypeInfo GetTypeInfo()
     {
         CallbackTypeInfo? info;
-        var type = GetType();
+        var type = this.GetTypeWithNestedPreservedInterfaces();
         var cache = TypeReflectionCache;
 
         lock (cache)
