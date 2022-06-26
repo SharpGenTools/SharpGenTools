@@ -15,13 +15,17 @@ public abstract partial class CallbackBase
     {
 #if NET6_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+#elif NET5_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 #endif
         public readonly TypeInfo Type;
         public readonly List<TypeInfo> ImplementedInterfaces;
 
         public ImmediateShadowInterfaceInfo(
 #if NET6_0_OR_GREATER
-            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+#elif NET5_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 #endif
             TypeInfo type)
         {
@@ -46,6 +50,8 @@ public abstract partial class CallbackBase
     {
 #if NET6_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+#elif NET5_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 #endif
         private readonly TypeInfo type;
         private ImmediateShadowInterfaceInfo[]? _vtbls;
@@ -54,7 +60,9 @@ public abstract partial class CallbackBase
 
         public CallbackTypeInfo(
 #if NET6_0_OR_GREATER
-            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+#elif NET5_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 #endif
             Type type) : this(type.GetTypeInfo())
         {
@@ -62,7 +70,9 @@ public abstract partial class CallbackBase
 
         private CallbackTypeInfo(
 #if NET6_0_OR_GREATER
-            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+#elif NET5_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 #endif
             TypeInfo type)
         {

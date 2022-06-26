@@ -5,7 +5,7 @@
 
   <PropertyGroup>
     <!--
-      net6.0 for full assembly trimming. 
+      net6.0 for full assembly trimming
       net5.0 for function pointers codegen and Native(U)Long API surface and partial assembly trimming
       netcoreapp3.0 for smaller [empty] dependency tree (w/o System.Runtime.CompilerServices.Unsafe)
       netstandard2.1 + netcoreapp2.1 for smaller dependency tree (w/o System.Memory)

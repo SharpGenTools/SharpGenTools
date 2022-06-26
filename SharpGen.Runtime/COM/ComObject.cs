@@ -112,7 +112,7 @@ public class ComObject : CppObject, IUnknown
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
     public virtual T QueryInterface<
-#if NET6_0_OR_GREATER
+#if NET5_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 #endif
     T>() where T : ComObject
@@ -134,7 +134,7 @@ public class ComObject : CppObject, IUnknown
     [SupportedOSPlatform("windows")]
 #endif
     public static T As<
-#if NET6_0_OR_GREATER
+#if NET5_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 #endif
     T>(object comObject) where T : ComObject => As<T>(Marshal.GetIUnknownForObject(comObject));
@@ -149,7 +149,7 @@ public class ComObject : CppObject, IUnknown
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
     public static T As<
-#if NET6_0_OR_GREATER
+#if NET5_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 #endif
     T>(IntPtr iunknownPtr) where T : ComObject
@@ -171,7 +171,7 @@ public class ComObject : CppObject, IUnknown
     [SupportedOSPlatform("windows")]
 #endif
     public static T QueryInterface<
-#if NET6_0_OR_GREATER
+#if NET5_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 #endif
     T>(object comObject) where T : ComObject =>
@@ -187,7 +187,7 @@ public class ComObject : CppObject, IUnknown
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
     public static T? QueryInterfaceOrNull<
-#if NET6_0_OR_GREATER
+#if NET5_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 #endif
     T>(IntPtr comPointer) where T : ComObject
@@ -205,7 +205,7 @@ public class ComObject : CppObject, IUnknown
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
     public virtual T? QueryInterfaceOrNull<
-#if NET6_0_OR_GREATER
+#if NET5_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 #endif
     T>() where T : ComObject

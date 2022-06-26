@@ -15,7 +15,7 @@ public static partial class MarshallingHelpers
     /// <param name="cppObjectPtr">The native pointer to a C++ object.</param>
     /// <returns>An instance of T bound to the native pointer</returns>
     public static T? FromPointer<
-#if NET6_0_OR_GREATER
+#if NET5_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 #endif
     T>(IntPtr cppObjectPtr) where T : CppObject
@@ -37,7 +37,7 @@ public static partial class MarshallingHelpers
     /// <param name="cppObjectPtr">The native pointer to a C++ object.</param>
     /// <returns>An instance of T bound to the native pointer</returns>
     public static T? FromPointer<
-#if NET6_0_OR_GREATER
+#if NET5_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 #endif
     T>(UIntPtr cppObjectPtr) where T : CppObject

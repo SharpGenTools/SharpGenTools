@@ -15,7 +15,7 @@ public abstract unsafe partial class CallbackBase
     protected virtual Guid[] BuildGuidList() => GetTypeInfo().Guids;
 
     private GCHandle CreateShadow(
-#if NET6_0_OR_GREATER
+#if NET5_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
 #endif
         TypeInfo type)
@@ -28,7 +28,7 @@ public abstract unsafe partial class CallbackBase
         return GCHandle.Alloc(shadow, GCHandleType.Normal);
     }
 
-#if NET6_0_OR_GREATER
+#if NET5_0_OR_GREATER
     [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2062", Justification = $"{nameof(ShadowAttribute.Type)} is already marked `DynamicallyAccessedMemberTypes.PublicConstructors` and the existing check via `Debug.Assert(holder.GetTypeInfo().GetConstructor(Type.EmptyTypes)` will ensure correctness.")]
     [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2111", Justification = "Same as above.")]
 #endif
