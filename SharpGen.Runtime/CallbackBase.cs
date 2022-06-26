@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -143,7 +144,13 @@ public abstract unsafe partial class CallbackBase : DisposeBase, ICallbackable
         return guidToShadow.TryGetValue(guidType, out var shadow) ? shadow : IntPtr.Zero;
     }
 
-    public IntPtr Find<TCallback>() where TCallback : ICallbackable => Find(TypeDataStorage.GetGuid<TCallback>());
+    public IntPtr Find<
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+#elif NET5_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+#endif
+    TCallback>() where TCallback : ICallbackable => Find(TypeDataStorage.GetGuid<TCallback>());
 
     protected GCHandle ThisHandle => _thisHandle switch
     {

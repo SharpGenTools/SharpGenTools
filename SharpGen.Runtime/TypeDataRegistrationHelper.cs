@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace SharpGen.Runtime;
@@ -20,7 +21,13 @@ public unsafe ref struct TypeDataRegistrationHelper
         _size = 0;
     }
 
-    public void Add<T>() where T : ICallbackable => Add(TypeDataStorage.GetSourceVtbl<T>());
+    public void Add<
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+#elif NET5_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+#endif
+    T>() where T : ICallbackable => Add(TypeDataStorage.GetSourceVtbl<T>());
 
     public void Add(IntPtr[] vtbl)
     {
@@ -32,7 +39,13 @@ public unsafe ref struct TypeDataRegistrationHelper
         _size += (uint) vtbl.Length;
     }
 
-    public void Register<T>() where T : ICallbackable => TypeDataStorage.Register<T>(RegisterImpl());
+    public void Register<
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
+#elif NET5_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+#endif
+    T>() where T : ICallbackable => TypeDataStorage.Register<T>(RegisterImpl());
 
     internal IntPtr Register(TypeInfo type)
     {
