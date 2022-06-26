@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace SharpGen.Runtime;
@@ -13,7 +14,11 @@ public static partial class MarshallingHelpers
     /// <typeparam name="T">The CppObject class that will be returned</typeparam>
     /// <param name="cppObjectPtr">The native pointer to a C++ object.</param>
     /// <returns>An instance of T bound to the native pointer</returns>
-    public static T? FromPointer<T>(IntPtr cppObjectPtr) where T : CppObject
+    public static T? FromPointer<
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+#endif
+    T>(IntPtr cppObjectPtr) where T : CppObject
     {
         if (cppObjectPtr == IntPtr.Zero)
             return default;
@@ -31,7 +36,11 @@ public static partial class MarshallingHelpers
     /// <typeparam name="T">The CppObject class that will be returned</typeparam>
     /// <param name="cppObjectPtr">The native pointer to a C++ object.</param>
     /// <returns>An instance of T bound to the native pointer</returns>
-    public static T? FromPointer<T>(UIntPtr cppObjectPtr) where T : CppObject
+    public static T? FromPointer<
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+#endif
+    T>(UIntPtr cppObjectPtr) where T : CppObject
     {
         if (cppObjectPtr == UIntPtr.Zero)
             return default;

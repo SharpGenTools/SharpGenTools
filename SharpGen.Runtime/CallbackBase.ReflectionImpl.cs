@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -13,7 +14,11 @@ public abstract unsafe partial class CallbackBase
 {
     protected virtual Guid[] BuildGuidList() => GetTypeInfo().Guids;
 
-    private GCHandle CreateShadow(TypeInfo type)
+    private GCHandle CreateShadow(
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+#endif
+        TypeInfo type)
     {
         var shadow = (CppObjectShadow) Activator.CreateInstance(type.AsType())!;
 
@@ -23,6 +28,10 @@ public abstract unsafe partial class CallbackBase
         return GCHandle.Alloc(shadow, GCHandleType.Normal);
     }
 
+#if NET6_0_OR_GREATER
+    [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2062", Justification = $"{nameof(ShadowAttribute.Type)} is already marked `DynamicallyAccessedMemberTypes.PublicConstructors` and the existing check via `Debug.Assert(holder.GetTypeInfo().GetConstructor(Type.EmptyTypes)` will ensure correctness.")]
+    [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2111", Justification = "Same as above.")]
+#endif
     protected virtual void InitializeCallableWrappers(IDictionary<Guid, IntPtr> ccw)
     {
         // Associate all shadows with their interfaces.

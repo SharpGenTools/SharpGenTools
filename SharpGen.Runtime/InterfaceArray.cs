@@ -33,7 +33,11 @@ namespace SharpGen.Runtime;
 [DebuggerTypeProxy(typeof(InterfaceArray<>.InterfaceArrayDebugView))]
 [DebuggerDisplay("Count={" + nameof(Length) + "}")]
 [SuppressMessage("ReSharper", "ConvertToAutoProperty")]
-public unsafe struct InterfaceArray<T> : IReadOnlyList<T>, IEnlightenedDisposable, IDisposable
+public unsafe struct InterfaceArray<
+#if NET6_0_OR_GREATER
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+#endif
+T> : IReadOnlyList<T>, IEnlightenedDisposable, IDisposable
     where T : CppObject
 {
     // .NET Native has issues with <...> in property backing fields in structs

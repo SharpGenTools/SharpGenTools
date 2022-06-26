@@ -1,7 +1,6 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2036
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32611.2
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpGen", "SharpGen\SharpGen.csproj", "{31F85A16-CB01-4456-BE3C-76E9FF3A1343}"
 EndProject
@@ -11,9 +10,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpGen.UnitTests", "Sharp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpGen.Runtime", "SharpGen.Runtime\SharpGen.Runtime.csproj", "{6302D087-BC5E-4AA0-BA4D-2115590D60E2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpGen.Platform", "SharpGen.Platform\SharpGen.Platform.csproj", "{A7FF5742-4C58-487C-ADD1-2FF2382D7D99}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpGen.Platform", "SharpGen.Platform\SharpGen.Platform.csproj", "{A7FF5742-4C58-487C-ADD1-2FF2382D7D99}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpGen.Generator", "SharpGen.Generator\SharpGen.Generator.csproj", "{B4D7CA39-8C95-4472-91E6-7D9E51AC2E1F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpGen.Generator", "SharpGen.Generator\SharpGen.Generator.csproj", "{B4D7CA39-8C95-4472-91E6-7D9E51AC2E1F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpGen.Runtime.Trim.Dummy", "SharpGen.Runtime.Trim.Dummy\SharpGen.Runtime.Trim.Dummy.csproj", "{D72FF74B-6FBB-4394-ADA5-E184339F8A80}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,11 +46,13 @@ Global
 		{B4D7CA39-8C95-4472-91E6-7D9E51AC2E1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B4D7CA39-8C95-4472-91E6-7D9E51AC2E1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B4D7CA39-8C95-4472-91E6-7D9E51AC2E1F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D72FF74B-6FBB-4394-ADA5-E184339F8A80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D72FF74B-6FBB-4394-ADA5-E184339F8A80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D72FF74B-6FBB-4394-ADA5-E184339F8A80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D72FF74B-6FBB-4394-ADA5-E184339F8A80}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E022185F-62DA-4472-98A7-DA67215F61B1}

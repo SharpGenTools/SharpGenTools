@@ -21,6 +21,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -110,7 +111,11 @@ public class ComObject : CppObject, IUnknown
     /// <msdn-id>ms682521</msdn-id>
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
-    public virtual T QueryInterface<T>() where T : ComObject
+    public virtual T QueryInterface<
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+#endif
+    T>() where T : ComObject
     {
         QueryInterface(typeof(T).GetTypeInfo().GUID, out var parentPtr).CheckError();
         return MarshallingHelpers.FromPointer<T>(parentPtr)!;
@@ -128,7 +133,11 @@ public class ComObject : CppObject, IUnknown
 #if NET5_0_OR_GREATER
     [SupportedOSPlatform("windows")]
 #endif
-    public static T As<T>(object comObject) where T : ComObject => As<T>(Marshal.GetIUnknownForObject(comObject));
+    public static T As<
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+#endif
+    T>(object comObject) where T : ComObject => As<T>(Marshal.GetIUnknownForObject(comObject));
 
     /// <summary>
     /// Queries a managed object for a particular COM interface support (This method is a shortcut to <see cref="QueryInterface"/>)
@@ -139,7 +148,11 @@ public class ComObject : CppObject, IUnknown
     /// <msdn-id>ms682521</msdn-id>
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
-    public static T As<T>(IntPtr iunknownPtr) where T : ComObject
+    public static T As<
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+#endif
+    T>(IntPtr iunknownPtr) where T : ComObject
     {
         using var tempObject = new ComObject(iunknownPtr);
         return tempObject.QueryInterface<T>();
@@ -157,7 +170,11 @@ public class ComObject : CppObject, IUnknown
 #if NET5_0_OR_GREATER
     [SupportedOSPlatform("windows")]
 #endif
-    public static T QueryInterface<T>(object comObject) where T : ComObject =>
+    public static T QueryInterface<
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+#endif
+    T>(object comObject) where T : ComObject =>
         As<T>(Marshal.GetIUnknownForObject(comObject));
 
     /// <summary>
@@ -169,7 +186,11 @@ public class ComObject : CppObject, IUnknown
     /// <msdn-id>ms682521</msdn-id>
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
-    public static T? QueryInterfaceOrNull<T>(IntPtr comPointer) where T : ComObject
+    public static T? QueryInterfaceOrNull<
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+#endif
+    T>(IntPtr comPointer) where T : ComObject
     {
         using var tempObject = new ComObject(comPointer);
         return tempObject.QueryInterfaceOrNull<T>();
@@ -183,7 +204,11 @@ public class ComObject : CppObject, IUnknown
     /// <msdn-id>ms682521</msdn-id>
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
-    public virtual T? QueryInterfaceOrNull<T>() where T : ComObject
+    public virtual T? QueryInterfaceOrNull<
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+#endif
+    T>() where T : ComObject
     {
         return MarshallingHelpers.FromPointer<T>(QueryInterfaceOrNull(typeof(T).GetTypeInfo().GUID));
     }

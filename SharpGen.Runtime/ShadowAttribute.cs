@@ -20,6 +20,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -34,13 +35,20 @@ public sealed class ShadowAttribute : Attribute
     /// <summary>
     /// Type of the associated shadow
     /// </summary>
+#if NET6_0_OR_GREATER
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+#endif
     public Type Type { get; }
 
     /// <summary>
     /// Initializes a new instance of <see cref="ShadowAttribute"/> class.
     /// </summary>
     /// <param name="holder">Type of the associated shadow</param>
-    public ShadowAttribute(Type holder)
+    public ShadowAttribute(
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+#endif
+        Type holder)
     {
         Type = holder ?? throw new ArgumentNullException(nameof(holder));
 
