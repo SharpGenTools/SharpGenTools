@@ -13,7 +13,7 @@ public abstract partial class CallbackBase
     private CallbackTypeInfo GetTypeInfo()
     {
         CallbackTypeInfo? info;
-        var type = this.GetTypeWithPreservedInterfaces();
+        var type = this.GetTypeWithNestedPreservedInterfaces();
         var cache = TypeReflectionCache;
 
         lock (cache)

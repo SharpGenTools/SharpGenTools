@@ -155,7 +155,7 @@ public static unsafe class TypeDataStorage
 
         foreach (var iface in type.ImplementedInterfaces)
         {
-            var typeInfo = iface.GetTypeInfoWithPreservedInterfaces();
+            var typeInfo = iface.GetTypeInfoWithNestedPreservedInterfaces();
             if (callbackable == typeInfo || !callbackable.IsAssignableFrom(typeInfo))
                 continue;
 

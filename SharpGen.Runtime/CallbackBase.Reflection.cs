@@ -131,7 +131,7 @@ public abstract partial class CallbackBase
 
             foreach (var implementedInterface in type.ImplementedInterfaces)
             {
-                var item = implementedInterface.GetTypeInfoWithPreservedInterfaces();
+                var item = implementedInterface.GetTypeInfoWithNestedPreservedInterfaces();
 
                 // Only process interfaces that have vtbl
                 if (!VtblAttribute.Has(item))
