@@ -16,6 +16,7 @@
     <Description>C# COM Interop classes for use with SharpGenTools generated libraries</Description>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
+    <IsTrimmable>true</IsTrimmable>
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CoreCompileDependsOn>$(CoreCompileDependsOn);SharpGenSetRoslynGeneratedPath</CoreCompileDependsOn>
