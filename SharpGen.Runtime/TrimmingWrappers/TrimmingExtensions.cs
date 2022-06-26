@@ -18,7 +18,7 @@ namespace SharpGen.Runtime.TrimmingWrappers
 #if NET6_0_OR_GREATER
         [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
 #elif NET5_0_OR_GREATER
-        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
 #endif
 #if NET5_0_OR_GREATER
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2068", Justification = "Nested interfaces are already preserved.")]
@@ -31,7 +31,7 @@ namespace SharpGen.Runtime.TrimmingWrappers
 #if NET6_0_OR_GREATER
         [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
 #elif NET5_0_OR_GREATER
-        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+        [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
 #endif
 #if NET5_0_OR_GREATER
         [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2073", Justification = "Nested interfaces are already preserved.")]
