@@ -10,7 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using SharpGen.Runtime.TrimmingWrappers;
+using SharpGen.Runtime.Trimming;
 
 namespace SharpGen.Runtime;
 

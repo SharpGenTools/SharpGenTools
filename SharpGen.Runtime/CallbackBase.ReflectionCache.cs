@@ -2,7 +2,7 @@
 
 using System;
 using System.Collections.Generic;
-using SharpGen.Runtime.TrimmingWrappers;
+using SharpGen.Runtime.Trimming;
 
 namespace SharpGen.Runtime;
 

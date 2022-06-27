@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -19,6 +20,7 @@ public sealed partial class SharpGenModuleGenerator
 
         List<GuidJob> guidJobs = new();
         List<VtblJob> vtblJobs = new();
+        List<LinkerPreserveInterfaceJob> preserveInterfaceJobs = new();
 
         void HandleGuid(ITypeSymbol symbol, Guid parsedGuid) =>
             guidJobs.Add(new GuidJob(symbol, parsedGuid, Utilities.GetGuidParameters(parsedGuid)));
@@ -51,6 +53,9 @@ public sealed partial class SharpGenModuleGenerator
 
             if (symbol.GetVtblAttribute() is { } vtblAttribute)
                 HandleVtbl(symbol, vtblAttribute);
+
+            if (symbol.HasBaseClass(CallbackBaseClassName))
+                preserveInterfaceJobs.Add(new LinkerPreserveInterfaceJob(symbol));
         }
 
         if (context.CancellationToken.IsCancellationRequested)
@@ -180,6 +185,31 @@ public sealed partial class SharpGenModuleGenerator
             }
         }
 
+        foreach (var preserveInterfaceJob in preserveInterfaceJobs)
+        {
+            body.Add(ExpressionStatement(
+                InvocationExpression(
+                        MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                MemberAccessExpression(
+                                    SyntaxKind.SimpleMemberAccessExpression,
+                                    MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        IdentifierName("SharpGen"),
+                                        IdentifierName("Runtime")),
+                                    IdentifierName("Trimming")),
+                                IdentifierName("TrimmingHelpers")),
+                            IdentifierName("PreserveInterfaces")))
+                    .WithArgumentList(
+                        ArgumentList(
+                            SingletonSeparatedList<ArgumentSyntax>(
+                                Argument(
+                                    TypeOfExpression(
+                                        IdentifierName(preserveInterfaceJob.Type.ToDisplayString()))))))));
+        }
+
         if (body.Count == 0)
             return;
 
@@ -210,6 +240,8 @@ public sealed partial class SharpGenModuleGenerator
         public readonly ITypeSymbol Type = Type ?? throw new ArgumentNullException(nameof(Type));
         public readonly ArgumentListSyntax GuidSyntax = GuidSyntax ?? throw new ArgumentNullException(nameof(GuidSyntax));
     }
+
+    private sealed record LinkerPreserveInterfaceJob(ITypeSymbol Type);
 
     private sealed class VtblJob
     {

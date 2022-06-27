@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -10,6 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SharpGen.Runtime.Trim.Dummy.CallbackTest\SharpGen.Runtime.Trim.Dummy.CallbackTest.csproj" />
+
     <ProjectReference Include="..\SharpGen.Runtime\SharpGen.Runtime.csproj" />
   </ItemGroup>
 

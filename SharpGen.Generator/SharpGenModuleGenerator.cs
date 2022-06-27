@@ -12,6 +12,7 @@ namespace SharpGen.Generator;
 public sealed partial class SharpGenModuleGenerator : ISourceGenerator
 {
     private const string CallbackableInterfaceName = "SharpGen.Runtime.ICallbackable";
+    private const string CallbackBaseClassName = "SharpGen.Runtime.CallbackBase";
     private const string ModuleInitializerAttributeName = "System.Runtime.CompilerServices.ModuleInitializerAttribute";
 
     private static readonly AttributeListSyntax ModuleInitializerAttributeList = AttributeList(
