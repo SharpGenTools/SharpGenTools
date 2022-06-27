@@ -53,13 +53,7 @@ public static partial class MarshallingHelpers
     }
 
     [MethodImpl(Utilities.MethodAggressiveOptimization)]
-    public static uint AddRef<
-#if NET6_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
-#elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-#endif
-    TCallback>(TCallback callback) where TCallback : ICallbackable =>
+    public static uint AddRef<TCallback>(TCallback callback) where TCallback : ICallbackable =>
         callback switch
         {
             ComObject cpp => cpp.AddRef(),
@@ -68,13 +62,7 @@ public static partial class MarshallingHelpers
         };
 
     [MethodImpl(Utilities.MethodAggressiveOptimization)]
-    public static uint Release<
-#if NET6_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
-#elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-#endif
-    TCallback>(TCallback callback) where TCallback : ICallbackable =>
+    public static uint Release<TCallback>(TCallback callback) where TCallback : ICallbackable =>
         callback switch
         {
             ComObject cpp => cpp.Release(),
@@ -88,13 +76,7 @@ public static partial class MarshallingHelpers
     /// <typeparam name="TCallback">The type of the callback.</typeparam>
     /// <param name="callback">The callback.</param>
     /// <returns>A pointer to the unmanaged C++ object of the callback</returns>
-    public static IntPtr ToCallbackPtr<
-#if NET6_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
-#elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-#endif
-    TCallback>(ICallbackable callback) where TCallback : ICallbackable =>
+    public static IntPtr ToCallbackPtr<TCallback>(ICallbackable callback) where TCallback : ICallbackable =>
         callback switch
         {
             CppObject cpp => cpp.NativePointer,
@@ -110,13 +92,7 @@ public static partial class MarshallingHelpers
     /// <returns>A pointer to the unmanaged C++ object of the callback</returns>
     /// <remarks>This method is meant as a fast-path for codegen to use to reduce the number of casts.</remarks>
     [MethodImpl(Utilities.MethodAggressiveOptimization)]
-    public static IntPtr ToCallbackPtr<
-#if NET6_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
-#elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-#endif
-    TCallback>(CppObject? obj) where TCallback : ICallbackable
+    public static IntPtr ToCallbackPtr<TCallback>(CppObject? obj) where TCallback : ICallbackable
         => obj?.NativePointer ?? IntPtr.Zero;
 
     /// <summary>

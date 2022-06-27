@@ -41,13 +41,7 @@ internal sealed class CppObjectMultiShadow
         return null;
     }
 
-    public bool ToCallback<
-#if NET6_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
-#elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-#endif
-    T>([NotNullWhen(true)] out T? value) where T : ICallbackable
+    public bool ToCallback<T>([NotNullWhen(true)] out T? value) where T : ICallbackable
     {
         foreach (var handle in _shadows)
         {

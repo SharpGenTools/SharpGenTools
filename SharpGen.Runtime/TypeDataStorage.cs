@@ -37,13 +37,7 @@ public static unsafe class TypeDataStorage
     }
 
     [MethodImpl(Utilities.MethodAggressiveOptimization)]
-    internal static Guid GetGuid<
-#if NET6_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
-#elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-#endif
-    T>() where T : ICallbackable
+    internal static Guid GetGuid<T>() where T : ICallbackable
     {
 #if !FORCE_REFLECTION_ONLY
         ref var guid = ref Storage<T>.Guid;
@@ -65,13 +59,7 @@ public static unsafe class TypeDataStorage
 #endif
     }
 
-    internal static void Register<
-#if NET6_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
-#elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-#endif
-    T>(void* vtbl) where T : ICallbackable
+    internal static void Register<T>(void* vtbl) where T : ICallbackable
     {
 #if !FORCE_REFLECTION_ONLY
         Register(GetGuid<T>(), vtbl);
@@ -80,13 +68,7 @@ public static unsafe class TypeDataStorage
 
     internal static void Register(Guid guid, void* vtbl) => vtblByGuid[guid] = new IntPtr(vtbl);
 
-    internal static IntPtr[]? GetSourceVtbl<
-#if NET6_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
-#elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-#endif
-    T>() where T : ICallbackable
+    internal static IntPtr[]? GetSourceVtbl<T>() where T : ICallbackable
     {
 #if !FORCE_REFLECTION_ONLY
         if (Storage<T>.SourceVtbl is { } storedVtbl)
@@ -203,13 +185,7 @@ public static unsafe class TypeDataStorage
 
     [SuppressMessage("ReSharper", "StaticMemberInGenericType")]
     [SuppressMessage("Usage", "CA2211:Non-constant fields should not be visible")]
-    public static class Storage<
-#if NET6_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
-#elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-#endif
-    T> where T : ICallbackable
+    public static class Storage<T> where T : ICallbackable
     {
         public static Guid Guid;
         public static IntPtr[]? SourceVtbl;

@@ -23,7 +23,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -85,13 +84,7 @@ public abstract unsafe class CppObjectShadow
 
     public IEnumerable<T> ToAllShadows<T>() where T : CppObjectShadow => ToCallback<CallbackBase>().Shadows.OfType<T>();
 
-    public static T ToCallback<
-#if NET6_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
-#elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-#endif
-    T>(IntPtr thisPtr) where T : ICallbackable
+    public static T ToCallback<T>(IntPtr thisPtr) where T : ICallbackable
     {
         Debug.Assert(thisPtr != IntPtr.Zero);
 
@@ -110,13 +103,7 @@ public abstract unsafe class CppObjectShadow
         };
     }
 
-    public T ToCallback<
-#if NET6_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
-#elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-#endif
-    T>() where T : ICallbackable
+    public T ToCallback<T>() where T : ICallbackable
     {
         var handle = callbackHandle;
         Debug.Assert(handle.IsAllocated);
