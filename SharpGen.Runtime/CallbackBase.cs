@@ -148,7 +148,7 @@ public abstract unsafe partial class CallbackBase : DisposeBase, ICallbackable
 #if NET6_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
 #elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
 #endif
     TCallback>() where TCallback : ICallbackable => Find(TypeDataStorage.GetGuid<TCallback>());
 
