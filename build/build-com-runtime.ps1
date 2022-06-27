@@ -4,15 +4,15 @@ Param(
     [string[]] $AdditionalParameters
 )
 
-Remove-Item -Recurse -Force "$RepoRoot/SharpGen.Runtime.COM/bin/$Configuration" -ErrorAction Ignore
-Remove-Item -Recurse -Force "$RepoRoot/SharpGen.Runtime.COM/obj/$Configuration" -ErrorAction Ignore
+Remove-Item -Recurse -Force "$RepoRoot/SharpGen.Runtime.COM/SharpGen.Runtime.COM/bin/$Configuration" -ErrorAction Ignore
+Remove-Item -Recurse -Force "$RepoRoot/SharpGen.Runtime.COM/SharpGen.Runtime.COM/obj/$Configuration" -ErrorAction Ignore
 
-$ComRuntimeSolution = "$RepoRoot/SharpGen.Runtime.COM/SharpGen.Runtime.COM.sln"
+$ComRuntimeProject = "$RepoRoot/SharpGen.Runtime.COM/SharpGen.Runtime.COM/SharpGen.Runtime.COM.csproj"
 
 $Parameters = @(
     "pack", "-bl:$RepoRoot/artifacts/binlog/com-runtime-$Configuration.binlog",
     "-nr:false", "-c:$Configuration", "-v:m"
-) + $AdditionalParameters + @($ComRuntimeSolution)
+) + $AdditionalParameters + @($ComRuntimeProject)
 
 dotnet $Parameters | Write-Host
 

@@ -1,9 +1,11 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpGen.Runtime.COM", "SharpGen.Runtime.COM.csproj", "{1E2AA0D7-49F8-4E21-966D-60899298214C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpGen.Runtime.COM", "SharpGen.Runtime.COM\SharpGen.Runtime.COM.csproj", "{1E2AA0D7-49F8-4E21-966D-60899298214C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpGen.Runtime.COM.Trim.Dummy", "SharpGen.Runtime.COM.Trim.Dummy\SharpGen.Runtime.COM.Trim.Dummy.csproj", "{E4721BB6-1428-47B8-A6C9-A0B622D50FFB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{1E2AA0D7-49F8-4E21-966D-60899298214C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E2AA0D7-49F8-4E21-966D-60899298214C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E2AA0D7-49F8-4E21-966D-60899298214C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4721BB6-1428-47B8-A6C9-A0B622D50FFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4721BB6-1428-47B8-A6C9-A0B622D50FFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4721BB6-1428-47B8-A6C9-A0B622D50FFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4721BB6-1428-47B8-A6C9-A0B622D50FFB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
