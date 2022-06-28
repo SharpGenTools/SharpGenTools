@@ -238,11 +238,15 @@ public sealed partial class SharpGenModuleGenerator
                    .WithModifiers(staticModifier)
                    .AddModifiers(Token(SyntaxKind.UnsafeKeyword))
                    .WithMembers(
-                        SingletonList<MemberDeclarationSyntax>(
-                            MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "Initialize")
-                               .WithModifiers(staticModifier)
-                               .AddAttributeLists(ModuleInitializerAttributeList)
-                               .WithBody(body.ToBlock())
+                        List(
+                            new MemberDeclarationSyntax[]
+                            {
+                                SuppressWarningsStatement,
+                                MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "Initialize")
+                                    .WithModifiers(staticModifier)
+                                    .AddAttributeLists(ModuleInitializerAttributeList)
+                                    .WithBody(body.ToBlock())
+                            }
                         )
                     );
 
