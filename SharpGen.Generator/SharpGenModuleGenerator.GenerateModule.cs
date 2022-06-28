@@ -206,24 +206,23 @@ public sealed partial class SharpGenModuleGenerator
             {
                 body.Add(ExpressionStatement(
                     InvocationExpression(
+                        MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
                             MemberAccessExpression(
                                 SyntaxKind.SimpleMemberAccessExpression,
                                 MemberAccessExpression(
                                     SyntaxKind.SimpleMemberAccessExpression,
                                     MemberAccessExpression(
                                         SyntaxKind.SimpleMemberAccessExpression,
-                                        MemberAccessExpression(
-                                            SyntaxKind.SimpleMemberAccessExpression,
-                                            IdentifierName("SharpGen"),
-                                            IdentifierName("Runtime")),
-                                        IdentifierName("Trimming")),
-                                    IdentifierName("TrimmingHelpers")),
-                                IdentifierName("PreserveInterfaces")))
-                        .WithArgumentList(
-                            ArgumentList(
-                                SingletonSeparatedList<ArgumentSyntax>(
-                                    Argument(
-                                        TypeOfExpression(
+                                        IdentifierName("SharpGen"),
+                                        IdentifierName("Runtime")),
+                                    IdentifierName("Trimming")),
+                                IdentifierName("TrimmingHelpers")),
+                            GenericName(
+                                    Identifier("PreserveMe"))
+                                .WithTypeArgumentList(
+                                    TypeArgumentList(
+                                        SingletonSeparatedList<TypeSyntax>(
                                             IdentifierName(preserveInterfaceJob.Type.ToDisplayString()))))))));
             }
         }

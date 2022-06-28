@@ -8,19 +8,14 @@ namespace SharpGen.Runtime.Trimming
     /// </summary>
     public static class TrimmingHelpers
     {
-        // Note: Would rather use Generic <T> here, but `DynamicallyAccessedMembers.Interfaces` doesn't properly work
-        // and doesn't preserve methods, only the list of interfaces that were inherited. Might be linker bug.
-
         /// <summary>
-        /// Dummy method used for telling the IL Linker to preserve interfaces.
+        /// Dummy method used for telling the IL Linker to preserve the type in its entirety.
         /// </summary>
-        /// <param name="type">Type to preserve interfaces for.</param>
-        public static void PreserveInterfaces(
-#if NET6_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
-#elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-#endif
-            Type type) {}
+        /// <typeparam name="T">Type to preserve all implementation for.</typeparam>
+        public static void PreserveMe<
+#if NET5_0_OR_GREATER
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+# endif
+            T>() {}
     }
 }
