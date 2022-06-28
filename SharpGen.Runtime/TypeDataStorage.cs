@@ -122,7 +122,7 @@ public static unsafe class TypeDataStorage
 #if NET6_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
 #elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 #endif
         TypeInfo type, out void* pointer)
     {
@@ -148,7 +148,7 @@ public static unsafe class TypeDataStorage
 #if NET6_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
 #elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 #endif
         TypeInfo type, IntPtr[] sourceVtbl)
     {

@@ -19,7 +19,7 @@ namespace SharpGen.Runtime.Trimming
 #if NET6_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
 #elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 #endif
             Type type) {}
     }
