@@ -187,27 +187,45 @@ public sealed partial class SharpGenModuleGenerator
 
         foreach (var preserveInterfaceJob in preserveInterfaceJobs)
         {
-            body.Add(ExpressionStatement(
-                InvocationExpression(
-                        MemberAccessExpression(
-                            SyntaxKind.SimpleMemberAccessExpression,
+            var accessibility = preserveInterfaceJob.Type.DeclaredAccessibility;
+            if (Utilities.IsAnyOfFollowing(accessibility, Accessibility.Private, Accessibility.ProtectedOrInternal, Accessibility.ProtectedOrFriend, Accessibility.ProtectedAndInternal, Accessibility.NotApplicable, Accessibility.Protected))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(new DiagnosticDescriptor
+                (   
+                    "SG0000", 
+                    "Privately accessible classes that inherit from `CallbackBase` cannot be protected from Assembly Trimming.",
+                    "Class {0} inheriting from `CallbackBase` should be marked with an accessibility modifier that makes it accessible from other classes (e.g. `internal`). A private accessibility modifier prevents SharpGenTools from protecting your callbacks against IL Linker/Assembly Trimmer.",
+                    "SharpGenTools",
+                    DiagnosticSeverity.Warning,
+                    true,
+                    null,
+                    null, WellKnownDiagnosticTags.Build
+                ), null, preserveInterfaceJob.Type.ToDisplayString()));
+            }
+            else
+            {
+                body.Add(ExpressionStatement(
+                    InvocationExpression(
                             MemberAccessExpression(
                                 SyntaxKind.SimpleMemberAccessExpression,
                                 MemberAccessExpression(
                                     SyntaxKind.SimpleMemberAccessExpression,
                                     MemberAccessExpression(
                                         SyntaxKind.SimpleMemberAccessExpression,
-                                        IdentifierName("SharpGen"),
-                                        IdentifierName("Runtime")),
-                                    IdentifierName("Trimming")),
-                                IdentifierName("TrimmingHelpers")),
-                            IdentifierName("PreserveInterfaces")))
-                    .WithArgumentList(
-                        ArgumentList(
-                            SingletonSeparatedList<ArgumentSyntax>(
-                                Argument(
-                                    TypeOfExpression(
-                                        IdentifierName(preserveInterfaceJob.Type.ToDisplayString()))))))));
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            IdentifierName("SharpGen"),
+                                            IdentifierName("Runtime")),
+                                        IdentifierName("Trimming")),
+                                    IdentifierName("TrimmingHelpers")),
+                                IdentifierName("PreserveInterfaces")))
+                        .WithArgumentList(
+                            ArgumentList(
+                                SingletonSeparatedList<ArgumentSyntax>(
+                                    Argument(
+                                        TypeOfExpression(
+                                            IdentifierName(preserveInterfaceJob.Type.ToDisplayString()))))))));
+            }
         }
 
         if (body.Count == 0)

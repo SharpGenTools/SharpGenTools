@@ -171,4 +171,18 @@ public static class Utilities
 
         return false;
     }
+
+    /// <summary>
+    /// Checks if an enum is any of the following given param values.
+    /// </summary>
+    public static bool IsAnyOfFollowing<T>(T value, params T[] values) where T : Enum
+    {
+        foreach (var val in values)
+        {
+            if (value.Equals(val))
+                return true;
+        }
+
+        return false;
+    }
 }
