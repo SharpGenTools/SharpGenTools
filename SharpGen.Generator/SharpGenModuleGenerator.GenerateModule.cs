@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -19,6 +20,7 @@ public sealed partial class SharpGenModuleGenerator
 
         List<GuidJob> guidJobs = new();
         List<VtblJob> vtblJobs = new();
+        List<LinkerPreserveInterfaceJob> preserveInterfaceJobs = new();
 
         void HandleGuid(ITypeSymbol symbol, Guid parsedGuid) =>
             guidJobs.Add(new GuidJob(symbol, parsedGuid, Utilities.GetGuidParameters(parsedGuid)));
@@ -51,6 +53,9 @@ public sealed partial class SharpGenModuleGenerator
 
             if (symbol.GetVtblAttribute() is { } vtblAttribute)
                 HandleVtbl(symbol, vtblAttribute);
+
+            if (symbol.HasBaseClass(CallbackBaseClassName))
+                preserveInterfaceJobs.Add(new LinkerPreserveInterfaceJob(symbol));
         }
 
         if (context.CancellationToken.IsCancellationRequested)
@@ -180,6 +185,48 @@ public sealed partial class SharpGenModuleGenerator
             }
         }
 
+        foreach (var preserveInterfaceJob in preserveInterfaceJobs)
+        {
+            var accessibility = preserveInterfaceJob.Type.DeclaredAccessibility;
+            if (Utilities.IsAnyOfFollowing(accessibility, Accessibility.Private, Accessibility.ProtectedOrInternal, Accessibility.ProtectedOrFriend, Accessibility.ProtectedAndInternal, Accessibility.NotApplicable, Accessibility.Protected))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(new DiagnosticDescriptor
+                (   
+                    "SG0000", 
+                    "Privately accessible classes that inherit from `CallbackBase` cannot be protected from Assembly Trimming.",
+                    "Class {0} inheriting from `CallbackBase` should be marked with an accessibility modifier that makes it accessible from other classes (e.g. `internal`). A private accessibility modifier prevents SharpGenTools from protecting your callbacks against IL Linker/Assembly Trimmer.",
+                    "SharpGenTools",
+                    DiagnosticSeverity.Warning,
+                    true,
+                    null,
+                    null, WellKnownDiagnosticTags.Build
+                ), null, preserveInterfaceJob.Type.ToDisplayString()));
+            }
+            else
+            {
+                body.Add(ExpressionStatement(
+                    InvocationExpression(
+                        MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                MemberAccessExpression(
+                                    SyntaxKind.SimpleMemberAccessExpression,
+                                    MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        IdentifierName("SharpGen"),
+                                        IdentifierName("Runtime")),
+                                    IdentifierName("Trimming")),
+                                IdentifierName("TrimmingHelpers")),
+                            GenericName(
+                                    Identifier("PreserveMe"))
+                                .WithTypeArgumentList(
+                                    TypeArgumentList(
+                                        SingletonSeparatedList<TypeSyntax>(
+                                            IdentifierName(preserveInterfaceJob.Type.ToDisplayString()))))))));
+            }
+        }
+
         if (body.Count == 0)
             return;
 
@@ -191,11 +238,15 @@ public sealed partial class SharpGenModuleGenerator
                    .WithModifiers(staticModifier)
                    .AddModifiers(Token(SyntaxKind.UnsafeKeyword))
                    .WithMembers(
-                        SingletonList<MemberDeclarationSyntax>(
-                            MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "Initialize")
-                               .WithModifiers(staticModifier)
-                               .AddAttributeLists(ModuleInitializerAttributeList)
-                               .WithBody(body.ToBlock())
+                        List(
+                            new MemberDeclarationSyntax[]
+                            {
+                                SuppressWarningsStatement,
+                                MethodDeclaration(PredefinedType(Token(SyntaxKind.VoidKeyword)), "Initialize")
+                                    .WithModifiers(staticModifier)
+                                    .AddAttributeLists(ModuleInitializerAttributeList)
+                                    .WithBody(body.ToBlock())
+                            }
                         )
                     );
 
@@ -210,6 +261,8 @@ public sealed partial class SharpGenModuleGenerator
         public readonly ITypeSymbol Type = Type ?? throw new ArgumentNullException(nameof(Type));
         public readonly ArgumentListSyntax GuidSyntax = GuidSyntax ?? throw new ArgumentNullException(nameof(GuidSyntax));
     }
+
+    private sealed record LinkerPreserveInterfaceJob(ITypeSymbol Type);
 
     private sealed class VtblJob
     {

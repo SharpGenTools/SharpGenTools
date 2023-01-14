@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -10,13 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SharpGen.Runtime.Trim.Dummy.CallbackTest\SharpGen.Runtime.Trim.Dummy.CallbackTest.csproj" />
-
-    <ProjectReference Include="..\SharpGen.Runtime\SharpGen.Runtime.csproj" />
+    <ProjectReference Include="../SharpGen.Runtime.COM/SharpGen.Runtime.COM.csproj" />
   </ItemGroup>
 
+
   <ItemGroup>
-    <TrimmerRootAssembly Include="SharpGen.Runtime" />
+    <TrimmerRootAssembly Include="SharpGen.Runtime.COM" />
   </ItemGroup>
 
 </Project>

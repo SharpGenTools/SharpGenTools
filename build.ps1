@@ -13,7 +13,7 @@ if ($LastExitCode -ne 0) {
 }
 
 Write-Debug "Deploying built packages for COM Runtime build"
-if (!(./build/deploy-test-packages -PackedConfiguration $Configuration -Project "SharpGen.Runtime.COM")) {
+if (!(./build/deploy-test-packages -PackedConfiguration $Configuration -Project "SharpGen.Runtime.COM/SharpGen.Runtime.COM")) {
     Write-Error "Failed to deploy packages"
     exit 1
 }

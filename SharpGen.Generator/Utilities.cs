@@ -150,4 +150,39 @@ public static class Utilities
         static ArgumentSyntax Literal4(int value) =>
             LiteralArgument(Literal("0x" + value.ToString("X8"), value));
     }
+
+    /// <summary>
+    /// Returns true if the given symbol contains a base class with a given type name.
+    /// </summary>
+    /// <param name="symbol">The class symbol.</param>
+    /// <param name="fullTypeName">Full name of the type, e.g. \"SharpGen.Runtime.CallbackBase\"</param>
+    /// <returns></returns>
+    public static bool HasBaseClass(this ITypeSymbol symbol, string fullTypeName)
+    {
+        var baseClass = symbol.BaseType;
+
+        while (baseClass != null)
+        {
+            if (baseClass.ToDisplayString() == fullTypeName)
+                return true;
+
+            baseClass = baseClass.BaseType;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Checks if an enum is any of the following given param values.
+    /// </summary>
+    public static bool IsAnyOfFollowing<T>(T value, params T[] values) where T : Enum
+    {
+        foreach (var val in values)
+        {
+            if (value.Equals(val))
+                return true;
+        }
+
+        return false;
+    }
 }

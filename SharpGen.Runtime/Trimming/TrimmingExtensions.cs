@@ -2,7 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
-namespace SharpGen.Runtime.TrimmingWrappers
+namespace SharpGen.Runtime.Trimming
 {
     internal static class TrimmingExtensions
     {

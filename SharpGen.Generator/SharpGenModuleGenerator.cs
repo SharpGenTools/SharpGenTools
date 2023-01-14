@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -12,10 +13,30 @@ namespace SharpGen.Generator;
 public sealed partial class SharpGenModuleGenerator : ISourceGenerator
 {
     private const string CallbackableInterfaceName = "SharpGen.Runtime.ICallbackable";
+    private const string CallbackBaseClassName = "SharpGen.Runtime.CallbackBase";
     private const string ModuleInitializerAttributeName = "System.Runtime.CompilerServices.ModuleInitializerAttribute";
 
-    private static readonly AttributeListSyntax ModuleInitializerAttributeList = AttributeList(
-        SingletonSeparatedList(Attribute(ParseName(ModuleInitializerAttributeName)))
+    private static readonly AttributeListSyntax[] ModuleInitializerAttributeList = new[]
+    {
+        // Module Initializer.
+        AttributeList(
+            SingletonSeparatedList(Attribute(ParseName(ModuleInitializerAttributeName)))
+        )
+    };
+
+    private static readonly GlobalStatementSyntax SuppressWarningsStatement = GlobalStatement
+    (
+        ExpressionStatement(IdentifierName(
+            Identifier(
+                TriviaList
+                (
+                    Trivia(IfDirectiveTrivia(IdentifierName("NET5_0_OR_GREATER"), true, false, false)),
+                    DisabledText(@"[System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(""ReflectionAnalysis"", ""IL2111"")]
+[System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(""ReflectionAnalysis"", ""IL2110"")]
+"),
+                    Trivia(EndIfDirectiveTrivia(true))
+                ),
+            "", TriviaList()))).WithSemicolonToken(MissingToken(SyntaxKind.SemicolonToken))
     );
 
     private static readonly NameSyntax TypeDataStorage = ParseName("SharpGen.Runtime.TypeDataStorage");
