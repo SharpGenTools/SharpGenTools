@@ -1,98 +1,97 @@
 ﻿<Project>
 
-  <Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" />
-  <Import Project="Sdk.props" Sdk="Microsoft.Build.CentralPackageVersions" />
+	<Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" />
 
-  <PropertyGroup>
-    <TargetFrameworks>net472;net5.0</TargetFrameworks>
-    <PackageId>SharpGenTools.Sdk</PackageId>
-    <NoPackageAnalysis>true</NoPackageAnalysis>
-    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+	<PropertyGroup>
+		<TargetFrameworks>net472;net6.0</TargetFrameworks>
+		<PackageId>SharpGenTools.Sdk</PackageId>
+		<NoPackageAnalysis>true</NoPackageAnalysis>
+		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
 
-    <PackageType>MSBuildSdk</PackageType>
-    <SharpGenSdkPackage>true</SharpGenSdkPackage>
-    <SharpGenBuildAsMSBuildSdk>true</SharpGenBuildAsMSBuildSdk>
+		<PackageType>MSBuildSdk</PackageType>
+		<SharpGenSdkPackage>true</SharpGenSdkPackage>
+		<SharpGenBuildAsMSBuildSdk>true</SharpGenBuildAsMSBuildSdk>
 
-    <SdkVersionPropsPath>$([System.IO.Path]::Combine('$(IntermediateOutputPath)', 'Sdk.Version.props'))</SdkVersionPropsPath>
+		<SdkVersionPropsPath>$([System.IO.Path]::Combine('$(IntermediateOutputPath)', 'Sdk.Version.props'))</SdkVersionPropsPath>
 
-    <!-- forces SDK to copy dependencies into build output to make packing easier -->
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <DevelopmentDependency>true</DevelopmentDependency>
-    <RuntimeIdentifiers>win;unix</RuntimeIdentifiers>
-    <Description>MSBuild tooling for SharpGen. Tooling for generating efficient C# code from C++ and COM headers.</Description>
-    <ExtrasBuildEachRuntimeIdentifier>true</ExtrasBuildEachRuntimeIdentifier>
-    <EnsureRuntimePackageDependencies>false</EnsureRuntimePackageDependencies>
-    <ExtrasIncludeDefaultProjectBuildOutputInPackTarget>IncludeDefaultProjectBuildOutputInPack</ExtrasIncludeDefaultProjectBuildOutputInPackTarget>
-  </PropertyGroup>
+		<!-- forces SDK to copy dependencies into build output to make packing easier -->
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+		<DevelopmentDependency>true</DevelopmentDependency>
+		<RuntimeIdentifiers>win;unix</RuntimeIdentifiers>
+		<Description>MSBuild tooling for SharpGen. Tooling for generating efficient C# code from C++ and COM headers.</Description>
+		<ExtrasBuildEachRuntimeIdentifier>true</ExtrasBuildEachRuntimeIdentifier>
+		<EnsureRuntimePackageDependencies>false</EnsureRuntimePackageDependencies>
+		<ExtrasIncludeDefaultProjectBuildOutputInPackTarget>IncludeDefaultProjectBuildOutputInPack</ExtrasIncludeDefaultProjectBuildOutputInPackTarget>
+		<PolySharpIncludeRuntimeSupportedAttributes>true</PolySharpIncludeRuntimeSupportedAttributes>
+	</PropertyGroup>
 
-  <Target Name="IncludeDefaultProjectBuildOutputInPack">
-    <ItemGroup>
-      <None Include="@(RidSpecificOutput->'%(Identity)')" PackagePath="tools/%(TargetFramework)/%(Rid)" Pack="true" />
-    </ItemGroup>
-  </Target>
+	<Target Name="IncludeDefaultProjectBuildOutputInPack">
+		<ItemGroup>
+			<None Include="@(RidSpecificOutput->'%(Identity)')" PackagePath="tools/%(TargetFramework)/%(Rid)" Pack="true" />
+		</ItemGroup>
+	</Target>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net5.0'">
-    <Compile Remove="CallerArgumentExpressionAttribute.cs" />
-    <Compile Update="SharpGenTask.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="SharpGenTask.InputsCache.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="SharpGenTask.PropertyCache.cs">
-      <SubType>Code</SubType>
-    </Compile>
-  </ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+		<Compile Remove="CallerArgumentExpressionAttribute.cs" />
+		<Compile Update="SharpGenTask.cs">
+			<SubType>Code</SubType>
+		</Compile>
+		<Compile Update="SharpGenTask.InputsCache.cs">
+			<SubType>Code</SubType>
+		</Compile>
+		<Compile Update="SharpGenTask.PropertyCache.cs">
+			<SubType>Code</SubType>
+		</Compile>
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Utilities.Core" />
-    <PackageReference Include="Microsoft.Bcl.HashCode" Condition="'$(TargetFramework)' == 'net472'" />
-    <PackageReference Include="Polly.Contrib.WaitAndRetry" />
-    <PackageReference Include="Nullable" Condition="'$(TargetFramework)' == 'net472'" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="PolySharp" />
+		<PackageReference Include="Microsoft.Build.Utilities.Core" />
+		<PackageReference Include="Polly.Contrib.WaitAndRetry" />
+		<PackageReference Include="Microsoft.Bcl.HashCode" Condition="'$(TargetFramework)' == 'net472'" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\SharpGen.Platform\SharpGen.Platform.csproj" />
-    <ProjectReference Include="..\SharpGen.Generator\SharpGen.Generator.csproj" ReferenceOutputAssembly="false">
-      <!-- As the composite root (in DI terms) we still want to ensure that the UI tier has a copy of the DAL dll to load up.-->
-      <OutputItemType>Content</OutputItemType>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <!-- DebugSymbolsProjectOutputGroup copies PDB files, but not for Visual Studio, which is still fine as Visual Studio knows how to get debugging information.  -->
-      <Targets>Build;DebugSymbolsProjectOutputGroup</Targets>
-    </ProjectReference>
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\SharpGen.Platform\SharpGen.Platform.csproj" />
+		<ProjectReference Include="..\SharpGen.Generator\SharpGen.Generator.csproj" ReferenceOutputAssembly="false">
+			<!-- As the composite root (in DI terms) we still want to ensure that the UI tier has a copy of the DAL dll to load up.-->
+			<OutputItemType>Content</OutputItemType>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<!-- DebugSymbolsProjectOutputGroup copies PDB files, but not for Visual Studio, which is still fine as Visual Studio knows how to get debugging information.  -->
+			<Targets>Build;DebugSymbolsProjectOutputGroup</Targets>
+		</ProjectReference>
+	</ItemGroup>
 
-  <ItemGroup>
-    <Content Include="../CastXML/**/*" PackagePath="tools/CastXML/%(RecursiveDir)%(FileName)%(Extension)" />
-    <Content Include="SharpGenMapping.xaml" PackagePath="build" />
-    <Content Include="Sdk.props" PackagePath="Sdk" />
-    <Content Include="Sdk.targets" PackagePath="Sdk" />
-    <Content Include="SharpGenTools.Sdk.props" PackagePath="build;buildMultiTargeting" />
-    <Content Include="SharpGenTools.Sdk.targets" PackagePath="build;buildMultiTargeting" />
-  </ItemGroup>
+	<ItemGroup>
+		<Content Include="../CastXML/**/*" PackagePath="tools/CastXML/%(RecursiveDir)%(FileName)%(Extension)" />
+		<Content Include="SharpGenMapping.xaml" PackagePath="build" />
+		<Content Include="Sdk.props" PackagePath="Sdk" />
+		<Content Include="Sdk.targets" PackagePath="Sdk" />
+		<Content Include="SharpGenTools.Sdk.props" PackagePath="build;buildMultiTargeting" />
+		<Content Include="SharpGenTools.Sdk.targets" PackagePath="build;buildMultiTargeting" />
+	</ItemGroup>
 
-  <Target Name="SharpGenWriteVersionProps" BeforeTargets="_GetPackageFiles;GenerateNuspec" Outputs="@(SdkVersionProps)">
-    <PropertyGroup>
-      <SdkVersionPropsPath>$([System.IO.Path]::Combine('$(IntermediateOutputPath)', 'Sdk.Version.props'))</SdkVersionPropsPath>
-    </PropertyGroup>
+	<Target Name="SharpGenWriteVersionProps" BeforeTargets="_GetPackageFiles;GenerateNuspec" Outputs="@(SdkVersionProps)">
+		<PropertyGroup>
+			<SdkVersionPropsPath>$([System.IO.Path]::Combine('$(IntermediateOutputPath)', 'Sdk.Version.props'))</SdkVersionPropsPath>
+		</PropertyGroup>
 
-    <ItemGroup>
-      <Content Include="$(SdkVersionPropsPath)" PackagePath="Sdk" />
-      <_VersionPropsLine Include="&lt;Project&gt;" />
-      <_VersionPropsLine Include="&lt;PropertyGroup&gt;" />
-      <_VersionPropsLine Include="&lt;SharpGenSdkVersion Condition=&quot;'%24(SharpGenSdkVersion)'==''&quot;&gt;$(PackageVersion)&lt;/SharpGenSdkVersion&gt;" />
-      <_VersionPropsLine Include="&lt;/PropertyGroup&gt;" />
-      <_VersionPropsLine Include="&lt;/Project&gt;" />
-    </ItemGroup>
+		<ItemGroup>
+			<Content Include="$(SdkVersionPropsPath)" PackagePath="Sdk" />
+			<_VersionPropsLine Include="&lt;Project&gt;" />
+			<_VersionPropsLine Include="&lt;PropertyGroup&gt;" />
+			<_VersionPropsLine Include="&lt;SharpGenSdkVersion Condition=&quot;'%24(SharpGenSdkVersion)'==''&quot;&gt;$(PackageVersion)&lt;/SharpGenSdkVersion&gt;" />
+			<_VersionPropsLine Include="&lt;/PropertyGroup&gt;" />
+			<_VersionPropsLine Include="&lt;/Project&gt;" />
+		</ItemGroup>
 
-    <WriteLinesToFile File="$(SdkVersionPropsPath)" WriteOnlyWhenDifferent="true" Overwrite="true" Lines="@(_VersionPropsLine)" />
-  </Target>
+		<WriteLinesToFile File="$(SdkVersionPropsPath)" WriteOnlyWhenDifferent="true" Overwrite="true" Lines="@(_VersionPropsLine)" />
+	</Target>
 
-  <Import Project="Sdk.targets" Sdk="Microsoft.Build.CentralPackageVersions" />
-  <Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" />
+	<Import Project="Sdk.targets" Sdk="MSBuild.Sdk.Extras" />
 
-  <!-- https://github.com/NuGet/NuGet.Client/blob/873f7db91460d8b35d971bf46660ffce0f629fd6/src/NuGet.Core/NuGet.Build.Tasks.Pack/NuGet.Build.Tasks.Pack.targets#L424-L431 -->
-  <!-- Replace with no-op -->
-  <Target Name="_GetFrameworkAssemblyReferences" DependsOnTargets="ResolveReferences" Returns="@(TfmSpecificFrameworkAssemblyReferences)" />
+	<!-- https://github.com/NuGet/NuGet.Client/blob/873f7db91460d8b35d971bf46660ffce0f629fd6/src/NuGet.Core/NuGet.Build.Tasks.Pack/NuGet.Build.Tasks.Pack.targets#L424-L431 -->
+	<!-- Replace with no-op -->
+	<Target Name="_GetFrameworkAssemblyReferences" DependsOnTargets="ResolveReferences" Returns="@(TfmSpecificFrameworkAssemblyReferences)" />
 
 </Project>

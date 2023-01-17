@@ -268,7 +268,7 @@ public sealed partial class SharpGenModuleGenerator
     {
         public readonly ITypeSymbol InterfaceType;
         public readonly ITypeSymbol VtblType;
-        public INamedTypeSymbol[] CallbackInterfaces { get; init; }
+        public INamedTypeSymbol[]? CallbackInterfaces { get; init; }
 
         public VtblJob(ITypeSymbol interfaceType, ITypeSymbol vtblType)
         {

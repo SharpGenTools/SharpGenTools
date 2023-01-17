@@ -59,8 +59,4 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(DisableSourceLink)' != 'true'">
-    <PackageReference Include="Microsoft.SourceLink.GitHub" />
-  </ItemGroup>
-
 </Project>

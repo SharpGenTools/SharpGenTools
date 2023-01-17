@@ -45,44 +45,4 @@ public sealed partial class SharpGenModuleGenerator
             )
         )
     );
-
-    private static void GenerateUtilities(GeneratorExecutionContext context)
-    {
-        List<MemberDeclarationSyntax> attributes = new(1);
-
-        var moduleInitType = context.Compilation.GetTypeByMetadataName(ModuleInitializerAttributeName);
-        if (moduleInitType is not { IsReferenceType: true, IsGenericType: false } ||
-            !context.Compilation.IsSymbolAccessibleWithin(moduleInitType, context.Compilation.Assembly))
-            attributes.Add(ModuleInitializerAttribute);
-
-        if (attributes.Count == 0)
-            return;
-
-        context.AddSource(
-            "SourceGeneratorUtilities.g.cs",
-            SourceText.From(GenerateCompilationUnit(attributes).ToString(), Encoding.UTF8)
-        );
-    }
-
-    private static NamespaceDeclarationSyntax ModuleInitializerAttribute =>
-        NamespaceDeclaration(
-                QualifiedName(
-                    QualifiedName(IdentifierName("System"), IdentifierName("Runtime")),
-                    IdentifierName("CompilerServices")
-                )
-            )
-           .AddMembers(
-                ClassDeclaration("ModuleInitializerAttribute")
-                   .AddAttributeLists(
-                        AttributeList(SingletonSeparatedList(MethodAttributeUsage)),
-                        AttributeList(SingletonSeparatedList(DebugConditionalAttribute))
-                    )
-                   .AddModifiers(Token(SyntaxKind.InternalKeyword), Token(SyntaxKind.SealedKeyword))
-                   .AddBaseListTypes(SimpleBaseType(Attribute))
-                   .AddMembers(
-                        ConstructorDeclaration(Identifier("ModuleInitializerAttribute"))
-                           .WithModifiers(TokenList(Token(SyntaxKind.PublicKeyword)))
-                           .WithBody(Block())
-                    )
-            );
 }

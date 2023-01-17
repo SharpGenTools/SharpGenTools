@@ -111,7 +111,7 @@ internal sealed class RoslynSyntaxNormalizer : CSharpSyntaxRewriter
         do
         {
             nextToken = nextToken.GetNextToken(true, true);
-        } while (nextToken != default && nextToken.Span.Length == 0 && nextToken.Kind() != SyntaxKind.EndOfDirectiveToken);
+        } while (nextToken != default && nextToken.Span.Length == 0 && !nextToken.IsKind(SyntaxKind.EndOfDirectiveToken));
 
         return _consideredSpan.Contains(nextToken.FullSpan) ? nextToken : default;
     }
@@ -156,7 +156,7 @@ internal sealed class RoslynSyntaxNormalizer : CSharpSyntaxRewriter
             return 1;
         }
 
-        if (nextToken.Kind() == SyntaxKind.None)
+        if (nextToken.IsKind(SyntaxKind.None))
         {
             return 0;
         }
@@ -197,8 +197,8 @@ internal sealed class RoslynSyntaxNormalizer : CSharpSyntaxRewriter
                 // Note: the `where` case handles constraints on method declarations
                 //  and also `where` clauses (consistently with other LINQ cases below)
                 return (currentToken.Parent is StatementSyntax && nextToken.Parent != currentToken.Parent)
-                    || nextToken.Kind() == SyntaxKind.OpenBraceToken
-                    || nextToken.Kind() == SyntaxKind.WhereKeyword
+                    || nextToken.IsKind(SyntaxKind.OpenBraceToken) 
+                    || nextToken.IsKind(SyntaxKind.WhereKeyword)
                            ? 1
                            : 0;
 

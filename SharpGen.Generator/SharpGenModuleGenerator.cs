@@ -63,8 +63,6 @@ public sealed partial class SharpGenModuleGenerator : ISourceGenerator
         if (context.CancellationToken.IsCancellationRequested)
             return;
 
-        GenerateUtilities(context);
-
         if (context.CancellationToken.IsCancellationRequested)
             return;
 

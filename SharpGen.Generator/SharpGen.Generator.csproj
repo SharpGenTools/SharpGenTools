@@ -1,33 +1,28 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <Sdk Name="Microsoft.Build.CentralPackageVersions" />
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<EnableNETAnalyzers>true</EnableNETAnalyzers>
+		<AnalysisLevel>latest</AnalysisLevel>
+		<IsPackable>false</IsPackable>
+		<Nullable>enable</Nullable>
+		<IsRoslynComponent>true</IsRoslynComponent>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<DefineConstants>SHARPGEN_ROSLYN</DefineConstants>
+	</PropertyGroup>
 
-    <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
-        <EnableNETAnalyzers>true</EnableNETAnalyzers>
-        <AnalysisLevel>latest</AnalysisLevel>
-        <IsPackable>false</IsPackable>
-        <Nullable>enable</Nullable>
-        <IsRoslynComponent>true</IsRoslynComponent>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <DefineConstants>SHARPGEN_ROSLYN</DefineConstants>
-    </PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="PolySharp" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+	</ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="IsExternalInit" />
-        <PackageReference Include="Microsoft.Bcl.HashCode" />
-        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
-        <PackageReference Include="Nullable" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Compile Include="..\SharpGen\Generator\StatementSyntaxList.cs">
-        <Link>StatementSyntaxList.cs</Link>
-      </Compile>
-      <Compile Include="..\SharpGen\Generator\SyntaxListBase.cs">
-        <Link>SyntaxListBase.cs</Link>
-      </Compile>
-    </ItemGroup>
+	<ItemGroup>
+		<Compile Include="..\SharpGen\Generator\StatementSyntaxList.cs">
+			<Link>StatementSyntaxList.cs</Link>
+		</Compile>
+		<Compile Include="..\SharpGen\Generator\SyntaxListBase.cs">
+			<Link>SyntaxListBase.cs</Link>
+		</Compile>
+	</ItemGroup>
 
 </Project>

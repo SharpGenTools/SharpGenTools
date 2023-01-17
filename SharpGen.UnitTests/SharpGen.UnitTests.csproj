@@ -1,27 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<IsPackable>false</IsPackable>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
 
-  <Sdk Name="Microsoft.Build.CentralPackageVersions" />
+	<ItemGroup>
+		<ProjectReference Include="..\SharpGen.Platform\SharpGen.Platform.csproj" />
+		<ProjectReference Include="..\SharpGen.Runtime\SharpGen.Runtime.csproj" />
+	</ItemGroup>
 
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-    <IsPackable>false</IsPackable>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\SharpGen.Platform\SharpGen.Platform.csproj" />
-    <ProjectReference Include="..\SharpGen.Runtime\SharpGen.Runtime.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="coverlet.msbuild" />
-    <PackageReference Include="FakeItEasy" />
-    <PackageReference Include="FakeItEasy.Analyzer.CSharp" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="xunit" />
-    <PackageReference Include="xunit.runner.visualstudio" />
-    <PackageReference Include="Xunit.SkippableFact" />
-    <PackageReference Include="System.Text.Json" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" />
+		<PackageReference Include="xunit" />
+		<PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+		<PackageReference Include="Xunit.SkippableFact" />
+		<PackageReference Include="FakeItEasy" />
+		<PackageReference Include="FakeItEasy.Analyzer.CSharp" />
+	</ItemGroup>
 
 </Project>

@@ -18,7 +18,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpGen.Runtime.Trim.Dummy
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Trimming", "Trimming", "{14DCB75C-3646-4E74-9B98-5ABF783F0F04}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpGen.Runtime.Trim.Dummy.CallbackTest", "SharpGen.Runtime.Trim.Dummy.CallbackTest\SharpGen.Runtime.Trim.Dummy.CallbackTest.csproj", "{BB8F0A30-3FE6-4F26-9E5F-EF9A70198D18}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpGen.Runtime.Trim.Dummy.CallbackTest", "SharpGen.Runtime.Trim.Dummy.CallbackTest\SharpGen.Runtime.Trim.Dummy.CallbackTest.csproj", "{BB8F0A30-3FE6-4F26-9E5F-EF9A70198D18}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".root", ".root", "{A3BC86F0-22E9-426A-BE0E-A2176A405501}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+		Directory.Build.targets = Directory.Build.targets
+		Directory.Packages.props = Directory.Packages.props
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

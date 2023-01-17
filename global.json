@@ -1,7 +1,5 @@
 {
     "msbuild-sdks": {
-        "MSBuild.Sdk.Extras": "3.0.44",
-        "Microsoft.Build.CentralPackageVersions" : "2.1.3",
-        "Microsoft.DotNet.PackageValidation" : "1.0.0-preview.7.21379.12"
+        "MSBuild.Sdk.Extras": "3.0.44"
     }
 }

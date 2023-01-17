@@ -29,10 +29,14 @@ public sealed partial class SharpGenTask
         };
 
         if (!string.Equals(PlatformName, "AnyCPU", StringComparison.InvariantCultureIgnoreCase))
-            parts.Add(PlatformName);
+        {
+            parts.Add(PlatformName!);
+        }
 
         if (!string.IsNullOrWhiteSpace(RuntimeIdentifier))
+        {
             parts.Add(RuntimeIdentifier);
+        }
 
         CacheFile cacheFile = new();
         try

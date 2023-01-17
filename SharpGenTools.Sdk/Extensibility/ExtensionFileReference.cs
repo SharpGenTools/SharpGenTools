@@ -97,7 +97,9 @@ internal sealed class ExtensionFileReference : ExtensionReference, IEquatable<Ex
     }
 
     public override int GetHashCode()
-        => HashCode.Combine(RuntimeHelpers.GetHashCode(AssemblyLoader), FullPath.GetHashCode());
+    {
+        return HashCode.Combine(RuntimeHelpers.GetHashCode(AssemblyLoader), FullPath.GetHashCode());
+    }
 
     public override ImmutableArray<IDocProvider> GetDocumentationProviders()
     {

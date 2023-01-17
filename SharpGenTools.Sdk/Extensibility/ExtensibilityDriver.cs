@@ -54,7 +54,7 @@ internal sealed class ExtensibilityDriver
     {
         var docProviderBuilder = ImmutableArray.CreateBuilder<IDocProvider>();
 
-        void ErrorHandler(object o, ExtensionLoadFailureEventArgs e)
+        void ErrorHandler(object? o, ExtensionLoadFailureEventArgs e)
         {
             var analyzerReference = o as ExtensionReference;
             Debug.Assert(analyzerReference != null);

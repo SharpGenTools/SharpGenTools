@@ -1,26 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Sdk Name="Microsoft.Build.CentralPackageVersions" />
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<PolySharpIncludeRuntimeSupportedAttributes>true</PolySharpIncludeRuntimeSupportedAttributes>
+	</PropertyGroup>
 
-  <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <TargetFramework>netstandard2.0</TargetFramework>
-  </PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
-    <PackageReference Include="System.Runtime.Extensions" />
-    <PackageReference Include="System.ValueTuple" />
-    <PackageReference Include="System.Xml.XmlSerializer" />
-    <PackageReference Include="System.Xml.XmlDocument" />
-    <PackageReference Include="System.Runtime.Serialization.Primitives" />
-    <PackageReference Include="System.Runtime.Serialization.Xml" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-      <_Parameter1>SharpGen.UnitTests, PublicKey=$(SharpGenPublicKey)</_Parameter1>
-    </AssemblyAttribute>
-  </ItemGroup>
+	<ItemGroup>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+			<_Parameter1>SharpGen.UnitTests, PublicKey=$(SharpGenPublicKey)</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
 
 </Project>
