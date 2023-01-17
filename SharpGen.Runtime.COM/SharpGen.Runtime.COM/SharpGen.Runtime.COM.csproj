@@ -1,17 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <Sdk Name="Microsoft.DotNet.PackageValidation" />
-  <Sdk Name="Microsoft.Build.CentralPackageVersions" />
   <Sdk Name="SharpGenTools.Sdk" Version="$(Version)" />
 
   <PropertyGroup>
     <!--
-      net5.0 for function pointers codegen
+      net6.0 for function pointers codegen
       netstandard2.0 for small dependency tree
       net45 to have small dependency tree for all .NET Framework versions
       netstandard1.3 is the lowest supported version (except .NET Framework)
     -->
-    <TargetFrameworks>net5.0;netstandard2.0;net45;netstandard1.3</TargetFrameworks>
+    <TargetFrameworks>net6.0;netstandard2.0;net45;netstandard1.3</TargetFrameworks>
     <RootNamespace>SharpGen.Runtime</RootNamespace>
     <Description>C# COM Interop classes for use with SharpGenTools generated libraries</Description>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
