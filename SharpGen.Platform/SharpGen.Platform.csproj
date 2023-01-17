@@ -4,9 +4,11 @@
 		<OutputType>Library</OutputType>
 		<TargetFrameworks>net472;net6.0</TargetFrameworks>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<PolySharpIncludeRuntimeSupportedAttributes>true</PolySharpIncludeRuntimeSupportedAttributes>
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="PolySharp" />
 		<PackageReference Include="Microsoft.Win32.Registry" Condition="'$(TargetFramework)' != 'net472'" />
 		<PackageReference Include="System.Text.Json" Condition="'$(TargetFramework)' != 'net6.0'" />
 	</ItemGroup>

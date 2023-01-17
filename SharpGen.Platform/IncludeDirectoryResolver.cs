@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using Microsoft.Win32;
 using SharpGen.Config;
 using SharpGen.Logging;
@@ -75,7 +76,11 @@ public sealed class IncludeDirectoryResolver : IIncludeDirectoryResolver
                 // Is Using registry?
                 if (path.StartsWith("="))
                 {
+#if NET6_0_OR_GREATER
+                    if (OperatingSystem.IsWindows())
+#else
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+#endif
                     {
                         var registryPath = path.Substring(1);
                         var indexOfSubPath = directory.Path.IndexOf(";");
@@ -119,6 +124,7 @@ public sealed class IncludeDirectoryResolver : IIncludeDirectoryResolver
         public IncludeDirRule Rule { get; }
     }
 
+    [SupportedOSPlatform("windows")]
     private (string path, bool success) ResolveRegistryDirectory(string registryPath)
     {
         string path = null;

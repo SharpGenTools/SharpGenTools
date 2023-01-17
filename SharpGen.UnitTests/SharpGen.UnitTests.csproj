@@ -17,6 +17,7 @@
 		<PackageReference Include="Xunit.SkippableFact" />
 		<PackageReference Include="FakeItEasy" />
 		<PackageReference Include="FakeItEasy.Analyzer.CSharp" />
+		<PackageReference Include="coverlet.msbuild" />
 	</ItemGroup>
 
 </Project>

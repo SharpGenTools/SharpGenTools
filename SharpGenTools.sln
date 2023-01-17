@@ -27,6 +27,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".root", ".root", "{A3BC86F0
 		Directory.Packages.props = Directory.Packages.props
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F671E5B9-5D3D-44EF-8B6F-F3702FB70DF1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -70,6 +72,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{13B246C9-F127-4AC5-8847-E9214C0ABD70} = {F671E5B9-5D3D-44EF-8B6F-F3702FB70DF1}
 		{D72FF74B-6FBB-4394-ADA5-E184339F8A80} = {14DCB75C-3646-4E74-9B98-5ABF783F0F04}
 		{BB8F0A30-3FE6-4F26-9E5F-EF9A70198D18} = {14DCB75C-3646-4E74-9B98-5ABF783F0F04}
 	EndGlobalSection
