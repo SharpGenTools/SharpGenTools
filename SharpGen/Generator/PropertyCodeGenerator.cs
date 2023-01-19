@@ -138,7 +138,7 @@ internal sealed class PropertyCodeGenerator : MemberMultiCodeGeneratorBase<CsPro
         {
             var paramByRef = GetMarshaller(csElement.Setter.Parameters[0])
                             .GenerateManagedArgument(csElement.Setter.Parameters[0])
-                            .RefOrOutKeyword.Kind() == SyntaxKind.RefKeyword;
+                            .RefOrOutKeyword.IsKind(SyntaxKind.RefKeyword);
 
             accessors.Add(AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
                          .WithExpressionBody(ArrowExpressionClause(

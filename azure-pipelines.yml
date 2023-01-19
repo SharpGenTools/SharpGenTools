@@ -74,6 +74,13 @@ stages:
             contents: 'Sharp*/bin/Release/Sharp*@(.nupkg|.snupkg)'
             targetFolder: '$(Build.ArtifactStagingDirectory)'
             flattenFolders: true
+        - task: CopyFiles@2
+          condition: eq(variables['Config'], 'Release')
+          displayName: 'Copy SharpGen.Runtime.COM NuGet packages to Artifact staging directory'
+          inputs:
+            contents: 'SharpGen.Runtime.COM/SharpGen.Runtime.COM/bin/Release/Sharp*@(.nupkg|.snupkg)'
+            targetFolder: '$(Build.ArtifactStagingDirectory)'
+            flattenFolders: true            
         - task: PublishBuildArtifacts@1
           condition: eq(variables['Config'], 'Release')
           displayName: Publish NuGet Packages
