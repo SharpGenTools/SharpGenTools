@@ -1,55 +1,58 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <Sdk Name="SharpGenTools.Sdk" Version="$(Version)" />
+	<Sdk Name="SharpGenTools.Sdk" Version="$(Version)" />
 
-  <PropertyGroup>
-    <!--
-      net6.0 for function pointers codegen
-      netstandard2.0 for small dependency tree
-      net45 to have small dependency tree for all .NET Framework versions
-      netstandard1.3 is the lowest supported version (except .NET Framework)
-    -->
-    <TargetFrameworks>net6.0;netstandard2.0;net45;netstandard1.3</TargetFrameworks>
-    <RootNamespace>SharpGen.Runtime</RootNamespace>
-    <Description>C# COM Interop classes for use with SharpGenTools generated libraries</Description>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	<PropertyGroup>
+		<!--
+		net6.0/net7.0 for full assembly trimming
+		net6.0/net7.0 for function pointers codegen and Native(U)Long API surface and partial assembly trimming
+		netcoreapp3.0 for smaller [empty] dependency tree (w/o System.Runtime.CompilerServices.Unsafe)
+		netstandard2.1 is .NET Core 3.0, but System.Memory is already inbox since 2.1
+		netstandard2.0 for smaller dependency tree than netstandard1.3
+		net471 for even smaller dependency tree on latest .NET Framework versions (w/o System.Runtime.InteropServices.RuntimeInformation)
+		net46 for using proper FormattableString instead of Shim/* version
+		-->
+		<TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net6.0;net7.0;net461;net471</TargetFrameworks>
+		<RootNamespace>SharpGen.Runtime</RootNamespace>
+		<Description>C# COM Interop classes for use with SharpGenTools generated libraries</Description>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-    <IsTrimmable>true</IsTrimmable>
-    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
-    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-    <CoreCompileDependsOn>$(CoreCompileDependsOn);SharpGenSetRoslynGeneratedPath</CoreCompileDependsOn>
-  </PropertyGroup>
+		<IsTrimmable>true</IsTrimmable>
+		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+		<CoreCompileDependsOn>$(CoreCompileDependsOn);SharpGenSetRoslynGeneratedPath</CoreCompileDependsOn>
+	</PropertyGroup>
 
-  <PropertyGroup>
-    <RestoreNoCache>true</RestoreNoCache>
-    <SharpGenWaitForDebuggerAttach>false</SharpGenWaitForDebuggerAttach>
-  </PropertyGroup>
+	<PropertyGroup>
+		<RestoreNoCache>true</RestoreNoCache>
+		<SharpGenWaitForDebuggerAttach>false</SharpGenWaitForDebuggerAttach>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="LocalPackages/**/*;RestoredPackages/**/*" />
-    <Content Remove="LocalPackages/**/*;RestoredPackages/**/*" />
-    <Compile Remove="LocalPackages/**/*;RestoredPackages/**/*" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Remove="LocalPackages/**/*;RestoredPackages/**/*" />
+		<Content Remove="LocalPackages/**/*;RestoredPackages/**/*" />
+		<Compile Remove="LocalPackages/**/*;RestoredPackages/**/*" />
+	</ItemGroup>
 
-  <Target Name="SharpGenSetRoslynGeneratedPath">
-    <PropertyGroup>
-      <CompilerGeneratedFilesOutputPath>$(IntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
-    </PropertyGroup>
-  </Target>
+	<Target Name="SharpGenSetRoslynGeneratedPath">
+		<PropertyGroup>
+			<CompilerGeneratedFilesOutputPath>$(IntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
+		</PropertyGroup>
+	</Target>
 
-  <Target Name="SharpGenComRuntimeSetDebuggerAttach" BeforeTargets="SharpGenExecute" Condition="'$(ComRuntimeDebuggerAttach)' == 'true'">
-    <PropertyGroup>
-      <SharpGenWaitForDebuggerAttach>true</SharpGenWaitForDebuggerAttach>
-    </PropertyGroup>
-  </Target>
+	<Target Name="SharpGenComRuntimeSetDebuggerAttach" BeforeTargets="SharpGenExecute" Condition="'$(ComRuntimeDebuggerAttach)' == 'true'">
+		<PropertyGroup>
+			<SharpGenWaitForDebuggerAttach>true</SharpGenWaitForDebuggerAttach>
+		</PropertyGroup>
+	</Target>
 
-  <Target Name="SharpGenComRuntimeClearDebuggerAttach" AfterTargets="SharpGenExecute" Condition="'$(ComRuntimeDebuggerAttach)' == 'true'">
-    <PropertyGroup>
-      <SharpGenWaitForDebuggerAttach>false</SharpGenWaitForDebuggerAttach>
-    </PropertyGroup>
-  </Target>
+	<Target Name="SharpGenComRuntimeClearDebuggerAttach" AfterTargets="SharpGenExecute" Condition="'$(ComRuntimeDebuggerAttach)' == 'true'">
+		<PropertyGroup>
+			<SharpGenWaitForDebuggerAttach>false</SharpGenWaitForDebuggerAttach>
+		</PropertyGroup>
+	</Target>
 
-  <ItemGroup>
-    <SharpGenMapping Include="Mapping.xml" />
-  </ItemGroup>
+	<ItemGroup>
+		<SharpGenMapping Include="Mapping.xml" />
+	</ItemGroup>
 
 </Project>
