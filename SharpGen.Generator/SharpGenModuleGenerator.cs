@@ -30,7 +30,7 @@ public sealed partial class SharpGenModuleGenerator : ISourceGenerator
             Identifier(
                 TriviaList
                 (
-                    Trivia(IfDirectiveTrivia(IdentifierName("NET5_0_OR_GREATER"), true, false, false)),
+                    Trivia(IfDirectiveTrivia(IdentifierName("NET6_0_OR_GREATER"), true, false, false)),
                     DisabledText(@"[System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(""ReflectionAnalysis"", ""IL2111"")]
 [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(""ReflectionAnalysis"", ""IL2110"")]
 "),

@@ -12,12 +12,12 @@
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == 'true' and '$(VisualStudioVersion)' != ''">
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <TargetPlatform>x86</TargetPlatform>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(SharpGenSdkTestsMultiTfmDependencies)' == 'true'">
-        <TargetFrameworks>netcoreapp2.1;net5.0</TargetFrameworks>
+        <TargetFrameworks>netcoreapp2.1;net6.0</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(SharpGenSdkTestsMultiTfmDependencies)' == 'true' and '$(MSBuildProjectName)' != 'Struct'">
@@ -59,7 +59,7 @@
 
     <Target Name="SharpGenSdkTestsVerifyTFM" BeforeTargets="BeforeCompile;CoreCompile">
         <Error Text="TFM not set properly"
-               Condition="'$(TargetFramework)' != 'net472' and '$(TargetFramework)' != 'netcoreapp2.1' and '$(TargetFramework)' != 'net5.0'"/>
+               Condition="'$(TargetFramework)' != 'net472' and '$(TargetFramework)' != 'netcoreapp2.1' and '$(TargetFramework)' != 'net6.0'"/>
         <Error Text="TP not set properly"
                Condition="'$(TargetPlatform)' != 'x86' and '$(TargetPlatform)' != 'x64'"/>
     </Target>

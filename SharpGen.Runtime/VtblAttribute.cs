@@ -16,7 +16,7 @@ public sealed class VtblAttribute : Attribute
     /// <summary>
     /// Type of the associated virtual method table
     /// </summary>
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields | DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties)]
 #endif
     public Type Type { get; }
@@ -26,7 +26,7 @@ public sealed class VtblAttribute : Attribute
     /// </summary>
     /// <param name="holder">Type of the associated virtual method table</param>
     public VtblAttribute(
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields | DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties)]
 #endif
         Type holder)

@@ -99,7 +99,7 @@ if (!$SkipOuterloopTests -and !($env:ReleaseTag -and ($Configuration -eq "Releas
 
     $managedTests = "Interface", "Struct", "Functions"
 
-    $tfms = "net472", "netcoreapp2.1", "net5.0"
+    $tfms = "net472", "netcoreapp3.1", "net6.0"
     $platforms = "x86", "x64"
 
     $matrix = CartesianProduct-Lists @($tfms, $platforms)

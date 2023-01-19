@@ -40,7 +40,7 @@ public abstract unsafe partial class CallbackBase : DisposeBase, ICallbackable
     private Dictionary<Guid, IntPtr>? _ccw;
     private IntPtr _guidPtr;
     private IntPtr[]? _guids;
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
     private uint _refCount = 1;
 #else
     private int _refCount = 1;
@@ -80,7 +80,7 @@ public abstract unsafe partial class CallbackBase : DisposeBase, ICallbackable
 
     public uint AddRef()
     {
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         return Interlocked.Increment(ref _refCount);
 #else
         return (uint)Interlocked.Increment(ref _refCount);
@@ -89,7 +89,7 @@ public abstract unsafe partial class CallbackBase : DisposeBase, ICallbackable
 
     public uint Release()
     {
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         var newRefCount = Interlocked.Decrement(ref _refCount);
 #else
         var newRefCount = Interlocked.Decrement(ref _refCount);

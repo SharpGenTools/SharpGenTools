@@ -34,7 +34,7 @@ namespace SharpGen.Runtime;
 [DebuggerDisplay("Count={" + nameof(Length) + "}")]
 [SuppressMessage("ReSharper", "ConvertToAutoProperty")]
 public unsafe struct InterfaceArray<
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 #endif
 T> : IReadOnlyList<T>, IEnlightenedDisposable, IDisposable

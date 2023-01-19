@@ -26,12 +26,12 @@ namespace SharpGen.Runtime;
 
 public static unsafe class ComObjectVtbl
 {
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
     public static readonly IntPtr[] Vtbl =
     {
-        (IntPtr) (delegate* unmanaged[Stdcall]<IntPtr, Guid*, void*, int>) (&QueryInterfaceImpl),
-        (IntPtr) (delegate* unmanaged[Stdcall]<IntPtr, uint>) (&AddRefImpl),
-        (IntPtr) (delegate* unmanaged[Stdcall]<IntPtr, uint>) (&ReleaseImpl)
+        (IntPtr) (delegate* unmanaged<IntPtr, Guid*, void*, int>) (&QueryInterfaceImpl),
+        (IntPtr) (delegate* unmanaged<IntPtr, uint>) (&AddRefImpl),
+        (IntPtr) (delegate* unmanaged<IntPtr, uint>) (&ReleaseImpl)
     };
 #else
     private static readonly QueryInterfaceDelegate QueryInterfaceDelegateCache = QueryInterfaceImpl;
@@ -45,11 +45,11 @@ public static unsafe class ComObjectVtbl
     };
 #endif
 
-#if !NET5_0_OR_GREATER
+#if !NET6_0_OR_GREATER
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate int QueryInterfaceDelegate(IntPtr thisObject, Guid* guid, void* output);
 #else
-    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    [UnmanagedCallersOnly]
 #endif
     private static int QueryInterfaceImpl(IntPtr thisObject, Guid* guid, void* output)
     {
@@ -78,20 +78,20 @@ public static unsafe class ComObjectVtbl
 #endif
     }
 
-#if !NET5_0_OR_GREATER
+#if !NET6_0_OR_GREATER
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate uint AddRefDelegate(IntPtr thisObject);
 #else
-    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    [UnmanagedCallersOnly]
 #endif
     private static uint AddRefImpl(IntPtr thisObject) =>
         MarshallingHelpers.AddRef(CppObjectShadow.ToCallback<IUnknown>(thisObject));
 
-#if !NET5_0_OR_GREATER
+#if !NET6_0_OR_GREATER
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate uint ReleaseDelegate(IntPtr thisObject);
 #else
-    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    [UnmanagedCallersOnly]
 #endif
     private static uint ReleaseImpl(IntPtr thisObject) =>
         MarshallingHelpers.Release(CppObjectShadow.ToCallback<IUnknown>(thisObject));

@@ -237,6 +237,6 @@ public static class GeneratorHelpers
                    : nonWindowsExpression();
     }
 
-    public static readonly IdentifierNameSyntax PreprocessorNameSyntax = IdentifierName("NET5_0_OR_GREATER");
+    public static readonly IdentifierNameSyntax PreprocessorNameSyntax = IdentifierName("NET6_0_OR_GREATER");
     public static readonly PrefixUnaryExpressionSyntax NotPreprocessorNameSyntax = PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, PreprocessorNameSyntax);
 }

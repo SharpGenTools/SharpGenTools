@@ -75,7 +75,7 @@ public class ComObject : CppObject, IUnknown
     /// Initializes a new instance of the <see cref="ComObject"/> class from a IUnknown object.
     /// </summary>
     /// <param name="iunknownObject">Reference to a IUnknown object</param>
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
     [SupportedOSPlatform("windows")]
 #endif
     public ComObject(object iunknownObject) : base(Marshal.GetIUnknownForObject(iunknownObject))
@@ -112,7 +112,7 @@ public class ComObject : CppObject, IUnknown
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
     public virtual T QueryInterface<
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 #endif
     T>() where T : ComObject
@@ -130,11 +130,11 @@ public class ComObject : CppObject, IUnknown
     /// <msdn-id>ms682521</msdn-id>
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
     [SupportedOSPlatform("windows")]
 #endif
     public static T As<
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 #endif
     T>(object comObject) where T : ComObject => As<T>(Marshal.GetIUnknownForObject(comObject));
@@ -149,7 +149,7 @@ public class ComObject : CppObject, IUnknown
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
     public static T As<
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 #endif
     T>(IntPtr iunknownPtr) where T : ComObject
@@ -167,11 +167,11 @@ public class ComObject : CppObject, IUnknown
     /// <msdn-id>ms682521</msdn-id>
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
     [SupportedOSPlatform("windows")]
 #endif
     public static T QueryInterface<
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 #endif
     T>(object comObject) where T : ComObject =>
@@ -187,7 +187,7 @@ public class ComObject : CppObject, IUnknown
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
     public static T? QueryInterfaceOrNull<
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 #endif
     T>(IntPtr comPointer) where T : ComObject
@@ -205,7 +205,7 @@ public class ComObject : CppObject, IUnknown
     /// <unmanaged>IUnknown::QueryInterface</unmanaged>	
     /// <unmanaged-short>IUnknown::QueryInterface</unmanaged-short>
     public virtual T? QueryInterfaceOrNull<
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 #endif
     T>() where T : ComObject

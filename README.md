@@ -31,14 +31,14 @@ Accurate and high performance C++ interop code generator for C#.
 
 * SDK-style (CPS) MSBuild projects
 * .NET environment, at least one of the following: 
-  * .NET SDK (5 or newer)
-  * .NET Core SDK (2.1 or newer)
+  * .NET SDK (6 or newer)
+  * .NET Core SDK (3.1 or newer)
   * Visual Studio 2017.3 with desktop .NET workload, .NET Framework 4.7.2 SDK or newer
 * Make any mapping files a `SharpGenMapping` item in your `.csproj`.
 
 ### To Build
 
-* .NET SDK: 5.0 or newer.
+* .NET SDK: 6.0 or newer.
 * CMake: 3.0 or newer.
 * SDK tests require x64 Windows, VS2019 with x86 and x64 C++ compilers, recent PowerShell version.
 

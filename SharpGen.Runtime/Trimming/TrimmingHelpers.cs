@@ -13,7 +13,7 @@ namespace SharpGen.Runtime.Trimming
         /// </summary>
         /// <typeparam name="T">Type to preserve all implementation for.</typeparam>
         public static void PreserveMe<
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 # endif
             T>() {}

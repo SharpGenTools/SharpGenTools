@@ -51,7 +51,7 @@ $SdkAssemblyFolder = "$RepoRoot/SdkTests/RestoredPackages/sharpgentools.sdk/$Ver
 $dotnetExe = $(Get-Command dotnet).Path
 $dotnetArgs = $($BuildParameters -join ' ')
 
-dotnet coverlet "$SdkAssemblyFolder/net5.0/win/SharpGenTools.Sdk.dll" -t $dotnetExe -a $dotnetArgs -f opencover `
+dotnet coverlet "$SdkAssemblyFolder/net6.0/win/SharpGenTools.Sdk.dll" -t $dotnetExe -a $dotnetArgs -f opencover `
     -o "$RepoRoot/artifacts/coverage/outerloop-host-$Hint.xml" --include-test-assembly --include-directory $SdkAssemblyFolder `
     | Write-Host
 

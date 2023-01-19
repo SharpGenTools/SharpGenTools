@@ -35,7 +35,7 @@ public sealed class ShadowAttribute : Attribute
     /// <summary>
     /// Type of the associated shadow
     /// </summary>
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 #endif
     public Type Type { get; }
@@ -45,7 +45,7 @@ public sealed class ShadowAttribute : Attribute
     /// </summary>
     /// <param name="holder">Type of the associated shadow</param>
     public ShadowAttribute(
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
 #endif
         Type holder)

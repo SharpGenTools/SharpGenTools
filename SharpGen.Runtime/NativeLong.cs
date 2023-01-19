@@ -5,7 +5,7 @@ namespace SharpGen.Runtime;
 
 [StructLayout(LayoutKind.Explicit)]
 public readonly struct NativeLong : IEquatable<NativeLong>, IComparable<NativeLong>, IComparable
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
 , IFormattable
 #endif
 {
@@ -66,8 +66,8 @@ public readonly struct NativeLong : IEquatable<NativeLong>, IComparable<NativeLo
     public string ToString(string format) => 
         UseInt ? _intValue.ToString(format) : _pointerValue.ToString(format);
 
-#if NET5_0_OR_GREATER
-        public string ToString(IFormatProvider formatProvider) => 
+#if NET6_0_OR_GREATER
+    public string ToString(IFormatProvider formatProvider) => 
             UseInt ? _intValue.ToString(formatProvider) : _pointerValue.ToString(formatProvider);
 
         /// <inheritdoc cref="IFormattable.ToString(string,System.IFormatProvider)" />

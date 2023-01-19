@@ -5,7 +5,7 @@ namespace SharpGen.Runtime;
 
 [StructLayout(LayoutKind.Explicit)]
 public readonly struct NativeULong : IEquatable<NativeULong>, IComparable<NativeULong>, IComparable
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
 , IFormattable
 #endif
 {
@@ -13,7 +13,7 @@ public readonly struct NativeULong : IEquatable<NativeULong>, IComparable<Native
     private readonly nuint _pointerValue;
     [FieldOffset(0)]
     private readonly uint _intValue;
-        
+
     private static readonly bool UseInt = NativeLong.UseInt;
 
     public NativeULong(uint value)
@@ -59,27 +59,33 @@ public readonly struct NativeULong : IEquatable<NativeULong>, IComparable<Native
     }
 
     /// <inheritdoc cref="object.ToString" />
-    public override string ToString() => 
+    public override string ToString() =>
         UseInt ? _intValue.ToString() : _pointerValue.ToString();
 
-#if NET5_0_OR_GREATER
-        public string ToString(string format) => 
-            UseInt ? _intValue.ToString(format) : _pointerValue.ToString(format);
+#if NET6_0_OR_GREATER
+    public string ToString(string format)
+    {
+        return UseInt ? _intValue.ToString(format) : _pointerValue.ToString(format);
+    }
 
-        public string ToString(IFormatProvider formatProvider) => 
-            UseInt ? _intValue.ToString(formatProvider) : _pointerValue.ToString(formatProvider);
+    public string ToString(IFormatProvider formatProvider)
+    {
+        return UseInt ? _intValue.ToString(formatProvider) : _pointerValue.ToString(formatProvider);
+    }
 
-        /// <inheritdoc cref="IFormattable.ToString(string,System.IFormatProvider)" />
-        public string ToString(string format, IFormatProvider formatProvider) => 
-            UseInt ? _intValue.ToString(format, formatProvider) : _pointerValue.ToString(format, formatProvider);
+    /// <inheritdoc cref="IFormattable.ToString(string,System.IFormatProvider)" />
+    public string ToString(string format, IFormatProvider formatProvider)
+    {
+        return UseInt ? _intValue.ToString(format, formatProvider) : _pointerValue.ToString(format, formatProvider);
+    }
 #endif
-        
+
     /// <inheritdoc cref="object.GetHashCode" />
-    public override int GetHashCode() => 
+    public override int GetHashCode() =>
         UseInt ? _intValue.GetHashCode() : _pointerValue.GetHashCode();
 
     /// <inheritdoc cref="IEquatable{T}.Equals(T)" />
-    public bool Equals(NativeULong other) => 
+    public bool Equals(NativeULong other) =>
         UseInt ? _intValue == other._intValue : _pointerValue.Equals(other._pointerValue);
 
     /// <inheritdoc cref="object.Equals(object)" />
@@ -172,7 +178,7 @@ public readonly struct NativeULong : IEquatable<NativeULong>, IComparable<Native
     /// </summary>
     /// <param name = "value">The value.</param>
     /// <returns>The result of the conversion.</returns>
-    public static explicit operator uint(NativeULong value) => 
+    public static explicit operator uint(NativeULong value) =>
         UseInt ? value._intValue : (uint) value._pointerValue;
 
     /// <summary>
@@ -180,7 +186,7 @@ public readonly struct NativeULong : IEquatable<NativeULong>, IComparable<Native
     /// </summary>
     /// <param name = "value">The value.</param>
     /// <returns>The result of the conversion.</returns>
-    public static implicit operator ulong(NativeULong value) => 
+    public static implicit operator ulong(NativeULong value) =>
         UseInt ? value._intValue : (ulong) value._pointerValue;
 
     /// <summary>
@@ -188,7 +194,7 @@ public readonly struct NativeULong : IEquatable<NativeULong>, IComparable<Native
     /// </summary>
     /// <param name = "value">The value.</param>
     /// <returns>The result of the conversion.</returns>
-    public static implicit operator UIntPtr(NativeULong value) => 
+    public static implicit operator UIntPtr(NativeULong value) =>
         UseInt ? (UIntPtr) value._intValue : (UIntPtr) value._pointerValue;
 
     /// <summary>
@@ -211,7 +217,7 @@ public readonly struct NativeULong : IEquatable<NativeULong>, IComparable<Native
     /// <param name = "value">The value.</param>
     /// <returns>The result of the conversion.</returns>
     public static explicit operator NativeULong(UIntPtr value) => new NativeULong(value);
-        
+
     /// <inheritdoc cref="IComparable.CompareTo" />
     public int CompareTo(NativeULong other)
     {
@@ -219,7 +225,7 @@ public readonly struct NativeULong : IEquatable<NativeULong>, IComparable<Native
             return _intValue.CompareTo(other._intValue);
 
 #if !NET5_0
-        return ((ulong)_pointerValue).CompareTo((ulong) other._pointerValue);
+        return ((ulong) _pointerValue).CompareTo((ulong) other._pointerValue);
 #else
             return _pointerValue.CompareTo(other._pointerValue);
 #endif

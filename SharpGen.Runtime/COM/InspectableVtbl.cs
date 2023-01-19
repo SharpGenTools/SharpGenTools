@@ -27,12 +27,12 @@ namespace SharpGen.Runtime;
 
 public static unsafe class InspectableVtbl
 {
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
     public static readonly IntPtr[] Vtbl =
     {
-        (IntPtr) (delegate *unmanaged[Stdcall]<IntPtr, int*, IntPtr**, int>) (&GetIids),
-        (IntPtr) (delegate *unmanaged[Stdcall]<IntPtr, IntPtr*, int>) (&GetRuntimeClassName),
-        (IntPtr) (delegate *unmanaged[Stdcall]<IntPtr, int*, int>) (&GetTrustLevel)
+        (IntPtr) (delegate *unmanaged<IntPtr, int*, IntPtr**, int>) (&GetIids),
+        (IntPtr) (delegate *unmanaged<IntPtr, IntPtr*, int>) (&GetRuntimeClassName),
+        (IntPtr) (delegate *unmanaged<IntPtr, int*, int>) (&GetTrustLevel)
     };
 #else
     private static readonly GetIidsDelegate GetIidsDelegateCache = GetIids;
@@ -52,11 +52,11 @@ public static unsafe class InspectableVtbl
     ///   /* [size_is][size_is][out] */ __RPC__deref_out_ecount_full_opt(*iidCount) IID **iids
     /// )
     /// </unmanaged>
-#if !NET5_0_OR_GREATER
+#if !NET6_0_OR_GREATER
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate int GetIidsDelegate(IntPtr thisPtr, int* iidCount, IntPtr** iids);
 #else
-    [UnmanagedCallersOnly(CallConvs = new[]{typeof(CallConvStdcall)})]
+    [UnmanagedCallersOnly]
 #endif
     private static int GetIids(IntPtr thisPtr, int* iidCount, IntPtr** iids)
     {
@@ -85,11 +85,11 @@ public static unsafe class InspectableVtbl
     /// <unmanaged>
     /// HRESULT STDMETHODCALLTYPE GetRuntimeClassName([out] __RPC__deref_out_opt HSTRING *className)
     /// </unmanaged>
-#if !NET5_0_OR_GREATER
+#if !NET6_0_OR_GREATER
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate int GetRuntimeClassNameDelegate(IntPtr thisPtr, IntPtr* className);
 #else
-    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    [UnmanagedCallersOnly]
 #endif
     private static int GetRuntimeClassName(IntPtr thisPtr, IntPtr* className)
     {
@@ -118,11 +118,11 @@ public static unsafe class InspectableVtbl
     /// <unmanaged>
     /// HRESULT STDMETHODCALLTYPE GetTrustLevel(/* [out] */ __RPC__out TrustLevel *trustLevel);
     /// </unmanaged>
-#if !NET5_0_OR_GREATER
+#if !NET6_0_OR_GREATER
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate int GetTrustLevelDelegate(IntPtr thisPtr, int* trustLevel);
 #else
-    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    [UnmanagedCallersOnly]
 #endif
     private static int GetTrustLevel(IntPtr thisPtr, int* trustLevel)
     {

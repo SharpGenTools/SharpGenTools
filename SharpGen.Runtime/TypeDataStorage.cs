@@ -121,8 +121,6 @@ public static unsafe class TypeDataStorage
     internal static bool GetTargetVtbl(
 #if NET6_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
-#elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 #endif
         TypeInfo type, out void* pointer)
     {
@@ -147,8 +145,6 @@ public static unsafe class TypeDataStorage
     private static IntPtr RegisterFromReflection(
 #if NET6_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
-#elif NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
 #endif
         TypeInfo type, IntPtr[] sourceVtbl)
     {
