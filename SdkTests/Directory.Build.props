@@ -6,8 +6,6 @@
     <MicrosoftCommonPropsHasBeenImported>true</MicrosoftCommonPropsHasBeenImported>
   </PropertyGroup>
 
-  <Import Project="Sdk.props" Sdk="Microsoft.Build.CentralPackageVersions" Condition="'$(MSBuildProjectExtension)' == '.csproj'" />
-
   <Import Project="$(MSBuildThisFileDirectory)../Directory.Build.props" />
 
   <PropertyGroup>

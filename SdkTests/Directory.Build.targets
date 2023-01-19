@@ -13,6 +13,4 @@
     />
     <Message Text="Copied Native Test Dependencies" />
   </Target>
-
-  <Import Project="Sdk.targets" Sdk="Microsoft.Build.CentralPackageVersions" Condition="'$(MSBuildProjectExtension)' == '.csproj'" />
 </Project>

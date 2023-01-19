@@ -32,6 +32,7 @@
 		
 		<PackageVersion Include="FakeItEasy" Version="7.3.1" />
 		<PackageVersion Include="FakeItEasy.Analyzer.CSharp" Version="6.1.0" />
+		<PackageVersion Include="System.Reactive" Version="5.0.0" />
 	</ItemGroup>
 
 </Project>
