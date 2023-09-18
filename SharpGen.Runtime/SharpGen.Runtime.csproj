@@ -40,4 +40,11 @@
 		<Compile Remove="Shim/ReferenceEqualityComparer.cs" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+			<_Parameter1>SharpGen.Runtime.COM, PublicKey=$(SharpGenPublicKey)</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
+
+
 </Project>
