@@ -12,7 +12,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="PolySharp" />
+		<PackageReference Include="PolySharp" PrivateAssets="all" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
 	</ItemGroup>
 

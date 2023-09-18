@@ -21,7 +21,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="PolySharp" />
+		<PackageReference Include="PolySharp" PrivateAssets="all" />
 		<PackageReference Include="System.Memory" Condition="'$(TargetFramework)' != 'net6.0' and '$(TargetFramework)' != 'net7.0' and '$(TargetFramework)' != 'netcoreapp3.1' and '$(TargetFramework)' != 'netstandard2.1'" />
 		<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Condition="'$(TargetFramework)' != 'net6.0' and '$(TargetFramework)' != 'net7.0' and '$(TargetFramework)' != 'netcoreapp3.0'" />
 		<PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Condition="'$(TargetFramework)' == 'net45' or '$(TargetFramework)' == 'net461' or '$(TargetFramework)' == 'netstandard1.3'" />
