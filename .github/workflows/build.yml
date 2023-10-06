@@ -1,0 +1,37 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 8 SDK
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+        dotnet-quality: 'preview'
+
+    - name: Pack
+      run: dotnet pack SharpGenTools.sln --configuration Release -p:Packing=true
+
+    - name: Pack SharpGen.Runtime.COM
+      run: dotnet pack SharpGen.Runtime.COM/SharpGen.Runtime.COM.sln --configuration Release -p:Packing=true
+
+    - name: Publish to NuGet
+      if: github.event_name == 'push'
+      run: dotnet nuget push artifacts/**/*.nupkg -k ${{secrets.NUGET_TOKEN}} --skip-duplicate --source https://api.nuget.org/v3/index.json
