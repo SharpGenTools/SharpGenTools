@@ -1,6 +1,7 @@
 # SharpGenTools
 
-[![Build Status](https://dev.azure.com/SharpGenTools/SharpGenTools/_apis/build/status/SharpGenTools?branchName=main)](https://dev.azure.com/SharpGenTools/SharpGenTools/_build/latest?definitionId=1&branchName=main) [![MyGet Pre Release](https://img.shields.io/myget/sharpgentools/vpre/SharpGenTools.Sdk.svg)](https://www.myget.org/feed/Packages/sharpgentools) [![NuGet](https://img.shields.io/nuget/v/SharpGenTools.Sdk.svg)](https://www.nuget.org/packages/SharpGenTools.Sdk) [![Docs](https://readthedocs.org/projects/sharpgentools/badge/?version=latest)](https://sharpgentools.readthedocs.io/en/latest/) [![codecov](https://codecov.io/gh/SharpGenTools/SharpGenTools/branch/main/graph/badge.svg)](https://codecov.io/gh/SharpGenTools/SharpGenTools) [![CodeFactor](https://www.codefactor.io/repository/github/sharpgentools/sharpgentools/badge)](https://www.codefactor.io/repository/github/sharpgentools/sharpgentools)
+[![Build status](https://github.com/SharpGenTools/SharpGenTools/workflows/Build/badge.svg)](https://github.com/SharpGenTools/SharpGenTools/actions)
+[![NuGet](https://img.shields.io/nuget/v/SharpGenTools.Sdk.svg)](https://www.nuget.org/packages/SharpGenTools.Sdk) [![Docs](https://readthedocs.org/projects/sharpgentools/badge/?version=latest)](https://sharpgentools.readthedocs.io/en/latest/) [![codecov](https://codecov.io/gh/SharpGenTools/SharpGenTools/branch/main/graph/badge.svg)](https://codecov.io/gh/SharpGenTools/SharpGenTools) [![CodeFactor](https://www.codefactor.io/repository/github/sharpgentools/sharpgentools/badge)](https://www.codefactor.io/repository/github/sharpgentools/sharpgentools)
 
 Accurate and high performance C++ interop code generator for C#.
 
@@ -38,18 +39,6 @@ Accurate and high performance C++ interop code generator for C#.
 
 ### To Build
 
-* .NET SDK: 6.0 or newer.
+* .NET SDK: 7.0 or newer.
 * CMake: 3.0 or newer.
-* SDK tests require x64 Windows, VS2019 with x86 and x64 C++ compilers, recent PowerShell version.
-
-## Nightly (CI) builds
-Add SharpGenTools MyGet feed to your NuGet.config:
-
-```xml
-<configuration>
-  <packageSources>
-    <!-- ... -->
-    <add key="SharpGenTools" value="https://www.myget.org/F/sharpgentools/api/v3/index.json" />
-  </packageSources>
-</configuration>
-```
+* SDK tests require x64 Windows, VS2022 with x86 and x64 C++ compilers, recent PowerShell version.
