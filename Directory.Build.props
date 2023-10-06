@@ -1,51 +1,60 @@
 <Project>
 
-  <PropertyGroup>
-    <VersionPrefix Condition="'$(VersionPrefix)' == ''">2.1.0</VersionPrefix>
-    <VersionSuffix Condition="'$(VersionSuffix)' == ''">beta</VersionSuffix>
-    <Version>$(VersionPrefix)-$(VersionSuffix)</Version>
-  </PropertyGroup>
+	<PropertyGroup>
+		<VersionPrefix Condition="'$(VersionPrefix)' == ''">2.1.1</VersionPrefix>
+		<VersionSuffix Condition="'$(VersionSuffix)' == ''">beta</VersionSuffix>
+		<Version>$(VersionPrefix)-$(VersionSuffix)</Version>
+	</PropertyGroup>
 
-  <PropertyGroup>
-    <SharpGenToolsRootDirectory>$(MSBuildThisFileDirectory)</SharpGenToolsRootDirectory>
-  </PropertyGroup>
+	<PropertyGroup>
+		<RestoreConfigFile>$(MSBuildThisFileDirectory)NuGet.config</RestoreConfigFile>
+		<SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.csproj'">
-    <LangVersion>10</LangVersion>
-    <SharpGenPublicKey>00240000048000009400000006020000002400005253413100040000010001003dab93dc845fe6b52b20d86918a54f7300fa6959d56e9743c6f721857346811cd6a82d12132856755ab87e014127322421694fb522ad98fc3c6b65b389ab18ee3bbdec5c2ad5a8bef05599a3615c3e6afdade7eb2cf571b5ede7feb026b099fa94ee73f2f8dadcb6b1be62f7c984226eb0508d5ca6c3e394605c5cb0fa0851a2</SharpGenPublicKey>
-    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)SharpGenTools.snk</AssemblyOriginatorKeyFile>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder Condition="'$(Configuration)' == 'Debug'">$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-  </PropertyGroup>
+	<PropertyGroup>
+		<SharpGenToolsRootDirectory>$(MSBuildThisFileDirectory)</SharpGenToolsRootDirectory>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(MSBuildProjectExtension)|$(SignAssembly)' == '.csproj|'">
-    <SignAssembly Condition="'$(BuildingSdkTests)' == 'true'">false</SignAssembly>
-    <SignAssembly Condition="'$(BuildingSdkTests)' != 'true'">true</SignAssembly>
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.csproj'">
+		<LangVersion>latest</LangVersion>
+		<SharpGenPublicKey>00240000048000009400000006020000002400005253413100040000010001003dab93dc845fe6b52b20d86918a54f7300fa6959d56e9743c6f721857346811cd6a82d12132856755ab87e014127322421694fb522ad98fc3c6b65b389ab18ee3bbdec5c2ad5a8bef05599a3615c3e6afdade7eb2cf571b5ede7feb026b099fa94ee73f2f8dadcb6b1be62f7c984226eb0508d5ca6c3e394605c5cb0fa0851a2</SharpGenPublicKey>
+		<AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)SharpGenTools.snk</AssemblyOriginatorKeyFile>
+		<AllowedOutputExtensionsInPackageBuildOutputFolder Condition="'$(Configuration)' == 'Debug'">$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(BuildingSdkTests)' == 'true' or '$(Configuration)' == 'Debug'">
-    <DeterministicSourcePaths>false</DeterministicSourcePaths>
-    <Deterministic>false</Deterministic>
-    <DisableSourceLink>true</DisableSourceLink>
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(MSBuildProjectExtension)|$(SignAssembly)' == '.csproj|'">
+		<SignAssembly Condition="'$(BuildingSdkTests)' == 'true'">false</SignAssembly>
+		<SignAssembly Condition="'$(BuildingSdkTests)' != 'true'">true</SignAssembly>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(DisableSourceLink)' != 'true'">
-    <Authors>jkoritzinsky</Authors>
-    <Copyright>(c) 2010-2017 Alexandre Mutel, 2017-2023 Jeremy Koritzinsky</Copyright>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/SharpGenTools/SharpGenTools</PackageProjectUrl>
-    <PackageOutputPath>$(MSBuildThisFileDirectory)artifacts/</PackageOutputPath>
-    <Tags>SharpGen;CodeGen;CPlusPlus;PInvoke;Native;COM</Tags>
-    <RepositoryUrl>https://github.com/SharpGenTools/SharpGenTools</RepositoryUrl>
+	<PropertyGroup Condition="'$(BuildingSdkTests)' == 'true' or '$(Configuration)' == 'Debug'">
+		<DeterministicSourcePaths>false</DeterministicSourcePaths>
+		<Deterministic>false</Deterministic>
+		<DisableSourceLink>true</DisableSourceLink>
+	</PropertyGroup>
 
-    <!-- Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+	<PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(DisableSourceLink)' != 'true'">
+		<Authors>jkoritzinsky</Authors>
+		<Copyright>(c) 2010-2017 Alexandre Mutel, 2017-2023 Jeremy Koritzinsky</Copyright>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/SharpGenTools/SharpGenTools</PackageProjectUrl>
+		<PackageOutputPath>$(MSBuildThisFileDirectory)artifacts/</PackageOutputPath>
+		<Tags>SharpGen;CodeGen;CPlusPlus;PInvoke;Native;COM</Tags>
+		<RepositoryUrl>https://github.com/SharpGenTools/SharpGenTools</RepositoryUrl>
 
-    <!-- Embed source files that are not tracked by the source control manager in the PDB -->
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<!-- Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 
-    <!-- Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-  </PropertyGroup>
+		<!-- Embed source files that are not tracked by the source control manager in the PDB -->
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+		<!-- Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<NoWarn>$(NoWarn);NETSDK1212</NoWarn>
+	</PropertyGroup>
 
 </Project>

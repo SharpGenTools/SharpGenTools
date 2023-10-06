@@ -3,15 +3,15 @@
 
 	<PropertyGroup>
 		<!--
-		net6.0/net7.0 for full assembly trimming
-		net6.0/net7.0 for function pointers codegen and Native(U)Long API surface and partial assembly trimming
+		net6.0/net7.0/net8.0 for full assembly trimming
+		net6.0/net7.0/net8.0 for function pointers codegen and Native(U)Long API surface and partial assembly trimming
 		netcoreapp3.0 for smaller [empty] dependency tree (w/o System.Runtime.CompilerServices.Unsafe)
 		netstandard2.1 is .NET Core 3.0, but System.Memory is already inbox since 2.1
 		netstandard2.0 for smaller dependency tree than netstandard1.3
 		net471 for even smaller dependency tree on latest .NET Framework versions (w/o System.Runtime.InteropServices.RuntimeInformation)
 		net46 for using proper FormattableString instead of Shim/* version
 		-->
-		<TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net6.0;net7.0;net461;net471</TargetFrameworks>
+		<TargetFrameworks>netstandard2.0;netstandard2.1;netcoreapp3.1;net6.0;net7.0;net8.0;net461;net471</TargetFrameworks>
 		<RootNamespace>SharpGen.Runtime</RootNamespace>
 		<Description>C# COM Interop classes for use with SharpGenTools generated libraries</Description>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
