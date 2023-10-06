@@ -31,7 +31,7 @@
 		</ItemGroup>
 	</Target>
 
-	<ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+	<ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
 		<Compile Remove="CallerArgumentExpressionAttribute.cs" />
 		<Compile Update="SharpGenTask.cs">
 			<SubType>Code</SubType>
