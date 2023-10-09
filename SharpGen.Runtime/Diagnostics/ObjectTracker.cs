@@ -167,7 +167,7 @@ public static class ObjectTracker
     /// <summary>
     /// Reports all COM object that are active and not yet disposed.
     /// </summary>
-    private static List<WeakReference<CppObject>> FindActiveObjects()
+    public static List<WeakReference<CppObject>> FindActiveObjects()
     {
         List<WeakReference<CppObject>> activeObjects;
         var objectReferences = ObjectReferences;
