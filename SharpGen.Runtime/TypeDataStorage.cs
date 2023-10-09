@@ -78,7 +78,11 @@ public static unsafe class TypeDataStorage
         return GetSourceVtblFromReflection(typeof(T));
     }
 
-    private static IntPtr[]? GetSourceVtblFromReflection(Type type)
+    private static IntPtr[]? GetSourceVtblFromReflection(
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields | DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties)]
+#endif
+        Type type)
     {
         const string vtbl = "Vtbl";
 

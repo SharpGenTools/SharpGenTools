@@ -32,7 +32,7 @@ public abstract unsafe partial class CallbackBase
     [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2062", Justification = $"{nameof(ShadowAttribute.Type)} is already marked `DynamicallyAccessedMemberTypes.PublicConstructors` and the existing check via `Debug.Assert(holder.GetTypeInfo().GetConstructor(Type.EmptyTypes)` will ensure correctness.")]
     [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2111", Justification = "Same as above.")]
 #endif
-    protected virtual void InitializeCallableWrappers(IDictionary<Guid, IntPtr> ccw)
+    protected virtual void InitializeCallableWrappers(IDictionary<Guid, nint> ccw)
     {
         // Associate all shadows with their interfaces.
         var typeInfo = GetTypeInfo();

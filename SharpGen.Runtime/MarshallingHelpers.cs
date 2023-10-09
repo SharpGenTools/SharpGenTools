@@ -14,6 +14,21 @@ public static partial class MarshallingHelpers
     /// <typeparam name="T">The CppObject class that will be returned</typeparam>
     /// <param name="cppObjectPtr">The native pointer to a C++ object.</param>
     /// <returns>An instance of T bound to the native pointer</returns>
+    public static T? FromPointer<T>(IntPtr cppObjectPtr, Func<IntPtr, T> factory) where T : CppObject
+    {
+        if (cppObjectPtr == IntPtr.Zero)
+            return default;
+
+        T? result = factory(cppObjectPtr);
+        return result;
+    }
+
+    /// <summary>
+    /// Instantiate a CppObject from a native pointer.
+    /// </summary>
+    /// <typeparam name="T">The CppObject class that will be returned</typeparam>
+    /// <param name="cppObjectPtr">The native pointer to a C++ object.</param>
+    /// <returns>An instance of T bound to the native pointer</returns>
     public static T? FromPointer<
 #if NET6_0_OR_GREATER
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
@@ -76,12 +91,12 @@ public static partial class MarshallingHelpers
     /// <typeparam name="TCallback">The type of the callback.</typeparam>
     /// <param name="callback">The callback.</param>
     /// <returns>A pointer to the unmanaged C++ object of the callback</returns>
-    public static IntPtr ToCallbackPtr<TCallback>(ICallbackable callback) where TCallback : ICallbackable =>
+    public static nint ToCallbackPtr<TCallback>(ICallbackable callback) where TCallback : ICallbackable =>
         callback switch
         {
             CppObject cpp => cpp.NativePointer,
             CallbackBase managed => managed.Find<TCallback>(),
-            _ => IntPtr.Zero,
+            _ => 0,
         };
 
     /// <summary>
