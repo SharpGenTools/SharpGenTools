@@ -1,7 +1,7 @@
 <Project>
 
 	<PropertyGroup>
-		<VersionPrefix Condition="'$(VersionPrefix)' == ''">2.1.2</VersionPrefix>
+		<VersionPrefix Condition="'$(VersionPrefix)' == ''">2.2.0</VersionPrefix>
 		<VersionSuffix Condition="'$(VersionSuffix)' == ''">beta</VersionSuffix>
 		<Version>$(VersionPrefix)-$(VersionSuffix)</Version>
 	</PropertyGroup>
@@ -35,7 +35,7 @@
 
 	<PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(DisableSourceLink)' != 'true'">
 		<Authors>jkoritzinsky</Authors>
-		<Copyright>(c) 2010-2017 Alexandre Mutel, 2017-2023 Jeremy Koritzinsky</Copyright>
+		<Copyright>(c) 2010-2017 Alexandre Mutel, 2017-2023 Jeremy Koritzinsky, 2023-2024 Amer Koleci</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/SharpGenTools/SharpGenTools</PackageProjectUrl>
 		<PackageOutputPath>$(MSBuildThisFileDirectory)artifacts/</PackageOutputPath>

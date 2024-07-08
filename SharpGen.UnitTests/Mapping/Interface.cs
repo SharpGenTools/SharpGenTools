@@ -323,7 +323,7 @@ public class Interface : MappingTestBase
                 },
                 new DefineExtensionRule
                 {
-                    Struct = "SharpGen.Runtime.PointerSize",
+                    Struct = "SharpGen.Runtime.PointerUSize",
                     SizeOf = 8,
                     IsNativePrimitive = true
                 }
@@ -331,7 +331,7 @@ public class Interface : MappingTestBase
             Bindings =
             {
                 new BindRule("HRESULT", "SharpGen.Runtime.Result"),
-                new BindRule("SIZE_T", "SharpGen.Runtime.PointerSize"),
+                new BindRule("SIZE_T", "SharpGen.Runtime.PointerUSize"),
                 new BindRule("UINT32", "System.UInt32"),
                 new BindRule("void", "System.Void")
             }

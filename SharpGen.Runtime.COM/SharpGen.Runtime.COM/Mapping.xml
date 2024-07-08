@@ -126,7 +126,7 @@
     <bind from="BOOL" to="SharpGen.Runtime.RawBool"/>
     <bind from="HANDLE" to="System.IntPtr" />
     <bind from="HRESULT" to="SharpGen.Runtime.Result" />
-    <bind from="SIZE_T" to="SharpGen.Runtime.PointerSize" />
+    <bind from="SIZE_T" to="SharpGen.Runtime.PointerUSize" />
     <bind from="SSIZE_T" to="SharpGen.Runtime.PointerSize" />
     <bind from="ULARGE_INTEGER" to="System.UInt64" />
     <bind from="LARGE_INTEGER" to="System.Int64" />
