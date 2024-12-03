@@ -22,6 +22,8 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
+#nullable enable
+
 namespace SharpGen.Runtime;
 
 /// <summary>
@@ -29,7 +31,7 @@ namespace SharpGen.Runtime;
 ///   Equivalent to the native type size_t.
 /// </summary>
 public readonly struct PointerUSize : IEquatable<PointerUSize>,
-#if NET7_0_OR_GREATER
+#if NET8_0_OR_GREATER
     IComparable<PointerUSize>,
 #endif
     IFormattable
@@ -48,13 +50,13 @@ public readonly struct PointerUSize : IEquatable<PointerUSize>,
 
     public override string ToString() => ToString(null, null);
 
-    public string ToString(string format, IFormatProvider formatProvider) => string.Format(
+    public string ToString(string? format, IFormatProvider? formatProvider) => string.Format(
         formatProvider ?? CultureInfo.CurrentCulture,
         string.IsNullOrEmpty(format) ? "{0}" : "{0:" + format + "}",
         Value
     );
 
-    public string ToString(string format) => ToString(format, null);
+    public string ToString(string? format) => ToString(format, null);
 
     public override int GetHashCode() => Value.GetHashCode();
 
@@ -63,7 +65,7 @@ public readonly struct PointerUSize : IEquatable<PointerUSize>,
     public override bool Equals([NotNullWhen(true)] object? obj) => obj is PointerUSize value && Equals(value);
 
 
-#if NET7_0_OR_GREATER
+#if NET8_0_OR_GREATER
     public int CompareTo(object? obj)
     {
         if (obj is PointerUSize other)

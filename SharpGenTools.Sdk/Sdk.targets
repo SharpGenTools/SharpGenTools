@@ -68,7 +68,7 @@
 
   <PropertyGroup Condition="'$(SharpGenSdkAssemblyFrameworkIdentifier)' == ''">
     <SharpGenSdkAssemblyFrameworkIdentifier Condition="'$(MSBuildRuntimeType)' == 'Core'">net8.0</SharpGenSdkAssemblyFrameworkIdentifier>
-    <SharpGenSdkAssemblyFrameworkIdentifier Condition="'$(MSBuildRuntimeType)' != 'Core'">net472</SharpGenSdkAssemblyFrameworkIdentifier>
+    <SharpGenSdkAssemblyFrameworkIdentifier Condition="'$(MSBuildRuntimeType)' != 'Core'">netstandard2.0</SharpGenSdkAssemblyFrameworkIdentifier>
   </PropertyGroup>
 
   <ItemGroup Condition="'@(SharpGenSdkAssembly)' == ''">

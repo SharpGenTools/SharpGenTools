@@ -3,7 +3,7 @@
 	<Import Project="Sdk.props" Sdk="MSBuild.Sdk.Extras" />
 
 	<PropertyGroup>
-		<TargetFrameworks>net472;net8.0</TargetFrameworks>
+		<TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
 		<PackageId>SharpGenTools.Sdk</PackageId>
 		<NoPackageAnalysis>true</NoPackageAnalysis>
 		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
@@ -48,7 +48,7 @@
 		<PackageReference Include="PolySharp" />
 		<PackageReference Include="Microsoft.Build.Utilities.Core" />
 		<PackageReference Include="Polly.Contrib.WaitAndRetry" />
-		<PackageReference Include="Microsoft.Bcl.HashCode" Condition="'$(TargetFramework)' == 'net472'" />
+		<PackageReference Include="Microsoft.Bcl.HashCode" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
 	</ItemGroup>
 
 	<ItemGroup>

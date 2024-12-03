@@ -30,9 +30,9 @@
 		<bind from="unsigned longlong" to="ulong" />
 		<bind from="float" to="float" />
 		<bind from="double" to="double" />
-		<bind from="ssize_t" to="SharpGen.Runtime.PointerSize" />
-		<bind from="size_t" to="SharpGen.Runtime.PointerUSize" />
-		<bind from="ptrdiff_t" to="SharpGen.Runtime.PointerSize" />
+		<bind from="ssize_t" to="nint" />
+		<bind from="size_t" to="nuint" />
+		<bind from="ptrdiff_t" to="nint" />
 		<bind from="bool" to="bool" marshal="byte" />
 		<bind from="__function__stdcall" to="SharpGen.Runtime.FunctionCallback" />
 		<bind from="GUID" to="System.Guid" />

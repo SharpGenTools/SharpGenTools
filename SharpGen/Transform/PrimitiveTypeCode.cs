@@ -18,5 +18,7 @@ public enum PrimitiveTypeCode : byte
     Decimal,
     String,
     IntPtr,
-    UIntPtr
+    UIntPtr,
+    NInt,
+    NUint,
 }
