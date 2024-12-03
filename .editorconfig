@@ -12,3 +12,15 @@ csharp_space_after_cast = true
 [*.cs]
 indent_style = space
 indent_size = 4
+
+[*.csproj]
+indent_style = space
+indent_size = 4
+
+[*.props]
+indent_style = space
+indent_size = 4
+
+[*.targets]
+indent_style = space
+indent_size = 4

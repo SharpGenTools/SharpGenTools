@@ -20,11 +20,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Setup .NET 8 SDK
+    - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'
-        dotnet-quality: 'preview'
+        global-json-file: ./global.json
 
     - name: Pack
       run: dotnet pack SharpGenTools.sln --configuration Release -p:Packing=true

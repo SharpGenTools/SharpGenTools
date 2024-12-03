@@ -10,29 +10,29 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageVersion Include="PolySharp" Version="1.14.1" />
+		<PackageVersion Include="PolySharp" Version="1.15.0" />
 
-		<PackageVersion Include="System.Memory" Version="4.5.5" />
+		<PackageVersion Include="System.Memory" Version="4.6.0" />
 		<PackageVersion Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
-		<PackageVersion Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
-		<PackageVersion Include="System.Text.Json" Version="8.0.3" />
+		<PackageVersion Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.0" />
+		<PackageVersion Include="System.Text.Json" Version="9.0.0" />
 
 		<PackageVersion Include="Microsoft.Win32.Registry" Version="5.0.0" />
-		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.5.0-2.final" />
-		<PackageVersion Include="Microsoft.Build.Utilities.Core" Version="17.4.0" />
-		<PackageVersion Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
+		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0-3.final" />
+		<PackageVersion Include="Microsoft.Build.Utilities.Core" Version="17.12.6" />
+		<PackageVersion Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
 		
 		<PackageVersion Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
 
-		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
-		<PackageVersion Include="xunit" Version="2.5.0" />
-		<PackageVersion Include="xunit.runner.visualstudio" Version="2.5.0" />
-		<PackageVersion Include="Xunit.SkippableFact" Version="1.4.13" />
-		<PackageVersion Include="coverlet.msbuild" Version="6.0.0" />
+		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+		<PackageVersion Include="xunit" Version="2.9.2" />
+		<PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+		<PackageVersion Include="Xunit.SkippableFact" Version="1.5.23" />
+		<PackageVersion Include="coverlet.msbuild" Version="6.0.2" />
 		
-		<PackageVersion Include="FakeItEasy" Version="7.3.1" />
-		<PackageVersion Include="FakeItEasy.Analyzer.CSharp" Version="6.1.0" />
-		<PackageVersion Include="System.Reactive" Version="5.0.0" />
+		<PackageVersion Include="FakeItEasy" Version="8.3.0" />
+		<PackageVersion Include="FakeItEasy.Analyzer.CSharp" Version="6.1.1" />
+		<PackageVersion Include="System.Reactive" Version="6.0.1" />
 	</ItemGroup>
 
 </Project>

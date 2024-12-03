@@ -2,15 +2,15 @@
 
 	<PropertyGroup>
 		<OutputType>Library</OutputType>
-		<TargetFrameworks>net472;net7.0</TargetFrameworks>
+		<TargetFrameworks>net472;net8.0</TargetFrameworks>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<PolySharpIncludeRuntimeSupportedAttributes>true</PolySharpIncludeRuntimeSupportedAttributes>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="PolySharp" />
+		<PackageReference Include="PolySharp" PrivateAssets="all" />
 		<PackageReference Include="Microsoft.Win32.Registry" Condition="'$(TargetFramework)' != 'net472'" />
-		<PackageReference Include="System.Text.Json" Condition="'$(TargetFramework)' != 'net7.0'" />
+		<PackageReference Include="System.Text.Json" Condition="'$(TargetFramework)' != 'net8.0'" />
 	</ItemGroup>
 
 	<ItemGroup>
