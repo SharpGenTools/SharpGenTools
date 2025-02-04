@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>Library</OutputType>
@@ -9,8 +9,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="PolySharp" PrivateAssets="all" />
-		<PackageReference Include="Microsoft.Win32.Registry" Condition="'$(TargetFramework)' != 'net472'" />
-		<PackageReference Include="System.Text.Json" Condition="'$(TargetFramework)' != 'net8.0'" />
+		<PackageReference Include="Microsoft.Win32.Registry"  />
+		<PackageReference Include="System.Text.Json" />
 	</ItemGroup>
 
 	<ItemGroup>
